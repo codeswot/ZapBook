@@ -20,8 +20,6 @@ import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
-import 'package:zapbook/features/book_ingestion/data/ai/gemma_zb_service.dart'
-    as _i228;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
@@ -36,8 +34,6 @@ import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.d
     as _i751;
 import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart'
     as _i370;
-import 'package:zapbook/features/book_ingestion/domain/ai/zb_inference_service.dart'
-    as _i727;
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart'
     as _i1003;
 import 'package:zapbook/features/book_ingestion/domain/repositories/book_ingestion_repository.dart'
@@ -46,8 +42,6 @@ import 'package:zapbook/features/book_ingestion/domain/usecases/get_ingested_boo
     as _i850;
 import 'package:zapbook/features/book_ingestion/domain/usecases/ingest_book.dart'
     as _i605;
-import 'package:zapbook/features/book_ingestion/domain/usecases/refine_page.dart'
-    as _i744;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc.dart'
     as _i318;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart'
@@ -97,9 +91,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<List<_i751.BookExtractor>>(
       () => ingestionModule.bookExtractors(gh<_i201.CoverGenerator>()),
     );
-    gh.lazySingleton<_i727.ZbInferenceService>(
-      () => _i228.GemmaZbService(gh<_i1012.AiService>()),
-    );
     gh.factoryParam<
       _i842.BookWizardCubit,
       _i687.Completer<_i1003.WizardData>,
@@ -110,12 +101,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i850.GenreDataSource>(),
         _completer,
         initialTitle,
-      ),
-    );
-    gh.factory<_i744.RefinePage>(
-      () => _i744.RefinePage(
-        gh<_i370.PdfPageRasterizer>(),
-        gh<_i727.ZbInferenceService>(),
       ),
     );
     gh.lazySingleton<_i865.BookIngestionRepository>(

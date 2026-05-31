@@ -10,8 +10,12 @@ class AppSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semanticColors = context.colors;
+    final mediaQuery = MediaQuery.of(context);
+    final maxHeight =
+        (mediaQuery.size.height - mediaQuery.viewInsets.bottom) * 0.9;
 
     return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: semanticColors.paper,
         borderRadius: const BorderRadius.only(
@@ -33,7 +37,7 @@ class AppSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          child,
+          Flexible(child: child),
         ],
       ),
     );

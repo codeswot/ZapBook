@@ -1,28 +1,29 @@
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:zapbook/features/book_ingestion/domain/usecases/refine_page.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
-import 'package:zapbook/features/book_ingestion/data/extractors/pdf_extractor.dart';
+import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/features/book_ingestion/data/extractors/pdf_extractor.dart';
 import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
-import 'package:logging/logging.dart';
+import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   ZbfViewerCubit({
     required this.handle,
-    required this.refiner,
-  }) : super(const ZbfViewerState()) {
+    PdfPageRasterizer? rasterizer,
+  })  : _rasterizer = rasterizer,
+        super(const ZbfViewerState()) {
     _prefetch(0);
   }
 
   final ZbfBookHandle handle;
-  final RefinePage refiner;
+  final PdfPageRasterizer? _rasterizer;
   final _logger = Logger('ZbfViewerCubit');
-  
+
+  PdfPageRasterizer get _raster => _rasterizer ?? getIt<PdfPageRasterizer>();
+
   final List<int> _prefetchQueue = [];
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
@@ -30,7 +31,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   void pageChanged(int index) {
     if (isClosed) return;
     emit(state.copyWith(currentPage: index));
-    
+
     final currentChunk = index < 10 ? 0 : 1 + ((index - 10) ~/ 20);
     final page = handle.pageAt(index);
     if (page.layoutType == BookLayoutType.processing) {
@@ -38,7 +39,8 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     final nextChunk = currentChunk + 1;
-    final triggerIndex = currentChunk == 0 ? 4 : (10 + (currentChunk - 1) * 20 + 10);
+    final triggerIndex =
+        currentChunk == 0 ? 4 : (10 + (currentChunk - 1) * 20 + 10);
     if (index >= triggerIndex) {
       _ensureChunkIngested(nextChunk);
     }
@@ -73,7 +75,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
       if (isClosed) return;
       emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
-      
+
       _prefetch(state.currentPage);
     } catch (e, stack) {
       _logger.severe('Failed to extract chunk $chunkIndex', e, stack);
@@ -107,8 +109,14 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
       final page = handle.pageAt(i);
       if (page.layoutType == BookLayoutType.processing) continue;
-      if (!page.needsAiProcessing) continue;
-      if (state.refinedPages.containsKey(i) || state.refiningPages.contains(i) || _prefetchQueue.contains(i)) continue;
+      // Only image-only / sparse pages get rendered as a page bitmap. Every
+      // other page renders its extracted text blocks directly.
+      if (page.layoutType != BookLayoutType.illustration) continue;
+      if (state.imagePages.containsKey(i) ||
+          state.rasterizingPages.contains(i) ||
+          _prefetchQueue.contains(i)) {
+        continue;
+      }
 
       pagesToQueue.add(i);
     }
@@ -128,68 +136,41 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       final pageIndex = _prefetchQueue.removeAt(0);
       final page = handle.pageAt(pageIndex);
       if (page.layoutType == BookLayoutType.processing) continue;
-      await _refinePage(pageIndex, pdf, page);
+      await _rasterizePage(pageIndex, pdf, page);
     }
 
     _isProcessingQueue = false;
   }
 
-  Future<void> _refinePage(int pageIndex, Uint8List pdf, BookPage page) async {
+  Future<void> _rasterizePage(int pageIndex, Uint8List pdf, BookPage page) async {
     if (isClosed) return;
     emit(state.copyWith(
-      refiningPages: {...state.refiningPages, pageIndex},
+      rasterizingPages: {...state.rasterizingPages, pageIndex},
     ));
 
     final imageName = 'page_${page.pageNumber}.png';
 
     try {
-      final result = await refiner.call(
-        sourcePdf: pdf,
-        page: page,
-        availableAssetRefs: [imageName],
-      );
-
+      final imageBytes = await _raster.render(pdf, page.pageNumber - 1);
       if (isClosed) return;
-
-      if (result != null) {
-        handle.updateAsset(imageName, result.imageBytes);
-        var blocks = result.blocks;
-        if (page.layoutType == BookLayoutType.illustration && !blocks.any((b) => b is ImageBlock)) {
-          blocks = [ImageBlock(assetRef: imageName), ...blocks];
-        }
+      if (imageBytes != null) {
+        handle.updateAsset(imageName, imageBytes);
         emit(state.copyWith(
-          refinedPages: {...state.refinedPages, pageIndex: blocks},
-          refiningPages: state.refiningPages.difference({pageIndex}),
+          imagePages: {
+            ...state.imagePages,
+            pageIndex: [ImageBlock(assetRef: imageName), ...page.blocks],
+          },
+          rasterizingPages: state.rasterizingPages.difference({pageIndex}),
         ));
         return;
       }
-    } catch (e, stackTrace) {
-      _logger.severe('AI refinement failed for page $pageIndex', e, stackTrace);
-    }
-
-    try {
-      if (page.layoutType == BookLayoutType.illustration) {
-        final rasterizer = getIt<PdfPageRasterizer>();
-        final imageBytes = await rasterizer.render(pdf, page.pageNumber - 1);
-        if (imageBytes != null && !isClosed) {
-          handle.updateAsset(imageName, imageBytes);
-          emit(state.copyWith(
-            refinedPages: {
-              ...state.refinedPages,
-              pageIndex: [ImageBlock(assetRef: imageName), ...page.blocks],
-            },
-            refiningPages: state.refiningPages.difference({pageIndex}),
-          ));
-          return;
-        }
-      }
-    } catch (e, s) {
-      _logger.severe('Fallback rasterization failed', e, s);
+    } catch (e, stack) {
+      _logger.severe('Rasterization failed for page $pageIndex', e, stack);
     }
 
     if (isClosed) return;
     emit(state.copyWith(
-      refiningPages: state.refiningPages.difference({pageIndex}),
+      rasterizingPages: state.rasterizingPages.difference({pageIndex}),
     ));
   }
 

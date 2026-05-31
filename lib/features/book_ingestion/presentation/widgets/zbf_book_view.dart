@@ -5,8 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_progress.dart';
 import 'package:zapbook/zbf/zbf.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/book_ingestion/domain/usecases/refine_page.dart';
+import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/zb_shimmer.dart';
@@ -28,10 +27,10 @@ class ZbfViewerMessage extends StatelessWidget {
 }
 
 class ZbfBookView extends StatefulWidget {
-  const ZbfBookView({required this.handle, super.key, this.refiner});
+  const ZbfBookView({required this.handle, super.key, this.rasterizer});
 
   final ZbfBookHandle handle;
-  final RefinePage? refiner;
+  final PdfPageRasterizer? rasterizer;
 
   @override
   State<ZbfBookView> createState() => _ZbfBookViewState();
@@ -52,11 +51,10 @@ class _ZbfBookViewState extends State<ZbfBookView> {
     if (manifest.pageCount == 0) {
       return const ZbfViewerMessage(text: 'No pages were extracted');
     }
-    final refiner = widget.refiner ?? getIt<RefinePage>();
     return BlocProvider(
       create: (_) => ZbfViewerCubit(
         handle: widget.handle,
-        refiner: refiner,
+        rasterizer: widget.rasterizer,
       ),
       child: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
         builder: (context, state) {
@@ -72,7 +70,6 @@ class _ZbfBookViewState extends State<ZbfBookView> {
                     handle: widget.handle,
                     page: widget.handle.pageAt(index),
                     index: index,
-                    refiner: widget.refiner,
                   ),
                 ),
               ),
@@ -90,91 +87,54 @@ class _ZbfPage extends StatelessWidget {
     required this.handle,
     required this.page,
     required this.index,
-    this.refiner,
   });
 
   final ZbfBookHandle handle;
   final BookPage page;
   final int index;
-  final RefinePage? refiner;
 
   @override
   Widget build(BuildContext context) {
     if (page.layoutType == BookLayoutType.processing) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Processing...', style: context.typography.label),
-            const SizedBox(height: 2),
-            Text(
-              'progressive ingestion',
-              style: context.typography.caption.copyWith(
-                color: context.colors.slate,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: ZbShimmer(
-                    message: 'Ingesting layout structure for Page ${index + 1}...',
-                  ),
-                ),
-              ),
-            ),
-          ],
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: ZbShimmer(message: 'Preparing page ${index + 1}…'),
         ),
       );
     }
+
+    final body = page.layoutType == BookLayoutType.illustration
+        ? BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
+            buildWhen: (prev, curr) =>
+                prev.imagePages[index] != curr.imagePages[index] ||
+                prev.rasterizingPages.contains(index) !=
+                    curr.rasterizingPages.contains(index),
+            builder: (context, state) {
+              final rendered = state.imagePages[index];
+              if (rendered != null) {
+                return _PageBlocks(handle: handle, blocks: rendered);
+              }
+              if (state.rasterizingPages.contains(index)) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: ZbShimmer(message: 'Rendering page ${index + 1}…'),
+                );
+              }
+              return _PageBlocks(handle: handle, blocks: page.blocks);
+            },
+          )
+        : _PageBlocks(handle: handle, blocks: page.blocks);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(page.chapterTitle, style: context.typography.label),
-          const SizedBox(height: 2),
-          Text(
-            '${page.layoutType.wireValue}'
-            '${page.needsAiProcessing ? ' \u00b7 needs AI' : ''}',
-            style: context.typography.caption.copyWith(
-              color: context.colors.slate,
-            ),
-          ),
           const SizedBox(height: 12),
-          Expanded(
-            child: page.needsAiProcessing
-                ? BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
-                    buildWhen: (prev, curr) =>
-                        prev.refinedPages[index] != curr.refinedPages[index] ||
-                        prev.refiningPages.contains(index) !=
-                            curr.refiningPages.contains(index),
-                    builder: (context, state) {
-                      final refined = state.refinedPages[index];
-                      final isRefining = state.refiningPages.contains(index);
-
-                      if (refined != null) {
-                        return _PageBlocks(handle: handle, blocks: refined);
-                      } else if (isRefining) {
-                        return Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: ZbShimmer(
-                              message: "Optimizing layout for '${handle.manifest.title}'…",
-                            ),
-                          ),
-                        );
-                      } else {
-                        return _PageBlocks(handle: handle, blocks: page.blocks);
-                      }
-                    },
-                  )
-                : _PageBlocks(handle: handle, blocks: page.blocks),
-          ),
+          Expanded(child: body),
         ],
       ),
     );
@@ -361,8 +321,7 @@ class _ImageView extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: Image.memory(
               data,
-              height: 160,
-              fit: BoxFit.cover,
+              fit: BoxFit.fitWidth,
               gaplessPlayback: true,
             ),
           )

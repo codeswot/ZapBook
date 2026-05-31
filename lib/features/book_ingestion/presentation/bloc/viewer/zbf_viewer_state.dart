@@ -4,30 +4,42 @@ import 'package:zapbook/zbf/zbf.dart';
 class ZbfViewerState extends Equatable {
   const ZbfViewerState({
     this.currentPage = 0,
-    this.refinedPages = const {},
-    this.refiningPages = const {},
+    this.imagePages = const {},
+    this.rasterizingPages = const {},
     this.updateTrigger = 0,
   });
 
   final int currentPage;
-  final Map<int, List<BookBlock>> refinedPages;
-  final Set<int> refiningPages;
+
+  /// Pages rendered as a rasterized page image (illustration / sparse-text
+  /// pages). Keyed by global page index; value is the block list to render
+  /// (a leading [ImageBlock] followed by any extracted draft blocks).
+  final Map<int, List<BookBlock>> imagePages;
+
+  /// Pages currently being rasterized in the background.
+  final Set<int> rasterizingPages;
+
   final int updateTrigger;
 
   ZbfViewerState copyWith({
     int? currentPage,
-    Map<int, List<BookBlock>>? refinedPages,
-    Set<int>? refiningPages,
+    Map<int, List<BookBlock>>? imagePages,
+    Set<int>? rasterizingPages,
     int? updateTrigger,
   }) {
     return ZbfViewerState(
       currentPage: currentPage ?? this.currentPage,
-      refinedPages: refinedPages ?? this.refinedPages,
-      refiningPages: refiningPages ?? this.refiningPages,
+      imagePages: imagePages ?? this.imagePages,
+      rasterizingPages: rasterizingPages ?? this.rasterizingPages,
       updateTrigger: updateTrigger ?? this.updateTrigger,
     );
   }
 
   @override
-  List<Object?> get props => [currentPage, refinedPages, refiningPages, updateTrigger];
+  List<Object?> get props => [
+    currentPage,
+    imagePages,
+    rasterizingPages,
+    updateTrigger,
+  ];
 }
