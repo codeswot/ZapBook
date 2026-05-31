@@ -28,7 +28,7 @@ class _AiSetupViewState extends State<AiSetupView> {
   Future<void> _checkCapability() async {
     final capabilityService = getIt<DeviceCapabilityService>();
     final capability = await capabilityService.checkDeviceCapability();
-    
+
     if (mounted) {
       setState(() {
         _capability = capability;
@@ -52,7 +52,9 @@ class _AiSetupViewState extends State<AiSetupView> {
     }
 
     final isCapable = _capability != DeviceCapability.incapable;
-    final modelName = _capability == DeviceCapability.capable4B ? 'Gemma 4B' : 'Gemma 2B';
+    final modelName = _capability == DeviceCapability.capable4B
+        ? 'Gemma 4B'
+        : 'Gemma 2B';
 
     return SafeArea(
       child: Padding(
@@ -61,11 +63,7 @@ class _AiSetupViewState extends State<AiSetupView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Spacer(),
-            Icon(
-              LucideIcons.bot,
-              size: 80,
-              color: context.colors.plum,
-            ),
+            Icon(LucideIcons.bot, size: 80, color: context.colors.plum),
             const SizedBox(height: 32),
             Text(
               isCapable ? 'Power Up with On-Device AI' : 'Device Not Supported',
@@ -74,10 +72,12 @@ class _AiSetupViewState extends State<AiSetupView> {
             ),
             const SizedBox(height: 16),
             Text(
-              isCapable 
-                ? 'ZapBook uses 100% private, on-device AI to supercharge your reading experience. No data ever leaves your device.'
-                : 'Use ZapBook on a modern, more capable device to have access to AI features like summaries and smart quizzes.',
-              style: context.typography.bodyL.copyWith(color: context.colors.slate),
+              isCapable
+                  ? 'ZapBook uses 100% private, on-device AI to supercharge your reading experience. No data ever leaves your device.'
+                  : 'Use ZapBook on a modern, more capable device to have access to AI features like summaries and smart quizzes.',
+              style: context.typography.bodyL.copyWith(
+                color: context.colors.slate,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -170,9 +170,19 @@ class _FeatureRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: context.typography.bodyL.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: context.typography.bodyL.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(description, style: context.typography.bodyS.copyWith(color: context.colors.slate)),
+              Text(
+                description,
+                style: context.typography.bodyS.copyWith(
+                  color: context.colors.slate,
+                ),
+              ),
             ],
           ),
         ),

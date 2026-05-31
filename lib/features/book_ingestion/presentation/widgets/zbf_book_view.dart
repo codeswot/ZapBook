@@ -58,7 +58,8 @@ class _ZbfBookViewState extends State<ZbfBookView> {
                 child: PageView.builder(
                   controller: _controller,
                   itemCount: manifest.pageCount,
-                  onPageChanged: (index) => context.read<ZbfViewerCubit>().pageChanged(index),
+                  onPageChanged: (index) =>
+                      context.read<ZbfViewerCubit>().pageChanged(index),
                   itemBuilder: (context, index) => _ZbfPage(
                     handle: widget.handle,
                     page: widget.handle.pageAt(index),

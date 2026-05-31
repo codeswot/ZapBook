@@ -2,11 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 
-enum DeviceCapability {
-  incapable,
-  capable2B,
-  capable4B,
-}
+enum DeviceCapability { incapable, capable2B, capable4B }
 
 extension DeviceCapabilityExtension on DeviceCapability {
   String? get modelUrl {
@@ -57,7 +53,11 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
 
   DeviceCapability _estimateIosCapability(String machine) {
     if (machine.startsWith('iPhone')) {
-      final modelNumber = int.tryParse(machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first) ?? 0;
+      final modelNumber =
+          int.tryParse(
+            machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first,
+          ) ??
+          0;
       if (modelNumber >= 15) {
         return DeviceCapability.capable4B;
       }
@@ -66,9 +66,13 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
       }
       return DeviceCapability.incapable;
     }
-    
+
     if (machine.startsWith('iPad')) {
-      final modelNumber = int.tryParse(machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first) ?? 0;
+      final modelNumber =
+          int.tryParse(
+            machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first,
+          ) ??
+          0;
       if (modelNumber >= 13) {
         return DeviceCapability.capable4B;
       }

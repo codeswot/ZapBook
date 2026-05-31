@@ -17,11 +17,7 @@ class NostrSetupView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Spacer(),
-            Icon(
-              LucideIcons.key,
-              size: 80,
-              color: context.colors.bitcoin,
-            ),
+            Icon(LucideIcons.key, size: 80, color: context.colors.bitcoin),
             const SizedBox(height: 32),
             Text(
               'Connect Nostr',
@@ -31,7 +27,9 @@ class NostrSetupView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'ZapBook uses Nostr for decentralised syncing, social highlights, and book reviews. Your identity stays yours.',
-              style: context.typography.bodyL.copyWith(color: context.colors.slate),
+              style: context.typography.bodyL.copyWith(
+                color: context.colors.slate,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),

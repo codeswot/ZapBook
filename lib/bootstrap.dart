@@ -10,7 +10,7 @@ import 'package:zapbook/core/observers/app_bloc_observer.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     log(

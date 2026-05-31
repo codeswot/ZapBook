@@ -9,5 +9,8 @@ abstract interface class BookExtractor {
 
   bool supports(File file);
 
-  Stream<IngestionProgress> extract(File file, {Future<WizardData>? wizardDataFuture});
+  Stream<IngestionProgress> extract(
+    File file, {
+    Future<WizardData>? wizardDataFuture,
+  });
 }

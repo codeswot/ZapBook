@@ -34,9 +34,7 @@ class AppRouter {
   );
 }
 
-@TypedGoRoute<OnboardingRoute>(
-  path: '/onboarding',
-)
+@TypedGoRoute<OnboardingRoute>(path: '/onboarding')
 class OnboardingRoute extends GoRouteData with $OnboardingRoute {
   const OnboardingRoute();
 

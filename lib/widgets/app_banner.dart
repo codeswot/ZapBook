@@ -16,11 +16,14 @@ class AppBanner extends StatelessWidget {
       initialData: aiService.currentState,
       builder: (context, snapshot) {
         final state = snapshot.data;
-        if (state == null || state.status == AiModelStatus.ready || state.bannerDismissed) {
+        if (state == null ||
+            state.status == AiModelStatus.ready ||
+            state.bannerDismissed) {
           return const SizedBox.shrink();
         }
 
-        if (state.status == AiModelStatus.downloading || state.status == AiModelStatus.paused) {
+        if (state.status == AiModelStatus.downloading ||
+            state.status == AiModelStatus.paused) {
           return _buildDownloadingBanner(context, aiService, state);
         }
 
@@ -28,7 +31,8 @@ class AppBanner extends StatelessWidget {
           return _buildVerifyingBanner(context);
         }
 
-        if (state.status == AiModelStatus.notSet || state.status == AiModelStatus.skipped) {
+        if (state.status == AiModelStatus.notSet ||
+            state.status == AiModelStatus.skipped) {
           return _buildMissingBanner(context, aiService);
         }
 
@@ -37,11 +41,15 @@ class AppBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildDownloadingBanner(BuildContext context, AiService aiService, AiModelState state) {
+  Widget _buildDownloadingBanner(
+    BuildContext context,
+    AiService aiService,
+    AiModelState state,
+  ) {
     final progress = state.downloadProgress;
     final isPaused = state.status == AiModelStatus.paused;
     final percent = (progress * 100).toStringAsFixed(0);
-    
+
     return Container(
       color: context.colors.plum.withValues(alpha: 0.1),
       padding: EdgeInsets.only(
@@ -55,29 +63,33 @@ class AppBanner extends StatelessWidget {
           SizedBox(
             width: 16,
             height: 16,
-            child: isPaused 
-              ? Icon(LucideIcons.pause, size: 16, color: context.colors.plum)
-              : CircularProgressIndicator(
-                  strokeWidth: 2,
-                  value: progress > 0 ? progress : null,
-                  color: context.colors.plum,
-                ),
+            child: isPaused
+                ? Icon(LucideIcons.pause, size: 16, color: context.colors.plum)
+                : CircularProgressIndicator(
+                    strokeWidth: 2,
+                    value: progress > 0 ? progress : null,
+                    color: context.colors.plum,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              isPaused 
-                ? 'AI Model Paused ($percent%)'
-                : 'Downloading AI Model ($percent%)...',
-              style: context.typography.bodyS.copyWith(color: context.colors.plum),
+              isPaused
+                  ? 'AI Model Paused ($percent%)'
+                  : 'Downloading AI Model ($percent%)...',
+              style: context.typography.bodyS.copyWith(
+                color: context.colors.plum,
+              ),
             ),
           ),
           GestureDetector(
-            onTap: isPaused ? aiService.resumeDownload : aiService.pauseDownload,
+            onTap: isPaused
+                ? aiService.resumeDownload
+                : aiService.pauseDownload,
             child: Icon(
-              isPaused ? LucideIcons.play : LucideIcons.pause, 
-              color: context.colors.plum, 
-              size: 20
+              isPaused ? LucideIcons.play : LucideIcons.pause,
+              color: context.colors.plum,
+              size: 20,
             ),
           ),
         ],
@@ -108,7 +120,9 @@ class AppBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'Verifying AI Model hash...',
-              style: context.typography.bodyS.copyWith(color: context.colors.mint2),
+              style: context.typography.bodyS.copyWith(
+                color: context.colors.mint2,
+              ),
             ),
           ),
         ],
@@ -132,7 +146,9 @@ class AppBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'AI model missing. Tap to set it up.',
-              style: context.typography.bodyS.copyWith(color: context.colors.tomato),
+              style: context.typography.bodyS.copyWith(
+                color: context.colors.tomato,
+              ),
             ),
           ),
           GestureDetector(

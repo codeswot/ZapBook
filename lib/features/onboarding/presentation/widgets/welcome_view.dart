@@ -17,11 +17,7 @@ class WelcomeView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Spacer(),
-            Icon(
-              LucideIcons.bookOpen,
-              size: 80,
-              color: context.colors.plum,
-            ),
+            Icon(LucideIcons.bookOpen, size: 80, color: context.colors.plum),
             const SizedBox(height: 32),
             Text(
               'Welcome to ZapBook',
@@ -31,15 +27,13 @@ class WelcomeView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Your private, sovereign library for reading, ingesting, and owning your books.',
-              style: context.typography.bodyL.copyWith(color: context.colors.slate),
+              style: context.typography.bodyL.copyWith(
+                color: context.colors.slate,
+              ),
               textAlign: TextAlign.center,
             ),
             const Spacer(),
-            AppButton(
-              label: 'Get Started',
-              onTap: onNext,
-              fullWidth: true,
-            ),
+            AppButton(label: 'Get Started', onTap: onNext, fullWidth: true),
           ],
         ),
       ),

@@ -6,14 +6,7 @@ import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:background_downloader/background_downloader.dart';
 
-enum AiModelStatus {
-  notSet,
-  downloading,
-  paused,
-  verifying,
-  ready,
-  skipped,
-}
+enum AiModelStatus { notSet, downloading, paused, verifying, ready, skipped }
 
 class AiModelState extends Equatable {
   final AiModelStatus status;
@@ -31,7 +24,13 @@ class AiModelState extends Equatable {
   });
 
   @override
-  List<Object?> get props => [status, downloadProgress, bannerDismissed, taskId, expectedHash];
+  List<Object?> get props => [
+    status,
+    downloadProgress,
+    bannerDismissed,
+    taskId,
+    expectedHash,
+  ];
 
   AiModelState copyWith({
     AiModelStatus? status,
@@ -66,7 +65,7 @@ abstract class AiService {
 @LazySingleton(as: AiService)
 class AiServiceImpl implements AiService {
   final SharedPreferences _prefs;
-  
+
   static const _statusKey = 'ai_model_status';
   static const _taskIdKey = 'ai_model_task_id';
   static const _hashKey = 'ai_model_hash';
@@ -101,15 +100,17 @@ class AiServiceImpl implements AiService {
       downloadProgress: progress,
     );
     _stateController.add(_currentState);
-    
+
     FileDownloader().registerCallbacks(
       taskProgressCallback: (update) {
         if (update.progress >= 0.0 && update.progress <= 1.0) {
           _prefs.setDouble(_progressKey, update.progress);
-          _updateState(_currentState.copyWith(
-            status: AiModelStatus.downloading,
-            downloadProgress: update.progress,
-          ));
+          _updateState(
+            _currentState.copyWith(
+              status: AiModelStatus.downloading,
+              downloadProgress: update.progress,
+            ),
+          );
         } else if (update.progress == progressPaused) {
           _updateState(_currentState.copyWith(status: AiModelStatus.paused));
         }
@@ -117,10 +118,15 @@ class AiServiceImpl implements AiService {
       taskStatusCallback: (update) async {
         if (update.status == TaskStatus.complete) {
           await _handleDownloadComplete(update.task as DownloadTask);
-        } else if (update.status == TaskStatus.failed || 
-                   update.status == TaskStatus.canceled ||
-                   update.status == TaskStatus.notFound) {
-          _updateState(const AiModelState(status: AiModelStatus.notSet, downloadProgress: 0.0));
+        } else if (update.status == TaskStatus.failed ||
+            update.status == TaskStatus.canceled ||
+            update.status == TaskStatus.notFound) {
+          _updateState(
+            const AiModelState(
+              status: AiModelStatus.notSet,
+              downloadProgress: 0.0,
+            ),
+          );
           await _clearPrefs();
         }
       },
@@ -128,7 +134,8 @@ class AiServiceImpl implements AiService {
 
     await FileDownloader().trackTasks();
 
-    if (initialStatus == AiModelStatus.downloading || initialStatus == AiModelStatus.paused) {
+    if (initialStatus == AiModelStatus.downloading ||
+        initialStatus == AiModelStatus.paused) {
       if (taskId != null) {
         final task = await FileDownloader().taskForId(taskId);
         if (task == null) {
@@ -144,7 +151,7 @@ class AiServiceImpl implements AiService {
 
   Future<void> _handleDownloadComplete(DownloadTask task) async {
     _updateState(_currentState.copyWith(status: AiModelStatus.verifying));
-    
+
     final expectedHash = _currentState.expectedHash;
     if (expectedHash == null) {
       _setReady();
@@ -176,7 +183,9 @@ class AiServiceImpl implements AiService {
   }
 
   Future<void> _setReady() async {
-    _updateState(const AiModelState(status: AiModelStatus.ready, downloadProgress: 1.0));
+    _updateState(
+      const AiModelState(status: AiModelStatus.ready, downloadProgress: 1.0),
+    );
     await _prefs.setString(_statusKey, AiModelStatus.ready.name);
   }
 
@@ -190,7 +199,7 @@ class AiServiceImpl implements AiService {
   void _updateState(AiModelState newState) {
     _currentState = newState;
     _stateController.add(_currentState);
-    
+
     _prefs.setString(_statusKey, newState.status.name);
     if (newState.taskId != null) {
       _prefs.setString(_taskIdKey, newState.taskId!);
@@ -218,12 +227,14 @@ class AiServiceImpl implements AiService {
       allowPause: true,
     );
 
-    _updateState(AiModelState(
-      status: AiModelStatus.downloading, 
-      downloadProgress: 0.0,
-      taskId: task.taskId,
-      expectedHash: expectedHash,
-    ));
+    _updateState(
+      AiModelState(
+        status: AiModelStatus.downloading,
+        downloadProgress: 0.0,
+        taskId: task.taskId,
+        expectedHash: expectedHash,
+      ),
+    );
 
     await FileDownloader().enqueue(task);
   }
@@ -254,7 +265,9 @@ class AiServiceImpl implements AiService {
   Future<void> cancelDownload() async {
     if (_currentState.taskId != null) {
       await FileDownloader().cancelTaskWithId(_currentState.taskId!);
-      _updateState(const AiModelState(status: AiModelStatus.notSet, downloadProgress: 0.0));
+      _updateState(
+        const AiModelState(status: AiModelStatus.notSet, downloadProgress: 0.0),
+      );
       await _clearPrefs();
     }
   }

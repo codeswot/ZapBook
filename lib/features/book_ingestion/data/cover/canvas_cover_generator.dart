@@ -162,19 +162,20 @@ final class CanvasCoverGenerator implements CoverGenerator {
     final seed = title.hashCode;
     final palette = [_bitcoin, _plum, _mint, _sky, _coral, _butter];
     final random = math.Random(seed);
-    
+
     final blobCount = 20 + random.nextInt(11);
     for (var i = 0; i < blobCount; i++) {
       final color = palette[random.nextInt(palette.length)];
-      
+
       final x = random.nextDouble() * bounds.width;
       final y = random.nextDouble() * bounds.height;
-      final radius = (random.nextDouble() * bounds.width * 0.3) + bounds.width * 0.1;
-      
+      final radius =
+          (random.nextDouble() * bounds.width * 0.3) + bounds.width * 0.1;
+
       canvas.drawCircle(
-        Offset(x, y), 
-        radius, 
-        Paint()..color = color.withValues(alpha: 0.7)
+        Offset(x, y),
+        radius,
+        Paint()..color = color.withValues(alpha: 0.7),
       );
     }
   }

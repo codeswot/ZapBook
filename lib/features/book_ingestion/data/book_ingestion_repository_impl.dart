@@ -26,7 +26,10 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
   final ZbfReader _reader;
 
   @override
-  Stream<IngestionProgress> ingest(File file, {Future<WizardData>? wizardDataFuture}) async* {
+  Stream<IngestionProgress> ingest(
+    File file, {
+    Future<WizardData>? wizardDataFuture,
+  }) async* {
     final extractor = _extractorFor(file);
     if (extractor == null) {
       yield IngestionProgress.failed('Unsupported file: ${file.path}');
@@ -35,7 +38,10 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
 
     try {
       ZbfBook? book;
-      await for (final progress in extractor.extract(file, wizardDataFuture: wizardDataFuture)) {
+      await for (final progress in extractor.extract(
+        file,
+        wizardDataFuture: wizardDataFuture,
+      )) {
         if (progress.stage == IngestionStage.error) {
           yield progress;
           return;

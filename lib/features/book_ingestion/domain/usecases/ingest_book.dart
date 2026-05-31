@@ -13,5 +13,8 @@ final class IngestBook {
 
   final BookIngestionRepository _repository;
 
-  Stream<IngestionProgress> call(File file, {Future<WizardData>? wizardDataFuture}) => _repository.ingest(file, wizardDataFuture: wizardDataFuture);
+  Stream<IngestionProgress> call(
+    File file, {
+    Future<WizardData>? wizardDataFuture,
+  }) => _repository.ingest(file, wizardDataFuture: wizardDataFuture);
 }

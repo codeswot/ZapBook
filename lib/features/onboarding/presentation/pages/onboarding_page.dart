@@ -33,7 +33,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       backgroundColor: context.colors.paper,
       body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Only navigate via buttons
+        physics:
+            const NeverScrollableScrollPhysics(), // Only navigate via buttons
         children: [
           WelcomeView(onNext: _nextPage),
           NostrSetupView(onNext: _nextPage),

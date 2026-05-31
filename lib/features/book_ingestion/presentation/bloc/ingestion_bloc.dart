@@ -36,11 +36,16 @@ class IngestionBloc extends Bloc<IngestionEvent, IngestionState> {
         currentItem: '',
       ),
     );
-    _subscription = _ingestBook(event.file, wizardDataFuture: event.wizardDataFuture).listen(
-      (progress) => add(IngestionProgressReported(progress)),
-      onError: (Object error) =>
-          add(IngestionProgressReported(IngestionProgress.failed('$error'))),
-    );
+    _subscription =
+        _ingestBook(
+          event.file,
+          wizardDataFuture: event.wizardDataFuture,
+        ).listen(
+          (progress) => add(IngestionProgressReported(progress)),
+          onError: (Object error) => add(
+            IngestionProgressReported(IngestionProgress.failed('$error')),
+          ),
+        );
   }
 
   Future<void> _onCancelled(

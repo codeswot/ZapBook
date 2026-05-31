@@ -12,7 +12,7 @@ class GenreDataSource {
       'Biography',
       'History',
       'Romance',
-      'Poetry'
+      'Poetry',
     ];
   }
 }

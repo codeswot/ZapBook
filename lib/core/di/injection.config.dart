@@ -20,6 +20,8 @@ import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
+import 'package:zapbook/features/book_ingestion/data/ai/gemma_zb_service.dart'
+    as _i228;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
     as _i785;
 import 'package:zapbook/features/book_ingestion/data/cover/cover_generator.dart'
@@ -30,6 +32,8 @@ import 'package:zapbook/features/book_ingestion/data/documents_directory.dart'
     as _i746;
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart'
     as _i751;
+import 'package:zapbook/features/book_ingestion/domain/ai/zb_inference_service.dart'
+    as _i727;
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart'
     as _i1003;
 import 'package:zapbook/features/book_ingestion/domain/repositories/book_ingestion_repository.dart'
@@ -83,6 +87,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<List<_i751.BookExtractor>>(
       () => ingestionModule.bookExtractors(gh<_i201.CoverGenerator>()),
+    );
+    gh.lazySingleton<_i727.ZbInferenceService>(
+      () => _i228.GemmaZbService(gh<_i1012.AiService>()),
     );
     gh.factoryParam<
       _i842.BookWizardCubit,

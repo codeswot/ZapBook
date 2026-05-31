@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_chip.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
@@ -76,14 +75,6 @@ class IngestionResultPreview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        AppButton(
-          label: 'Inspect ZBF',
-          icon: Icons.travel_explore_outlined,
-          variant: AppButtonVariant.tonal,
-          fullWidth: true,
-          onTap: onInspect,
-        ),
-        const SizedBox(height: 12),
       ],
     );
   }
