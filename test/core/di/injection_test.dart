@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/book_ingestion/data/documents_directory.dart';
 import 'package:zapbook/features/book_ingestion/domain/repositories/book_ingestion_repository.dart';
@@ -9,8 +10,9 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc
 void main() {
   tearDown(() => getIt.reset());
 
-  test('configureDependencies wires the ingestion graph', () {
-    configureDependencies();
+  test('configureDependencies wires the ingestion graph', () async {
+    SharedPreferences.setMockInitialValues({});
+    await configureDependencies();
 
     expect(getIt<DocumentsDirectory>(), isA<DocumentsDirectory>());
     expect(getIt<BookIngestionRepository>(), isA<BookIngestionRepository>());
@@ -19,8 +21,9 @@ void main() {
     expect(getIt<IngestionBloc>(), isA<IngestionBloc>());
   });
 
-  test('repository is a singleton, bloc is a factory', () {
-    configureDependencies();
+  test('repository is a singleton, bloc is a factory', () async {
+    SharedPreferences.setMockInitialValues({});
+    await configureDependencies();
 
     expect(
       identical(

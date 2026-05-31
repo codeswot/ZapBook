@@ -1,156 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/theme/app_radii.dart';
-
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
-
-enum AppBannerTone { info, success, warning, error, zap }
 
 class AppBanner extends StatelessWidget {
-  final AppBannerTone tone;
-  final String? title;
-  final String? message;
-  final Widget? action;
-  final VoidCallback? onClose;
-
-  const AppBanner({
-    super.key,
-    this.tone = AppBannerTone.info,
-    this.title,
-    this.message,
-    this.action,
-    this.onClose,
-  });
+  const AppBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final semanticColors = context.colors;
-    final typography = context.typography;
+    final aiService = getIt<AiService>();
 
-    Color c;
-    Color tint;
-    Color line;
-    IconData? iconData;
+    return StreamBuilder<AiModelState>(
+      stream: aiService.aiState,
+      initialData: aiService.currentState,
+      builder: (context, snapshot) {
+        final state = snapshot.data;
+        if (state == null || state.status == AiModelStatus.ready || state.bannerDismissed) {
+          return const SizedBox.shrink();
+        }
 
-    switch (tone) {
-      case AppBannerTone.info:
-        c = semanticColors.sky;
-        tint = semanticColors.skyTint;
-        line = semanticColors.sky.withValues(alpha: 0.34);
-        iconData = LucideIcons.info;
-        break;
-      case AppBannerTone.success:
-        c = semanticColors.mint;
-        tint = semanticColors.mintTint;
-        line = semanticColors.mint.withValues(alpha: 0.34);
-        iconData = LucideIcons.checkCircle;
-        break;
-      case AppBannerTone.warning:
-        c = semanticColors.butter;
-        tint = semanticColors.butterTint;
-        line = semanticColors.butter.withValues(alpha: 0.34);
-        iconData = LucideIcons.alertTriangle;
-        break;
-      case AppBannerTone.error:
-        c = semanticColors.tomato;
-        tint = semanticColors.tomatoTint;
-        line = semanticColors.tomato.withValues(alpha: 0.36);
-        iconData = LucideIcons.xCircle;
-        break;
-      case AppBannerTone.zap:
-        c = semanticColors.bitcoin;
-        tint = semanticColors.bitcoinTint;
-        line = semanticColors.bitcoinTint2;
-        iconData = LucideIcons.zap;
-        break;
-    }
+        if (state.status == AiModelStatus.downloading || state.status == AiModelStatus.paused) {
+          return _buildDownloadingBanner(context, aiService, state);
+        }
 
-    if (tone == AppBannerTone.error) iconData = LucideIcons.x;
-    if (tone == AppBannerTone.success) iconData = LucideIcons.check;
+        if (state.status == AiModelStatus.verifying) {
+          return _buildVerifyingBanner(context);
+        }
 
+        if (state.status == AiModelStatus.notSet || state.status == AiModelStatus.skipped) {
+          return _buildMissingBanner(context, aiService);
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildDownloadingBanner(BuildContext context, AiService aiService, AiModelState state) {
+    final progress = state.downloadProgress;
+    final isPaused = state.status == AiModelStatus.paused;
+    final percent = (progress * 100).toStringAsFixed(0);
+    
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: tint,
-        borderRadius: AppRadii.br18,
-        border: Border.all(color: line),
+      color: context.colors.plum.withValues(alpha: 0.1),
+      padding: EdgeInsets.only(
+        top: MediaQuery.paddingOf(context).top + 8,
+        bottom: 8,
+        left: 16,
+        right: 16,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: tint,
-              borderRadius: BorderRadius.circular(11),
-              border: Border.all(color: line),
-            ),
-            child: Icon(
-              iconData,
-              size: tone == AppBannerTone.zap ? 18 : 19,
-              color: c,
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 1.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (title != null)
-                    Text(
-                      title!,
-                      style: typography.displayM.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        height: 1.25,
-                        letterSpacing: -0.01 * 15,
-                        color: semanticColors.ink,
-                      ),
-                    ),
-                  if (message != null)
-                    Padding(
-                      padding: EdgeInsets.only(top: title != null ? 5.0 : 0.0),
-                      child: Text(
-                        message!,
-                        style: typography.body.copyWith(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 13.5,
-                          height: 1.5,
-                          color: semanticColors.slate,
-                        ),
-                      ),
-                    ),
-                  if (action != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12.0),
-                      child: action!,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          if (onClose != null) ...[
-            const SizedBox(width: 13),
-            BouncingInteractiveWidget(
-              onTap: onClose,
-              child: Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(borderRadius: AppRadii.br8),
-                child: Icon(
-                  LucideIcons.x,
-                  size: 16,
-                  color: semanticColors.slate2,
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: isPaused 
+              ? Icon(LucideIcons.pause, size: 16, color: context.colors.plum)
+              : CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: progress > 0 ? progress : null,
+                  color: context.colors.plum,
                 ),
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isPaused 
+                ? 'AI Model Paused ($percent%)'
+                : 'Downloading AI Model ($percent%)...',
+              style: context.typography.bodyS.copyWith(color: context.colors.plum),
             ),
-          ],
+          ),
+          GestureDetector(
+            onTap: isPaused ? aiService.resumeDownload : aiService.pauseDownload,
+            child: Icon(
+              isPaused ? LucideIcons.play : LucideIcons.pause, 
+              color: context.colors.plum, 
+              size: 20
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerifyingBanner(BuildContext context) {
+    return Container(
+      color: context.colors.mintTint.withValues(alpha: 0.2),
+      padding: EdgeInsets.only(
+        top: MediaQuery.paddingOf(context).top + 8,
+        bottom: 8,
+        left: 16,
+        right: 16,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: context.colors.mint2,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Verifying AI Model hash...',
+              style: context.typography.bodyS.copyWith(color: context.colors.mint2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMissingBanner(BuildContext context, AiService aiService) {
+    return Container(
+      color: context.colors.coralTint,
+      padding: EdgeInsets.only(
+        top: MediaQuery.paddingOf(context).top + 8,
+        bottom: 8,
+        left: 16,
+        right: 16,
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.alertCircle, color: context.colors.tomato, size: 16),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'AI model missing. Tap to set it up.',
+              style: context.typography.bodyS.copyWith(color: context.colors.tomato),
+            ),
+          ),
+          GestureDetector(
+            onTap: aiService.dismissBanner,
+            child: Icon(LucideIcons.x, color: context.colors.slate, size: 20),
+          ),
         ],
       ),
     );

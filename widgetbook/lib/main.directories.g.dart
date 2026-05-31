@@ -13,8 +13,6 @@
 import 'package:widgetbook/widgetbook.dart' as _widgetbook;
 import 'package:widgetbook_workspace/components/app_avatar.dart'
     as _widgetbook_workspace_components_app_avatar;
-import 'package:widgetbook_workspace/components/app_banner.dart'
-    as _widgetbook_workspace_components_app_banner;
 import 'package:widgetbook_workspace/components/app_book_cover.dart'
     as _widgetbook_workspace_components_app_book_cover;
 import 'package:widgetbook_workspace/components/app_bottom_navigation.dart'
@@ -53,16 +51,6 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Default',
             builder: _widgetbook_workspace_components_app_avatar
                 .buildAppAvatarUseCase,
-          ),
-        ],
-      ),
-      _widgetbook.WidgetbookComponent(
-        name: 'AppBanner',
-        useCases: [
-          _widgetbook.WidgetbookUseCase(
-            name: 'Info Banner',
-            builder: _widgetbook_workspace_components_app_banner
-                .buildInfoBannerUseCase,
           ),
         ],
       ),

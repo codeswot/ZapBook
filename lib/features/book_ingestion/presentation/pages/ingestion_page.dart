@@ -7,7 +7,6 @@ import 'package:zapbook/widgets/app_button.dart';
 
 import 'package:zapbook/zbf/zbf.dart';
 
-
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
@@ -27,9 +26,7 @@ class IngestionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<IngestionBloc>(
-          create: (_) => getIt<IngestionBloc>(),
-        ),
+        BlocProvider<IngestionBloc>(create: (_) => getIt<IngestionBloc>()),
         BlocProvider<IngestionPageCubit>(
           create: (_) => getIt<IngestionPageCubit>(),
         ),
@@ -39,8 +36,18 @@ class IngestionPage extends StatelessWidget {
   }
 }
 
-class _IngestionView extends StatelessWidget {
+class _IngestionView extends StatefulWidget {
   const _IngestionView();
+
+  @override
+  State<_IngestionView> createState() => _IngestionViewState();
+}
+
+class _IngestionViewState extends State<_IngestionView> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   void _inspect(BuildContext context, String zbfPath) {
     ZbfViewerRoute(zbfPath: zbfPath).push<void>(context);
@@ -73,7 +80,6 @@ class _IngestionView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const IngestionProgressWidget(),
                 const Spacer(),
                 BlocBuilder<IngestionBloc, IngestionState>(
                   builder: (context, state) {
@@ -91,6 +97,8 @@ class _IngestionView extends StatelessWidget {
                     );
                   },
                 ),
+                const IngestionProgressWidget(),
+                const SizedBox(height: 16),
                 AppButton(
                   label: 'Pick a book',
                   icon: Icons.menu_book_outlined,
