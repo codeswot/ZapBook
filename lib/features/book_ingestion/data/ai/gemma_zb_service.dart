@@ -36,6 +36,7 @@ final class GemmaZbService implements ZbInferenceService {
     if (_model != null) {
       return;
     }
+    await FlutterGemma.initialize();
     await FlutterGemma.installModel(
       modelType: ModelType.gemmaIt,
       fileType: ModelFileType.litertlm,
@@ -50,33 +51,37 @@ final class GemmaZbService implements ZbInferenceService {
 
   @override
   Future<ZbPageRefinement> refine(ZbPageRequest request) async {
-    await warmUp();
-    final model = _model;
-    if (model == null) {
-      return const ZbPageRefinement(blocks: []);
-    }
-
-    final session = await model.createSession(
-      systemInstruction: ZbPrompt.system,
-      enableVisionModality: false,
-      temperature: 0.2,
-      topK: 1,
-    );
     try {
-      await session.addQueryChunk(
-        Message.text(
-          text: ZbPrompt.pageInstruction(
-            pageNumber: request.pageNumber,
-            draftBlocks: request.draftBlocks,
-            availableAssetRefs: request.availableAssetRefs,
-          ),
-          isUser: true,
-        ),
+      await warmUp();
+      final model = _model;
+      if (model == null) {
+        return const ZbPageRefinement(blocks: []);
+      }
+
+      final session = await model.createSession(
+        systemInstruction: ZbPrompt.system,
+        enableVisionModality: false,
+        temperature: 0.2,
+        topK: 1,
       );
-      final raw = await session.getResponse();
-      return _parser.parse(raw, allowedAssetRefs: request.availableAssetRefs);
-    } finally {
-      await session.close();
+      try {
+        await session.addQueryChunk(
+          Message.text(
+            text: ZbPrompt.pageInstruction(
+              pageNumber: request.pageNumber,
+              draftBlocks: request.draftBlocks,
+              availableAssetRefs: request.availableAssetRefs,
+            ),
+            isUser: true,
+          ),
+        );
+        final raw = await session.getResponse();
+        return _parser.parse(raw, allowedAssetRefs: request.availableAssetRefs);
+      } finally {
+        await session.close();
+      }
+    } catch (e) {
+      return const ZbPageRefinement(blocks: []);
     }
   }
 

@@ -6,6 +6,13 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
 import 'package:zapbook/features/book_ingestion/domain/ai/zb_inference_service.dart';
 
+final class RefinementResult {
+  const RefinementResult(this.blocks, this.imageBytes);
+
+  final List<BookBlock> blocks;
+  final Uint8List imageBytes;
+}
+
 @injectable
 final class RefinePage {
   const RefinePage(this._rasterizer, this._inference);
@@ -13,9 +20,7 @@ final class RefinePage {
   final PdfPageRasterizer _rasterizer;
   final ZbInferenceService _inference;
 
-  /// Returns Zb-refined blocks for a flagged page, or null when refinement is
-  /// unavailable or produced nothing — in which case the caller keeps the draft.
-  Future<List<BookBlock>?> call({
+  Future<RefinementResult?> call({
     required Uint8List sourcePdf,
     required BookPage page,
     required List<String> availableAssetRefs,
@@ -32,6 +37,6 @@ final class RefinePage {
         availableAssetRefs: availableAssetRefs,
       ),
     );
-    return refinement.blocks.isEmpty ? null : refinement.blocks;
+    return refinement.blocks.isEmpty ? null : RefinementResult(refinement.blocks, image);
   }
 }

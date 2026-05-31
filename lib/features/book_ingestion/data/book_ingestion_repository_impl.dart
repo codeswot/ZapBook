@@ -83,8 +83,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
   }
 
   Future<ZbfBook> _stashSourceForAi(ZbfBook book, File file) async {
-    if (!book.manifest.needsAiProcessing ||
-        book.manifest.sourceFormat != BookSourceFormat.pdf) {
+    if (book.manifest.sourceFormat != BookSourceFormat.pdf) {
       return book;
     }
     final sourceBytes = await file.readAsBytes();

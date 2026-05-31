@@ -51,7 +51,7 @@ void main() {
     blocks: [ParagraphBlock(text: 'draft')],
   );
 
-  Future<List<BookBlock>?> run(PdfPageRasterizer r, ZbInferenceService i) {
+  Future<RefinementResult?> run(PdfPageRasterizer r, ZbInferenceService i) {
     return RefinePage(
       r,
       i,
@@ -64,8 +64,9 @@ void main() {
       _FakeInference(blocks: const [HeadingBlock(level: 1, text: 'Real')]),
     );
 
-    expect(result, hasLength(1));
-    expect(result!.first, isA<HeadingBlock>());
+    expect(result!.blocks, hasLength(1));
+    expect(result.blocks.first, isA<HeadingBlock>());
+    expect(result.imageBytes, equals(pageImage));
   });
 
   test('returns null when Zb is not ready', () async {

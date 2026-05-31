@@ -81,11 +81,24 @@ final class ZbfBookHandle {
     }
   }
 
+  final Map<String, Uint8List> _dynamicAssetCache = {};
+
+  void updateAsset(String name, Uint8List data) {
+    _dynamicAssetCache[name] = data;
+  }
+
   Uint8List? asset(String name) {
+    if (_dynamicAssetCache.containsKey(name)) {
+      return _dynamicAssetCache[name];
+    }
     final isRoot =
         name == manifest.coverAsset || name == AssetNaming.sourceDocument;
     final path = isRoot ? name : 'assets/$name';
-    return _archive.findFile(path)?.content;
+    final file = _archive.findFile(path);
+    if (file == null) {
+      return null;
+    }
+    return file.content;
   }
 
   Uint8List? sourceDocument() => asset(AssetNaming.sourceDocument);

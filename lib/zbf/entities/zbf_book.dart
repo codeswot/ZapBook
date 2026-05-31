@@ -30,4 +30,9 @@ final class ZbfBook extends Equatable {
 
   @override
   List<Object?> get props => [manifest, chapters, assets.keys.toList()];
+
+  @override
+  String toString() {
+    return 'ZbfBook(manifest: $manifest, chapters: $chapters, assets: ${assets.keys.toList()})';
+  }
 }

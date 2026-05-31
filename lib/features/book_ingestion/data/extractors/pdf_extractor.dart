@@ -43,7 +43,7 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
     final metadata = _readMetadata(document, fallbackTitle);
 
     final builder = _PdfChapterBuilder(fallbackTitle: metadata.title);
-    final limit = pageCount < 20 ? pageCount : 20;
+    final limit = pageCount < 10 ? pageCount : 10;
     for (var index = 0; index < limit; index++) {
       builder.addPage(_buildPage(extractor, index));
     }

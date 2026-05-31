@@ -51,6 +51,11 @@ final class IngestionNeedsAiProcessing extends IngestionState {
     pagesNeedingProcessing,
     coverImage,
   ];
+
+  @override
+  String toString() {
+    return 'IngestionNeedsAiProcessing(zbfPath: $zbfPath, manifest: $manifest, pagesNeedingProcessing: $pagesNeedingProcessing, coverImage: ${coverImage != null ? 'Uint8List(${coverImage!.length})' : 'null'})';
+  }
 }
 
 final class IngestionComplete extends IngestionState {
@@ -66,6 +71,11 @@ final class IngestionComplete extends IngestionState {
 
   @override
   List<Object?> get props => [zbfPath, manifest, coverImage];
+
+  @override
+  String toString() {
+    return 'IngestionComplete(zbfPath: $zbfPath, manifest: $manifest, coverImage: ${coverImage != null ? 'Uint8List(${coverImage!.length})' : 'null'})';
+  }
 }
 
 final class IngestionFailed extends IngestionState {

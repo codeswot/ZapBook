@@ -29,14 +29,15 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (isClosed) return;
     emit(state.copyWith(currentPage: index));
     
-    final currentChunk = index ~/ 20;
+    final currentChunk = index < 10 ? 0 : 1 + ((index - 10) ~/ 20);
     final page = handle.pageAt(index);
     if (page.layoutType == BookLayoutType.processing) {
       _ensureChunkIngested(currentChunk);
     }
 
     final nextChunk = currentChunk + 1;
-    if (index >= (currentChunk * 20) + 10) {
+    final triggerIndex = currentChunk == 0 ? 4 : (10 + (currentChunk - 1) * 20 + 10);
+    if (index >= triggerIndex) {
       _ensureChunkIngested(nextChunk);
     }
 
@@ -50,9 +51,9 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     final pdf = handle.sourceDocument();
     if (pdf == null) return;
 
-    final start = chunkIndex * 20;
+    final start = chunkIndex == 0 ? 0 : 10 + (chunkIndex - 1) * 20;
     if (start >= handle.manifest.pageCount) return;
-    final end = start + 19;
+    final end = chunkIndex == 0 ? 9 : start + 19;
 
     try {
       final extractor = PdfExtractor();
@@ -74,6 +75,23 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       _prefetch(state.currentPage);
     } catch (e, stack) {
       _logger.severe('Failed to extract chunk $chunkIndex', e, stack);
+      for (var i = start; i <= end; i++) {
+        if (i < handle.manifest.pageCount) {
+          handle.updatePage(
+            i,
+            BookPage(
+              pageNumber: i + 1,
+              chapterIndex: chunkIndex,
+              chapterTitle: 'Chapter ${chunkIndex + 1}',
+              layoutType: BookLayoutType.textHeavy,
+              needsAiProcessing: false,
+              blocks: const [],
+            ),
+          );
+        }
+      }
+      if (isClosed) return;
+      emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
     }
   }
 
@@ -121,20 +139,19 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     ));
 
     try {
-      final refined = await refiner.call(
+      final imageName = 'page_${page.pageNumber}.png';
+      final result = await refiner.call(
         sourcePdf: pdf,
         page: page,
-        availableAssetRefs: page.blocks
-            .whereType<ImageBlock>()
-            .map((block) => block.assetRef)
-            .toList(),
+        availableAssetRefs: [imageName],
       );
 
       if (isClosed) return;
 
-      if (refined != null) {
+      if (result != null) {
+        handle.updateAsset(imageName, result.imageBytes);
         emit(state.copyWith(
-          refinedPages: {...state.refinedPages, pageIndex: refined},
+          refinedPages: {...state.refinedPages, pageIndex: result.blocks},
           refiningPages: state.refiningPages.difference({pageIndex}),
         ));
         return;
