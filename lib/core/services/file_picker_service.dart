@@ -7,7 +7,7 @@ import 'package:injectable/injectable.dart';
 @lazySingleton
 class FilePickerService {
   Future<File?> pickBook() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'docx', 'epub', 'txt'],
     );
@@ -19,7 +19,7 @@ class FilePickerService {
   }
 
   Future<Uint8List?> pickImage() async {
-    final result = await FilePicker.pickFiles(type: FileType.image);
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
     final path = result?.files.single.path;
     if (path != null) {
       return await File(path).readAsBytes();

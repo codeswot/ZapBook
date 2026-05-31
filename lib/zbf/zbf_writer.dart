@@ -37,10 +37,15 @@ final class ZbfWriter {
 
   void _addAssets(Archive archive, ZbfBook book) {
     book.assets.forEach((name, bytes) {
-      final path = name == book.manifest.coverAsset ? name : 'assets/$name';
+      final path = _isRootAsset(name, book.manifest.coverAsset)
+          ? name
+          : 'assets/$name';
       archive.addFile(ArchiveFile(path, bytes.length, bytes));
     });
   }
+
+  bool _isRootAsset(String name, String coverAsset) =>
+      name == coverAsset || name == AssetNaming.sourceDocument;
 
   Uint8List _encodeJson(Object? json) {
     return Uint8List.fromList(utf8.encode(jsonEncode(json)));

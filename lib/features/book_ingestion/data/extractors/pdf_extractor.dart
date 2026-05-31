@@ -20,6 +20,9 @@ final class PdfExtractor extends IsolateBookExtractor {
   @override
   Future<ParsedContent> parse(Uint8List bytes, String title) =>
       Isolate.run(() => _parsePdf(bytes, title));
+
+  Future<List<BookPage>> extractRange(Uint8List bytes, int startPageIndex, int endPageIndex, String chapterTitle, int chapterIndex) =>
+      Isolate.run(() => _extractRange(bytes, startPageIndex, endPageIndex, chapterTitle, chapterIndex));
 }
 
 const double _headingScale = 1.25;
@@ -40,8 +43,14 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
     final metadata = _readMetadata(document, fallbackTitle);
 
     final builder = _PdfChapterBuilder(fallbackTitle: metadata.title);
-    for (var index = 0; index < pageCount; index++) {
+    final limit = pageCount < 20 ? pageCount : 20;
+    for (var index = 0; index < limit; index++) {
       builder.addPage(_buildPage(extractor, index));
+    }
+    if (pageCount > limit) {
+      for (var index = limit; index < pageCount; index++) {
+        builder.addPlaceholderPage(index + 1);
+      }
     }
 
     return ParsedContent(
@@ -50,6 +59,32 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
       needsAiProcessing: builder.needsAiProcessing,
       chapters: builder.build(),
     );
+  } finally {
+    document.dispose();
+  }
+}
+
+List<BookPage> _extractRange(Uint8List bytes, int startPageIndex, int endPageIndex, String chapterTitle, int chapterIndex) {
+  final document = PdfDocument(inputBytes: bytes);
+  try {
+    final extractor = PdfTextExtractor(document);
+    final pageCount = document.pages.count;
+    final pages = <BookPage>[];
+    final end = endPageIndex >= pageCount ? pageCount - 1 : endPageIndex;
+    for (var index = startPageIndex; index <= end; index++) {
+      final draft = _buildPage(extractor, index);
+      pages.add(
+        BookPage(
+          pageNumber: index + 1,
+          chapterIndex: chapterIndex,
+          chapterTitle: chapterTitle,
+          layoutType: draft.layoutType,
+          needsAiProcessing: draft.needsAiProcessing,
+          blocks: List.unmodifiable(draft.blocks),
+        ),
+      );
+    }
+    return pages;
   } finally {
     document.dispose();
   }
@@ -236,6 +271,25 @@ final class _PdfChapterBuilder {
         layoutType: draft.layoutType,
         needsAiProcessing: draft.needsAiProcessing,
         blocks: List.unmodifiable(draft.blocks),
+      ),
+    );
+  }
+
+  void addPlaceholderPage(int pageNumber) {
+    if (_chapterIndex == -1) {
+      _flush();
+      _chapterIndex = 0;
+      _currentTitle = fallbackTitle;
+    }
+    _pageNumber++;
+    _pages.add(
+      BookPage(
+        pageNumber: pageNumber,
+        chapterIndex: _chapterIndex,
+        chapterTitle: _currentTitle,
+        layoutType: BookLayoutType.processing,
+        needsAiProcessing: false,
+        blocks: const [],
       ),
     );
   }

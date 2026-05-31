@@ -22,6 +22,8 @@ import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/features/book_ingestion/data/ai/gemma_zb_service.dart'
     as _i228;
+import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
+    as _i217;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
     as _i785;
 import 'package:zapbook/features/book_ingestion/data/cover/cover_generator.dart'
@@ -32,6 +34,8 @@ import 'package:zapbook/features/book_ingestion/data/documents_directory.dart'
     as _i746;
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart'
     as _i751;
+import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart'
+    as _i370;
 import 'package:zapbook/features/book_ingestion/domain/ai/zb_inference_service.dart'
     as _i727;
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart'
@@ -42,6 +46,8 @@ import 'package:zapbook/features/book_ingestion/domain/usecases/get_ingested_boo
     as _i850;
 import 'package:zapbook/features/book_ingestion/domain/usecases/ingest_book.dart'
     as _i605;
+import 'package:zapbook/features/book_ingestion/domain/usecases/refine_page.dart'
+    as _i744;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc.dart'
     as _i318;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart'
@@ -76,6 +82,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i447.DeviceCapabilityService>(
       () => _i447.DeviceCapabilityServiceImpl(),
     );
+    gh.lazySingleton<_i370.PdfPageRasterizer>(
+      () => const _i217.PrintingPdfRasterizer(),
+    );
     gh.lazySingleton<_i746.DocumentsDirectory>(
       () => const _i746.PathProviderDocumentsDirectory(),
     );
@@ -101,6 +110,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i850.GenreDataSource>(),
         _completer,
         initialTitle,
+      ),
+    );
+    gh.factory<_i744.RefinePage>(
+      () => _i744.RefinePage(
+        gh<_i370.PdfPageRasterizer>(),
+        gh<_i727.ZbInferenceService>(),
       ),
     );
     gh.lazySingleton<_i865.BookIngestionRepository>(

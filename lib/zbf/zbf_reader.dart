@@ -52,7 +52,16 @@ final class ZbfBookHandle {
     return BookChapter.fromJson(index, _decodeJsonArray(file.content));
   }
 
+  final Map<int, BookPage> _dynamicallyIngestedPages = {};
+
+  void updatePage(int globalIndex, BookPage page) {
+    _dynamicallyIngestedPages[globalIndex] = page;
+  }
+
   BookPage pageAt(int globalIndex) {
+    if (_dynamicallyIngestedPages.containsKey(globalIndex)) {
+      return _dynamicallyIngestedPages[globalIndex]!;
+    }
     if (globalIndex < 0 || globalIndex >= manifest.pageCount) {
       throw RangeError.index(globalIndex, this, 'globalIndex');
     }
@@ -73,9 +82,13 @@ final class ZbfBookHandle {
   }
 
   Uint8List? asset(String name) {
-    final path = name == manifest.coverAsset ? name : 'assets/$name';
+    final isRoot =
+        name == manifest.coverAsset || name == AssetNaming.sourceDocument;
+    final path = isRoot ? name : 'assets/$name';
     return _archive.findFile(path)?.content;
   }
+
+  Uint8List? sourceDocument() => asset(AssetNaming.sourceDocument);
 }
 
 Map<String, Object?> _decodeJsonObject(List<int> bytes) {

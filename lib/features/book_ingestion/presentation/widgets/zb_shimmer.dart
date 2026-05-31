@@ -5,8 +5,8 @@ import 'package:zapbook/theme/app_theme.dart';
 class ZbShimmer extends StatefulWidget {
   const ZbShimmer({
     super.key,
-    this.message = 'Zb is at it…',
-    this.lineCount = 3,
+    this.message = 'Optimizing page layout…',
+    this.lineCount = 4,
   });
 
   final String message;
@@ -17,15 +17,21 @@ class ZbShimmer extends StatefulWidget {
 }
 
 class _ZbShimmerState extends State<ZbShimmer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+    with TickerProviderStateMixin {
+  late final AnimationController _shimmerController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: const Duration(milliseconds: 1600),
   )..repeat();
+
+  late final AnimationController _pulseController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2000),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
-    _controller.dispose();
+    _shimmerController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -36,24 +42,70 @@ class _ZbShimmerState extends State<ZbShimmer>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.sparkles, size: 16, color: colors.nostr),
-            const SizedBox(width: 6),
-            Text(
-              widget.message,
-              style: context.typography.caption.copyWith(color: colors.nostr),
+        AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: 0.6 + (_pulseController.value * 0.4),
+              child: Transform.scale(
+                scale: 0.95 + (_pulseController.value * 0.05),
+                child: child,
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colors.nostrTint.withValues(alpha: 0.4),
+                  colors.bitcoinTint.withValues(alpha: 0.2),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors.nostrTint2.withValues(alpha: 0.5),
+                width: 1,
+              ),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RotationTransition(
+                  turns: _pulseController,
+                  child: Icon(LucideIcons.sparkles, size: 14, color: colors.nostr),
+                ),
+                const SizedBox(width: 8),
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [colors.nostr, colors.bitcoin2],
+                  ).createShader(bounds),
+                  child: Text(
+                    widget.message,
+                    style: context.typography.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 20),
         for (var line = 0; line < widget.lineCount; line++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: 12),
             child: _ShimmerBar(
-              controller: _controller,
-              widthFactor: line.isEven ? 1.0 : 0.7,
+              controller: _shimmerController,
+              widthFactor: line == 0
+                  ? 1.0
+                  : line == 1
+                      ? 0.85
+                      : line == 2
+                          ? 0.95
+                          : 0.6,
               base: colors.mist,
               highlight: colors.paper4,
             ),
@@ -89,18 +141,18 @@ class _ShimmerBar extends StatelessWidget {
             blendMode: BlendMode.srcIn,
             shaderCallback: (bounds) => LinearGradient(
               colors: [base, highlight, base],
-              stops: const [0.35, 0.5, 0.65],
-              begin: Alignment(shift - 1, 0),
-              end: Alignment(shift + 1, 0),
+              stops: const [0.3, 0.5, 0.7],
+              begin: Alignment(shift - 1, -0.2),
+              end: Alignment(shift + 1, 0.2),
             ).createShader(bounds),
             child: child,
           );
         },
         child: Container(
-          height: 12,
+          height: 14,
           decoration: BoxDecoration(
             color: base,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(7),
           ),
         ),
       ),

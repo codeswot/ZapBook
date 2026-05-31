@@ -3,6 +3,10 @@ final class AssetNaming {
 
   static const String coverAsset = 'cover.png';
 
+  /// Original source document, stashed only when a book needs AI processing so
+  /// flagged pages can be re-rendered for Zb later. Lives in the ZBF root.
+  static const String sourceDocument = 'source.pdf';
+
   static String imageAsset(int index, String extension) {
     final padded = index.toString().padLeft(3, '0');
     return 'img_$padded.$extension';

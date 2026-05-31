@@ -2,7 +2,8 @@ enum BookLayoutType {
   textHeavy('text-heavy'),
   mixed('mixed'),
   illustration('illustration'),
-  chapterOpener('chapter-opener');
+  chapterOpener('chapter-opener'),
+  processing('processing');
 
   const BookLayoutType(this.wireValue);
 

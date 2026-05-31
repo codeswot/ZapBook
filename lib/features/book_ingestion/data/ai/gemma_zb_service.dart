@@ -44,7 +44,7 @@ final class GemmaZbService implements ZbInferenceService {
       modelType: ModelType.gemmaIt,
       fileType: ModelFileType.litertlm,
       maxTokens: 2048,
-      supportImage: true,
+      supportImage: false,
     );
   }
 
@@ -58,19 +58,18 @@ final class GemmaZbService implements ZbInferenceService {
 
     final session = await model.createSession(
       systemInstruction: ZbPrompt.system,
-      enableVisionModality: true,
+      enableVisionModality: false,
       temperature: 0.2,
       topK: 1,
     );
     try {
       await session.addQueryChunk(
-        Message.withImage(
+        Message.text(
           text: ZbPrompt.pageInstruction(
             pageNumber: request.pageNumber,
             draftBlocks: request.draftBlocks,
             availableAssetRefs: request.availableAssetRefs,
           ),
-          imageBytes: request.pageImage,
           isUser: true,
         ),
       );

@@ -5,8 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_progress.dart';
 import 'package:zapbook/zbf/zbf.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/features/book_ingestion/domain/usecases/refine_page.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
+import 'package:zapbook/features/book_ingestion/presentation/widgets/zb_shimmer.dart';
 
 class ZbfViewerMessage extends StatelessWidget {
   const ZbfViewerMessage({required this.text, super.key});
@@ -25,9 +28,10 @@ class ZbfViewerMessage extends StatelessWidget {
 }
 
 class ZbfBookView extends StatefulWidget {
-  const ZbfBookView({required this.handle, super.key});
+  const ZbfBookView({required this.handle, super.key, this.refiner});
 
   final ZbfBookHandle handle;
+  final RefinePage? refiner;
 
   @override
   State<ZbfBookView> createState() => _ZbfBookViewState();
@@ -48,8 +52,12 @@ class _ZbfBookViewState extends State<ZbfBookView> {
     if (manifest.pageCount == 0) {
       return const ZbfViewerMessage(text: 'No pages were extracted');
     }
+    final refiner = widget.refiner ?? getIt<RefinePage>();
     return BlocProvider(
-      create: (_) => ZbfViewerCubit(),
+      create: (_) => ZbfViewerCubit(
+        handle: widget.handle,
+        refiner: refiner,
+      ),
       child: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
         builder: (context, state) {
           return Column(
@@ -63,6 +71,8 @@ class _ZbfBookViewState extends State<ZbfBookView> {
                   itemBuilder: (context, index) => _ZbfPage(
                     handle: widget.handle,
                     page: widget.handle.pageAt(index),
+                    index: index,
+                    refiner: widget.refiner,
                   ),
                 ),
               ),
@@ -76,13 +86,50 @@ class _ZbfBookViewState extends State<ZbfBookView> {
 }
 
 class _ZbfPage extends StatelessWidget {
-  const _ZbfPage({required this.handle, required this.page});
+  const _ZbfPage({
+    required this.handle,
+    required this.page,
+    required this.index,
+    this.refiner,
+  });
 
   final ZbfBookHandle handle;
   final BookPage page;
+  final int index;
+  final RefinePage? refiner;
 
   @override
   Widget build(BuildContext context) {
+    if (page.layoutType == BookLayoutType.processing) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Processing...', style: context.typography.label),
+            const SizedBox(height: 2),
+            Text(
+              'progressive ingestion',
+              style: context.typography.caption.copyWith(
+                color: context.colors.slate,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: ZbShimmer(
+                    message: 'Ingesting layout structure for Page ${index + 1}...',
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Column(
@@ -99,15 +146,54 @@ class _ZbfPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView(
-              children: [
-                for (final block in page.blocks)
-                  ZbfBlockView(block: block, asset: handle.asset),
-              ],
-            ),
+            child: page.needsAiProcessing
+                ? BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
+                    buildWhen: (prev, curr) =>
+                        prev.refinedPages[index] != curr.refinedPages[index] ||
+                        prev.refiningPages.contains(index) !=
+                            curr.refiningPages.contains(index),
+                    builder: (context, state) {
+                      final refined = state.refinedPages[index];
+                      final isRefining = state.refiningPages.contains(index);
+
+                      if (refined != null) {
+                        return _PageBlocks(handle: handle, blocks: refined);
+                      } else if (isRefining) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: ZbShimmer(
+                              message: "Optimizing layout for '${handle.manifest.title}'…",
+                            ),
+                          ),
+                        );
+                      } else {
+                        return _PageBlocks(handle: handle, blocks: page.blocks);
+                      }
+                    },
+                  )
+                : _PageBlocks(handle: handle, blocks: page.blocks),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PageBlocks extends StatelessWidget {
+  const _PageBlocks({required this.handle, required this.blocks});
+
+  final ZbfBookHandle handle;
+  final List<BookBlock> blocks;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        for (final block in blocks)
+          ZbfBlockView(block: block, asset: handle.asset),
+      ],
     );
   }
 }

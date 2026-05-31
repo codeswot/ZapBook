@@ -57,6 +57,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
         yield IngestionProgress.failed('Extraction produced no book');
         return;
       }
+      book = await _stashSourceForAi(book, file);
       yield IngestionProgress.writing('Writing ${book.manifest.title}');
       final directory = await _documentsDirectory.resolve();
       final path = await _writer.write(book, directory);
@@ -79,6 +80,17 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       }
     }
     return manifests;
+  }
+
+  Future<ZbfBook> _stashSourceForAi(ZbfBook book, File file) async {
+    if (!book.manifest.needsAiProcessing ||
+        book.manifest.sourceFormat != BookSourceFormat.pdf) {
+      return book;
+    }
+    final sourceBytes = await file.readAsBytes();
+    return book.copyWith(
+      assets: {...book.assets, AssetNaming.sourceDocument: sourceBytes},
+    );
   }
 
   BookExtractor? _extractorFor(File file) {
