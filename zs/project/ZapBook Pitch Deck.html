@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZapBook — Pitch</title>
+<link rel="stylesheet" href="styles/zapbook.css">
+<style>
+  /* ---- phone mock (hand-built, design-system flat) ---- */
+  .phone {
+    width: 430px; height: 880px; flex: none;
+    border-radius: 54px;
+    background: #fff;
+    border: 1px solid var(--hairline);
+    padding: 14px;
+    position: relative;
+  }
+  .phone .screen {
+    width: 100%; height: 100%;
+    border-radius: 42px;
+    background: var(--paper);
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .phone .notch {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 30px; background: #15110C; border-radius: 999px; z-index: 5;
+  }
+  .stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 26px 14px; font: 600 17px/1 var(--font-body); color: var(--ink);
+  }
+  .stat-row .sig { display: flex; gap: 5px; align-items: center; }
+  .stat-row .sig i { width: 5px; height: 5px; border-radius: 999px; background: var(--ink); display: inline-block; }
+
+  /* milestone overlay zap rays */
+  .zap-burst { position: relative; width: 200px; height: 200px; display: grid; place-items: center; }
+  .zap-burst .ray {
+    position: absolute; inset: 0; border-radius: 999px;
+    border: 2px solid var(--bitcoin); opacity: 0;
+    animation: zapring 2.2s var(--ease) infinite;
+  }
+  .zap-burst .ray.b { animation-delay: .7s; }
+  .zap-burst .ray.c { animation-delay: 1.4s; }
+  @keyframes zapring { 0%{transform:scale(.2);opacity:.9} 70%{opacity:0} 100%{transform:scale(1);opacity:0} }
+  .zap-core {
+    position: relative; z-index: 2; width: 116px; height: 116px; border-radius: 999px;
+    background: var(--bitcoin); display: grid; place-items: center;
+  }
+  .zap-core svg { width: 60px; height: 60px; color: #fff; }
+
+  .progress { height: 10px; border-radius: 999px; background: var(--mist); border: 1px solid var(--hairline); overflow: hidden; }
+  .progress > span { display: block; height: 100%; background: var(--bitcoin); border-radius: 999px; }
+
+  /* step connector */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .step-card { padding: 0 44px; position: relative; }
+  .step-card:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 54px; width: 1px; height: calc(100% - 54px); background: var(--hairline);
+  }
+  .step-num {
+    width: 108px; height: 108px; border-radius: var(--r-4);
+    display: grid; place-items: center; font: 700 52px/1 var(--font-display);
+    border: 1px solid var(--hairline); margin-bottom: 30px;
+  }
+
+  .mini-page { padding: 22px 28px; font: 400 19px/1.62 var(--font-body); color: var(--ink-2); }
+  .mini-page h4 { font: 600 26px/1.2 var(--font-display); margin: 0 0 16px; letter-spacing: -0.01em; }
+  .pull { border-left: 3px solid var(--bitcoin); padding-left: 16px; color: var(--bitcoin-3); font-style: italic; margin: 18px 0; }
+
+  .chip-line { display: flex; flex-wrap: wrap; gap: 12px; }
+  .chip { display:inline-flex; align-items:center; gap:9px; padding:11px 18px; border-radius: var(--r-pill);
+          font: 500 21px/1 var(--font-body); background: var(--bg-elev); border: 1px solid var(--hairline); color: var(--ink-2); }
+  .chip [data-lucide] { width: 19px; height: 19px; }
+
+  .avatar { width: 56px; height: 56px; border-radius: 999px; display: grid; place-items: center; font-size: 28px;
+            background: var(--paper-2); border: 1px solid var(--hairline); flex: none; }
+</style>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+
+  <!-- ================= 01 · COVER ================= -->
+  <section data-label="Cover">
+    <div class="pad" style="justify-content:space-between">
+      <div class="brand">
+        <span class="zb-mark"><svg viewBox="0 0 40 40"><rect x="2" y="2" width="36" height="36" rx="11" fill="var(--bitcoin)"/><path d="M22 8.5 13.5 22.5H19l-1.2 9.5L26.5 18H21l1-9.5z" fill="#fff"/></svg></span>
+        <span>Zap<b>Book</b></span>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:40px; max-width:1300px">
+        <div class="tag btc-tag"><span class="dot"></span>Reading, rewarded in bitcoin</div>
+        <h1 class="t-display">
+          Read together.<br>
+          <span class="btc-o">Prove it.</span> <span class="nos">Get paid.</span>
+        </h1>
+        <p class="lede">
+          ZapBook is a reading app where finishing a book earns real bitcoin.
+          Kids read, pass a milestone, and get zapped sats — sent device to device over Nostr. No points. No tokens. Real value.
+        </p>
+      </div>
+
+      <div class="foot"><span>zapbook.app</span><span class="num">Pitch · 2026</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 02 · PROBLEM ================= -->
+  <section data-label="Problem">
+    <div class="pad">
+      <div class="brand" style="margin-bottom:auto"><span class="zb-mark"><svg viewBox="0 0 40 40"><rect x="2" y="2" width="36" height="36" rx="11" fill="var(--bitcoin)"/><path d="M22 8.5 13.5 22.5H19l-1.2 9.5L26.5 18H21l1-9.5z" fill="#fff"/></svg></span><span>Zap<b>Book</b></span></div>
+
+      <div class="eyebrow slate" style="margin-bottom:28px">The problem</div>
+      <h2 class="t-big" style="max-width:1500px; margin-bottom:64px">
+        We tell kids reading matters — then reward it with <span style="color:var(--slate)">gold stars.</span>
+      </h2>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:32px">
+        <div class="card" style="padding:40px">
+          <div class="itile ink" style="margin-bottom:26px"><i data-lucide="sticker"></i></div>
+          <h3 class="t-h" style="margin-bottom:14px">Hollow rewards</h3>
+          <p class="lede-s">Stickers, pizza coupons, screen time. The incentive ends the moment the chart fills up.</p>
+        </div>
+        <div class="card" style="padding:40px">
+          <div class="itile ink" style="margin-bottom:26px"><i data-lucide="badge-help"></i></div>
+          <h3 class="t-h" style="margin-bottom:14px">No real proof</h3>
+          <p class="lede-s">"Did you actually read it?" Reading logs are guesses. Parents can't tell pages turned from pages read.</p>
+        </div>
+        <div class="card" style="padding:40px">
+          <div class="itile ink" style="margin-bottom:26px"><i data-lucide="users-round"></i></div>
+          <h3 class="t-h" style="margin-bottom:14px">Read alone</h3>
+          <p class="lede-s">Reading is solitary. There's no shared streak, no circle cheering a kid through a hard chapter.</p>
+        </div>
+      </div>
+
+      <div class="foot"><span>The problem</span><span class="num">02</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 03 · SOLUTION ================= -->
+  <section data-label="Solution" class="night">
+    <div class="pad" style="justify-content:center">
+      <div class="eyebrow" style="color:var(--bitcoin); margin-bottom:32px">The idea</div>
+      <h2 class="t-xl" style="max-width:1500px; margin-bottom:44px">
+        Put real stakes<br>behind every page.
+      </h2>
+      <p class="lede" style="color:#C9BFAE; margin-bottom:56px">
+        ZapBook turns a finished book into a small, real bitcoin reward — earned by proving you read it, and paid by the people who want you to keep going.
+      </p>
+      <div style="display:flex; gap:18px; flex-wrap:wrap">
+        <div class="tag btc-tag" style="font-size:24px; padding:16px 26px"><span class="dot"></span>Bitcoin = the reward</div>
+        <div class="tag nos-tag" style="font-size:24px; padding:16px 26px"><span class="dot"></span>Nostr = the delivery</div>
+        <div class="tag" style="font-size:24px; padding:16px 26px; background:var(--night-2); border:1px solid #3A2F1F; color:#E8DECB"><span class="dot" style="background:#fff"></span>The book = the proof</div>
+      </div>
+      <div class="foot"><span>The idea</span><span class="num">03</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 04 · HOW IT WORKS ================= -->
+  <section data-label="How it works">
+    <div class="pad">
+      <div class="eyebrow" style="margin-bottom:24px">How it works</div>
+      <h2 class="t-mid" style="margin-bottom:80px">Three steps, one stream.</h2>
+
+      <div class="steps" style="flex:1; align-content:center">
+        <div class="step-card">
+          <div class="step-num btc" style="background:var(--bitcoin-tint); border-color:var(--bitcoin-tint-2); color:var(--bitcoin-3)">1</div>
+          <h3 class="t-h" style="margin-bottom:16px">Read the book</h3>
+          <p class="lede-s">A clean, distraction-free reader. Pages are real, structured text — your progress is tracked honestly as you go.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num" style="background:var(--mist); border-color:var(--hairline); color:var(--ink)">2</div>
+          <h3 class="t-h" style="margin-bottom:16px">Pass the milestone</h3>
+          <p class="lede-s">At each chapter end, a short milestone quiz checks you actually read it. Get it right, and the page is proven.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num nos" style="background:var(--nostr-tint); border-color:var(--nostr-tint-2); color:var(--nostr-2)">3</div>
+          <h3 class="t-h" style="margin-bottom:16px">Get zapped</h3>
+          <p class="lede-s">Sats land instantly — zapped over Nostr by a parent, grandparent, or your reading circle. Real bitcoin, in your wallet.</p>
+        </div>
+      </div>
+
+      <div class="foot"><span>How it works</span><span class="num">04</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 05 · THE READER ================= -->
+  <section data-label="The reader">
+    <div class="pad" style="flex-direction:row; align-items:center; gap:120px; padding-right:0">
+      <div style="flex:1; max-width:760px">
+        <div class="eyebrow" style="margin-bottom:24px">Product · The reader</div>
+        <h2 class="t-big" style="margin-bottom:34px">The book is the<br>whole interface.</h2>
+        <p class="lede" style="margin-bottom:40px">
+          No feeds, no badges crowding the page. Just well-set type and a quiet progress bar. The reader renders structured pages — headings, paragraphs, pull-quotes — so it stays crisp at any size.
+        </p>
+        <div class="chip-line">
+          <span class="chip"><i data-lucide="type"></i>Distraction-free</span>
+          <span class="chip"><i data-lucide="gauge"></i>Honest progress</span>
+          <span class="chip"><i data-lucide="moon"></i>Day & night</span>
+        </div>
+      </div>
+
+      <div style="flex:none; display:grid; place-items:center; width:760px; height:100%; background:var(--paper-2); border-left:1px solid var(--hairline)">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="stat-row"><span>9:41</span><span class="sig"><i></i><i></i><i></i></span></div>
+            <div style="padding:8px 26px 0; display:flex; align-items:center; justify-content:space-between">
+              <span style="font:500 16px/1 var(--font-mono); color:var(--slate)">Chapter 3</span>
+              <span class="sats" style="font-size:16px; padding:7px 12px"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"/></svg>day 12</span>
+            </div>
+            <div class="mini-page" style="flex:1">
+              <h4>The Lantern Room</h4>
+              <p>The stairs to the lighthouse went up and up, past windows the size of dinner plates, until Wren lost count somewhere around the hundredth step.</p>
+              <p class="pull">"Light only counts," Grandpa always said, "if someone's out there to see it."</p>
+              <p>At the top was a single round room, and in the middle of it, the biggest lamp she had ever seen — dark, and waiting.</p>
+            </div>
+            <div style="padding:18px 26px 26px">
+              <div class="progress"><span style="width:64%"></span></div>
+              <div style="display:flex; justify-content:space-between; margin-top:12px; font:500 15px/1 var(--font-mono); color:var(--slate)">
+                <span>page 41 / 64</span><span>9 min left</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Product · Reader</span><span class="num">05</span></div>
+  </section>
+
+  <!-- ================= 06 · THE ZAP MOMENT ================= -->
+  <section data-label="The zap moment" class="night">
+    <div class="pad" style="flex-direction:row; align-items:center; gap:120px; padding-right:0">
+      <div style="flex:1; max-width:760px">
+        <div class="eyebrow" style="color:var(--bitcoin); margin-bottom:24px">Product · The milestone</div>
+        <h2 class="t-big" style="margin-bottom:34px">Proof,<br>not points.</h2>
+        <p class="lede" style="color:#C9BFAE; margin-bottom:40px">
+          Finish a chapter and a milestone quiz appears. Answer right and the bolt fires — sats zap in over Lightning, sent by whoever's backing this reader. The reward is tied to comprehension, not page-flips.
+        </p>
+        <div class="chip-line">
+          <span class="chip" style="background:var(--night-2); border-color:#3A2F1F; color:#E8DECB"><i data-lucide="shield-check"></i>Quiz-gated</span>
+          <span class="chip" style="background:var(--night-2); border-color:#3A2F1F; color:#E8DECB"><i data-lucide="zap"></i>Instant payout</span>
+          <span class="chip" style="background:var(--night-2); border-color:#3A2F1F; color:#E8DECB"><i data-lucide="wallet"></i>Real sats</span>
+        </div>
+      </div>
+
+      <div style="flex:none; display:grid; place-items:center; width:760px; height:100%; background:var(--night-2); border-left:1px solid #2A2114">
+        <div class="phone" style="background:#1C160F; border-color:#2A2114">
+          <div class="notch"></div>
+          <div class="screen" style="background:#15110C; align-items:center; justify-content:center; padding:40px 30px">
+            <div class="zap-burst" style="margin-top:20px">
+              <div class="ray a"></div><div class="ray b"></div><div class="ray c"></div>
+              <div class="zap-core"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"/></svg></div>
+            </div>
+            <div style="text-align:center; margin-top:44px">
+              <div style="font:600 22px/1 var(--font-mono); color:#F7C948; letter-spacing:.04em">MILESTONE PASSED</div>
+              <div style="font:700 64px/1 var(--font-display); color:#F7F2E8; margin-top:18px; letter-spacing:-0.02em">+2,100 <span style="font-size:32px; color:var(--bitcoin)">sats</span></div>
+              <div style="font:400 20px/1.4 var(--font-body); color:#C9BFAE; margin-top:18px; max-width:300px">zapped by <span style="color:#F7F2E8">Grandpa 🦊</span> for finishing chapter 3</div>
+            </div>
+            <div style="margin-top:48px; width:100%; padding:18px; border-radius:18px; background:#1C160F; border:1px solid #2A2114; text-align:center; font:500 17px/1 var(--font-mono); color:#8C8270">
+              question 2 / 2 · correct
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Product · Milestone</span><span class="num">06</span></div>
+  </section>
+
+  <!-- ================= 07 · READING CIRCLES ================= -->
+  <section data-label="Reading circles">
+    <div class="pad">
+      <div class="eyebrow nostr" style="margin-bottom:24px">Reading circles</div>
+      <h2 class="t-big" style="max-width:1400px; margin-bottom:56px">Reading is better with a circle behind you.</h2>
+
+      <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap:48px; flex:1">
+        <div style="display:flex; flex-direction:column; gap:28px">
+          <p class="lede" style="max-width:none">
+            A circle is a named group — a family, a classroom, a book club. Anyone in it can back a reader with sats, set the per-milestone reward, and cheer the streak. Offline members get caught up automatically when they rejoin.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:16px">
+            <div class="card" style="padding:24px 28px; display:flex; align-items:center; gap:20px">
+              <div class="itile nos" style="width:60px; height:60px"><i data-lucide="hand-coins"></i></div>
+              <div><h3 class="t-h" style="font-size:30px; margin-bottom:6px">Sponsor a reader</h3><p class="lede-s">Set the reward per milestone. Top up anytime.</p></div>
+            </div>
+            <div class="card" style="padding:24px 28px; display:flex; align-items:center; gap:20px">
+              <div class="itile nos" style="width:60px; height:60px"><i data-lucide="trophy"></i></div>
+              <div><h3 class="t-h" style="font-size:30px; margin-bottom:6px">Shared streaks</h3><p class="lede-s">A live leaderboard of who's reading, not who's spending.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- circle card -->
+        <div class="card" style="padding:36px; display:flex; flex-direction:column">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px">
+            <h3 class="t-h" style="font-size:32px">The Ito Family</h3>
+            <span class="tag nos-tag"><span class="dot"></span>4 readers</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:14px; flex:1">
+            <div style="display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--hairline)">
+              <div class="avatar">🦊</div>
+              <div style="flex:1"><div style="font:600 24px/1 var(--font-display)">Wren</div><div style="font:500 16px/1 var(--font-mono); color:var(--slate); margin-top:7px">12-day streak</div></div>
+              <span class="sats">12,400</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--hairline)">
+              <div class="avatar">🐙</div>
+              <div style="flex:1"><div style="font:600 24px/1 var(--font-display)">Theo</div><div style="font:500 16px/1 var(--font-mono); color:var(--slate); margin-top:7px">8-day streak</div></div>
+              <span class="sats">9,050</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:18px; padding:14px 0">
+              <div class="avatar">🌿</div>
+              <div style="flex:1"><div style="font:600 24px/1 var(--font-display)">Mei</div><div style="font:500 16px/1 var(--font-mono); color:var(--slate); margin-top:7px">5-day streak</div></div>
+              <span class="sats">6,300</span>
+            </div>
+          </div>
+          <button class="btn" style="margin-top:26px; background:var(--nostr); color:#fff; padding:16px; border-radius:14px; font:600 20px/1 var(--font-body); border:none; cursor:pointer">Zap the circle</button>
+        </div>
+      </div>
+
+      <div class="foot"><span>Reading circles</span><span class="num">07</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 08 · WHY BITCOIN + NOSTR ================= -->
+  <section data-label="Why bitcoin + nostr">
+    <div class="pad">
+      <div class="eyebrow" style="margin-bottom:24px">Why this stack</div>
+      <h2 class="t-mid" style="margin-bottom:64px">Real value. No platform in the middle.</h2>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; flex:1">
+        <div class="card" style="padding:52px; display:flex; flex-direction:column; background:var(--bitcoin-tint); border-color:var(--bitcoin-tint-2)">
+          <div class="itile btc" style="background:var(--bitcoin); border-color:var(--bitcoin); color:#fff; margin-bottom:32px"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"/></svg></div>
+          <h3 class="t-h" style="font-size:46px; margin-bottom:24px">Bitcoin is the reward</h3>
+          <div style="display:flex; flex-direction:column; gap:20px">
+            <p class="lede-s" style="color:var(--bitcoin-3)"><b>It holds value.</b> Sats aren't points that expire — they're money the reader actually keeps.</p>
+            <p class="lede-s" style="color:var(--bitcoin-3)"><b>Tiny amounts work.</b> Lightning makes a 2,100-sat reward instant and nearly free to send.</p>
+            <p class="lede-s" style="color:var(--bitcoin-3)"><b>Their wallet, their money.</b> No store credit, no walled garden.</p>
+          </div>
+        </div>
+        <div class="card" style="padding:52px; display:flex; flex-direction:column; background:var(--nostr-tint); border-color:var(--nostr-tint-2)">
+          <div class="itile nos" style="background:var(--nostr); border-color:var(--nostr); color:#fff; margin-bottom:32px"><i data-lucide="globe"></i></div>
+          <h3 class="t-h" style="font-size:46px; margin-bottom:24px">Nostr is the delivery</h3>
+          <div style="display:flex; flex-direction:column; gap:20px">
+            <p class="lede-s" style="color:var(--nostr-2)"><b>No accounts, no servers.</b> Identities and zaps ride an open protocol — there's nothing for us to lock you into.</b></p>
+            <p class="lede-s" style="color:var(--nostr-2)"><b>Circles are portable.</b> Your reading group isn't trapped in ZapBook's database.</p>
+            <p class="lede-s" style="color:var(--nostr-2)"><b>Zaps are native.</b> Nostr already knows how to send sats between people. We build on it.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot"><span>Why this stack</span><span class="num">08</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 09 · MARKET / WHO ================= -->
+  <section data-label="Who it's for">
+    <div class="pad">
+      <div class="eyebrow slate" style="margin-bottom:24px">Who it's for</div>
+      <h2 class="t-mid" style="margin-bottom:72px">Built for the people who already care about both.</h2>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:32px; margin-bottom:auto">
+        <div class="card" style="padding:40px">
+          <div class="itile nos" style="margin-bottom:26px"><i data-lucide="home"></i></div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:14px">Bitcoin families</h3>
+          <p class="lede-s">Parents already stacking sats who want a reason to hand some to their kids — earned, not given.</p>
+        </div>
+        <div class="card" style="padding:40px">
+          <div class="itile nos" style="margin-bottom:26px"><i data-lucide="graduation-cap"></i></div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:14px">Homeschool & co-ops</h3>
+          <p class="lede-s">Reading curricula that need real proof of comprehension and a shared progress view across families.</p>
+        </div>
+        <div class="card" style="padding:40px">
+          <div class="itile nos" style="margin-bottom:26px"><i data-lucide="book-open"></i></div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:14px">Reading communities</h3>
+          <p class="lede-s">Book clubs and Nostr communities that want to fund readers and rally around shared streaks.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:48px; padding:40px 52px; display:flex; align-items:center; justify-content:space-between; background:var(--mist)">
+        <div style="font:400 26px/1.4 var(--font-body); color:var(--slate); max-width:760px">Two communities are already growing fast and overlap heavily — we sit right where they meet.</div>
+        <div style="display:flex; gap:64px">
+          <div><div style="font:700 64px/1 var(--font-display); color:var(--bitcoin); letter-spacing:-0.03em" class="tab">100M+</div><div style="font:500 19px/1.3 var(--font-mono); color:var(--slate); margin-top:10px">bitcoin holders</div></div>
+          <div><div style="font:700 64px/1 var(--font-display); color:var(--nostr); letter-spacing:-0.03em" class="tab">growing</div><div style="font:500 19px/1.3 var(--font-mono); color:var(--slate); margin-top:10px">Nostr & zaps</div></div>
+        </div>
+      </div>
+
+      <div class="foot"><span>Who it's for</span><span class="num">09</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 10 · WHERE WE ARE ================= -->
+  <section data-label="Roadmap">
+    <div class="pad">
+      <div class="eyebrow" style="margin-bottom:24px">Where we are</div>
+      <h2 class="t-mid" style="margin-bottom:80px">From a working reader to a reading economy.</h2>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0; flex:1; align-content:center">
+        <div class="step-card">
+          <div class="tag btc-tag" style="margin-bottom:26px"><span class="dot"></span>Now</div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:16px">The reader + zaps</h3>
+          <p class="lede-s">Flutter app with structured-page reader, milestone quizzes, and Lightning zaps over Nostr. In private testing with families.</p>
+        </div>
+        <div class="step-card">
+          <div class="tag nos-tag" style="margin-bottom:26px"><span class="dot"></span>Next</div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:16px">Circles & catalog</h3>
+          <p class="lede-s">Public reading circles, a curated open book catalog, and sponsor tooling for parents and communities.</p>
+        </div>
+        <div class="step-card">
+          <div class="tag" style="margin-bottom:26px; background:var(--mist); border:1px solid var(--hairline); color:var(--slate)"><span class="dot" style="background:var(--slate)"></span>Later</div>
+          <h3 class="t-h" style="font-size:34px; margin-bottom:16px">Publishers & schools</h3>
+          <p class="lede-s">Author-funded rewards, classroom dashboards, and a marketplace where finishing a book is a real, paid event.</p>
+        </div>
+      </div>
+
+      <div class="foot"><span>Roadmap</span><span class="num">10</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 11 · CLOSING ================= -->
+  <section data-label="Closing" class="night">
+    <div class="pad" style="justify-content:space-between">
+      <div class="brand"><span class="zb-mark"><svg viewBox="0 0 40 40"><rect x="2" y="2" width="36" height="36" rx="11" fill="var(--bitcoin)"/><path d="M22 8.5 13.5 22.5H19l-1.2 9.5L26.5 18H21l1-9.5z" fill="#fff"/></svg></span><span>Zap<b>Book</b></span></div>
+
+      <div style="display:flex; flex-direction:column; gap:40px">
+        <h2 class="t-display" style="max-width:1500px">
+          Read together.<br><span class="btc-o">Prove it.</span> <span style="color:var(--nostr)">Get paid.</span>
+        </h2>
+        <p class="lede" style="color:#C9BFAE">
+          Reading is the one habit everyone agrees matters. Let's make finishing a book worth something real.
+        </p>
+        <div style="display:flex; gap:20px; align-items:center; margin-top:8px">
+          <span class="tag btc-tag" style="font-size:22px; padding:16px 26px"><span class="dot"></span>zapbook.app</span>
+          <span class="tag nos-tag" style="font-size:22px; padding:16px 26px"><span class="dot"></span>hello@zapbook.app</span>
+        </div>
+      </div>
+
+      <div class="foot"><span>ZapBook</span><span class="num">11</span></div>
+    </div>
+  </section>
+
+</deck-stage>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="deck-stage.js"></script>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

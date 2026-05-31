@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZapBook — Core App (Ember)</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #E7E1D7; }
+  .design-canvas { font-family: 'Hanken Grotesque', system-ui, sans-serif; }
+  image-slot { --is-bg: #29221A; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="image-slot.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="app/ds.jsx"></script>
+<script type="text/babel" src="app/components.jsx"></script>
+<script type="text/babel" src="app/ember.jsx"></script>
+<script type="text/babel" src="app/ember_systems.jsx"></script>
+<script type="text/babel" src="app/ember_import.jsx"></script>
+
+<script type="text/babel">
+  const AW = 470, AH = 980;
+  const board = (id, label, node) => (
+    <DCArtboard id={id} label={label} width={AW} height={AH} style={{ background: '#E7E1D7' }}>
+      <Frame>{node}</Frame>
+    </DCArtboard>
+  );
+
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="home" title="Home · feed" subtitle="Active circles + current books. Covers take a drop-your-own, edge-faded image.">
+          {board('home', 'Home', <EmberHome />)}
+        </DCSection>
+
+        <DCSection id="circle" title="Circle view" subtitle="One book · 1–100 readers · anyone can zap anyone. Members, progress, leaderboard.">
+          {board('circle', 'Circle · readers', <EmberCircle />)}
+        </DCSection>
+
+        <DCSection id="reader" title="The reader" subtitle="Distraction-free. Incoming celebrations arrive as a floating pill — never a hard interrupt.">
+          {board('reader', 'Reader + pill', <EmberReader />)}
+          {board('halfsheet', 'Celebration half-sheet (pill tap)', <CelebrationSheet />)}
+        </DCSection>
+
+        <DCSection id="feed" title="Celebration feed" subtitle="The circle's memory — persisted, newest-first, filterable. Unread = amber edge.">
+          {board('feed', 'Cheers feed', <CelebrationFeed />)}
+        </DCSection>
+
+        <DCSection id="reactions" title="Zap gesture picker" subtitle="Long-press any member. Reaction = amount: 👍100 · 👏500 · 🔥1k · 🚀2.1k · 🏆5k — plus 🎁 gift wrap.">
+          {board('zapsheet', 'Gesture picker', <ZapSheet />)}
+        </DCSection>
+
+        <DCSection id="flow" title="Quiz → milestone flow" subtitle="Soft trigger → question → reveal → result shared to the circle. No takeover.">
+          {board('q1', '1 · Soft trigger', <QuizAlert />)}
+          {board('q2', '2 · Question', <QuizQuestion />)}
+          {board('q3', '3 · Reveal', <QuizReveal />)}
+          {board('q4', '4 · Milestone result', <QuizSubmitted />)}
+        </DCSection>
+
+        <DCSection id="import" title="Book import" subtitle="Upload → structured on-device by Gemma into pages + milestone quizzes → confirm.">
+          {board('imp1', '1 · Upload', <ImportUpload />)}
+          {board('imp2', '2 · Processing (on-device)', <ImportProcessing />)}
+          {board('imp3', '3 · Confirm + reward', <ImportConfirm />)}
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

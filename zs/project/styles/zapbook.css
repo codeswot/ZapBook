@@ -1,0 +1,154 @@
+/* ============================================================
+   ZapBook — brand layer over Omni Share base
+   Bitcoin orange (action / sats) + Nostr purple (social / protocol)
+   on the warm cream Omni Share paper. Flat, hairline borders, no slop.
+   ============================================================ */
+
+@import url('tokens.css');
+
+:root {
+  /* ----- Bitcoin orange — value, sats, the "zap" ----- */
+  --bitcoin:        #F7931A;
+  --bitcoin-2:      #E07B00;  /* hover / deep */
+  --bitcoin-3:      #B45F00;  /* deep text on cream */
+  --bitcoin-tint:   #FDF0DD;
+  --bitcoin-tint-2: #F6D9AE;
+
+  /* ----- Nostr purple — social, circles, protocol ----- */
+  --nostr:          #8E30EB;
+  --nostr-2:        #7222C7;
+  --nostr-3:        #5A1AA0;
+  --nostr-tint:     #F2E8FD;
+  --nostr-tint-2:   #DDC4F8;
+
+  /* near-black warm for accent slides */
+  --night:          #15110C;
+  --night-2:        #211A12;
+}
+
+/* ============================================================
+   Deck stage chrome
+   ============================================================ */
+deck-stage:not(:defined) { visibility: hidden; }
+html, body { background: #0E0B07; }
+
+section {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* ---- shared layout ---- */
+.pad {
+  position: absolute;
+  inset: 0;
+  padding: 96px 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* brand row */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 700 26px/1 var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.brand .zb-mark { width: 38px; height: 38px; flex: none; }
+.brand .zb-mark svg { display: block; width: 100%; height: 100%; }
+.brand b { font-weight: 700; }
+.brand .amp { color: var(--bitcoin); }
+
+/* footer */
+.foot {
+  position: absolute;
+  left: 120px; right: 120px; bottom: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  font: 500 20px/1 var(--font-mono);
+  color: var(--slate);
+}
+.foot .num { letter-spacing: 0.08em; }
+
+/* eyebrow */
+.eyebrow {
+  font: 700 24px/1 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--bitcoin-3);
+}
+.eyebrow.nostr { color: var(--nostr-2); }
+.eyebrow.slate { color: var(--slate); }
+
+/* type scale (authored for 1920) */
+.t-display { font: 700 168px/0.96 var(--font-display); letter-spacing: -0.04em; color: var(--ink); text-wrap: balance; }
+.t-xl      { font: 700 132px/1.0  var(--font-display); letter-spacing: -0.035em; color: var(--ink); text-wrap: balance; }
+.t-big     { font: 700 104px/1.04 var(--font-display); letter-spacing: -0.03em; color: var(--ink); text-wrap: balance; }
+.t-mid     { font: 600 68px/1.08  var(--font-display); letter-spacing: -0.02em; color: var(--ink); text-wrap: balance; }
+.t-h       { font: 600 42px/1.15  var(--font-display); letter-spacing: -0.015em; color: var(--ink); }
+.lede      { font: 400 34px/1.45 var(--font-body); color: var(--slate); max-width: 1100px; text-wrap: pretty; }
+.lede-s    { font: 400 26px/1.5 var(--font-body); color: var(--slate); text-wrap: pretty; }
+
+.ink   { color: var(--ink); }
+.btc   { color: var(--bitcoin-3); }
+.btc-o { color: var(--bitcoin); }
+.nos   { color: var(--nostr-2); }
+.tab   { font-variant-numeric: tabular-nums; }
+
+/* pill tag */
+.tag {
+  display: inline-flex; align-items: center; gap: 11px;
+  padding: 12px 22px; border-radius: var(--r-pill);
+  font: 600 22px/1 var(--font-body);
+  width: fit-content;
+}
+.tag .dot { width: 11px; height: 11px; border-radius: 999px; }
+.tag.btc-tag { background: var(--bitcoin-tint); border: 1px solid var(--bitcoin-tint-2); color: var(--bitcoin-3); }
+.tag.btc-tag .dot { background: var(--bitcoin); }
+.tag.nos-tag { background: var(--nostr-tint); border: 1px solid var(--nostr-tint-2); color: var(--nostr-2); }
+.tag.nos-tag .dot { background: var(--nostr); }
+
+/* cards */
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-4);
+  box-shadow: none;
+}
+
+/* sats chip — mono amount with a bolt */
+.sats {
+  display: inline-flex; align-items: center; gap: 10px;
+  font: 600 24px/1 var(--font-mono);
+  color: var(--bitcoin-3);
+  background: var(--bitcoin-tint);
+  border: 1px solid var(--bitcoin-tint-2);
+  padding: 10px 16px; border-radius: var(--r-pill);
+}
+.sats svg { width: 20px; height: 20px; }
+
+/* night (dark accent) slides */
+section.night { background: var(--night); color: var(--paper); }
+.night .t-display, .night .t-xl, .night .t-big, .night .t-mid, .night .t-h { color: #F7F2E8; }
+.night .lede, .night .lede-s { color: #C9BFAE; }
+.night .foot { color: #8C8270; }
+.night .brand { color: #F7F2E8; }
+
+/* icon tile */
+.itile {
+  width: 84px; height: 84px; border-radius: var(--r-3);
+  display: grid; place-items: center; flex: none;
+}
+.itile svg, .itile [data-lucide] { width: 40px; height: 40px; stroke-width: 1.75; }
+.itile.btc { background: var(--bitcoin-tint); border: 1px solid var(--bitcoin-tint-2); color: var(--bitcoin-3); }
+.itile.nos { background: var(--nostr-tint); border: 1px solid var(--nostr-tint-2); color: var(--nostr-2); }
+.itile.ink { background: var(--mist); border: 1px solid var(--hairline); color: var(--ink); }
+
+[data-lucide] { stroke-width: 1.75; }
+
+/* lightning bolt accent fill */
+.bolt-fill { color: var(--bitcoin); }

@@ -1,0 +1,204 @@
+/* ZapBook — Ember component library (Material You, dark).
+   Reusable primitives used across app screens AND the design-system page.
+   Exports to window. */
+
+// semantic tones for banners / status
+const TONE = {
+  info:    { c: '#4F8EFF', tint: 'rgba(79,142,255,0.13)', line: 'rgba(79,142,255,0.34)', icon: 'info' },
+  success: { c: '#3DCB89', tint: 'rgba(61,203,137,0.13)', line: 'rgba(61,203,137,0.34)', icon: 'check' },
+  warning: { c: '#F7C948', tint: 'rgba(247,201,72,0.13)', line: 'rgba(247,201,72,0.34)', icon: 'warn' },
+  error:   { c: '#E5484D', tint: 'rgba(229,72,77,0.14)',  line: 'rgba(229,72,77,0.36)',  icon: 'x' },
+  zap:     { c: ZB.orange, tint: ZB.orangeDim,            line: ZB.orangeLine,            icon: null },
+};
+
+// ── Button ──
+function Button({ variant = 'primary', size = 'md', icon, iconR, children, full, style = {} }) {
+  const H = { sm: 38, md: 48, lg: 56 }[size];
+  const FS = { sm: 14, md: 15, lg: 16 }[size];
+  const variants = {
+    primary: { background: ZB.orange, color: '#241500', border: '1px solid transparent' },
+    purple:  { background: ZB.purple, color: '#fff', border: '1px solid transparent' },
+    tonal:   { background: ZB.s3, color: ZB.t1, border: `1px solid ${ZB.line}` },
+    ghost:   { background: 'transparent', color: ZB.t2, border: '1px solid transparent' },
+    outline: { background: 'transparent', color: ZB.t1, border: `1px solid ${ZB.line2}` },
+    danger:  { background: TONE.error.c, color: '#fff', border: '1px solid transparent' },
+  };
+  return (
+    <button style={{ height: H, padding: `0 ${size === 'sm' ? 16 : 22}px`, borderRadius: 999, cursor: 'pointer',
+      display: full ? 'flex' : 'inline-flex', width: full ? '100%' : 'auto', alignItems: 'center', justifyContent: 'center', gap: 9,
+      font: `700 ${FS}px/1 ${FONT_BODY}`, letterSpacing: '0.01em', ...variants[variant], ...style }}>
+      {icon && <Icon name={icon} size={FS + 4} color="currentColor" sw={2.1} />}
+      {children}
+      {iconR && <Icon name={iconR} size={FS + 3} color="currentColor" sw={2.1} />}
+    </button>
+  );
+}
+
+// ── Chip / pill ──
+function Chip({ children, icon, tone, selected, style = {} }) {
+  const c = tone ? TONE[tone].c : ZB.t2;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999,
+      font: `600 13px/1 ${FONT_BODY}`,
+      background: selected ? (tone ? TONE[tone].tint : ZB.orangeDim) : ZB.s2,
+      border: `1px solid ${selected ? (tone ? TONE[tone].line : ZB.orangeLine) : ZB.line}`,
+      color: selected ? (tone ? c : ZB.orangeSoft) : ZB.t2, ...style }}>
+      {icon && <Icon name={icon} size={15} color="currentColor" sw={2} />}
+      {children}
+    </span>
+  );
+}
+
+// ── Alert banner ──
+function Banner({ tone = 'info', title, children, action, onClose, style = {} }) {
+  const t = TONE[tone];
+  return (
+    <div style={{ display: 'flex', gap: 13, padding: 16, borderRadius: 18, background: t.tint,
+      border: `1px solid ${t.line}`, ...style }}>
+      <div style={{ width: 36, height: 36, borderRadius: 11, flex: 'none', display: 'grid', placeItems: 'center',
+        background: t.tint, border: `1px solid ${t.line}` }}>
+        {tone === 'zap' ? <Bolt size={18} color={t.c} /> : <Icon name={t.icon} size={19} color={t.c} sw={2.2} />}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 1 }}>
+        {title && <div style={{ font: `700 15px/1.25 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em' }}>{title}</div>}
+        {children && <div style={{ font: `400 13.5px/1.5 ${FONT_BODY}`, color: ZB.t2, marginTop: title ? 5 : 0 }}>{children}</div>}
+        {action && <div style={{ marginTop: 12 }}>{action}</div>}
+      </div>
+      {onClose && (
+        <div style={{ width: 26, height: 26, borderRadius: 8, flex: 'none', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+          <Icon name="x" size={16} color={ZB.t3} sw={2.2} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Card ──
+function Card({ children, pad = 18, r = 24, style = {} }) {
+  return <div style={{ background: ZB.s2, border: `1px solid ${ZB.line}`, borderRadius: r, padding: pad, ...style }}>{children}</div>;
+}
+
+// ── List row ──
+function Row({ lead, title, sub, trail, style = {} }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '11px 14px', borderRadius: 16,
+      background: ZB.s1, border: `1px solid ${ZB.line}`, ...style }}>
+      {lead}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ font: `700 15.5px/1.15 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em' }}>{title}</div>
+        {sub && <div style={{ font: `500 12.5px/1.2 ${FONT_BODY}`, color: ZB.t3, marginTop: 6 }}>{sub}</div>}
+      </div>
+      {trail}
+    </div>
+  );
+}
+
+// ── Input (Material filled) ──
+function Input({ label, value, placeholder, icon, suffix, style = {} }) {
+  return (
+    <div style={style}>
+      {label && <div style={{ font: `600 12px/1 ${FONT_BODY}`, color: ZB.t3, marginBottom: 9, letterSpacing: '0.02em' }}>{label}</div>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 52, padding: '0 16px', borderRadius: 16,
+        background: ZB.s2, border: `1px solid ${value ? ZB.orangeLine : ZB.line2}` }}>
+        {icon && <Icon name={icon} size={19} color={ZB.t3} />}
+        <span style={{ flex: 1, font: `500 16px/1 ${FONT_BODY}`, color: value ? ZB.t1 : ZB.t3 }}>{value || placeholder}</span>
+        {suffix && <span style={{ font: `600 14px/1 ${FONT_MONO}`, color: ZB.t2 }}>{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Progress bar ──
+function Progress({ value = 0.4, color = ZB.orange, h = 8, track = ZB.s4 }) {
+  return (
+    <div style={{ height: h, borderRadius: 999, background: track, overflow: 'hidden' }}>
+      <div style={{ width: `${Math.round(value * 100)}%`, height: '100%', background: color, borderRadius: 999 }} />
+    </div>
+  );
+}
+
+// ── Reaction tile (emoji + label + sats) — the unique zap unit ──
+function Reaction({ emoji, label, sats, accent = ZB.orange, big }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: big ? '16px 8px' : '13px 8px',
+      borderRadius: 18, background: ZB.s2, border: `1px solid ${ZB.line}` }}>
+      <span style={{ fontSize: big ? 32 : 27, lineHeight: 1 }}>{emoji}</span>
+      <span style={{ font: `600 12px/1 ${FONT_BODY}`, color: ZB.t2 }}>{label}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, font: `700 12px/1 ${FONT_MONO}`, color: accent, fontVariantNumeric: 'tabular-nums' }}>
+        <Bolt size={11} color={accent} />{sats}
+      </span>
+    </div>
+  );
+}
+
+// ── Bottom sheet shell (grabber + body) over a scrim ──
+function Sheet({ children, scrimChild }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, background: ZB.bg }}>{scrimChild}</div>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,6,3,0.62)' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, background: ZB.s1,
+        borderTop: `1px solid ${ZB.line2}`, borderTopLeftRadius: 30, borderTopRightRadius: 30,
+        paddingBottom: SAFE_BOT + 8 }}>
+        <div style={{ display: 'grid', placeItems: 'center', padding: '12px 0 6px' }}>
+          <div style={{ width: 40, height: 5, borderRadius: 999, background: ZB.line2 }} />
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { TONE, Button, Chip, Banner, Card, Row, Input, Progress, Reaction, Sheet });
+
+// ── Floating celebration pill (non-blocking, sits above reader nav) ──
+function Pill({ emoji = '👏', text, count, style = {} }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11, height: 52, padding: '0 8px 0 14px',
+      borderRadius: 999, background: ZB.s3, border: `1px solid ${ZB.line2}`,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.4)', ...style }}>
+      <span style={{ fontSize: 22, lineHeight: 1 }}>{emoji}</span>
+      <span style={{ flex: 1, font: `600 14px/1.2 ${FONT_BODY}`, color: ZB.t1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{text}</span>
+      {count > 1 && (
+        <span style={{ font: `700 11px/1 ${FONT_MONO}`, color: ZB.orangeSoft, background: ZB.orangeDim, border: `1px solid ${ZB.orangeLine}`, padding: '5px 8px', borderRadius: 999 }}>+{count - 1}</span>
+      )}
+      <div style={{ width: 36, height: 36, borderRadius: 999, flex: 'none', display: 'grid', placeItems: 'center', background: ZB.s4 }}>
+        <Icon name="chevron" size={17} color={ZB.t2} sw={2.2} style={{ transform: 'rotate(-90deg)' }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Celebration card (used in feed + half-sheet). The reaction row IS the
+//    affordance — tap a reaction to zap. No separate action buttons. ──
+function CelebrationCard({ emoji, name, action, time, book, score, reactions = [], unread, compact }) {
+  return (
+    <div style={{ background: ZB.s2, border: `1px solid ${unread ? ZB.orangeLine : ZB.line}`, borderLeft: `3px solid ${unread ? ZB.orange : 'transparent'}`,
+      borderRadius: 18, padding: compact ? 16 : 17 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <Ava emoji={emoji} size={42} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ font: `600 14.5px/1.35 ${FONT_BODY}`, color: ZB.t1 }}><b style={{ fontWeight: 800 }}>{name}</b> {action}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 6, flexWrap: 'wrap' }}>
+            <span style={{ font: `500 12.5px/1.2 ${FONT_BODY}`, color: ZB.t3 }}>{book}</span>
+            {score && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, font: `600 12px/1 ${FONT_MONO}`, color: '#5BD79B' }}><Icon name="check" size={13} color="#5BD79B" sw={2.6} />{score}</span>}
+          </div>
+        </div>
+        <span style={{ font: `500 11.5px/1 ${FONT_MONO}`, color: ZB.t3, whiteSpace: 'nowrap' }}>{time}</span>
+      </div>
+
+      {reactions.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 13, flexWrap: 'wrap' }}>
+          {reactions.map((r, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 999, background: ZB.s1, border: `1px solid ${ZB.line}` }}>
+              <span style={{ fontSize: 15 }}>{r.e}</span>
+              <span style={{ font: `700 12px/1 ${FONT_MONO}`, color: ZB.t2 }}>{r.n}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { Pill, CelebrationCard });

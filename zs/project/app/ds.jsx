@@ -1,0 +1,170 @@
+/* ZapBook app — shared design tokens, icons, primitives.
+   Dark-first. Neutral warm surfaces, Bitcoin orange + Nostr purple as accents.
+   Exports to window for the other babel scripts. */
+
+const FONT_DISPLAY = "'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif";
+const FONT_BODY    = "'Hanken Grotesque', ui-sans-serif, system-ui, sans-serif";
+const FONT_MONO    = "'JetBrains Mono', ui-monospace, monospace";
+
+const ZB = {
+  // base canvas
+  bg:   '#0E0B07',
+  // tonal warm-neutral surfaces (Material You elevation steps)
+  s1:   '#16120D',
+  s2:   '#1F1A13',
+  s3:   '#29221A',
+  s4:   '#342B20',
+  s5:   '#3F352765',
+  line:    'rgba(255,247,232,0.09)',
+  line2:   'rgba(255,247,232,0.14)',
+  // text
+  t1:   '#F7F1E5',
+  t2:   '#B9AF9D',
+  t3:   '#7F7666',
+  // accents — bitcoin orange + nostr purple (brightened for dark)
+  orange:     '#F7931A',
+  orangeSoft: '#FFB867',
+  orangeDim:  'rgba(247,147,26,0.15)',
+  orangeLine: 'rgba(247,147,26,0.32)',
+  purple:     '#A56BFF',
+  purpleSoft: '#C8AEFF',
+  purpleDim:  'rgba(165,107,255,0.15)',
+  purpleLine: 'rgba(165,107,255,0.34)',
+  // glass (Halo direction)
+  glass:   'rgba(255,250,240,0.055)',
+  glassHi: 'rgba(255,250,240,0.10)',
+  gBorder: 'rgba(255,250,240,0.14)',
+};
+
+// ── safe-area constants for the iOS frame (status bar / home indicator) ──
+const SAFE_TOP = 56;
+const SAFE_BOT = 30;
+
+// ── icon set — Lucide-style 24×24 stroke paths ──
+const PATHS = {
+  home:    'M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z',
+  circles: 'M9 7a3 3 0 1 0 0-.01M16.5 9a2.5 2.5 0 1 0 0-.01M12 20c0-2.8-1.8-5-5-5s-5 2.2-5 5M22 20c0-2.2-1.2-3.8-3.2-4.4',
+  book:    'M5 4.5A2.5 2.5 0 0 1 7.5 2H20v15.5H7.5A2.5 2.5 0 0 0 5 20zM5 20a2.5 2.5 0 0 0 2.5 2.5H20',
+  user:    'M12 12a4 4 0 1 0 0-.01M5 21c0-3.5 3-6 7-6s7 2.5 7 6',
+  flame:   'M9 13.5A2.5 2.5 0 0 0 12 11c0-1.4-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3A2.5 2.5 0 0 0 9 13.5z',
+  chevron: 'm9 6 6 6-6 6',
+  play:    'M7 4.5v15l13-7.5z',
+  search:  'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.3-4.3',
+  plus:    'M12 5v14M5 12h14',
+  trophy:  'M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 19h6M10 15.5V19M14 15.5V19',
+  bookmark:'M6 3h12v18l-6-4-6 4z',
+  clock:   'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  check:   'M4 12.5 9 17.5 20 6',
+  gift:    'M4 11h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM3 7h18v4H3zM12 7V21M12 7C12 7 10 2 7.5 3.5S9.5 7 12 7zM12 7s2-5 4.5-3.5S14.5 7 12 7z',
+  sparkle: 'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
+  dot:     'M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+  text:    'M5 6h14M5 12h14M5 18h9',
+  sun:     'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19',
+  info:    'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8h.01M11 11.5h1V17',
+  warn:    'M12 3 2.5 20h19zM12 10v4M12 17.5h.01',
+  x:       'M6 6l12 12M18 6 6 18',
+  bell:    'M6 9.5a6 6 0 0 1 12 0c0 4.5 2 5.5 2 5.5H4s2-1 2-5.5M10 20a2 2 0 0 0 4 0',
+  lock:    'M6.5 10.5V8a5.5 5.5 0 0 1 11 0v2.5M5.5 10.5h13v9.5h-13zM12 14.5v2.5',
+  arrowR:  'M4 12h15M13 6l6 6-6 6',
+  star:    'M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6L12 17l-5.3 2.5 1.1-6L3.4 9.3l6-.8z',
+  pen:     'M14 4l6 6M3 21l1-5L16 4l4 4L8 20z',
+  zap:     'M13 2 4 14h6l-1 8 9-12h-6l1-8z',
+  upload:  'M12 16V4M7 9l5-5 5 5M5 18v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2',
+  link:    'M9 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M15 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1',
+  cpu:     'M6 6h12v12H6zM9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3',
+  filter:  'M3 5h18l-7 8v6l-4 2v-8z',
+};
+
+function Icon({ name, size = 22, color = 'currentColor', sw = 1.9, fill = false, style }) {
+  const filled = name === 'play' || name === 'bookmark';
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24"
+      fill={fill || filled ? color : 'none'}
+      stroke={fill || filled ? 'none' : color}
+      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d={PATHS[name]} />
+    </svg>
+  );
+}
+
+// filled lightning bolt — the zap mark
+function Bolt({ size = 22, color = ZB.orange, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={style}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />
+    </svg>
+  );
+}
+
+// sats amount chip
+function Sats({ amount, color = ZB.orange, size = 13, bg = ZB.orangeDim, border = ZB.orangeLine }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 9px 5px 7px',
+      borderRadius: 999, background: bg, border: `1px solid ${border}`,
+      font: `600 ${size}px/1 ${FONT_MONO}`, color, fontVariantNumeric: 'tabular-nums' }}>
+      <Bolt size={size + 1} color={color} />{amount}
+    </span>
+  );
+}
+
+// book cover — full-bleed cover image whose edges feather into the surface.
+// `img` = test/real art src; `slot` = drop-your-own (overrides img).
+function Cover({ w = 96, h = 132, hue = 'orange', title, author, r = 14, slot, img }) {
+  const a = hue === 'purple' ? ZB.purple : hue === 'mint' ? '#3DCB89' : hue === 'sky' ? '#4F8EFF' : ZB.orange;
+  const fade = 'radial-gradient(112% 82% at 50% 42%, rgba(255,255,255,1) 22%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0) 90%)';
+  const maskCss = { maskImage: fade, WebkitMaskImage: fade };
+  return (
+    <div style={{ width: w, height: h, borderRadius: r, position: 'relative', overflow: 'hidden', flex: 'none',
+      background: ZB.s3, border: `1px solid ${ZB.line2}` }}>
+      {/* cover art — edges blend into the book surface */}
+      {img ? (
+        <img src={(typeof window !== 'undefined' && window.__resources && window.__resources[img]) || img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', ...maskCss }} />
+      ) : slot ? (
+        <image-slot id={slot} shape="rect" fit="cover" placeholder="cover"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', ...maskCss }}></image-slot>
+      ) : (
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: Math.max(4, w * 0.045), background: a, opacity: 0.9 }} />
+      )}
+      {/* title block */}
+      {title && (
+        <div style={{ position: 'absolute', inset: 0, padding: `14px 12px 12px ${img || slot ? 14 : Math.max(13, w * 0.15)}px`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ font: `700 ${Math.max(12, w * 0.13)}px/1.05 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.02em', textShadow: '0 1px 8px rgba(0,0,0,0.75)' }}>{title}</div>
+          {author && <div style={{ marginTop: 5, font: `500 ${Math.max(9, w * 0.085)}px/1.2 ${FONT_BODY}`, color: ZB.t2, textShadow: '0 1px 6px rgba(0,0,0,0.75)' }}>{author}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// avatar bubble (emoji)
+function Ava({ emoji, size = 44, ring }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: 999, flex: 'none', display: 'grid', placeItems: 'center',
+      fontSize: size * 0.5, background: ZB.s3, border: `1px solid ${ring || ZB.line2}` }}>{emoji}</div>
+  );
+}
+
+// frame wrapper: centers the device in the artboard with breathing room
+function Frame({ children }) {
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center',
+      background: '#E7E1D7', fontFamily: FONT_BODY }}>
+      <IOSDevice dark>{children}</IOSDevice>
+    </div>
+  );
+}
+
+// full-screen base inside the device
+function Screen({ children, style }) {
+  return (
+    <div style={{ minHeight: '100%', height: '100%', position: 'relative', overflow: 'hidden',
+      color: ZB.t1, fontFamily: FONT_BODY, display: 'flex', flexDirection: 'column', ...style }}>
+      {children}
+    </div>
+  );
+}
+
+Object.assign(window, {
+  ZB, FONT_DISPLAY, FONT_BODY, FONT_MONO, SAFE_TOP, SAFE_BOT,
+  Icon, Bolt, Sats, Cover, Ava, Frame, Screen,
+});
