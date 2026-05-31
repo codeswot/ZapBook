@@ -71,13 +71,17 @@ class IngestionBloc extends Bloc<IngestionEvent, IngestionState> {
           ),
         );
       case IngestionStage.needsAiProcessing:
-        emit(
-          IngestionNeedsAiProcessing(
-            zbfPath: progress.zbfPath ?? '',
-            pagesNeedingProcessing: _countPagesNeedingAi(progress.result),
-            coverImage: _coverOf(progress.result),
-          ),
-        );
+        final result = progress.result;
+        if (result != null) {
+          emit(
+            IngestionNeedsAiProcessing(
+              zbfPath: progress.zbfPath ?? '',
+              manifest: result.manifest,
+              pagesNeedingProcessing: _countPagesNeedingAi(result),
+              coverImage: _coverOf(result),
+            ),
+          );
+        }
       case IngestionStage.complete:
         final result = progress.result;
         if (result != null) {

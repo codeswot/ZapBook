@@ -42,18 +42,6 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorController;
 
-  static const _genres = [
-    'Fiction',
-    'Non-Fiction',
-    'Sci-Fi',
-    'Fantasy',
-    'Mystery',
-    'Biography',
-    'History',
-    'Romance',
-    'Poetry',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -150,7 +138,7 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _genres.map((genre) {
+                    children: state.availableGenres.map((genre) {
                       final isSelected = state.genre == genre;
                       return AppChip(
                         label: genre,

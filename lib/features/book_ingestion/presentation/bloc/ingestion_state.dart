@@ -34,16 +34,18 @@ final class IngestionInProgress extends IngestionState {
 final class IngestionNeedsAiProcessing extends IngestionState {
   const IngestionNeedsAiProcessing({
     required this.zbfPath,
+    required this.manifest,
     required this.pagesNeedingProcessing,
     this.coverImage,
   });
 
   final String zbfPath;
+  final BookManifest manifest;
   final int pagesNeedingProcessing;
   final Uint8List? coverImage;
 
   @override
-  List<Object?> get props => [zbfPath, pagesNeedingProcessing, coverImage];
+  List<Object?> get props => [zbfPath, manifest, pagesNeedingProcessing, coverImage];
 }
 
 final class IngestionComplete extends IngestionState {

@@ -68,112 +68,122 @@ class AppBookCover extends StatelessWidget {
     final textShadowBlur = 6.0;
     final textShadowOffsetY = 1.0;
 
-    return ClipRRect(
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: semanticColors.mist,
-          borderRadius: AppRadii.br12,
-          border: Border.all(color: semanticColors.hairline2),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (image != null)
-              Positioned.fill(
-                child: ShaderMask(
-                  shaderCallback: (rect) {
-                    return RadialGradient(
-                      center: Alignment.topRight,
-                      radius: gradientRadius,
-                      colors: [
-                        semanticColors.white,
-                        semanticColors.transparent,
-                      ],
-                      stops: [solidStop, transparentStop],
-                    ).createShader(rect);
-                  },
-                  blendMode: BlendMode.dstIn,
-                  child: Image(image: image!, fit: BoxFit.cover),
-                ),
-              )
-            else if (title != null && title!.isNotEmpty)
-              Positioned.fill(
-                child: ShaderMask(
-                  shaderCallback: (rect) {
-                    return RadialGradient(
-                      center: Alignment.topRight,
-                      radius: gradientRadius,
-                      colors: [
-                        semanticColors.white,
-                        semanticColors.transparent,
-                      ],
-                      stops: [solidStop, transparentStop],
-                    ).createShader(rect);
-                  },
-                  blendMode: BlendMode.dstIn,
-                  child: CustomPaint(
-                    painter: _AbstractArtPainter(
-                      title!.hashCode,
-                      semanticColors,
-                    ),
-                  ),
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: semanticColors.mist,
+        borderRadius: AppRadii.br12,
+        border: Border.all(color: semanticColors.hairline2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (image != null)
+            Positioned.fill(
+              child: ShaderMask(
+                shaderCallback: (rect) {
+                  return RadialGradient(
+                    center: Alignment.topRight,
+                    radius: gradientRadius,
+                    colors: [semanticColors.white, semanticColors.transparent],
+                    stops: [solidStop, transparentStop],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: Image(image: image!, fit: BoxFit.cover),
+              ),
+            )
+          else if (title != null && title!.isNotEmpty)
+            Positioned.fill(
+              child: ShaderMask(
+                shaderCallback: (rect) {
+                  return RadialGradient(
+                    center: Alignment.topRight,
+                    radius: gradientRadius,
+                    colors: [semanticColors.white, semanticColors.transparent],
+                    stops: [solidStop, transparentStop],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: CustomPaint(
+                  painter: _AbstractArtPainter(title!.hashCode, semanticColors),
                 ),
               ),
+            ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: spineWidth,
+            child: Container(color: hueColor),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    semanticColors.black.withValues(alpha: shadowAlphaStart),
+                    semanticColors.transparent,
+                    semanticColors.transparent,
+                    semanticColors.black.withValues(alpha: shadowAlphaEnd),
+                  ],
+                  stops: [
+                    shadowStopStart,
+                    shadowStopMidLeft,
+                    shadowStopMidRight,
+                    shadowStopEnd,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (title != null)
             Positioned(
               left: 0,
-              top: 0,
+              right: 0,
               bottom: 0,
-              width: spineWidth,
-              child: Container(color: hueColor),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      semanticColors.black.withValues(alpha: shadowAlphaStart),
-                      semanticColors.transparent,
-                      semanticColors.transparent,
-                      semanticColors.black.withValues(alpha: shadowAlphaEnd),
-                    ],
-                    stops: [
-                      shadowStopStart,
-                      shadowStopMidLeft,
-                      shadowStopMidRight,
-                      shadowStopEnd,
-                    ],
-                  ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: spineWidth + basePadding,
+                  right: basePadding,
+                  bottom: basePadding,
                 ),
-              ),
-            ),
-            if (title != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: spineWidth + basePadding,
-                    right: basePadding,
-                    bottom: basePadding,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title!,
+                      style: typography.displayM.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: titleSize,
+                        height: textLineHeight,
+                        letterSpacing: textLetterSpacing,
+                        color: semanticColors.ink,
+                        shadows: [
+                          Shadow(
+                            color: semanticColors.black.withValues(
+                              alpha: textShadowAlpha,
+                            ),
+                            offset: Offset(0, textShadowOffsetY),
+                            blurRadius: textShadowBlur,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (author != null) ...[
+                      SizedBox(height: textSpacing),
                       Text(
-                        title!,
-                        style: typography.displayM.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: titleSize,
-                          height: textLineHeight,
-                          letterSpacing: textLetterSpacing,
-                          color: semanticColors.ink,
+                        author!,
+                        style: typography.body.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: authorSize,
+                          height: authorLineHeight,
+                          color: semanticColors.slate,
                           shadows: [
                             Shadow(
                               color: semanticColors.black.withValues(
@@ -185,33 +195,12 @@ class AppBookCover extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (author != null) ...[
-                        SizedBox(height: textSpacing),
-                        Text(
-                          author!,
-                          style: typography.body.copyWith(
-                            fontWeight: FontWeight.w500,
-                            fontSize: authorSize,
-                            height: authorLineHeight,
-                            color: semanticColors.slate,
-                            shadows: [
-                              Shadow(
-                                color: semanticColors.black.withValues(
-                                  alpha: textShadowAlpha,
-                                ),
-                                offset: Offset(0, textShadowOffsetY),
-                                blurRadius: textShadowBlur,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -1,17 +1,25 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
+import 'package:zapbook/widgets/app_chip.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class IngestionResultPreview extends StatelessWidget {
   const IngestionResultPreview({
     super.key,
     required this.coverImage,
+    required this.title,
+    required this.author,
+    this.genre,
     required this.onInspect,
   });
 
   final Uint8List? coverImage;
+  final String title;
+  final String author;
+  final String? genre;
   final VoidCallback onInspect;
 
   @override
@@ -42,19 +50,26 @@ class IngestionResultPreview extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 24),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Book Title',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Book Author',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    author,
+                    style: TextStyle(fontSize: 14, color: context.colors.mint),
                   ),
+                  if (genre != null) ...[
+                    const SizedBox(height: 12),
+                    AppChip(label: genre!),
+                  ],
                 ],
               ),
             ),

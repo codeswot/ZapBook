@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/widgets/app_button.dart';
 
+import 'package:zapbook/zbf/zbf.dart';
+
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
@@ -81,8 +83,12 @@ class _IngestionView extends StatelessWidget {
                     if (zbfPath == null) {
                       return const SizedBox.shrink();
                     }
+                    final manifest = _manifestOf(state);
                     return IngestionResultPreview(
                       coverImage: _coverImage(state),
+                      title: manifest?.title ?? 'Unknown Title',
+                      author: manifest?.author ?? 'Unknown Author',
+                      genre: manifest?.genre,
                       onInspect: () => _inspect(context, zbfPath),
                     );
                   },
@@ -110,6 +116,12 @@ class _IngestionView extends StatelessWidget {
   Uint8List? _coverImage(IngestionState state) => switch (state) {
     IngestionComplete(:final coverImage) => coverImage,
     IngestionNeedsAiProcessing(:final coverImage) => coverImage,
+    _ => null,
+  };
+
+  BookManifest? _manifestOf(IngestionState state) => switch (state) {
+    IngestionComplete(:final manifest) => manifest,
+    IngestionNeedsAiProcessing(:final manifest) => manifest,
     _ => null,
   };
 }
