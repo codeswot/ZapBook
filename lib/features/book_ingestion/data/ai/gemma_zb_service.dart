@@ -79,6 +79,7 @@ final class GemmaZbService implements ZbInferenceService {
         return _parser.parse(raw, allowedAssetRefs: request.availableAssetRefs);
       } finally {
         await session.close();
+        await Future.delayed(const Duration(seconds: 1));
       }
     } catch (e) {
       return const ZbPageRefinement(blocks: []);

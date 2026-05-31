@@ -7,6 +7,8 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_vie
 import 'package:zapbook/features/book_ingestion/data/extractors/pdf_extractor.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
 import 'package:logging/logging.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
@@ -138,8 +140,9 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       refiningPages: {...state.refiningPages, pageIndex},
     ));
 
+    final imageName = 'page_${page.pageNumber}.png';
+
     try {
-      final imageName = 'page_${page.pageNumber}.png';
       final result = await refiner.call(
         sourcePdf: pdf,
         page: page,
@@ -150,14 +153,38 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
       if (result != null) {
         handle.updateAsset(imageName, result.imageBytes);
+        var blocks = result.blocks;
+        if (page.layoutType == BookLayoutType.illustration && !blocks.any((b) => b is ImageBlock)) {
+          blocks = [ImageBlock(assetRef: imageName), ...blocks];
+        }
         emit(state.copyWith(
-          refinedPages: {...state.refinedPages, pageIndex: result.blocks},
+          refinedPages: {...state.refinedPages, pageIndex: blocks},
           refiningPages: state.refiningPages.difference({pageIndex}),
         ));
         return;
       }
     } catch (e, stackTrace) {
-      _logger.severe('AI refinement failed for page $pageIndex, falling back to draft blocks', e, stackTrace);
+      _logger.severe('AI refinement failed for page $pageIndex', e, stackTrace);
+    }
+
+    try {
+      if (page.layoutType == BookLayoutType.illustration) {
+        final rasterizer = getIt<PdfPageRasterizer>();
+        final imageBytes = await rasterizer.render(pdf, page.pageNumber - 1);
+        if (imageBytes != null && !isClosed) {
+          handle.updateAsset(imageName, imageBytes);
+          emit(state.copyWith(
+            refinedPages: {
+              ...state.refinedPages,
+              pageIndex: [ImageBlock(assetRef: imageName), ...page.blocks],
+            },
+            refiningPages: state.refiningPages.difference({pageIndex}),
+          ));
+          return;
+        }
+      }
+    } catch (e, s) {
+      _logger.severe('Fallback rasterization failed', e, s);
     }
 
     if (isClosed) return;
