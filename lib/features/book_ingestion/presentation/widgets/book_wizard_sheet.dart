@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -154,7 +155,9 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
                     fullWidth: true,
                     onTap: () {
                       cubit.submit();
-                      Navigator.of(context).pop();
+                      if (context.mounted) {
+                        context.pop();
+                      }
                     },
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:zapbook/features/book_ingestion/presentation/pages/ingestion_page.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 class ZapBookApp extends StatelessWidget {
@@ -8,12 +9,13 @@ class ZapBookApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final router = getIt<AppRouter>().router;
+    return MaterialApp.router(
       title: 'ZapBook',
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
-      home: const IngestionPage(),
+      routerConfig: router,
     );
   }
 }

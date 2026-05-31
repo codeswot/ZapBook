@@ -14,6 +14,7 @@ import 'dart:async' as _i687;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
+import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
     as _i785;
@@ -50,6 +51,7 @@ extension GetItInjectableX on _i174.GetIt {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final ingestionModule = _$IngestionModule();
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
+    gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );

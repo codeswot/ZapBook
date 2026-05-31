@@ -9,6 +9,7 @@ import 'package:zapbook/zbf/zbf.dart';
 
 
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_event.dart';
@@ -18,7 +19,6 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion
 import 'package:zapbook/features/book_ingestion/presentation/widgets/ingestion_progress_widget.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/book_wizard_sheet.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/ingestion_result_preview.dart';
-import 'package:zapbook/features/book_ingestion/presentation/pages/zbf_viewer_page.dart';
 
 class IngestionPage extends StatelessWidget {
   const IngestionPage({super.key});
@@ -43,9 +43,7 @@ class _IngestionView extends StatelessWidget {
   const _IngestionView();
 
   void _inspect(BuildContext context, String zbfPath) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ZbfViewerPage(zbfPath: zbfPath)),
-    );
+    ZbfViewerRoute(zbfPath: zbfPath).push<void>(context);
   }
 
   void _handlePageCubitState(BuildContext context, IngestionPageState state) {
