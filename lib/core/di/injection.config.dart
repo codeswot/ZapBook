@@ -20,6 +20,7 @@ import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
+import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
@@ -46,6 +47,8 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc
     as _i318;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart'
     as _i439;
+import 'package:zapbook/features/book_ingestion/presentation/bloc/reader_settings/reader_settings_cubit.dart'
+    as _i28;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i842;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
@@ -81,6 +84,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i746.DocumentsDirectory>(
       () => const _i746.PathProviderDocumentsDirectory(),
+    );
+    gh.lazySingleton<_i465.ThemeCubit>(
+      () => _i465.ThemeCubit(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i28.ReaderSettingsCubit>(
+      () => _i28.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i1012.AiService>(
       () => _i1012.AiServiceImpl(gh<_i460.SharedPreferences>()),

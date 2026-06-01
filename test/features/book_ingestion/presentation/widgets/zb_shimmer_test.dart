@@ -13,7 +13,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Zb is at it…'), findsOneWidget);
+    expect(find.text('Optimizing page layout…'), findsOneWidget);
   });
 
   testWidgets('honours a custom message and line count', (tester) async {

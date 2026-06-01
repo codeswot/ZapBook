@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_gemma
+  printing
   url_launcher_linux
 )
 

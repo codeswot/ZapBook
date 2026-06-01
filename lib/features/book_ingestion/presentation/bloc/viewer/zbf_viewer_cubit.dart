@@ -10,23 +10,34 @@ import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.da
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
-  ZbfViewerCubit({
-    required this.handle,
-    PdfPageRasterizer? rasterizer,
-  })  : _rasterizer = rasterizer,
-        super(const ZbfViewerState()) {
+  ZbfViewerCubit({required this.handle, PdfPageRasterizer? rasterizer})
+    : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
+      super(const ZbfViewerState()) {
     _prefetch(0);
   }
 
   final ZbfBookHandle handle;
-  final PdfPageRasterizer? _rasterizer;
+  final PdfPageRasterizer _rasterizer;
   final _logger = Logger('ZbfViewerCubit');
-
-  PdfPageRasterizer get _raster => _rasterizer ?? getIt<PdfPageRasterizer>();
 
   final List<int> _prefetchQueue = [];
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
+
+  void nextPage() {
+    final next = state.currentPage + 1;
+    if (next < handle.manifest.pageCount) pageChanged(next);
+  }
+
+  void previousPage() {
+    final prev = state.currentPage - 1;
+    if (prev >= 0) pageChanged(prev);
+  }
+
+  void goToPage(int index) {
+    if (index < 0 || index >= handle.manifest.pageCount) return;
+    pageChanged(index);
+  }
 
   void pageChanged(int index) {
     if (isClosed) return;
@@ -39,8 +50,9 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     final nextChunk = currentChunk + 1;
-    final triggerIndex =
-        currentChunk == 0 ? 4 : (10 + (currentChunk - 1) * 20 + 10);
+    final triggerIndex = currentChunk == 0
+        ? 4
+        : (10 + (currentChunk - 1) * 20 + 10);
     if (index >= triggerIndex) {
       _ensureChunkIngested(nextChunk);
     }
@@ -109,8 +121,6 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
       final page = handle.pageAt(i);
       if (page.layoutType == BookLayoutType.processing) continue;
-      // Only image-only / sparse pages get rendered as a page bitmap. Every
-      // other page renders its extracted text blocks directly.
       if (page.layoutType != BookLayoutType.illustration) continue;
       if (state.imagePages.containsKey(i) ||
           state.rasterizingPages.contains(i) ||
@@ -142,26 +152,32 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     _isProcessingQueue = false;
   }
 
-  Future<void> _rasterizePage(int pageIndex, Uint8List pdf, BookPage page) async {
+  Future<void> _rasterizePage(
+    int pageIndex,
+    Uint8List pdf,
+    BookPage page,
+  ) async {
     if (isClosed) return;
-    emit(state.copyWith(
-      rasterizingPages: {...state.rasterizingPages, pageIndex},
-    ));
+    emit(
+      state.copyWith(rasterizingPages: {...state.rasterizingPages, pageIndex}),
+    );
 
     final imageName = 'page_${page.pageNumber}.png';
 
     try {
-      final imageBytes = await _raster.render(pdf, page.pageNumber - 1);
+      final imageBytes = await _rasterizer.render(pdf, page.pageNumber - 1);
       if (isClosed) return;
       if (imageBytes != null) {
         handle.updateAsset(imageName, imageBytes);
-        emit(state.copyWith(
-          imagePages: {
-            ...state.imagePages,
-            pageIndex: [ImageBlock(assetRef: imageName), ...page.blocks],
-          },
-          rasterizingPages: state.rasterizingPages.difference({pageIndex}),
-        ));
+        emit(
+          state.copyWith(
+            imagePages: {
+              ...state.imagePages,
+              pageIndex: [ImageBlock(assetRef: imageName), ...page.blocks],
+            },
+            rasterizingPages: state.rasterizingPages.difference({pageIndex}),
+          ),
+        );
         return;
       }
     } catch (e, stack) {
@@ -169,9 +185,11 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     if (isClosed) return;
-    emit(state.copyWith(
-      rasterizingPages: state.rasterizingPages.difference({pageIndex}),
-    ));
+    emit(
+      state.copyWith(
+        rasterizingPages: state.rasterizingPages.difference({pageIndex}),
+      ),
+    );
   }
 
   @override
