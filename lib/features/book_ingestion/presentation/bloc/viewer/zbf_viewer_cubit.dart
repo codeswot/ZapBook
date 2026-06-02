@@ -6,6 +6,7 @@ import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/pdf_extractor.dart';
+import 'package:zapbook/features/book_ingestion/data/support/paragraph_merger.dart';
 import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
 
@@ -24,13 +25,27 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
 
+  bool _isSkippable(int index) {
+    final page = handle.pageAt(index);
+    if (page.layoutType == BookLayoutType.processing) return false;
+    if (page.layoutType == BookLayoutType.illustration) return false;
+    if (!pageHasContent(page.blocks)) return true;
+    return isTableOfContentsPage(page.blocks);
+  }
+
   void nextPage() {
-    final next = state.currentPage + 1;
+    var next = state.currentPage + 1;
+    while (next < handle.manifest.pageCount - 1 && _isSkippable(next)) {
+      next++;
+    }
     if (next < handle.manifest.pageCount) pageChanged(next);
   }
 
   void previousPage() {
-    final prev = state.currentPage - 1;
+    var prev = state.currentPage - 1;
+    while (prev > 0 && _isSkippable(prev)) {
+      prev--;
+    }
     if (prev >= 0) pageChanged(prev);
   }
 

@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:background_downloader/background_downloader.dart';
+import 'package:zapbook/core/services/device_capability_service.dart';
 
 enum AiModelStatus { notSet, downloading, paused, verifying, ready, skipped }
 
@@ -14,6 +15,7 @@ class AiModelState extends Equatable {
   final bool bannerDismissed;
   final String? taskId;
   final String? expectedHash;
+  final DeviceCapability? capability;
 
   const AiModelState({
     required this.status,
@@ -21,6 +23,7 @@ class AiModelState extends Equatable {
     this.bannerDismissed = false,
     this.taskId,
     this.expectedHash,
+    this.capability,
   });
 
   @override
@@ -30,6 +33,7 @@ class AiModelState extends Equatable {
     bannerDismissed,
     taskId,
     expectedHash,
+    capability,
   ];
 
   AiModelState copyWith({
@@ -38,6 +42,7 @@ class AiModelState extends Equatable {
     bool? bannerDismissed,
     String? taskId,
     String? expectedHash,
+    DeviceCapability? capability,
   }) {
     return AiModelState(
       status: status ?? this.status,
@@ -45,6 +50,7 @@ class AiModelState extends Equatable {
       bannerDismissed: bannerDismissed ?? this.bannerDismissed,
       taskId: taskId ?? this.taskId,
       expectedHash: expectedHash ?? this.expectedHash,
+      capability: capability ?? this.capability,
     );
   }
 }
@@ -65,6 +71,7 @@ abstract class AiService {
 @LazySingleton(as: AiService)
 class AiServiceImpl implements AiService {
   final SharedPreferences _prefs;
+  final DeviceCapabilityService _deviceCapabilityService;
 
   static const _statusKey = 'ai_model_status';
   static const _taskIdKey = 'ai_model_task_id';
@@ -74,7 +81,8 @@ class AiServiceImpl implements AiService {
   final _stateController = StreamController<AiModelState>.broadcast();
   late AiModelState _currentState;
 
-  AiServiceImpl(this._prefs) {
+  AiServiceImpl(this._prefs, this._deviceCapabilityService) {
+    _currentState = const AiModelState(status: AiModelStatus.notSet);
     _init();
   }
 
@@ -83,6 +91,7 @@ class AiServiceImpl implements AiService {
     final taskId = _prefs.getString(_taskIdKey);
     final expectedHash = _prefs.getString(_hashKey);
     final progress = _prefs.getDouble(_progressKey) ?? 0.0;
+    final capability = await _deviceCapabilityService.checkDeviceCapability();
 
     AiModelStatus initialStatus = AiModelStatus.notSet;
 
@@ -98,6 +107,7 @@ class AiServiceImpl implements AiService {
       taskId: taskId,
       expectedHash: expectedHash,
       downloadProgress: progress,
+      capability: capability,
     );
     _stateController.add(_currentState);
 
@@ -135,10 +145,15 @@ class AiServiceImpl implements AiService {
     await FileDownloader().trackTasks();
 
     if (initialStatus == AiModelStatus.downloading ||
-        initialStatus == AiModelStatus.paused) {
+        initialStatus == AiModelStatus.paused ||
+        initialStatus == AiModelStatus.verifying) {
       if (taskId != null) {
         final task = await FileDownloader().taskForId(taskId);
-        if (task == null) {
+        if (task != null &&
+            task is DownloadTask &&
+            initialStatus == AiModelStatus.verifying) {
+          unawaited(_handleDownloadComplete(task));
+        } else if (task == null) {
           _updateState(const AiModelState(status: AiModelStatus.notSet));
           await _clearPrefs();
         }
@@ -197,15 +212,19 @@ class AiServiceImpl implements AiService {
   }
 
   void _updateState(AiModelState newState) {
-    _currentState = newState;
+    var stateToEmit = newState;
+    if (stateToEmit.capability == null && _currentState.capability != null) {
+      stateToEmit = stateToEmit.copyWith(capability: _currentState.capability);
+    }
+    _currentState = stateToEmit;
     _stateController.add(_currentState);
 
-    _prefs.setString(_statusKey, newState.status.name);
-    if (newState.taskId != null) {
-      _prefs.setString(_taskIdKey, newState.taskId!);
+    _prefs.setString(_statusKey, stateToEmit.status.name);
+    if (stateToEmit.taskId != null) {
+      _prefs.setString(_taskIdKey, stateToEmit.taskId!);
     }
-    if (newState.expectedHash != null) {
-      _prefs.setString(_hashKey, newState.expectedHash!);
+    if (stateToEmit.expectedHash != null) {
+      _prefs.setString(_hashKey, stateToEmit.expectedHash!);
     }
   }
 

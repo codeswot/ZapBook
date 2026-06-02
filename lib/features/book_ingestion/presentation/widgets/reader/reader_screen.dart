@@ -15,6 +15,8 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_vie
 import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_body.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_footer.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_header.dart';
+import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_pull_indicator.dart';
+import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_toc_sheet.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reading_style.dart';
 import 'package:zapbook/features/book_ingestion/presentation/widgets/zb_shimmer.dart';
 
@@ -37,6 +39,7 @@ class ReaderScreen extends StatefulWidget {
 class _ReaderScreenState extends State<ReaderScreen> {
   bool _chromeVisible = false;
   bool _turningForward = true;
+  ReaderPullState? _pull;
 
   void _toggleChrome() => setState(() => _chromeVisible = !_chromeVisible);
 
@@ -45,6 +48,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (shouldShow != _chromeVisible) {
       setState(() => _chromeVisible = shouldShow);
     }
+  }
+
+  void _onPullChanged(ReaderPullState? pull) {
+    if (pull == null && _pull == null) return;
+    setState(() {
+      _pull = pull;
+      if (pull != null) _chromeVisible = false;
+    });
   }
 
   List<BookBlock>? _blocksFor(int index, ZbfViewerState state) {
@@ -137,6 +148,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 _turningForward = false;
                                 cubit.previousPage();
                               },
+                              onPullChanged: _onPullChanged,
                             ),
                     ),
                   ),
@@ -150,16 +162,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     title: widget.handle.manifest.title,
                     chapterTitle: page.chapterTitle,
                     onBack: widget.onExit ?? () => context.pop(),
+                    onOpenContents: () => ReaderTocSheet.show(
+                      context,
+                      manifest: widget.handle.manifest,
+                      currentPage: index,
+                      onSelect: cubit.goToPage,
+                    ),
                   ),
                 ),
-                AppFadeOverlay.bottom(color: colors.paper, height: 200),
+                AppFadeOverlay.bottom(color: colors.paper, height: 135),
 
                 _ChromeSlot(
                   alignment: Alignment.bottomCenter,
                   visible: _chromeVisible,
                   fromTop: false,
-                  child: ReaderFooter(currentPage: index, totalPages: total),
+                  child: ReaderFooter(
+                    progress: total == 0 ? 0 : (index + 1) / total,
+                    currentPage: index,
+                    totalPages: total,
+                  ),
                 ),
+                ReaderPullIndicator(pull: _pull),
               ],
             );
           },

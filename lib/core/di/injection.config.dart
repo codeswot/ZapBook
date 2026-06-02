@@ -18,9 +18,12 @@ import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
+import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
+import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart'
+    as _i970;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'
@@ -51,6 +54,10 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/reader_setting
     as _i28;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i842;
+import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart'
+    as _i539;
+import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart'
+    as _i286;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -68,6 +75,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
+    gh.lazySingleton<_i1053.ClipboardService>(() => _i1053.ClipboardService());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );
@@ -76,6 +84,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i1.ZbfWriter>(() => ingestionModule.zbfWriter());
     gh.lazySingleton<_i1.ZbfReader>(() => ingestionModule.zbfReader());
+    gh.lazySingleton<_i539.HeadsUpCubit>(() => _i539.HeadsUpCubit());
     gh.lazySingleton<_i447.DeviceCapabilityService>(
       () => _i447.DeviceCapabilityServiceImpl(),
     );
@@ -85,14 +94,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i746.DocumentsDirectory>(
       () => const _i746.PathProviderDocumentsDirectory(),
     );
+    gh.lazySingleton<_i1012.AiService>(
+      () => _i1012.AiServiceImpl(
+        gh<_i460.SharedPreferences>(),
+        gh<_i447.DeviceCapabilityService>(),
+      ),
+    );
     gh.lazySingleton<_i465.ThemeCubit>(
       () => _i465.ThemeCubit(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i28.ReaderSettingsCubit>(
       () => _i28.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i1012.AiService>(
-      () => _i1012.AiServiceImpl(gh<_i460.SharedPreferences>()),
     );
     gh.factory<_i439.IngestionPageCubit>(
       () => _i439.IngestionPageCubit(gh<_i1034.FilePickerService>()),
@@ -111,6 +123,15 @@ extension GetItInjectableX on _i174.GetIt {
         _completer,
         initialTitle,
       ),
+    );
+    gh.factory<_i286.OnboardingCubit>(
+      () => _i286.OnboardingCubit(
+        gh<_i460.SharedPreferences>(),
+        gh<_i1053.ClipboardService>(),
+      ),
+    );
+    gh.factory<_i970.AiModelCubit>(
+      () => _i970.AiModelCubit(gh<_i1012.AiService>()),
     );
     gh.lazySingleton<_i865.BookIngestionRepository>(
       () => _i785.BookIngestionRepositoryImpl(

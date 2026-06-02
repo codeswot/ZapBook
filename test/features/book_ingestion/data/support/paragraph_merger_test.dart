@@ -3,7 +3,6 @@ import 'package:zapbook/features/book_ingestion/data/support/paragraph_merger.da
 import 'package:zapbook/zbf/zbf.dart';
 
 void main() {
-  // Long lines (>= 66% of the widest line) read as wraps; short ones as breaks.
   const wrapA = ParagraphBlock(
     text: 'It was the best of times, it was the worst of times, it was the',
   );
@@ -97,5 +96,107 @@ void main() {
     final merged = mergeReadingBlocks(const [wrapA]);
     expect(merged, hasLength(1));
     expect(merged.single, same(wrapA));
+  });
+
+  test('strips standalone page-number blocks', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: '6'),
+      wrapA,
+      wrapB,
+      ParagraphBlock(text: 'xiv'),
+      ParagraphBlock(text: 'Page 12'),
+    ]);
+
+    expect(merged, hasLength(1));
+    expect((merged.single as ParagraphBlock).text, startsWith('It was'));
+  });
+
+  test('strips empty paragraph and heading blocks', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: '   '),
+      HeadingBlock(level: 1, text: ''),
+      wrapA,
+    ]);
+
+    expect(merged, hasLength(1));
+    expect(merged.single, isA<ParagraphBlock>());
+  });
+
+  test('pageHasContent is false for noise-only pages', () {
+    expect(
+      pageHasContent(const [
+        ParagraphBlock(text: '5'),
+        ParagraphBlock(text: '   '),
+      ]),
+      isFalse,
+    );
+    expect(pageHasContent(const [wrapA]), isTrue);
+  });
+
+  test('detects a dot-leader table-of-contents page', () {
+    expect(
+      isTableOfContentsPage(const [
+        ParagraphBlock(text: 'Zaps and Nutzaps 78 ......................'),
+        ParagraphBlock(text: '7. Communities 81 .........................'),
+        ParagraphBlock(text: 'Digital Architecture 82 ..................'),
+        ParagraphBlock(text: 'Social Clusters 83 .......................'),
+      ]),
+      isTrue,
+    );
+  });
+
+  test('does not flag normal prose as a table of contents', () {
+    expect(
+      isTableOfContentsPage(const [wrapA, wrapB, wrapA]),
+      isFalse,
+    );
+  });
+
+  test('does not flag a short page as a table of contents', () {
+    expect(
+      isTableOfContentsPage(const [
+        ParagraphBlock(text: 'Chapter One ......... 5'),
+      ]),
+      isFalse,
+    );
+  });
+
+  test('rejoins a word split across two single-token blocks', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: 'Slicin'),
+      ParagraphBlock(text: 'g'),
+    ]);
+
+    expect(merged, hasLength(1));
+    expect((merged.single as ParagraphBlock).text, 'Slicing');
+  });
+
+  test('does not no-space-glue when the next token is capitalised', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: 'Slicin'),
+      ParagraphBlock(text: 'Word'),
+    ]);
+
+    final joined = merged.whereType<ParagraphBlock>().map((b) => b.text);
+    expect(joined, isNot(contains('SlicinWord')));
+  });
+
+  test('rejoins a single trailing letter onto a multi-word line', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: 'Read our full blog pos'),
+      ParagraphBlock(text: 't'),
+    ]);
+
+    expect(merged, hasLength(1));
+    expect((merged.single as ParagraphBlock).text, 'Read our full blog post');
+  });
+
+  test('does not glue a real word onto a multi-word line', () {
+    final merged = mergeReadingBlocks(const [
+      ParagraphBlock(text: 'The quick brown'),
+      ParagraphBlock(text: 'fox'),
+    ]);
+    final texts = merged.whereType<ParagraphBlock>().map((b) => b.text);
+    expect(texts, isNot(contains('The quick brownfox')));
   });
 }

@@ -131,7 +131,7 @@ class AppButton extends StatelessWidget {
         width: fullWidth ? double.infinity : null,
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: AppRadii.br999,
+          borderRadius: AppRadii.br10,
           border: Border.all(color: borderColor),
         ),
         child: content,

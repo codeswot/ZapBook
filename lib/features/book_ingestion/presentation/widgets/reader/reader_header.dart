@@ -6,12 +6,14 @@ class ReaderHeader extends StatelessWidget {
     required this.title,
     required this.chapterTitle,
     required this.onBack,
+    required this.onOpenContents,
     super.key,
   });
 
   final String title;
   final String chapterTitle;
   final VoidCallback onBack;
+  final VoidCallback onOpenContents;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +56,12 @@ class ReaderHeader extends StatelessWidget {
                       ),
                   ],
                 ),
+              ),
+              IconButton(
+                onPressed: onOpenContents,
+                icon: const Icon(Icons.list_rounded),
+                tooltip: 'Contents',
+                color: colors.ink,
               ),
             ],
           ),

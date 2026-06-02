@@ -1,6 +1,51 @@
 import 'package:zapbook/zbf/zbf.dart';
 
-List<BookBlock> mergeReadingBlocks(List<BookBlock> blocks) {
+final RegExp _pageNumberPattern = RegExp(
+  r'^[\s\-–—]*(?:\d{1,4}|[ivxlcdm]{1,7}|page\s+\d{1,4})[\s\-–—.]*$',
+  caseSensitive: false,
+);
+
+bool _isNoise(BookBlock block) {
+  if (block is ParagraphBlock) {
+    final text = block.text.trim();
+    if (text.isEmpty) return true;
+    if (_pageNumberPattern.hasMatch(text)) return true;
+    return false;
+  }
+  if (block is HeadingBlock) return block.text.trim().isEmpty;
+  if (block is CaptionBlock) return block.text.trim().isEmpty;
+  return false;
+}
+
+List<BookBlock> _stripNoise(List<BookBlock> blocks) =>
+    blocks.where((b) => !_isNoise(b)).toList();
+
+bool pageHasContent(List<BookBlock> blocks) => _stripNoise(blocks).isNotEmpty;
+
+final RegExp _dotLeaderPattern = RegExp(r'[.·•‣⋯]{2,}\s*\d{0,4}\s*$');
+
+bool _isDotLeaderLine(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return false;
+  return _dotLeaderPattern.hasMatch(trimmed);
+}
+
+bool isTableOfContentsPage(List<BookBlock> blocks) {
+  final lines = <String>[];
+  for (final block in _stripNoise(blocks)) {
+    if (block is ParagraphBlock) {
+      lines.add(block.text);
+    } else if (block is HeadingBlock) {
+      lines.add(block.text);
+    }
+  }
+  if (lines.length < 3) return false;
+  final leaders = lines.where(_isDotLeaderLine).length;
+  return leaders / lines.length >= 0.5;
+}
+
+List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
+  final blocks = _stripNoise(rawBlocks);
   if (blocks.length < 2) return List.unmodifiable(blocks);
 
   final maxLen = blocks.whereType<ParagraphBlock>().fold<int>(
@@ -29,7 +74,9 @@ List<BookBlock> mergeReadingBlocks(List<BookBlock> blocks) {
       pending = block;
       continue;
     }
-    if (_continues(pending!, widthThreshold)) {
+    if (_isWordFragmentSplit(pending!, block)) {
+      pending = _join(pending!, block, noSpace: true);
+    } else if (_continues(pending!, widthThreshold)) {
       pending = _join(pending!, block);
     } else {
       flush();
@@ -39,6 +86,23 @@ List<BookBlock> mergeReadingBlocks(List<BookBlock> blocks) {
   flush();
 
   return List.unmodifiable(result);
+}
+
+final RegExp _whitespace = RegExp(r'\s');
+final RegExp _endsLetter = RegExp(r'[A-Za-z]$');
+
+bool _isWordFragmentSplit(ParagraphBlock previous, ParagraphBlock next) {
+  final prev = previous.text.trimRight();
+  final cont = next.text.trim();
+  if (prev.isEmpty || cont.isEmpty) return false;
+  if (_whitespace.hasMatch(cont)) return false;
+  if (!_endsLetter.hasMatch(prev)) return false;
+  if (!RegExp(r'^[a-z]').hasMatch(cont)) return false;
+
+  final prevSingleToken = !_whitespace.hasMatch(prev);
+  if (prevSingleToken) return true;
+
+  return cont.length == 1 && cont != 'a' && cont != 'i';
 }
 
 bool _continues(ParagraphBlock previous, int widthThreshold) {
@@ -67,12 +131,12 @@ const Set<String> _terminators = {
   '»',
 };
 
-ParagraphBlock _join(ParagraphBlock a, ParagraphBlock b) {
+ParagraphBlock _join(ParagraphBlock a, ParagraphBlock b, {bool noSpace = false}) {
   final aText = a.text.trimRight();
   final hyphenated = aText.endsWith('-');
   final left = hyphenated ? aText.substring(0, aText.length - 1) : aText;
-  final separator = hyphenated ? '' : ' ';
-  final mergedText = '$left$separator${b.text.trimLeft()}';
+  final glue = (hyphenated || noSpace) ? '' : ' ';
+  final mergedText = '$left$glue${b.text.trimLeft()}';
 
   final aRuns = _runsOf(a);
   final bRuns = _runsOf(b);
@@ -80,7 +144,7 @@ ParagraphBlock _join(ParagraphBlock a, ParagraphBlock b) {
   if (aRuns != null && bRuns != null) {
     mergedRuns = [
       ..._trimTrailingHyphen(aRuns, hyphenated),
-      if (!hyphenated) const TextRun(' '),
+      if (!hyphenated && !noSpace) const TextRun(' '),
       ...bRuns,
     ];
   }

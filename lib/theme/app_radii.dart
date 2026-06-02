@@ -6,6 +6,7 @@ class AppRadii {
   static const double r8 = 8.0;
   static const double r10 = 10.0;
   static const double r12 = 12.0;
+  static const double r14 = 14.0;
   static const double r16 = 16.0;
   static const double r18 = 18.0;
   static const double r20 = 20.0;
@@ -17,6 +18,7 @@ class AppRadii {
   static const Radius rad8 = Radius.circular(r8);
   static const Radius rad10 = Radius.circular(r10);
   static const Radius rad12 = Radius.circular(r12);
+  static const Radius rad14 = Radius.circular(r14);
   static const Radius rad16 = Radius.circular(r16);
   static const Radius rad18 = Radius.circular(r18);
   static const Radius rad20 = Radius.circular(r20);
@@ -28,6 +30,7 @@ class AppRadii {
   static const BorderRadius br8 = BorderRadius.all(rad8);
   static const BorderRadius br10 = BorderRadius.all(rad10);
   static const BorderRadius br12 = BorderRadius.all(rad12);
+  static const BorderRadius br14 = BorderRadius.all(rad14);
   static const BorderRadius br16 = BorderRadius.all(rad16);
   static const BorderRadius br18 = BorderRadius.all(rad18);
   static const BorderRadius br20 = BorderRadius.all(rad20);

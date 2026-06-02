@@ -11,10 +11,19 @@ class ThemeCubit extends Cubit<ThemeMode> {
 
   static const _key = 'app_theme_dark';
 
-  static ThemeMode _load(SharedPreferences prefs) =>
-      (prefs.getBool(_key) ?? false) ? ThemeMode.dark : ThemeMode.light;
+  static ThemeMode _load(SharedPreferences prefs) {
+    final isDark = prefs.getBool(_key);
+    if (isDark == null) {
+      return ThemeMode.system;
+    }
+    return isDark ? ThemeMode.dark : ThemeMode.light;
+  }
 
-  bool get isDark => state == ThemeMode.dark;
+  bool get isDark =>
+      state == ThemeMode.dark ||
+      (state == ThemeMode.system &&
+          WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+              Brightness.dark);
 
   void toggle() {
     final next = isDark ? ThemeMode.light : ThemeMode.dark;

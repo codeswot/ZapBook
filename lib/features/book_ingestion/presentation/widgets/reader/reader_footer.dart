@@ -8,11 +8,13 @@ import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/read
 
 class ReaderFooter extends StatelessWidget {
   const ReaderFooter({
+    required this.progress,
     required this.currentPage,
     required this.totalPages,
     super.key,
   });
 
+  final double progress;
   final int currentPage;
   final int totalPages;
 
@@ -20,7 +22,6 @@ class ReaderFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final value = totalPages == 0 ? 0.0 : (currentPage + 1) / totalPages;
     final themeCubit = context.read<ThemeCubit>();
 
     return Container(
@@ -35,8 +36,6 @@ class ReaderFooter extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ReaderProgress(value: value),
-              const SizedBox(height: 4),
               Row(
                 children: [
                   _FooterIconButton(
@@ -45,10 +44,9 @@ class ReaderFooter extends StatelessWidget {
                     onTap: context.read<ReaderSettingsCubit>().cycleFont,
                   ),
                   Expanded(
-                    child: Text(
-                      'Page ${currentPage + 1} of $totalPages',
-                      textAlign: TextAlign.center,
-                      style: typography.caption.copyWith(color: colors.slate),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: ReaderProgress(value: progress),
                     ),
                   ),
                   BlocBuilder<ThemeCubit, ThemeMode>(
@@ -63,6 +61,13 @@ class ReaderFooter extends StatelessWidget {
                     },
                   ),
                 ],
+              ),
+              Text(
+                '${currentPage + 1} / $totalPages',
+                style: typography.caption.copyWith(
+                  color: colors.slate2,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ],
           ),
