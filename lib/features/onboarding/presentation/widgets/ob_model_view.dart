@@ -24,11 +24,9 @@ class ObModelView extends StatelessWidget {
     final isReady = status == AiModelStatus.ready;
     final isCapable = capability != DeviceCapability.incapable;
 
-    final modelName = capability == DeviceCapability.capable4B
-        ? 'Gemma 3n · 4B'
-        : 'Gemma 3n · 2B';
-    final modelSize = capability == DeviceCapability.capable4B
-        ? '1.1 GB'
+    final modelName = capability?.modelName;
+    final modelSize = capability?.expectedFileSize != null
+        ? '${(capability!.expectedFileSize! / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB'
         : '650 MB';
 
     return Column(
@@ -41,7 +39,8 @@ class ObModelView extends StatelessWidget {
           accentLine: context.colors.plumTint2,
           over: "Step 3 · On-device AI",
           title: "Reading checks, on your phone",
-          description: "ZapBook uses a small AI model to turn books into clean pages and write the milestone quizzes — running entirely on your device.",
+          description:
+              "ZapBook uses a small AI model to turn books into clean pages and write the milestone quizzes — running entirely on your device.",
         ),
         const SizedBox(height: 26),
         Container(
@@ -63,7 +62,11 @@ class ObModelView extends StatelessWidget {
                       borderRadius: AppRadii.br14,
                       border: Border.all(color: context.colors.plumTint2),
                     ),
-                    child: Icon(LucideIcons.sparkles, color: context.colors.plum, size: 24),
+                    child: Icon(
+                      LucideIcons.sparkles,
+                      color: context.colors.plum,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -71,7 +74,7 @@ class ObModelView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          modelName,
+                          modelName ?? 'None',
                           style: context.typography.bodyL.copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.colors.ink,
@@ -90,18 +93,27 @@ class ObModelView extends StatelessWidget {
                   const SizedBox(width: 8),
                   if (isCapable)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 7,
+                      ),
                       decoration: BoxDecoration(
                         color: isReady
                             ? context.colors.positive.withValues(alpha: 0.15)
                             : context.colors.positive.withValues(alpha: 0.1),
                         borderRadius: AppRadii.br999,
-                        border: Border.all(color: context.colors.positive.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: context.colors.positive.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(LucideIcons.check, size: 13, color: context.colors.positive),
+                          Icon(
+                            LucideIcons.check,
+                            size: 13,
+                            color: context.colors.positive,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             isReady ? "Ready" : "Supported",
@@ -132,8 +144,12 @@ class ObModelView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      status == AiModelStatus.verifying ? "Verifying..." : "Downloading model...",
-                      style: context.typography.bodyS.copyWith(color: context.colors.slate),
+                      status == AiModelStatus.verifying
+                          ? "Verifying..."
+                          : "Downloading model...",
+                      style: context.typography.bodyS.copyWith(
+                        color: context.colors.slate,
+                      ),
                     ),
                     Text(
                       "${((aiState?.downloadProgress ?? 0.0) * 100).toInt()}%",
@@ -153,7 +169,8 @@ class ObModelView extends StatelessWidget {
         ObBanner(
           icon: LucideIcons.info,
           title: "Nothing leaves your device",
-          description: "Books, quizzes, and your reading are processed locally. ZapBook never uploads them.",
+          description:
+              "Books, quizzes, and your reading are processed locally. ZapBook never uploads them.",
           backgroundColor: context.colors.plumTint,
           iconColor: context.colors.plum,
           borderColor: context.colors.plum.withValues(alpha: 0.2),

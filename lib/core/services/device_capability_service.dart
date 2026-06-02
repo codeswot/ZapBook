@@ -16,6 +16,28 @@ extension DeviceCapabilityExtension on DeviceCapability {
     }
   }
 
+  String? get modelName {
+    switch (this) {
+      case DeviceCapability.capable2B:
+        return 'Gemma 4 E2B';
+      case DeviceCapability.capable4B:
+        return 'Gemma 4 E4B';
+      case DeviceCapability.incapable:
+        return null;
+    }
+  }
+
+  int? get expectedFileSize {
+    switch (this) {
+      case DeviceCapability.capable2B:
+        return 2576980377;
+      case DeviceCapability.capable4B:
+        return 3650722208;
+      case DeviceCapability.incapable:
+        return null;
+    }
+  }
+
   String? get expectedHash {
     switch (this) {
       case DeviceCapability.capable2B:

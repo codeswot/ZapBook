@@ -8,7 +8,7 @@ class AiVerifyingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBanner(
-      backgroundColor: context.colors.mintTint.withValues(alpha: 0.2),
+      backgroundColor: context.colors.mintTint.withValues(alpha: 0.6),
       leading: SizedBox(
         width: 16,
         height: 16,
@@ -19,9 +19,7 @@ class AiVerifyingBanner extends StatelessWidget {
       ),
       title: Text(
         'Verifying AI Model hash...',
-        style: context.typography.bodyS.copyWith(
-          color: context.colors.mint2,
-        ),
+        style: context.typography.bodyS.copyWith(color: context.colors.mint2),
       ),
     );
   }

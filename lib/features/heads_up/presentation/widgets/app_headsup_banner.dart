@@ -16,6 +16,9 @@ class AppHeadsUpBanner extends StatelessWidget {
             ? const SizedBox.shrink()
             : Stack(children: activeBanners.map((m) => m.child).toList());
 
+        final String key = activeBanners.isNotEmpty
+            ? activeBanners.last.id
+            : 'empty';
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
           transitionBuilder: (child, animation) {
@@ -27,7 +30,7 @@ class AppHeadsUpBanner extends StatelessWidget {
               child: FadeTransition(opacity: animation, child: child),
             );
           },
-          child: KeyedSubtree(key: ValueKey(activeBanners), child: child),
+          child: KeyedSubtree(key: ValueKey(key), child: child),
         );
       },
     );

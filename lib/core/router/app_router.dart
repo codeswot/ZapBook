@@ -4,13 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/features/book_ingestion/presentation/pages/ingestion_page.dart';
 import 'package:zapbook/features/book_ingestion/presentation/pages/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
-import 'package:zapbook/features/ai_model/presentation/widgets/ai_download_banner.dart';
-import 'package:zapbook/features/heads_up/domain/models/heads_up_message.dart';
+import 'package:zapbook/features/ai_model/presentation/widgets/ai_model_headsup_bridge.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
 
@@ -66,7 +64,7 @@ class AppShellRoute extends ShellRouteData {
         BlocProvider<AiModelCubit>(create: (_) => getIt<AiModelCubit>()),
         BlocProvider<HeadsUpCubit>(create: (_) => getIt<HeadsUpCubit>()),
       ],
-      child: _ShellStateBridge(
+      child: AiModelHeadsUpBridge(
         child: Scaffold(
           body: Column(
             children: [
@@ -97,48 +95,5 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ZbfViewerPage(zbfPath: zbfPath);
-  }
-}
-
-class _ShellStateBridge extends StatefulWidget {
-  final Widget child;
-
-  const _ShellStateBridge({required this.child});
-
-  @override
-  State<_ShellStateBridge> createState() => _ShellStateBridgeState();
-}
-
-class _ShellStateBridgeState extends State<_ShellStateBridge> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _syncAiBanner(context.read<AiModelCubit>().state);
-      }
-    });
-  }
-
-  void _syncAiBanner(AiModelState aiState) {
-    final headsUpCubit = context.read<HeadsUpCubit>();
-    if (aiState.status != AiModelStatus.ready && !aiState.bannerDismissed) {
-      headsUpCubit.showBanner(
-        HeadsUpMessage(
-          id: 'ai_model',
-          child: const AiDownloadBanner(),
-        ),
-      );
-    } else {
-      headsUpCubit.dismissBanner('ai_model');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<AiModelCubit, AiModelState>(
-      listener: (context, state) => _syncAiBanner(state),
-      child: widget.child,
-    );
   }
 }

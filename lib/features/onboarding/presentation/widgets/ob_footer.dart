@@ -136,7 +136,11 @@ class ObFooter extends StatelessWidget {
             label: (isReady || isDownloading) ? "Continue" : "Download model",
             fullWidth: true,
             variant: AppButtonVariant.purple,
-            iconRight: isReady ? LucideIcons.check : LucideIcons.download,
+            iconRight: isReady
+                ? LucideIcons.check
+                : isDownloading
+                ? LucideIcons.arrowRight
+                : LucideIcons.download,
             onTap: (isReady || isDownloading)
                 ? onComplete
                 : () async {

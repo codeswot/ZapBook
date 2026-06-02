@@ -113,6 +113,10 @@ class AiServiceImpl implements AiService {
 
     FileDownloader().registerCallbacks(
       taskProgressCallback: (update) {
+        if (_currentState.status == AiModelStatus.verifying ||
+            _currentState.status == AiModelStatus.ready) {
+          return;
+        }
         if (update.progress >= 0.0 && update.progress <= 1.0) {
           _prefs.setDouble(_progressKey, update.progress);
           _updateState(
@@ -126,6 +130,9 @@ class AiServiceImpl implements AiService {
         }
       },
       taskStatusCallback: (update) async {
+        if (_currentState.status == AiModelStatus.ready) {
+          return;
+        }
         if (update.status == TaskStatus.complete) {
           await _handleDownloadComplete(update.task as DownloadTask);
         } else if (update.status == TaskStatus.failed ||
@@ -144,16 +151,20 @@ class AiServiceImpl implements AiService {
 
     await FileDownloader().trackTasks();
 
-    if (initialStatus == AiModelStatus.downloading ||
-        initialStatus == AiModelStatus.paused ||
-        initialStatus == AiModelStatus.verifying) {
+    if (initialStatus == AiModelStatus.verifying) {
+      final task = DownloadTask(
+        url: 'dummy',
+        filename: 'gemma_model.litertlm',
+        directory: 'ai_models',
+        baseDirectory: BaseDirectory.applicationDocuments,
+        updates: Updates.statusAndProgress,
+      );
+      unawaited(_handleDownloadComplete(task));
+    } else if (initialStatus == AiModelStatus.downloading ||
+        initialStatus == AiModelStatus.paused) {
       if (taskId != null) {
         final task = await FileDownloader().taskForId(taskId);
-        if (task != null &&
-            task is DownloadTask &&
-            initialStatus == AiModelStatus.verifying) {
-          unawaited(_handleDownloadComplete(task));
-        } else if (task == null) {
+        if (task == null) {
           _updateState(const AiModelState(status: AiModelStatus.notSet));
           await _clearPrefs();
         }
