@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zapbook/features/book_ingestion/presentation/widgets/zb_shimmer.dart';
+import 'package:zapbook/features/library/presentation/widgets/zb_shimmer.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 void main() {

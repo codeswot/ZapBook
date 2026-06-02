@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/book_ingestion/presentation/pages/ingestion_page.dart';
-import 'package:zapbook/features/book_ingestion/presentation/pages/zbf_viewer_page.dart';
+import 'package:zapbook/app/app_shell_page.dart';
+import 'package:zapbook/features/library/presentation/pages/library_page.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
-import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
-import 'package:zapbook/features/ai_model/presentation/widgets/ai_model_headsup_bridge.dart';
-import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
-import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
 
 part 'app_router.g.dart';
 
@@ -50,50 +46,111 @@ class OnboardingRoute extends GoRouteData with $OnboardingRoute {
 
 @TypedShellRoute<AppShellRoute>(
   routes: <TypedRoute<RouteData>>[
-    TypedGoRoute<IngestionRoute>(path: '/'),
-    TypedGoRoute<ZbfViewerRoute>(path: '/viewer'),
+    TypedGoRoute<HomeRoute>(path: '/'),
+    TypedGoRoute<CirclesRoute>(path: '/circles'),
+    TypedGoRoute<CheersRoute>(path: '/cheers'),
+    TypedGoRoute<LibraryRoute>(path: '/library'),
+    TypedGoRoute<YouRoute>(path: '/you'),
   ],
 )
 class AppShellRoute extends ShellRouteData {
   const AppShellRoute();
+  @override
+  Widget builder(BuildContext context, GoRouterState state, Widget navigator) =>
+      AppShellPage(location: state.matchedLocation, child: navigator);
+}
+
+class LibraryRoute extends GoRouteData with $LibraryRoute {
+  const LibraryRoute();
 
   @override
-  Widget builder(BuildContext context, GoRouterState state, Widget navigator) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AiModelCubit>(create: (_) => getIt<AiModelCubit>()),
-        BlocProvider<HeadsUpCubit>(create: (_) => getIt<HeadsUpCubit>()),
-      ],
-      child: AiModelHeadsUpBridge(
-        child: Scaffold(
-          body: Column(
-            children: [
-              const AppHeadsUpBanner(),
-              Expanded(child: navigator),
-            ],
-          ),
-        ),
-      ),
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: const LibraryPage(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          FadeTransition(opacity: animation, child: child),
     );
   }
 }
 
-class IngestionRoute extends GoRouteData with $IngestionRoute {
-  const IngestionRoute();
+class HomeRoute extends GoRouteData with $HomeRoute {
+  const HomeRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const IngestionPage();
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: const Scaffold(
+        body: Center(
+          child: Text('Home (Feed & Reading Circles) Tab Placeholder'),
+        ),
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
   }
 }
 
+class CirclesRoute extends GoRouteData with $CirclesRoute {
+  const CirclesRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: const Scaffold(
+        body: Center(child: Text('Circles Tab Placeholder')),
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+  }
+}
+
+class CheersRoute extends GoRouteData with $CheersRoute {
+  const CheersRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: const Scaffold(
+        body: Center(child: Text('Cheers Tab Placeholder')),
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+  }
+}
+
+class YouRoute extends GoRouteData with $YouRoute {
+  const YouRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: const Scaffold(
+        body: Center(child: Text('You Profile Tab Placeholder')),
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+  }
+}
+
+@TypedGoRoute<ZbfViewerRoute>(path: '/viewer')
 class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
   final String zbfPath;
 
   const ZbfViewerRoute({required this.zbfPath});
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return ZbfViewerPage(zbfPath: zbfPath);
-  }
+  Widget build(BuildContext context, GoRouterState state) =>
+      ZbfViewerPage(zbfPath: zbfPath);
 }

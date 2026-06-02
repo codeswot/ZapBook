@@ -37,6 +37,7 @@ class ReaderTocSheet extends StatelessWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: context.colors.transparent,
       builder: (_) => ReaderTocSheet(

@@ -25,6 +25,7 @@ class BookWizardSheet extends StatefulWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: context.colors.transparent,
       builder: (_) => BlocProvider<BookWizardCubit>(

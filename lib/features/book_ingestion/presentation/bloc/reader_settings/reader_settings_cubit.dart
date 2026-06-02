@@ -3,7 +3,7 @@ import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:zapbook/features/book_ingestion/presentation/bloc/reader_settings/reader_settings_state.dart';
-import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reading_style.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reading_style.dart';
 
 @LazySingleton()
 class ReaderSettingsCubit extends Cubit<ReaderSettingsState> {

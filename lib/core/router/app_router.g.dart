@@ -6,7 +6,11 @@ part of 'app_router.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$onboardingRoute, $appShellRoute];
+List<RouteBase> get $appRoutes => [
+  $onboardingRoute,
+  $appShellRoute,
+  $zbfViewerRoute,
+];
 
 RouteBase get $onboardingRoute => GoRouteData.$route(
   path: '/onboarding',
@@ -37,8 +41,11 @@ mixin $OnboardingRoute on GoRouteData {
 RouteBase get $appShellRoute => ShellRouteData.$route(
   factory: $AppShellRouteExtension._fromState,
   routes: [
-    GoRouteData.$route(path: '/', factory: $IngestionRoute._fromState),
-    GoRouteData.$route(path: '/viewer', factory: $ZbfViewerRoute._fromState),
+    GoRouteData.$route(path: '/', factory: $HomeRoute._fromState),
+    GoRouteData.$route(path: '/circles', factory: $CirclesRoute._fromState),
+    GoRouteData.$route(path: '/cheers', factory: $CheersRoute._fromState),
+    GoRouteData.$route(path: '/library', factory: $LibraryRoute._fromState),
+    GoRouteData.$route(path: '/you', factory: $YouRoute._fromState),
   ],
 );
 
@@ -46,9 +53,8 @@ extension $AppShellRouteExtension on AppShellRoute {
   static AppShellRoute _fromState(GoRouterState state) => const AppShellRoute();
 }
 
-mixin $IngestionRoute on GoRouteData {
-  static IngestionRoute _fromState(GoRouterState state) =>
-      const IngestionRoute();
+mixin $HomeRoute on GoRouteData {
+  static HomeRoute _fromState(GoRouterState state) => const HomeRoute();
 
   @override
   String get location => GoRouteData.$location('/');
@@ -66,6 +72,89 @@ mixin $IngestionRoute on GoRouteData {
   @override
   void replace(BuildContext context) => context.replace(location);
 }
+
+mixin $CirclesRoute on GoRouteData {
+  static CirclesRoute _fromState(GoRouterState state) => const CirclesRoute();
+
+  @override
+  String get location => GoRouteData.$location('/circles');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CheersRoute on GoRouteData {
+  static CheersRoute _fromState(GoRouterState state) => const CheersRoute();
+
+  @override
+  String get location => GoRouteData.$location('/cheers');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $LibraryRoute on GoRouteData {
+  static LibraryRoute _fromState(GoRouterState state) => const LibraryRoute();
+
+  @override
+  String get location => GoRouteData.$location('/library');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $YouRoute on GoRouteData {
+  static YouRoute _fromState(GoRouterState state) => const YouRoute();
+
+  @override
+  String get location => GoRouteData.$location('/you');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $zbfViewerRoute =>
+    GoRouteData.$route(path: '/viewer', factory: $ZbfViewerRoute._fromState);
 
 mixin $ZbfViewerRoute on GoRouteData {
   static ZbfViewerRoute _fromState(GoRouterState state) =>

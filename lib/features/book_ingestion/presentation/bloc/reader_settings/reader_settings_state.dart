@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reading_style.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reading_style.dart';
 
 class ReaderSettingsState extends Equatable {
   const ReaderSettingsState({this.font = ReaderFont.sans});

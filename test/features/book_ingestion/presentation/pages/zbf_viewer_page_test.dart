@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/txt_extractor.dart';
-import 'package:zapbook/features/book_ingestion/presentation/widgets/zbf_book_view.dart';
+import 'package:zapbook/features/library/presentation/widgets/zbf_book_view.dart';
 import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/zbf/zbf.dart';

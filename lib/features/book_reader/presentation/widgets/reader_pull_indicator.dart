@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
-import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_body.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.dart';
 
 class ReaderPullIndicator extends StatelessWidget {
   const ReaderPullIndicator({required this.pull, super.key});

@@ -7,7 +7,7 @@ import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dar
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_event.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_state.dart';
-import 'package:zapbook/features/book_ingestion/presentation/widgets/ingestion_progress_widget.dart';
+import 'package:zapbook/features/library/presentation/widgets/ingestion_progress_widget.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/zbf/zbf.dart';
 

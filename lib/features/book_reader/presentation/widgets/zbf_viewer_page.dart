@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/zbf/zbf.dart';
-
-import 'package:zapbook/features/book_ingestion/presentation/widgets/reader/reader_screen.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reader_screen.dart';
 import 'package:zapbook/core/di/injection.dart';
 
 class ZbfViewerPage extends StatelessWidget {
