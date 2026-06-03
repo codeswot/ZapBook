@@ -8,6 +8,7 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
 
 class LibraryBody extends StatelessWidget {
   const LibraryBody({super.key});
@@ -25,7 +26,7 @@ class LibraryBody extends StatelessWidget {
             };
 
             if (library is LibraryLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const LibraryShimmer();
             }
             if (books.isEmpty && jobs.isEmpty) {
               return const SingleChildScrollView(child: LibraryEmpty());
