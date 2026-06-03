@@ -20,6 +20,7 @@ import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
+import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart'
@@ -66,10 +67,14 @@ import 'package:zapbook/features/library/domain/usecases/backfill_library.dart'
     as _i887;
 import 'package:zapbook/features/library/domain/usecases/delete_library_book.dart'
     as _i1038;
+import 'package:zapbook/features/library/domain/usecases/find_book_by_content_hash.dart'
+    as _i190;
 import 'package:zapbook/features/library/domain/usecases/get_library_book.dart'
     as _i807;
 import 'package:zapbook/features/library/domain/usecases/touch_book_opened.dart'
     as _i296;
+import 'package:zapbook/features/library/domain/usecases/update_book_metadata.dart'
+    as _i96;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
     as _i1024;
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart'
@@ -97,6 +102,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
     gh.lazySingleton<_i1053.ClipboardService>(() => _i1053.ClipboardService());
+    gh.lazySingleton<_i917.FileHasher>(() => const _i917.FileHasher());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );
@@ -184,11 +190,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1038.DeleteLibraryBook>(
       () => _i1038.DeleteLibraryBook(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i190.FindBookByContentHash>(
+      () => _i190.FindBookByContentHash(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i807.GetLibraryBook>(
       () => _i807.GetLibraryBook(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i296.TouchBookOpened>(
       () => _i296.TouchBookOpened(gh<_i516.LibraryRepository>()),
+    );
+    gh.factory<_i96.UpdateBookMetadata>(
+      () => _i96.UpdateBookMetadata(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i1024.WatchLibraryBooks>(
       () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
@@ -197,6 +209,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i107.LibraryCubit(
         gh<_i1024.WatchLibraryBooks>(),
         gh<_i887.BackfillLibrary>(),
+        gh<_i296.TouchBookOpened>(),
       ),
     );
     gh.factory<_i605.IngestBook>(
@@ -206,6 +219,8 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i327.IngestionQueueCubit(
         gh<_i605.IngestBook>(),
         gh<_i1071.AddBookToLibrary>(),
+        gh<_i917.FileHasher>(),
+        gh<_i190.FindBookByContentHash>(),
       ),
     );
     return this;

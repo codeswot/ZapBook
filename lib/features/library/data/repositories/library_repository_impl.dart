@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
@@ -40,10 +42,20 @@ final class LibraryRepositoryImpl implements LibraryRepository {
   }
 
   @override
-  Future<LibraryBook> addBookFromIngestion(ZbfBook book, String zbfPath) {
+  Future<LibraryBook?> findByContentHash(String contentHash) async {
+    final row = await _dao.getByContentHash(contentHash);
+    return row == null ? null : _toEntity(row);
+  }
+
+  @override
+  Future<LibraryBook> addBookFromIngestion(
+    ZbfBook book,
+    String zbfPath, {
+    String? contentHash,
+  }) {
     final manifest = book.manifest;
     final coverBytes = book.assets[manifest.coverAsset];
-    return _index(manifest, zbfPath, coverBytes);
+    return _index(manifest, zbfPath, coverBytes, contentHash: contentHash);
   }
 
   @override
@@ -89,11 +101,89 @@ final class LibraryRepositoryImpl implements LibraryRepository {
     }
   }
 
+  @override
+  Future<LibraryBook> updateBookMetadata(
+    String id, {
+    required String title,
+    String? author,
+    String? genre,
+    Uint8List? coverImage,
+  }) async {
+    final row = await _dao.getById(id);
+    if (row == null) {
+      throw StateError('Book $id not found');
+    }
+    final cleanTitle = title.trim().isEmpty ? 'Untitled' : title.trim();
+    final cleanAuthor = (author ?? '').trim();
+    final cleanGenre = (genre ?? '').trim().isEmpty ? null : genre!.trim();
+
+    await _rewriteManifest(
+      zbfPath: row.zbfPath,
+      title: cleanTitle,
+      author: cleanAuthor,
+      genre: cleanGenre,
+      coverImage: coverImage,
+    );
+
+    var coverPath = row.coverPath;
+    if (coverImage != null) {
+      coverPath = await _coverStore.writeCover(id, coverImage);
+    }
+
+    await _dao.updateMetadata(
+      id,
+      title: cleanTitle,
+      author: cleanAuthor,
+      genre: cleanGenre,
+      coverPath: coverPath,
+    );
+    final updated = await _dao.getById(id);
+    return _toEntity(updated!);
+  }
+
+  Future<void> _rewriteManifest({
+    required String zbfPath,
+    required String title,
+    required String author,
+    required String? genre,
+    Uint8List? coverImage,
+  }) async {
+    final file = File(zbfPath);
+    final source = ZipDecoder().decodeBytes(await file.readAsBytes());
+    final manifest = BookManifest.fromJson(
+      jsonDecode(utf8.decode(source.findFile('manifest.json')!.content))
+          as Map<String, Object?>,
+    ).copyWith(title: title, author: author, genre: genre);
+    final coverAsset = manifest.coverAsset;
+
+    final output = Archive();
+    for (final entry in source.files) {
+      if (entry.name == 'manifest.json') {
+        continue;
+      }
+      if (coverImage != null && entry.name == coverAsset) {
+        continue;
+      }
+      output.addFile(ArchiveFile(entry.name, entry.size, entry.content));
+    }
+    final manifestBytes = utf8.encode(jsonEncode(manifest.toJson()));
+    output.addFile(
+      ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
+    );
+    if (coverImage != null) {
+      output.addFile(
+        ArchiveFile(coverAsset, coverImage.length, coverImage),
+      );
+    }
+    await file.writeAsBytes(ZipEncoder().encodeBytes(output), flush: true);
+  }
+
   Future<LibraryBook> _index(
     BookManifest manifest,
     String zbfPath,
-    List<int>? coverBytes,
-  ) async {
+    List<int>? coverBytes, {
+    String? contentHash,
+  }) async {
     final coverPath = await _coverStore.writeCover(
       manifest.id,
       coverBytes == null ? null : Uint8List.fromList(coverBytes),
@@ -104,6 +194,7 @@ final class LibraryRepositoryImpl implements LibraryRepository {
         title: manifest.title,
         author: manifest.author,
         genre: Value(manifest.genre),
+        contentHash: Value(contentHash),
         sourceFormat: manifest.sourceFormat.wireValue,
         pageCount: manifest.pageCount,
         chapterCount: manifest.chapterCount,
@@ -135,6 +226,7 @@ final class LibraryRepositoryImpl implements LibraryRepository {
       createdAt: row.createdAt,
       addedAt: row.addedAt,
       lastOpenedAt: row.lastOpenedAt,
+      contentHash: row.contentHash,
     );
   }
 }

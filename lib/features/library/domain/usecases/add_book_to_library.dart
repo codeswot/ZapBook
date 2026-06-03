@@ -10,6 +10,10 @@ final class AddBookToLibrary {
 
   final LibraryRepository _repository;
 
-  Future<LibraryBook> call(ZbfBook book, String zbfPath) =>
-      _repository.addBookFromIngestion(book, zbfPath);
+  Future<LibraryBook> call(
+    ZbfBook book,
+    String zbfPath, {
+    String? contentHash,
+  }) =>
+      _repository.addBookFromIngestion(book, zbfPath, contentHash: contentHash);
 }

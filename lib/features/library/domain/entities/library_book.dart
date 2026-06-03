@@ -18,6 +18,7 @@ final class LibraryBook extends Equatable {
     required this.createdAt,
     required this.addedAt,
     this.lastOpenedAt,
+    this.contentHash,
   });
 
   final String id;
@@ -34,6 +35,7 @@ final class LibraryBook extends Equatable {
   final DateTime createdAt;
   final DateTime addedAt;
   final DateTime? lastOpenedAt;
+  final String? contentHash;
 
   @override
   List<Object?> get props => [
@@ -51,5 +53,6 @@ final class LibraryBook extends Equatable {
     createdAt,
     addedAt,
     lastOpenedAt,
+    contentHash,
   ];
 }

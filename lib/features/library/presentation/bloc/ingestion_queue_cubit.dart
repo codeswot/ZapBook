@@ -10,27 +10,51 @@ import 'package:zapbook/features/book_ingestion/domain/entities/ingestion_progre
 import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
 import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dart';
 import 'package:zapbook/features/book_ingestion/domain/usecases/ingest_book.dart';
+import 'package:zapbook/core/services/file_hasher.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
+import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/domain/enums/ingestion_job_status.dart';
 import 'package:zapbook/features/library/domain/usecases/add_book_to_library.dart';
+import 'package:zapbook/features/library/domain/usecases/find_book_by_content_hash.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_state.dart';
 
 @injectable
 class IngestionQueueCubit extends Cubit<IngestionQueueState> {
-  IngestionQueueCubit(this._ingestBook, this._addBookToLibrary)
-    : super(const IngestionQueueState());
+  IngestionQueueCubit(
+    this._ingestBook,
+    this._addBookToLibrary,
+    this._fileHasher,
+    this._findByContentHash,
+  ) : super(const IngestionQueueState());
 
   final IngestBook _ingestBook;
   final AddBookToLibrary _addBookToLibrary;
+  final FileHasher _fileHasher;
+  final FindBookByContentHash _findByContentHash;
 
   static const int maxConcurrent = 3;
 
   final Queue<_PendingFile> _pending = Queue<_PendingFile>();
   final Map<String, StreamSubscription<IngestionProgress>> _running = {};
+  final Map<String, String> _hashByJob = {};
 
-  void enqueue(File file, {Future<WizardData>? wizardDataFuture}) {
+  /// Hashes [file] and looks up an already-imported book with the same bytes.
+  /// Returns the hash plus the existing book (null when not a duplicate).
+  Future<({String hash, LibraryBook? existing})> findDuplicate(
+    File file,
+  ) async {
+    final hash = await _fileHasher.sha256OfFile(file);
+    final existing = await _findByContentHash(hash);
+    return (hash: hash, existing: existing);
+  }
+
+  void enqueue(
+    File file, {
+    Future<WizardData>? wizardDataFuture,
+    String? contentHash,
+  }) {
     final job = IngestionJob(id: Ulid().toString(), fileName: _nameOf(file));
-    _pending.add(_PendingFile(job.id, file, wizardDataFuture));
+    _pending.add(_PendingFile(job.id, file, wizardDataFuture, contentHash));
     emit(state.upsert(job));
     _pump();
   }
@@ -62,6 +86,9 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
         (job) => job.copyWith(status: IngestionJobStatus.running),
       ),
     );
+    if (pending.contentHash != null) {
+      _hashByJob[pending.jobId] = pending.contentHash!;
+    }
     _running[pending.jobId] =
         _ingestBook(
           pending.file,
@@ -104,7 +131,11 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
       return;
     }
     try {
-      final added = await _addBookToLibrary(book, zbfPath);
+      final added = await _addBookToLibrary(
+        book,
+        zbfPath,
+        contentHash: _hashByJob[jobId],
+      );
       emit(
         state.patch(
           jobId,
@@ -136,6 +167,7 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
 
   void _finish(String jobId) {
     _running.remove(jobId)?.cancel();
+    _hashByJob.remove(jobId);
     _pump();
   }
 
@@ -153,9 +185,15 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
 }
 
 final class _PendingFile {
-  const _PendingFile(this.jobId, this.file, this.wizardDataFuture);
+  const _PendingFile(
+    this.jobId,
+    this.file,
+    this.wizardDataFuture,
+    this.contentHash,
+  );
 
   final String jobId;
   final File file;
   final Future<WizardData>? wizardDataFuture;
+  final String? contentHash;
 }

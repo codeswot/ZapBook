@@ -9,7 +9,20 @@ class LibraryDatabase extends _$LibraryDatabase {
   LibraryDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(books, books.contentHash);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_books_content_hash '
+          'ON books (content_hash)',
+        );
+      }
+    },
+  );
 }
 
 @DriftAccessor(tables: [Books])
@@ -26,6 +39,11 @@ class BooksDao extends DatabaseAccessor<LibraryDatabase> with _$BooksDaoMixin {
     return (select(books)..where((b) => b.id.equals(id))).getSingleOrNull();
   }
 
+  Future<BookRow?> getByContentHash(String hash) {
+    return (select(books)..where((b) => b.contentHash.equals(hash)))
+        .getSingleOrNull();
+  }
+
   Future<void> upsert(BooksCompanion row) {
     return into(books).insertOnConflictUpdate(row);
   }
@@ -37,6 +55,23 @@ class BooksDao extends DatabaseAccessor<LibraryDatabase> with _$BooksDaoMixin {
   Future<void> touchOpened(String id, DateTime when) {
     return (update(books)..where((b) => b.id.equals(id)))
         .write(BooksCompanion(lastOpenedAt: Value(when)));
+  }
+
+  Future<void> updateMetadata(
+    String id, {
+    required String title,
+    required String author,
+    required String? genre,
+    required String? coverPath,
+  }) {
+    return (update(books)..where((b) => b.id.equals(id))).write(
+      BooksCompanion(
+        title: Value(title),
+        author: Value(author),
+        genre: Value(genre),
+        coverPath: Value(coverPath),
+      ),
+    );
   }
 
   Future<List<String>> allZbfPaths() async {

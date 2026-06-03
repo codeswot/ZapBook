@@ -44,6 +44,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, BookRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _contentHashMeta = const VerificationMeta(
+    'contentHash',
+  );
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+    'content_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sourceFormatMeta = const VerificationMeta(
     'sourceFormat',
   );
@@ -163,6 +174,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, BookRow> {
     title,
     author,
     genre,
+    contentHash,
     sourceFormat,
     pageCount,
     chapterCount,
@@ -211,6 +223,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, BookRow> {
       context.handle(
         _genreMeta,
         genre.isAcceptableOrUnknown(data['genre']!, _genreMeta),
+      );
+    }
+    if (data.containsKey('content_hash')) {
+      context.handle(
+        _contentHashMeta,
+        contentHash.isAcceptableOrUnknown(
+          data['content_hash']!,
+          _contentHashMeta,
+        ),
       );
     }
     if (data.containsKey('source_format')) {
@@ -326,6 +347,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, BookRow> {
         DriftSqlType.string,
         data['${effectivePrefix}genre'],
       ),
+      contentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_hash'],
+      ),
       sourceFormat: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source_format'],
@@ -380,6 +405,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
   final String title;
   final String author;
   final String? genre;
+  final String? contentHash;
   final String sourceFormat;
   final int pageCount;
   final int chapterCount;
@@ -395,6 +421,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
     required this.title,
     required this.author,
     this.genre,
+    this.contentHash,
     required this.sourceFormat,
     required this.pageCount,
     required this.chapterCount,
@@ -414,6 +441,9 @@ class BookRow extends DataClass implements Insertable<BookRow> {
     map['author'] = Variable<String>(author);
     if (!nullToAbsent || genre != null) {
       map['genre'] = Variable<String>(genre);
+    }
+    if (!nullToAbsent || contentHash != null) {
+      map['content_hash'] = Variable<String>(contentHash);
     }
     map['source_format'] = Variable<String>(sourceFormat);
     map['page_count'] = Variable<int>(pageCount);
@@ -440,6 +470,9 @@ class BookRow extends DataClass implements Insertable<BookRow> {
       genre: genre == null && nullToAbsent
           ? const Value.absent()
           : Value(genre),
+      contentHash: contentHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentHash),
       sourceFormat: Value(sourceFormat),
       pageCount: Value(pageCount),
       chapterCount: Value(chapterCount),
@@ -467,6 +500,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
       title: serializer.fromJson<String>(json['title']),
       author: serializer.fromJson<String>(json['author']),
       genre: serializer.fromJson<String?>(json['genre']),
+      contentHash: serializer.fromJson<String?>(json['contentHash']),
       sourceFormat: serializer.fromJson<String>(json['sourceFormat']),
       pageCount: serializer.fromJson<int>(json['pageCount']),
       chapterCount: serializer.fromJson<int>(json['chapterCount']),
@@ -487,6 +521,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
       'title': serializer.toJson<String>(title),
       'author': serializer.toJson<String>(author),
       'genre': serializer.toJson<String?>(genre),
+      'contentHash': serializer.toJson<String?>(contentHash),
       'sourceFormat': serializer.toJson<String>(sourceFormat),
       'pageCount': serializer.toJson<int>(pageCount),
       'chapterCount': serializer.toJson<int>(chapterCount),
@@ -505,6 +540,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
     String? title,
     String? author,
     Value<String?> genre = const Value.absent(),
+    Value<String?> contentHash = const Value.absent(),
     String? sourceFormat,
     int? pageCount,
     int? chapterCount,
@@ -520,6 +556,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
     title: title ?? this.title,
     author: author ?? this.author,
     genre: genre.present ? genre.value : this.genre,
+    contentHash: contentHash.present ? contentHash.value : this.contentHash,
     sourceFormat: sourceFormat ?? this.sourceFormat,
     pageCount: pageCount ?? this.pageCount,
     chapterCount: chapterCount ?? this.chapterCount,
@@ -537,6 +574,9 @@ class BookRow extends DataClass implements Insertable<BookRow> {
       title: data.title.present ? data.title.value : this.title,
       author: data.author.present ? data.author.value : this.author,
       genre: data.genre.present ? data.genre.value : this.genre,
+      contentHash: data.contentHash.present
+          ? data.contentHash.value
+          : this.contentHash,
       sourceFormat: data.sourceFormat.present
           ? data.sourceFormat.value
           : this.sourceFormat,
@@ -567,6 +607,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
           ..write('title: $title, ')
           ..write('author: $author, ')
           ..write('genre: $genre, ')
+          ..write('contentHash: $contentHash, ')
           ..write('sourceFormat: $sourceFormat, ')
           ..write('pageCount: $pageCount, ')
           ..write('chapterCount: $chapterCount, ')
@@ -587,6 +628,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
     title,
     author,
     genre,
+    contentHash,
     sourceFormat,
     pageCount,
     chapterCount,
@@ -606,6 +648,7 @@ class BookRow extends DataClass implements Insertable<BookRow> {
           other.title == this.title &&
           other.author == this.author &&
           other.genre == this.genre &&
+          other.contentHash == this.contentHash &&
           other.sourceFormat == this.sourceFormat &&
           other.pageCount == this.pageCount &&
           other.chapterCount == this.chapterCount &&
@@ -623,6 +666,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
   final Value<String> title;
   final Value<String> author;
   final Value<String?> genre;
+  final Value<String?> contentHash;
   final Value<String> sourceFormat;
   final Value<int> pageCount;
   final Value<int> chapterCount;
@@ -639,6 +683,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
     this.title = const Value.absent(),
     this.author = const Value.absent(),
     this.genre = const Value.absent(),
+    this.contentHash = const Value.absent(),
     this.sourceFormat = const Value.absent(),
     this.pageCount = const Value.absent(),
     this.chapterCount = const Value.absent(),
@@ -656,6 +701,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
     required String title,
     required String author,
     this.genre = const Value.absent(),
+    this.contentHash = const Value.absent(),
     required String sourceFormat,
     required int pageCount,
     required int chapterCount,
@@ -683,6 +729,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
     Expression<String>? title,
     Expression<String>? author,
     Expression<String>? genre,
+    Expression<String>? contentHash,
     Expression<String>? sourceFormat,
     Expression<int>? pageCount,
     Expression<int>? chapterCount,
@@ -700,6 +747,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
       if (title != null) 'title': title,
       if (author != null) 'author': author,
       if (genre != null) 'genre': genre,
+      if (contentHash != null) 'content_hash': contentHash,
       if (sourceFormat != null) 'source_format': sourceFormat,
       if (pageCount != null) 'page_count': pageCount,
       if (chapterCount != null) 'chapter_count': chapterCount,
@@ -719,6 +767,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
     Value<String>? title,
     Value<String>? author,
     Value<String?>? genre,
+    Value<String?>? contentHash,
     Value<String>? sourceFormat,
     Value<int>? pageCount,
     Value<int>? chapterCount,
@@ -736,6 +785,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
       title: title ?? this.title,
       author: author ?? this.author,
       genre: genre ?? this.genre,
+      contentHash: contentHash ?? this.contentHash,
       sourceFormat: sourceFormat ?? this.sourceFormat,
       pageCount: pageCount ?? this.pageCount,
       chapterCount: chapterCount ?? this.chapterCount,
@@ -764,6 +814,9 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
     }
     if (genre.present) {
       map['genre'] = Variable<String>(genre.value);
+    }
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
     }
     if (sourceFormat.present) {
       map['source_format'] = Variable<String>(sourceFormat.value);
@@ -808,6 +861,7 @@ class BooksCompanion extends UpdateCompanion<BookRow> {
           ..write('title: $title, ')
           ..write('author: $author, ')
           ..write('genre: $genre, ')
+          ..write('contentHash: $contentHash, ')
           ..write('sourceFormat: $sourceFormat, ')
           ..write('pageCount: $pageCount, ')
           ..write('chapterCount: $chapterCount, ')
@@ -832,12 +886,20 @@ abstract class _$LibraryDatabase extends GeneratedDatabase {
     'idx_books_added_at',
     'CREATE INDEX idx_books_added_at ON books (added_at)',
   );
+  late final Index idxBooksContentHash = Index(
+    'idx_books_content_hash',
+    'CREATE INDEX idx_books_content_hash ON books (content_hash)',
+  );
   late final BooksDao booksDao = BooksDao(this as LibraryDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [books, idxBooksAddedAt];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    books,
+    idxBooksAddedAt,
+    idxBooksContentHash,
+  ];
 }
 
 typedef $$BooksTableCreateCompanionBuilder =
@@ -846,6 +908,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       required String title,
       required String author,
       Value<String?> genre,
+      Value<String?> contentHash,
       required String sourceFormat,
       required int pageCount,
       required int chapterCount,
@@ -864,6 +927,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> author,
       Value<String?> genre,
+      Value<String?> contentHash,
       Value<String> sourceFormat,
       Value<int> pageCount,
       Value<int> chapterCount,
@@ -903,6 +967,11 @@ class $$BooksTableFilterComposer
 
   ColumnFilters<String> get genre => $composableBuilder(
     column: $table.genre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -986,6 +1055,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get sourceFormat => $composableBuilder(
     column: $table.sourceFormat,
     builder: (column) => ColumnOrderings(column),
@@ -1057,6 +1131,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get genre =>
       $composableBuilder(column: $table.genre, builder: (column) => column);
+
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get sourceFormat => $composableBuilder(
     column: $table.sourceFormat,
@@ -1131,6 +1210,7 @@ class $$BooksTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> author = const Value.absent(),
                 Value<String?> genre = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
                 Value<String> sourceFormat = const Value.absent(),
                 Value<int> pageCount = const Value.absent(),
                 Value<int> chapterCount = const Value.absent(),
@@ -1147,6 +1227,7 @@ class $$BooksTableTableManager
                 title: title,
                 author: author,
                 genre: genre,
+                contentHash: contentHash,
                 sourceFormat: sourceFormat,
                 pageCount: pageCount,
                 chapterCount: chapterCount,
@@ -1165,6 +1246,7 @@ class $$BooksTableTableManager
                 required String title,
                 required String author,
                 Value<String?> genre = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
                 required String sourceFormat,
                 required int pageCount,
                 required int chapterCount,
@@ -1181,6 +1263,7 @@ class $$BooksTableTableManager
                 title: title,
                 author: author,
                 genre: genre,
+                contentHash: contentHash,
                 sourceFormat: sourceFormat,
                 pageCount: pageCount,
                 chapterCount: chapterCount,

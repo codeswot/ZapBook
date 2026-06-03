@@ -25,9 +25,12 @@ import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_icon_button.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
-void _openReader(BuildContext context, String zbfPath) {
+void _openBook(BuildContext context, LibraryBook book) {
+  context.read<LibraryCubit>().markOpened(book.id);
   Navigator.of(context, rootNavigator: true).push(
-    MaterialPageRoute<void>(builder: (_) => ZbfViewerPage(zbfPath: zbfPath)),
+    MaterialPageRoute<void>(
+      builder: (_) => ZbfViewerPage(zbfPath: book.zbfPath),
+    ),
   );
 }
 
@@ -43,23 +46,50 @@ class LibraryPage extends StatelessWidget {
 class _LibraryView extends StatelessWidget {
   const _LibraryView();
 
-  void _onPageCubitState(BuildContext context, IngestionPageState state) {
-    if (state is IngestionPageFilePicked) {
-      final completer = Completer<WizardData>();
-      context.read<IngestionQueueCubit>().enqueue(
-        state.file,
-        wizardDataFuture: completer.future,
-      );
-      BookWizardSheet.show(
-        context,
-        completer: completer,
-        rawTitle: state.rawTitle,
-      );
-    } else if (state is IngestionPageError) {
+  Future<void> _onPageCubitState(
+    BuildContext context,
+    IngestionPageState state,
+  ) async {
+    if (state is IngestionPageError) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(state.message)));
+      return;
     }
+    if (state is! IngestionPageFilePicked) {
+      return;
+    }
+
+    final queue = context.read<IngestionQueueCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final duplicate = await queue.findDuplicate(state.file);
+    if (!context.mounted) {
+      return;
+    }
+    if (duplicate.existing != null) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              '“${duplicate.existing!.title}” is already in your library',
+            ),
+          ),
+        );
+      return;
+    }
+
+    final completer = Completer<WizardData>();
+    queue.enqueue(
+      state.file,
+      wizardDataFuture: completer.future,
+      contentHash: duplicate.hash,
+    );
+    BookWizardSheet.show(
+      context,
+      completer: completer,
+      rawTitle: state.rawTitle,
+    );
   }
 
   @override
@@ -116,9 +146,25 @@ class _Shelf extends StatelessWidget {
   final List<IngestionJob> jobs;
   final List<LibraryBook> books;
 
+  LibraryBook? _lastOpened(List<LibraryBook> books) {
+    if (books.isEmpty) {
+      return null;
+    }
+    LibraryBook? opened;
+    for (final book in books) {
+      if (book.lastOpenedAt == null) {
+        continue;
+      }
+      if (opened == null || book.lastOpenedAt!.isAfter(opened.lastOpenedAt!)) {
+        opened = book;
+      }
+    }
+    return opened ?? books.first;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hero = books.isNotEmpty ? books.first : null;
+    final hero = _lastOpened(books);
     final tileCount = jobs.length + books.length;
 
     return CustomScrollView(
@@ -176,7 +222,7 @@ class _ContinueReadingCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       child: BouncingInteractiveWidget(
-        onTap: () => _openReader(context, book.zbfPath),
+        onTap: () => _openBook(context, book),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -219,7 +265,7 @@ class _ContinueReadingCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               AppIconButton(
-                onTap: () => _openReader(context, book.zbfPath),
+                onTap: () => _openBook(context, book),
                 icon: LucideIcons.bookOpen,
                 size: 20,
                 color: colors.paper,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 class BouncingInteractiveWidget extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double scaleFactor;
   final Duration duration;
 
@@ -11,6 +12,7 @@ class BouncingInteractiveWidget extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.scaleFactor = 0.96,
     this.duration = const Duration(milliseconds: 120),
   });
@@ -64,6 +66,20 @@ class _BouncingInteractiveWidgetState extends State<BouncingInteractiveWidget>
     }
   }
 
+  void _handleLongPressStart(LongPressStartDetails details) {
+    if (widget.onLongPress != null) {
+      HapticFeedback.heavyImpact();
+      _controller.forward();
+      widget.onLongPress!();
+    }
+  }
+
+  void _handleLongPressEnd() {
+    if (widget.onLongPress != null) {
+      _controller.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -71,6 +87,15 @@ class _BouncingInteractiveWidgetState extends State<BouncingInteractiveWidget>
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
+      onLongPressStart: widget.onLongPress != null
+          ? _handleLongPressStart
+          : null,
+      onLongPressEnd: widget.onLongPress != null
+          ? (_) => _handleLongPressEnd()
+          : null,
+      onLongPressCancel: widget.onLongPress != null
+          ? _handleLongPressEnd
+          : null,
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
