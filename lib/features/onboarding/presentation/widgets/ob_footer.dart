@@ -5,6 +5,7 @@ import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 
 class ObFooter extends StatelessWidget {
   final OnboardingState state;
@@ -70,9 +71,7 @@ class ObFooter extends StatelessWidget {
             onTap: () {
               if (!state.isGeneratingNew &&
                   nsecController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please enter your secret key")),
-                );
+                context.toast.showError("Please enter your secret key");
                 return;
               }
               cubit.nextStep();
@@ -96,11 +95,7 @@ class ObFooter extends StatelessWidget {
             iconRight: LucideIcons.arrowRight,
             onTap: () {
               if (lnAddressController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please enter a Lightning address"),
-                  ),
-                );
+                context.toast.showError("Please enter a Lightning address");
                 return;
               }
               cubit.nextStep();

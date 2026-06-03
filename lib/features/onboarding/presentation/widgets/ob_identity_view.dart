@@ -9,6 +9,7 @@ import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_banner.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_step_intro.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 
 class ObIdentityView extends StatelessWidget {
   final OnboardingState state;
@@ -161,11 +162,7 @@ class ObIdentityView extends StatelessWidget {
                           onTap: () async {
                             await cubit.copyKeys();
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Keys copied to clipboard"),
-                                ),
-                              );
+                              context.toast.showSuccess("Keys copied to clipboard");
                             }
                           },
                           child: Container(
