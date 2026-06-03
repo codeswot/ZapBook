@@ -6,8 +6,9 @@ import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart
 import 'package:zapbook/features/ai_model/presentation/widgets/ai_model_headsup_bridge.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_bloc.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/widgets/app_bottom_navigation.dart';
 
 class AppShellPage extends StatelessWidget {
@@ -45,7 +46,10 @@ class AppShellPage extends StatelessWidget {
       providers: [
         BlocProvider<AiModelCubit>(create: (_) => getIt<AiModelCubit>()),
         BlocProvider<HeadsUpCubit>(create: (_) => getIt<HeadsUpCubit>()),
-        BlocProvider<IngestionBloc>(create: (_) => getIt<IngestionBloc>()),
+        BlocProvider<LibraryCubit>(create: (_) => getIt<LibraryCubit>()),
+        BlocProvider<IngestionQueueCubit>(
+          create: (_) => getIt<IngestionQueueCubit>(),
+        ),
         BlocProvider<IngestionPageCubit>(
           create: (_) => getIt<IngestionPageCubit>(),
         ),

@@ -38,6 +38,7 @@ class AiMissingBanner extends StatelessWidget {
               style: context.typography.bodyS.copyWith(
                 color: context.colors.tomato,
                 decoration: TextDecoration.underline,
+                decorationColor: context.colors.tomato,
               ),
             ),
           ),

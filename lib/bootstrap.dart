@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:logging/logging.dart';
 
 import 'package:zapbook/core/di/injection.dart';
@@ -10,6 +11,8 @@ import 'package:zapbook/core/observers/app_bloc_observer.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {

@@ -17,13 +17,11 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     required this._extractors,
     required this._documentsDirectory,
     this._writer = const ZbfWriter(),
-    this._reader = const ZbfReader(),
   });
 
   final List<BookExtractor> _extractors;
   final DocumentsDirectory _documentsDirectory;
   final ZbfWriter _writer;
-  final ZbfReader _reader;
 
   @override
   Stream<IngestionProgress> ingest(
@@ -65,21 +63,6 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     } on Object catch (error) {
       yield IngestionProgress.failed(error.toString());
     }
-  }
-
-  @override
-  Future<List<BookManifest>> getIngestedBooks() async {
-    final directory = await _documentsDirectory.resolve();
-    if (!directory.existsSync()) {
-      return const [];
-    }
-    final manifests = <BookManifest>[];
-    for (final entity in directory.listSync()) {
-      if (entity is File && entity.path.toLowerCase().endsWith('.zbf')) {
-        manifests.add(await _reader.readManifest(entity.path));
-      }
-    }
-    return manifests;
   }
 
   Future<ZbfBook> _stashSourceForAi(ZbfBook book, File file) async {
