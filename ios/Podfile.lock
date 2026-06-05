@@ -38,21 +38,11 @@ PODS:
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
-  - flutter_gemma (0.13.4):
-    - Flutter
-    - MediaPipeTasksGenAI (= 0.10.33)
-    - MediaPipeTasksGenAIC (= 0.10.33)
-    - TensorFlowLiteC (= 0.0.1-nightly.20250619)
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
-  - large_file_handler (0.0.1):
-    - Flutter
   - marmot_dart (0.0.1):
     - Flutter
-  - MediaPipeTasksGenAI (0.10.33):
-    - MediaPipeTasksGenAIC (= 0.10.33)
-  - MediaPipeTasksGenAIC (0.10.33)
   - printing (1.0.0):
     - Flutter
   - SDWebImage (5.21.7):
@@ -87,18 +77,13 @@ PODS:
     - sqlite3/rtree
     - sqlite3/session
   - SwiftyGif (5.4.5)
-  - TensorFlowLiteC (0.0.1-nightly.20250619):
-    - TensorFlowLiteC/Core (= 0.0.1-nightly.20250619)
-  - TensorFlowLiteC/Core (0.0.1-nightly.20250619)
 
 DEPENDENCIES:
   - background_downloader (from `.symlinks/plugins/background_downloader/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
-  - flutter_gemma (from `.symlinks/plugins/flutter_gemma/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
-  - large_file_handler (from `.symlinks/plugins/large_file_handler/ios`)
   - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -108,12 +93,9 @@ SPEC REPOS:
   trunk:
     - DKImagePickerController
     - DKPhotoGallery
-    - MediaPipeTasksGenAI
-    - MediaPipeTasksGenAIC
     - SDWebImage
     - sqlite3
     - SwiftyGif
-    - TensorFlowLiteC
 
 EXTERNAL SOURCES:
   background_downloader:
@@ -124,12 +106,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
-  flutter_gemma:
-    :path: ".symlinks/plugins/flutter_gemma/ios"
   flutter_secure_storage_darwin:
     :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
-  large_file_handler:
-    :path: ".symlinks/plugins/large_file_handler/ios"
   marmot_dart:
     :path: ".symlinks/plugins/marmot_dart/ios"
   printing:
@@ -146,20 +124,15 @@ SPEC CHECKSUMS:
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_gemma: 5a7a785813c235bfcac6fb7149d917708b484391
   flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
-  large_file_handler: e3686e246052b0f03955789d3a04604574f80afe
   marmot_dart: a5888a784f2d355809d5e9bbea29169abe5ebefe
-  MediaPipeTasksGenAI: 8eed8e6d03fe26d30c4205cb5295ec7b394432ad
-  MediaPipeTasksGenAIC: cb098ecea44e248efe8fe7e2f62b4cb0df781802
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
   sqlite3_flutter_libs: f9114e4bbe1f2e03dd543373c53d23245982ca13
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  TensorFlowLiteC: 215ef57653dd0fa09a474e7d94d79ae64a870b28
 
-PODFILE CHECKSUM: c0915517eae1a513480956f02c7781054ca94770
+PODFILE CHECKSUM: dc0108e6a0feefabed29be9a111a1ad3542b81a0
 
 COCOAPODS: 1.16.2

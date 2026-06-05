@@ -86,8 +86,20 @@ import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit
     as _i327;
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
-import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart'
-    as _i286;
+import 'package:zapbook/features/onboarding/data/datasources/onboarding_local_datasource.dart'
+    as _i638;
+import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
+    as _i444;
+import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart'
+    as _i377;
+import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart'
+    as _i341;
+import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart'
+    as _i709;
+import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart'
+    as _i136;
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart'
+    as _i634;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -146,6 +158,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i28.ReaderSettingsCubit>(
       () => _i28.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
     );
+    gh.lazySingleton<_i638.OnboardingLocalDataSource>(
+      () => _i638.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
+    );
     gh.factory<_i439.IngestionPageCubit>(
       () => _i439.IngestionPageCubit(gh<_i1034.FilePickerService>()),
     );
@@ -167,15 +182,14 @@ extension GetItInjectableX on _i174.GetIt {
         initialTitle,
       ),
     );
-    gh.factory<_i286.OnboardingCubit>(
-      () => _i286.OnboardingCubit(
-        gh<_i460.SharedPreferences>(),
-        gh<_i1053.ClipboardService>(),
-        gh<_i63.IdentityRepository>(),
-      ),
-    );
     gh.lazySingleton<_i828.CoverStore>(
       () => _i828.CoverStore(gh<_i746.DocumentsDirectory>()),
+    );
+    gh.factory<_i709.GenerateIdentity>(
+      () => _i709.GenerateIdentity(gh<_i63.IdentityRepository>()),
+    );
+    gh.factory<_i136.ImportIdentity>(
+      () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
     );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i584.LibraryRepositoryImpl(
@@ -185,6 +199,10 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1.ZbfReader>(),
       ),
     );
+    gh.lazySingleton<_i377.OnboardingRepository>(
+      () =>
+          _i444.OnboardingRepositoryImpl(gh<_i638.OnboardingLocalDataSource>()),
+    );
     gh.factory<_i970.AiModelCubit>(
       () => _i970.AiModelCubit(gh<_i1012.AiService>()),
     );
@@ -193,6 +211,12 @@ extension GetItInjectableX on _i174.GetIt {
         extractors: gh<List<_i751.BookExtractor>>(),
         documentsDirectory: gh<_i746.DocumentsDirectory>(),
         writer: gh<_i1.ZbfWriter>(),
+      ),
+    );
+    gh.factory<_i341.CompleteOnboarding>(
+      () => _i341.CompleteOnboarding(
+        gh<_i63.IdentityRepository>(),
+        gh<_i377.OnboardingRepository>(),
       ),
     );
     gh.factory<_i1071.AddBookToLibrary>(
@@ -218,6 +242,14 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1024.WatchLibraryBooks>(
       () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
+    );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i1053.ClipboardService>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+      ),
     );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(

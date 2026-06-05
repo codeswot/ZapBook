@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injectable/injectable.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:zapbook/app/app_shell_page.dart';
 import 'package:zapbook/features/library/presentation/pages/library_page.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
@@ -16,8 +16,7 @@ class AppRouter {
     initialLocation: '/',
     routes: $appRoutes,
     redirect: (context, state) {
-      final prefs = getIt<SharedPreferences>();
-      final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+      final onboardingComplete = getIt<OnboardingRepository>().status().isComplete;
 
       final isOnboarding = state.matchedLocation == '/onboarding';
 

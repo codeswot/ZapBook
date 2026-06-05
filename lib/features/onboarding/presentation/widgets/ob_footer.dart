@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/widgets/app_button.dart';
-import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/core/di/injection.dart';

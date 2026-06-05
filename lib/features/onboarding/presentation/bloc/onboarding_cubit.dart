@@ -1,83 +1,32 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zapbook/core/identity/identity_repository.dart';
+import 'package:logging/logging.dart';
+
 import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.dart';
 
-enum OnboardingStep { welcome, identity, wallet, model }
-
-class OnboardingState extends Equatable {
-  final OnboardingStep step;
-  final bool isGeneratingNew;
-  final String generatedNpub;
-  final String generatedNsec;
-  final String importedNsec;
-  final String lightningAddress;
-  final bool isBusy;
-  final String? error;
-  final bool isComplete;
-
-  const OnboardingState({
-    required this.step,
-    this.isGeneratingNew = true,
-    this.generatedNpub = "",
-    this.generatedNsec = "",
-    this.importedNsec = "",
-    this.lightningAddress = "",
-    this.isBusy = false,
-    this.error,
-    this.isComplete = false,
-  });
-
-  @override
-  List<Object?> get props => [
-    step,
-    isGeneratingNew,
-    generatedNpub,
-    generatedNsec,
-    importedNsec,
-    lightningAddress,
-    isBusy,
-    error,
-    isComplete,
-  ];
-
-  OnboardingState copyWith({
-    OnboardingStep? step,
-    bool? isGeneratingNew,
-    String? generatedNpub,
-    String? generatedNsec,
-    String? importedNsec,
-    String? lightningAddress,
-    bool? isBusy,
-    String? error,
-    bool? isComplete,
-  }) {
-    return OnboardingState(
-      step: step ?? this.step,
-      isGeneratingNew: isGeneratingNew ?? this.isGeneratingNew,
-      generatedNpub: generatedNpub ?? this.generatedNpub,
-      generatedNsec: generatedNsec ?? this.generatedNsec,
-      importedNsec: importedNsec ?? this.importedNsec,
-      lightningAddress: lightningAddress ?? this.lightningAddress,
-      isBusy: isBusy ?? this.isBusy,
-      error: error,
-      isComplete: isComplete ?? this.isComplete,
-    );
-  }
-}
+export 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.dart';
 
 @injectable
 class OnboardingCubit extends Cubit<OnboardingState> {
-  final SharedPreferences _prefs;
-  final ClipboardService _clipboardService;
-  final IdentityRepository _identity;
-
-  OnboardingCubit(this._prefs, this._clipboardService, this._identity)
-    : super(const OnboardingState(step: OnboardingStep.welcome)) {
-    regenerateKeys();
+  OnboardingCubit(
+    this._clipboardService,
+    this._generateIdentity,
+    this._importIdentity,
+    this._completeOnboarding,
+  ) : super(const OnboardingState(step: OnboardingStep.welcome)) {
+    generateKeys();
   }
+
+  static final Logger _log = Logger('OnboardingCubit');
+
+  final ClipboardService _clipboardService;
+  final GenerateIdentity _generateIdentity;
+  final ImportIdentity _importIdentity;
+  final CompleteOnboarding _completeOnboarding;
 
   void nextStep() {
     switch (state.step) {
@@ -119,14 +68,14 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   void toggleIdentityMode(bool isGeneratingNew) {
     emit(state.copyWith(isGeneratingNew: isGeneratingNew, error: null));
     if (isGeneratingNew && state.generatedNpub.isEmpty) {
-      regenerateKeys();
+      generateKeys();
     }
   }
 
-  Future<void> regenerateKeys() async {
+  Future<void> generateKeys() async {
     emit(state.copyWith(isBusy: true, error: null));
     try {
-      final keypair = await _identity.generate();
+      final keypair = await _generateIdentity();
       emit(
         state.copyWith(
           isBusy: false,
@@ -134,7 +83,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           generatedNsec: keypair.nsec ?? "",
         ),
       );
-    } on Object {
+    } on Exception catch (error, stack) {
+      _log.severe('generateKeys failed', error, stack);
       emit(state.copyWith(isBusy: false, error: "Failed to generate keypair"));
     }
   }
@@ -147,12 +97,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
     emit(state.copyWith(isBusy: true, error: null));
     try {
-      final isValid = await _identity.validateNsec(trimmed);
-      if (!isValid) {
-        emit(state.copyWith(isBusy: false, error: "Invalid secret key"));
-        return false;
-      }
-      final keypair = await _identity.importFromNsec(trimmed);
+      final keypair = await _importIdentity(trimmed);
       emit(
         state.copyWith(
           isBusy: false,
@@ -162,7 +107,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         ),
       );
       return true;
-    } on Object {
+    } on Exception catch (error, stack) {
+      _log.severe('importNsec failed', error, stack);
       emit(state.copyWith(isBusy: false, error: "Invalid secret key"));
       return false;
     }
@@ -204,8 +150,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       emit(state.copyWith(error: "No identity to save"));
       return false;
     }
-    await _identity.persist(npub: npub, nsec: nsec);
-    await _prefs.setBool('onboarding_complete', true);
+    await _completeOnboarding(npub: npub, nsec: nsec);
     emit(state.copyWith(isComplete: true));
     return true;
   }

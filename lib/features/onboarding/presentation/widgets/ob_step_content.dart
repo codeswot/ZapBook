@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/core/services/ai_service.dart';
-import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_welcome_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_identity_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_wallet_view.dart';

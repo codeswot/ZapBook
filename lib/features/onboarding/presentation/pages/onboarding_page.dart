@@ -5,7 +5,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
-import 'package:zapbook/features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_header.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_footer.dart';
