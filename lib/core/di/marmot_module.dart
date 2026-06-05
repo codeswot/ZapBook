@@ -11,8 +11,8 @@ abstract class MarmotModule {
     final dbPath = '${dir.path}/marmot.db';
     return Marmot.sqlite(
       dbPath: dbPath,
-      serviceId: 'come.zapbook.geeksaxis',
-      keyId: 'marmot-db-key',
+      serviceId: 'com.zapbook.geeksaxis',
+      keyId: 'zapbook_marmot_key_id',
     );
   }
 }
