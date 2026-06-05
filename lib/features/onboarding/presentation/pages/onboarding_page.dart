@@ -48,8 +48,8 @@ class _OnboardingViewState extends State<_OnboardingView> {
   }
 
   void _onComplete(BuildContext context, OnboardingCubit cubit) async {
-    await cubit.completeOnboarding();
-    if (context.mounted) {
+    final saved = await cubit.completeOnboarding();
+    if (saved && context.mounted) {
       context.go('/');
     }
   }

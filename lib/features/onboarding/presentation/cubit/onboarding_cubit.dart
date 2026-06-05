@@ -1,8 +1,8 @@
-import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/services/clipboard_service.dart';
 
 enum OnboardingStep { welcome, identity, wallet, model }
@@ -14,15 +14,19 @@ class OnboardingState extends Equatable {
   final String generatedNsec;
   final String importedNsec;
   final String lightningAddress;
+  final bool isBusy;
+  final String? error;
   final bool isComplete;
 
   const OnboardingState({
     required this.step,
     this.isGeneratingNew = true,
-    this.generatedNpub = "npub1q8s7fx4k2m9v0pe3rt6yu7c5l8wd2na6hg4j0zq",
-    this.generatedNsec = "nsec1u8y9px4k2m9v0pe3rt6yu7c5l8wd2na6hg4j0zqnsec",
+    this.generatedNpub = "",
+    this.generatedNsec = "",
     this.importedNsec = "",
-    this.lightningAddress = "wren@walletofsatoshi.com",
+    this.lightningAddress = "",
+    this.isBusy = false,
+    this.error,
     this.isComplete = false,
   });
 
@@ -34,6 +38,8 @@ class OnboardingState extends Equatable {
     generatedNsec,
     importedNsec,
     lightningAddress,
+    isBusy,
+    error,
     isComplete,
   ];
 
@@ -44,6 +50,8 @@ class OnboardingState extends Equatable {
     String? generatedNsec,
     String? importedNsec,
     String? lightningAddress,
+    bool? isBusy,
+    String? error,
     bool? isComplete,
   }) {
     return OnboardingState(
@@ -53,6 +61,8 @@ class OnboardingState extends Equatable {
       generatedNsec: generatedNsec ?? this.generatedNsec,
       importedNsec: importedNsec ?? this.importedNsec,
       lightningAddress: lightningAddress ?? this.lightningAddress,
+      isBusy: isBusy ?? this.isBusy,
+      error: error,
       isComplete: isComplete ?? this.isComplete,
     );
   }
@@ -62,9 +72,12 @@ class OnboardingState extends Equatable {
 class OnboardingCubit extends Cubit<OnboardingState> {
   final SharedPreferences _prefs;
   final ClipboardService _clipboardService;
+  final IdentityRepository _identity;
 
-  OnboardingCubit(this._prefs, this._clipboardService)
-    : super(const OnboardingState(step: OnboardingStep.welcome));
+  OnboardingCubit(this._prefs, this._clipboardService, this._identity)
+    : super(const OnboardingState(step: OnboardingStep.welcome)) {
+    regenerateKeys();
+  }
 
   void nextStep() {
     switch (state.step) {
@@ -104,23 +117,59 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   void toggleIdentityMode(bool isGeneratingNew) {
-    emit(state.copyWith(isGeneratingNew: isGeneratingNew));
+    emit(state.copyWith(isGeneratingNew: isGeneratingNew, error: null));
+    if (isGeneratingNew && state.generatedNpub.isEmpty) {
+      regenerateKeys();
+    }
   }
 
-  void regenerateKeys() {
-    final rand = Random();
-    final chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    final randomPart = List.generate(
-      30,
-      (index) => chars[rand.nextInt(chars.length)],
-    ).join("");
-    final npub = "npub1q8s7f$randomPart";
-    final nsec = "nsec1${randomPart}nsec";
-    emit(state.copyWith(generatedNpub: npub, generatedNsec: nsec));
+  Future<void> regenerateKeys() async {
+    emit(state.copyWith(isBusy: true, error: null));
+    try {
+      final keypair = await _identity.generate();
+      emit(
+        state.copyWith(
+          isBusy: false,
+          generatedNpub: keypair.npub,
+          generatedNsec: keypair.nsec ?? "",
+        ),
+      );
+    } on Object {
+      emit(state.copyWith(isBusy: false, error: "Failed to generate keypair"));
+    }
+  }
+
+  Future<bool> importNsec(String nsec) async {
+    final trimmed = nsec.trim();
+    if (trimmed.isEmpty) {
+      emit(state.copyWith(error: "Please enter your secret key"));
+      return false;
+    }
+    emit(state.copyWith(isBusy: true, error: null));
+    try {
+      final isValid = await _identity.validateNsec(trimmed);
+      if (!isValid) {
+        emit(state.copyWith(isBusy: false, error: "Invalid secret key"));
+        return false;
+      }
+      final keypair = await _identity.importFromNsec(trimmed);
+      emit(
+        state.copyWith(
+          isBusy: false,
+          importedNsec: trimmed,
+          generatedNpub: keypair.npub,
+          generatedNsec: keypair.nsec ?? trimmed,
+        ),
+      );
+      return true;
+    } on Object {
+      emit(state.copyWith(isBusy: false, error: "Invalid secret key"));
+      return false;
+    }
   }
 
   void updateImportedNsec(String nsec) {
-    emit(state.copyWith(importedNsec: nsec));
+    emit(state.copyWith(importedNsec: nsec, error: null));
   }
 
   void updateLightningAddress(String address) {
@@ -128,8 +177,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> copyKeys() async {
-    final nsec = "nsec1${state.generatedNpub.substring(5)}nsec";
-    await _clipboardService.copy("npub: ${state.generatedNpub}\nnsec: $nsec");
+    await _clipboardService.copy(
+      "npub: ${state.generatedNpub}\nnsec: ${state.generatedNsec}",
+    );
   }
 
   Future<String?> pasteNsec() async {
@@ -147,8 +197,16 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  Future<void> completeOnboarding() async {
+  Future<bool> completeOnboarding() async {
+    final npub = state.generatedNpub;
+    final nsec = state.generatedNsec;
+    if (npub.isEmpty || nsec.isEmpty) {
+      emit(state.copyWith(error: "No identity to save"));
+      return false;
+    }
+    await _identity.persist(npub: npub, nsec: nsec);
     await _prefs.setBool('onboarding_complete', true);
     emit(state.copyWith(isComplete: true));
+    return true;
   }
 }

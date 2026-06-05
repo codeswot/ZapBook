@@ -1,7 +1,7 @@
 final class AssetNaming {
   const AssetNaming._();
 
-  static const String coverAsset = 'cover.png';
+  static const String coverAsset = 'cover.jpg';
 
   static const String sourceDocument = 'source.pdf';
 

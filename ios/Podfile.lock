@@ -43,7 +43,12 @@ PODS:
     - MediaPipeTasksGenAI (= 0.10.33)
     - MediaPipeTasksGenAIC (= 0.10.33)
     - TensorFlowLiteC (= 0.0.1-nightly.20250619)
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
   - large_file_handler (0.0.1):
+    - Flutter
+  - marmot_dart (0.0.1):
     - Flutter
   - MediaPipeTasksGenAI (0.10.33):
     - MediaPipeTasksGenAIC (= 0.10.33)
@@ -92,7 +97,9 @@ DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_gemma (from `.symlinks/plugins/flutter_gemma/ios`)
+  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - large_file_handler (from `.symlinks/plugins/large_file_handler/ios`)
+  - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
@@ -119,8 +126,12 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_gemma:
     :path: ".symlinks/plugins/flutter_gemma/ios"
+  flutter_secure_storage_darwin:
+    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
   large_file_handler:
     :path: ".symlinks/plugins/large_file_handler/ios"
+  marmot_dart:
+    :path: ".symlinks/plugins/marmot_dart/ios"
   printing:
     :path: ".symlinks/plugins/printing/ios"
   shared_preferences_foundation:
@@ -136,7 +147,9 @@ SPEC CHECKSUMS:
   file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_gemma: 5a7a785813c235bfcac6fb7149d917708b484391
+  flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
   large_file_handler: e3686e246052b0f03955789d3a04604574f80afe
+  marmot_dart: a5888a784f2d355809d5e9bbea29169abe5ebefe
   MediaPipeTasksGenAI: 8eed8e6d03fe26d30c4205cb5295ec7b394432ad
   MediaPipeTasksGenAIC: cb098ecea44e248efe8fe7e2f62b4cb0df781802
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b

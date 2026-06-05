@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 
@@ -99,7 +98,7 @@ class _LibraryShimmerState extends State<LibraryShimmer>
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
-          child: SliverToBoxAdapter(
+          sliver: SliverToBoxAdapter(
             child: Text(
               'All Books',
               style: typography.eyebrow.copyWith(
@@ -111,7 +110,7 @@ class _LibraryShimmerState extends State<LibraryShimmer>
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: SliverGrid(
+          sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               mainAxisSpacing: 18,
@@ -123,7 +122,6 @@ class _LibraryShimmerState extends State<LibraryShimmer>
                 return LayoutBuilder(
                   builder: (context, constraints) {
                     final width = constraints.maxWidth;
-                    final height = width / 0.727;
                     return CustomPaint(
                       painter: _DottedBorderPainter(
                         color: colors.hairline2,
@@ -211,21 +209,17 @@ class _ShimmerElement extends StatelessWidget {
 class _DottedBorderPainter extends CustomPainter {
   _DottedBorderPainter({
     required this.color,
-    this.strokeWidth = 1.2,
-    this.dashPattern = const [4, 4],
-    this.borderRadius = 12.0,
+    required this.borderRadius,
   });
 
   final Color color;
-  final double strokeWidth;
-  final List<double> dashPattern;
   final double borderRadius;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
     final path = Path()
@@ -241,7 +235,7 @@ class _DottedBorderPainter extends CustomPainter {
       var distance = 0.0;
       var draw = true;
       while (distance < metric.length) {
-        final len = dashPattern[draw ? 0 : 1 % dashPattern.length];
+        final len = draw ? 4.0 : 4.0;
         if (draw) {
           dashedPath.addPath(
             metric.extractPath(distance, distance + len),
@@ -258,7 +252,6 @@ class _DottedBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DottedBorderPainter oldDelegate) {
     return oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.borderRadius != borderRadius;
   }
 }

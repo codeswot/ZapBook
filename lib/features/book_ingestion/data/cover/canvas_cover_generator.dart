@@ -3,14 +3,20 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
+import 'package:image/image.dart' as img;
 
 import 'package:zapbook/features/book_ingestion/data/cover/cover_generator.dart';
 
 final class CanvasCoverGenerator implements CoverGenerator {
-  const CanvasCoverGenerator({this.width = 600, this.height = 900});
+  const CanvasCoverGenerator({
+    this.width = 600,
+    this.height = 900,
+    this.quality = 85,
+  });
 
   final int width;
   final int height;
+  final int quality;
 
   static const Color _mist = Color(0xFFEFE9DF);
   static const Color _ink = Color(0xFF1F1B16);
@@ -149,13 +155,20 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(width, height);
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     image.dispose();
     picture.dispose();
     if (data == null) {
       throw StateError('Failed to encode generated cover');
     }
-    return data.buffer.asUint8List();
+    final raster = img.Image.fromBytes(
+      width: width,
+      height: height,
+      bytes: data.buffer,
+      numChannels: 4,
+      order: img.ChannelOrder.rgba,
+    );
+    return img.encodeJpg(raster, quality: quality);
   }
 
   void _drawAbstractArt(Canvas canvas, Rect bounds, String title) {

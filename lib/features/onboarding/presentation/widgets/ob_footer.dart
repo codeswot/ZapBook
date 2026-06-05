@@ -68,11 +68,22 @@ class ObFooter extends StatelessWidget {
                 : AppButtonVariant.primary,
             fullWidth: true,
             iconRight: LucideIcons.arrowRight,
-            onTap: () {
-              if (!state.isGeneratingNew &&
-                  nsecController.text.trim().isEmpty) {
-                context.toast.showError("Please enter your secret key");
-                return;
+            onTap: () async {
+              if (state.isGeneratingNew) {
+                if (state.generatedNpub.isEmpty) {
+                  context.toast.showError("Generating your key, one moment…");
+                  return;
+                }
+              } else {
+                final imported = await cubit.importNsec(nsecController.text);
+                if (!imported) {
+                  if (context.mounted) {
+                    context.toast.showError(
+                      cubit.state.error ?? "Invalid secret key",
+                    );
+                  }
+                  return;
+                }
               }
               cubit.nextStep();
             },

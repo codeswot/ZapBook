@@ -49,7 +49,7 @@ class ObIdentityView extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
+                child: BouncingInteractiveWidget(
                   onTap: () => cubit.toggleIdentityMode(true),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -162,7 +162,9 @@ class ObIdentityView extends StatelessWidget {
                           onTap: () async {
                             await cubit.copyKeys();
                             if (context.mounted) {
-                              context.toast.showSuccess("Keys copied to clipboard");
+                              context.toast.showSuccess(
+                                "Keys copied to clipboard",
+                              );
                             }
                           },
                           child: Container(
@@ -188,7 +190,9 @@ class ObIdentityView extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  state.generatedNpub,
+                  state.generatedNpub.isEmpty
+                      ? "Generating…"
+                      : state.generatedNpub,
                   style: context.typography.mono.copyWith(
                     fontWeight: FontWeight.w500,
                     fontSize: 13.5,
@@ -231,7 +235,7 @@ class ObIdentityView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-               ObPasteButton(
+              ObPasteButton(
                 onTap: () async {
                   final text = await cubit.pasteNsec();
                   if (text != null) {

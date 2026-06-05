@@ -13,15 +13,20 @@ import 'dart:async' as _i687;
 
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:marmot_dart/marmot_dart.dart' as _i970;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
+import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
+import 'package:zapbook/core/identity/identity_repository.dart' as _i63;
+import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
+import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart'
     as _i970;
@@ -93,6 +98,7 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    final marmotModule = _$MarmotModule();
     final ingestionModule = _$IngestionModule();
     final libraryModule = _$LibraryModule();
     await gh.factoryAsync<_i460.SharedPreferences>(
@@ -100,11 +106,15 @@ extension GetItInjectableX on _i174.GetIt {
       preResolve: true,
     );
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
+    gh.lazySingletonAsync<_i970.Marmot>(() => marmotModule.marmot());
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
     gh.lazySingleton<_i1053.ClipboardService>(() => _i1053.ClipboardService());
     gh.lazySingleton<_i917.FileHasher>(() => const _i917.FileHasher());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
+    );
+    gh.lazySingleton<_i123.SecureStorageService>(
+      () => _i123.SecureStorageService(),
     );
     gh.lazySingleton<_i201.CoverGenerator>(
       () => ingestionModule.coverGenerator(),
@@ -126,6 +136,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
         gh<_i447.DeviceCapabilityService>(),
       ),
+    );
+    gh.lazySingleton<_i63.IdentityRepository>(
+      () => _i538.MarmotIdentityRepository(gh<_i123.SecureStorageService>()),
     );
     gh.lazySingleton<_i465.ThemeCubit>(
       () => _i465.ThemeCubit(gh<_i460.SharedPreferences>()),
@@ -158,6 +171,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i286.OnboardingCubit(
         gh<_i460.SharedPreferences>(),
         gh<_i1053.ClipboardService>(),
+        gh<_i63.IdentityRepository>(),
       ),
     );
     gh.lazySingleton<_i828.CoverStore>(
@@ -228,6 +242,8 @@ extension GetItInjectableX on _i174.GetIt {
 }
 
 class _$RegisterModule extends _i200.RegisterModule {}
+
+class _$MarmotModule extends _i817.MarmotModule {}
 
 class _$IngestionModule extends _i627.IngestionModule {}
 
