@@ -15,6 +15,14 @@ abstract class NostrModule {
         engine: NdkEngine.JIT,
         cache: DriftCacheManager(store),
         eventVerifier: Bip340EventVerifier(),
+        bootstrapRelays: const [
+          'wss://relay.damus.io',
+          'wss://nos.lol',
+          'wss://relay.nostr.band',
+          'wss://relay.primal.net',
+          'wss://relay.snort.social',
+          'wss://nostr.wine',
+        ],
       ),
     );
   }

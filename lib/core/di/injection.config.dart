@@ -228,7 +228,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
         gh<_i377.OnboardingRepository>(),
-        gh<_i638.OnboardingLocalDataSource>(),
       ),
     );
     gh.factory<_i1071.AddBookToLibrary>(

@@ -189,7 +189,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     try {
       final metadata = await _nostrService
           .getMetadata(_nostrService.pubkey!)
-          .timeout(const Duration(seconds: 6));
+          .timeout(const Duration(seconds: 10));
       if (metadata != null) {
         final fetchedName = metadata.displayName ?? metadata.name;
         emit(
@@ -198,13 +198,15 @@ class OnboardingCubit extends Cubit<OnboardingState> {
                 ? fetchedName
                 : state.displayName,
             picture: metadata.picture ?? state.picture,
+            lightningAddress: metadata.lud16 ?? state.lightningAddress,
             isFetchingMetadata: false,
           ),
         );
       } else {
         emit(state.copyWith(isFetchingMetadata: false));
       }
-    } on Exception {
+    } on Exception catch (e) {
+      _log.warning('_fetchExistingProfile failed: $e');
       emit(state.copyWith(isFetchingMetadata: false));
     }
   }
@@ -216,13 +218,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       emit(state.copyWith(error: "No identity to save"));
       return false;
     }
-    await _completeOnboarding(
-      npub: npub,
-      nsec: nsec,
-      lightningAddress: state.lightningAddress.isNotEmpty
-          ? state.lightningAddress
-          : null,
-    );
+    await _completeOnboarding(npub: npub, nsec: nsec);
     if (_nostrService.isInitialized) {
       unawaited(
         _nostrService.publishMetadata(

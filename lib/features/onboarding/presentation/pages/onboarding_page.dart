@@ -148,6 +148,10 @@ class _OnboardingViewState extends State<_OnboardingView> {
           nsecController: _nsecController,
         );
       case OnboardingStep.wallet:
+        if (_lnAddressController.text.isEmpty &&
+            state.lightningAddress.isNotEmpty) {
+          _lnAddressController.text = state.lightningAddress;
+        }
         return ObWalletView(
           state: state,
           cubit: cubit,
