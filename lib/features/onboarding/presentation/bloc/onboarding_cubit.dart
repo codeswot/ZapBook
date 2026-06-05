@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
-
 import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
@@ -14,6 +17,7 @@ export 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.d
 class OnboardingCubit extends Cubit<OnboardingState> {
   OnboardingCubit(
     this._clipboardService,
+    this._nostrService,
     this._generateIdentity,
     this._importIdentity,
     this._completeOnboarding,
@@ -24,6 +28,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   static final Logger _log = Logger('OnboardingCubit');
 
   final ClipboardService _clipboardService;
+  final NostrService _nostrService;
   final GenerateIdentity _generateIdentity;
   final ImportIdentity _importIdentity;
   final CompleteOnboarding _completeOnboarding;
@@ -40,6 +45,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         emit(state.copyWith(step: OnboardingStep.model));
         break;
       case OnboardingStep.model:
+        emit(state.copyWith(step: OnboardingStep.profile));
+        _onEnterProfile();
+        break;
+      case OnboardingStep.profile:
         completeOnboarding();
         break;
     }
@@ -57,6 +66,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         break;
       case OnboardingStep.model:
         emit(state.copyWith(step: OnboardingStep.wallet));
+        break;
+      case OnboardingStep.profile:
+        emit(state.copyWith(step: OnboardingStep.model));
         break;
     }
   }
@@ -100,12 +112,18 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       final keypair = await _importIdentity(trimmed);
       emit(
         state.copyWith(
-          isBusy: false,
           importedNsec: trimmed,
           generatedNpub: keypair.npub,
           generatedNsec: keypair.nsec ?? trimmed,
         ),
       );
+
+      _nostrService.initialize(
+        nsec: keypair.nsec ?? trimmed,
+        npub: keypair.npub,
+      );
+      await _fetchExistingProfile();
+      emit(state.copyWith(isBusy: false));
       return true;
     } on Exception catch (error, stack) {
       _log.severe('importNsec failed', error, stack);
@@ -143,6 +161,54 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
+  void updateDisplayName(String name) {
+    emit(state.copyWith(displayName: name));
+  }
+
+  void cycleMeta() {
+    final meta = ProfileMetaGenerator.generate();
+    emit(state.copyWith(displayName: meta.displayName, picture: meta.avatar));
+  }
+
+  void _onEnterProfile() {
+    if (!_nostrService.isInitialized) {
+      _nostrService.initialize(
+        nsec: state.generatedNsec,
+        npub: state.generatedNpub,
+      );
+    }
+
+    if (state.displayName.isEmpty) {
+      final meta = ProfileMetaGenerator.generate(seed: state.generatedNpub);
+      emit(state.copyWith(displayName: meta.displayName, picture: meta.avatar));
+    }
+  }
+
+  Future<void> _fetchExistingProfile() async {
+    emit(state.copyWith(isFetchingMetadata: true));
+    try {
+      final metadata = await _nostrService
+          .getMetadata(_nostrService.pubkey!)
+          .timeout(const Duration(seconds: 6));
+      if (metadata != null) {
+        final fetchedName = metadata.displayName ?? metadata.name;
+        emit(
+          state.copyWith(
+            displayName: (fetchedName != null && fetchedName.isNotEmpty)
+                ? fetchedName
+                : state.displayName,
+            picture: metadata.picture ?? state.picture,
+            isFetchingMetadata: false,
+          ),
+        );
+      } else {
+        emit(state.copyWith(isFetchingMetadata: false));
+      }
+    } on Exception {
+      emit(state.copyWith(isFetchingMetadata: false));
+    }
+  }
+
   Future<bool> completeOnboarding() async {
     final npub = state.generatedNpub;
     final nsec = state.generatedNsec;
@@ -150,7 +216,24 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       emit(state.copyWith(error: "No identity to save"));
       return false;
     }
-    await _completeOnboarding(npub: npub, nsec: nsec);
+    await _completeOnboarding(
+      npub: npub,
+      nsec: nsec,
+      lightningAddress: state.lightningAddress.isNotEmpty
+          ? state.lightningAddress
+          : null,
+    );
+    if (_nostrService.isInitialized) {
+      unawaited(
+        _nostrService.publishMetadata(
+          displayName: state.displayName.isNotEmpty ? state.displayName : null,
+          lud16: state.lightningAddress.isNotEmpty
+              ? state.lightningAddress
+              : null,
+          picture: state.picture.isNotEmpty ? state.picture : null,
+        ),
+      );
+    }
     emit(state.copyWith(isComplete: true));
     return true;
   }

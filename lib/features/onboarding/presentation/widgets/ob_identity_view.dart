@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_paste_button.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -164,7 +165,7 @@ class ObIdentityView extends StatelessWidget {
                 Text(
                   state.generatedNpub.isEmpty
                       ? "Generating…"
-                      : state.generatedNpub,
+                      : state.generatedNpub.toNpubReadable(),
                   style: context.typography.mono.copyWith(
                     fontWeight: FontWeight.w500,
                     fontSize: 13.5,

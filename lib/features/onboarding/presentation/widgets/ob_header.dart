@@ -41,7 +41,7 @@ class ObHeader extends StatelessWidget {
           Expanded(
             child: ObStepper(
               step: currentStep - 1,
-              total: 3,
+              total: 4,
             ),
           ),
         ],

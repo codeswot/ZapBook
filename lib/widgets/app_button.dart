@@ -16,6 +16,7 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final IconData? iconRight;
   final bool fullWidth;
+  final bool isLoading;
 
   const AppButton({
     super.key,
@@ -26,6 +27,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.iconRight,
     this.fullWidth = false,
+    this.isLoading = false,
   });
 
   @override
@@ -107,16 +109,28 @@ class AppButton extends StatelessWidget {
       color: fgColor,
     );
 
+    final effectiveOnTap = isLoading ? null : onTap;
+
     Widget content = Row(
       mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (icon != null) ...[
+        if (isLoading) ...[
+          SizedBox(
+            width: fontSize + 2,
+            height: fontSize + 2,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: fgColor,
+            ),
+          ),
+          const SizedBox(width: 9),
+        ] else if (icon != null) ...[
           Icon(icon, size: fontSize + 4, color: fgColor),
           const SizedBox(width: 9),
         ],
         Text(label, style: buttonTextStyle),
-        if (iconRight != null) ...[
+        if (!isLoading && iconRight != null) ...[
           const SizedBox(width: 9),
           Icon(iconRight, size: fontSize + 3, color: fgColor),
         ],
@@ -124,7 +138,7 @@ class AppButton extends StatelessWidget {
     );
 
     return BouncingInteractiveWidget(
-      onTap: onTap,
+      onTap: effectiveOnTap,
       child: Container(
         height: height,
         padding: EdgeInsets.symmetric(horizontal: paddingX),

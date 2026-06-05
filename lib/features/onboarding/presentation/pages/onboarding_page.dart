@@ -13,6 +13,7 @@ import 'package:zapbook/features/onboarding/presentation/widgets/ob_welcome_view
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_identity_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_wallet_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_model_view.dart';
+import 'package:zapbook/features/onboarding/presentation/widgets/ob_profile_view.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
@@ -39,11 +40,13 @@ class _OnboardingView extends StatefulWidget {
 class _OnboardingViewState extends State<_OnboardingView> {
   final TextEditingController _nsecController = TextEditingController();
   final TextEditingController _lnAddressController = TextEditingController();
+  final TextEditingController _displayNameController = TextEditingController();
 
   @override
   void dispose() {
     _nsecController.dispose();
     _lnAddressController.dispose();
+    _displayNameController.dispose();
     super.dispose();
   }
 
@@ -102,6 +105,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
                       aiState: aiState,
                       nsecController: _nsecController,
                       lnAddressController: _lnAddressController,
+                      displayNameController: _displayNameController,
                       onComplete: () => _onComplete(context, cubit),
                     ),
                   ],
@@ -124,6 +128,8 @@ class _OnboardingViewState extends State<_OnboardingView> {
         return 2;
       case OnboardingStep.model:
         return 3;
+      case OnboardingStep.profile:
+        return 4;
     }
   }
 
@@ -149,6 +155,15 @@ class _OnboardingViewState extends State<_OnboardingView> {
         );
       case OnboardingStep.model:
         return ObModelView(capability: aiState.capability, aiState: aiState);
+      case OnboardingStep.profile:
+        if (_displayNameController.text != state.displayName) {
+          _displayNameController.text = state.displayName;
+        }
+        return ObProfileView(
+          state: state,
+          cubit: cubit,
+          displayNameController: _displayNameController,
+        );
     }
   }
 }

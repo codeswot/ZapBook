@@ -14,6 +14,7 @@ class ObFooter extends StatelessWidget {
   final AiModelState? aiState;
   final TextEditingController nsecController;
   final TextEditingController lnAddressController;
+  final TextEditingController displayNameController;
   final VoidCallback onComplete;
 
   const ObFooter({
@@ -24,6 +25,7 @@ class ObFooter extends StatelessWidget {
     required this.aiState,
     required this.nsecController,
     required this.lnAddressController,
+    required this.displayNameController,
     required this.onComplete,
   });
 
@@ -67,7 +69,8 @@ class ObFooter extends StatelessWidget {
                 ? AppButtonVariant.purple
                 : AppButtonVariant.primary,
             fullWidth: true,
-            iconRight: LucideIcons.arrowRight,
+            iconRight: state.isBusy ? null : LucideIcons.arrowRight,
+            isLoading: state.isBusy && !state.isGeneratingNew,
             onTap: () async {
               if (state.isGeneratingNew) {
                 if (state.generatedNpub.isEmpty) {
@@ -131,8 +134,8 @@ class ObFooter extends StatelessWidget {
             AppButton(
               label: "Continue",
               fullWidth: true,
-              iconRight: LucideIcons.check,
-              onTap: onComplete,
+              iconRight: LucideIcons.arrowRight,
+              onTap: () => cubit.nextStep(),
             ),
           ];
         }
@@ -143,12 +146,12 @@ class ObFooter extends StatelessWidget {
             fullWidth: true,
             variant: AppButtonVariant.purple,
             iconRight: isReady
-                ? LucideIcons.check
+                ? LucideIcons.arrowRight
                 : isDownloading
                 ? LucideIcons.arrowRight
                 : LucideIcons.download,
             onTap: (isReady || isDownloading)
-                ? onComplete
+                ? () => cubit.nextStep()
                 : () async {
                     final url = capability?.modelUrl;
                     final hash = capability?.expectedHash;
@@ -156,13 +159,30 @@ class ObFooter extends StatelessWidget {
                       await getIt<AiService>().startDownload(url, hash);
                     } else {
                       await getIt<AiService>().skipSetup();
-                      onComplete();
+                      cubit.nextStep();
                     }
                   },
           ),
           const SizedBox(height: 12),
           AppButton(
             label: "Skip for now",
+            variant: AppButtonVariant.ghost,
+            fullWidth: true,
+            onTap: () => cubit.nextStep(),
+          ),
+        ];
+      case OnboardingStep.profile:
+        return [
+          AppButton(
+            label: "Continue",
+            fullWidth: true,
+            variant: AppButtonVariant.purple,
+            iconRight: LucideIcons.check,
+            onTap: onComplete,
+          ),
+          const SizedBox(height: 12),
+          AppButton(
+            label: "Skip",
             variant: AppButtonVariant.ghost,
             fullWidth: true,
             onTap: onComplete,

@@ -47,6 +47,8 @@ class ObStepContent extends StatelessWidget {
           capability: capability,
           aiState: aiState,
         );
+      case OnboardingStep.profile:
+        return const SizedBox.shrink();
     }
   }
 }
