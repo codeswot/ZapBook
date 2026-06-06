@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -44,9 +40,9 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
   }
 
   Future<void> _pickImage() async {
-    final bytes = await getIt<FilePickerService>().pickImage();
-    if (bytes != null && mounted) {
-      setState(() => _picture = 'data:image/png;base64,${base64Encode(bytes)}');
+    final url = await widget.pickImage();
+    if (url.isNotEmpty && mounted) {
+      setState(() => _picture = url);
     }
   }
 
@@ -171,13 +167,14 @@ class ProfileEditSheet extends StatefulWidget {
     required String displayName,
     required String lud16,
     required String picture,
-  })
-  onSave;
+  }) onSave;
+  final Future<String> Function() pickImage;
 
   const ProfileEditSheet({
     super.key,
     required this.profile,
     required this.onSave,
+    required this.pickImage,
   });
 
   @override
@@ -190,15 +187,19 @@ class ProfileEditSheet extends StatefulWidget {
       required String displayName,
       required String lud16,
       required String picture,
-    })
-    onSave,
+    }) onSave,
+    required Future<String> Function() pickImage,
   }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ProfileEditSheet(profile: profile, onSave: onSave),
+      builder: (_) => ProfileEditSheet(
+        profile: profile,
+        onSave: onSave,
+        pickImage: pickImage,
+      ),
     );
   }
 }

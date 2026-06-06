@@ -43,7 +43,6 @@ class NwcService {
       bunkerUrl: connectionString,
       bunkers: _ndk.bunkers,
     );
-
     if (connection == null) {
       throw Exception('Failed to establish bunker connection');
     }

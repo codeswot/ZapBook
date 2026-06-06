@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -38,6 +38,7 @@ class ProfileKeyManageSheet extends StatefulWidget {
 }
 
 class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
+  final _clipboard = ClipboardService();
   bool _nsecRevealed = false;
 
   @override
@@ -63,12 +64,18 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
               ),
             ),
             const SizedBox(height: 20),
-            _keyBlock(context, 'Public Key', widget.npub.toNpubReadable()),
+            _KeyBlock(
+              label: 'Public Key (npub)',
+              displayValue: widget.npub.toNpubReadable(),
+              rawValue: widget.npub,
+              clipboard: _clipboard,
+            ),
             const SizedBox(height: 12),
-            _keyBlock(
-              context,
-              'Secret Key (nsec)',
-              _nsecRevealed ? widget.nsec : _masked(widget.nsec),
+            _KeyBlock(
+              label: 'Secret Key (nsec)',
+              displayValue: _nsecRevealed ? widget.nsec : _masked,
+              rawValue: widget.nsec,
+              clipboard: _clipboard,
             ),
             const SizedBox(height: 24),
             AppButton(
@@ -85,10 +92,24 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
     );
   }
 
-  String _masked(String nsec) =>
-      'nsec1•••••••••••••••••••••••••••••••••••••••••••';
+  String get _masked => 'nsec1•••••••••••••••••••••••••••••••••••••••••••';
+}
 
-  Widget _keyBlock(BuildContext context, String label, String value) {
+class _KeyBlock extends StatelessWidget {
+  final String label;
+  final String displayValue;
+  final String rawValue;
+  final ClipboardService clipboard;
+
+  const _KeyBlock({
+    required this.label,
+    required this.displayValue,
+    required this.rawValue,
+    required this.clipboard,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -101,9 +122,11 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
         ),
         const SizedBox(height: 6),
         BouncingInteractiveWidget(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: value));
-            context.toast.showSuccess('$label copied');
+          onTap: () async {
+            await clipboard.copy(rawValue);
+            if (context.mounted) {
+              context.toast.showSuccess('$label copied');
+            }
           },
           child: Container(
             padding: const EdgeInsets.all(12),
@@ -116,7 +139,7 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    value,
+                    displayValue,
                     style: context.typography.mono.copyWith(
                       fontSize: 12,
                       color: context.colors.ink,

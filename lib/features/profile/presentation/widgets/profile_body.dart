@@ -9,9 +9,6 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_section.da
 import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_stats_row.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
 import 'package:zapbook/widgets/app_nwc_connect_sheet.dart';
@@ -36,13 +33,13 @@ class ProfileBody extends StatelessWidget {
         children: [
           ProfileWalletCard(
             profile: profile,
-            nwcLabel: getIt<NwcService>().isConnected ? 'Connected' : null,
+            nwcLabel: context.read<ProfileCubit>().nwcConnected ? 'Connected' : null,
             onWallet: () {
-              final nwc = getIt<NwcService>();
-              if (nwc.isConnected) return;
+              final cubit = context.read<ProfileCubit>();
+              if (cubit.nwcConnected) return;
               AppNwcConnectSheet.show(
                 context,
-                onConnect: (uri) => nwc.connect(uri),
+                onConnect: (uri) => cubit.connectNwc(uri),
               );
             },
             onCopyLightning: () => _copy(
@@ -63,8 +60,8 @@ class ProfileBody extends StatelessWidget {
                 title: 'Manage keys',
                 subtitle: 'Back up or export your nsec',
                 onTap: () async {
-                  final nsec = await getIt<IdentityLocalDataSource>()
-                      .readNsec();
+                  final nsec =
+                      await context.read<ProfileCubit>().readNsec();
                   if (nsec != null && context.mounted) {
                     ProfileKeyManageSheet.show(
                       context,

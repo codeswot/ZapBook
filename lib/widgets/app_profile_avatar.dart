@@ -31,37 +31,55 @@ class AppProfileAvatar extends StatelessWidget {
             ? Border.all(color: borderColor!, width: borderWidth)
             : null,
       ),
-      child: ClipOval(child: _buildImage(context)),
+      child: ClipOval(child: _AvatarImage(url: url, size: size)),
     );
   }
+}
 
-  Widget _buildImage(BuildContext context) {
+class _AvatarImage extends StatelessWidget {
+  final String url;
+  final double size;
+
+  const _AvatarImage({required this.url, required this.size});
+
+  bool get _isLocalFile =>
+      !url.startsWith('http') && !url.startsWith('data:');
+
+  @override
+  Widget build(BuildContext context) {
     if (url.startsWith('data:image')) {
-      return _buildDataUri();
+      return _DataUriImage(url: url);
     }
     if (_isLocalFile) {
       return Image.file(
         File(url),
         fit: BoxFit.cover,
-        errorBuilder: (_, err, stack) => _placeholder(context),
+        errorBuilder: (_, err, stack) => _AvatarPlaceholder(size: size),
       );
     }
     if (url.endsWith('.svg') || url.contains('dicebear.com')) {
       return SvgPicture.network(
         url,
         fit: BoxFit.cover,
-        placeholderBuilder: (_) => _placeholder(context),
+        placeholderBuilder: (_) => _AvatarPlaceholder(size: size),
       );
     }
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
-      placeholder: (_, url) => _placeholder(context),
-      errorWidget: (_, err, stack) => _placeholder(context),
+      placeholder: (_, u) => _AvatarPlaceholder(size: size),
+      errorWidget: (_, err, stack) => _AvatarPlaceholder(size: size),
     );
   }
+}
 
-  Widget _buildDataUri() {
+class _DataUriImage extends StatelessWidget {
+  final String url;
+
+  const _DataUriImage({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
     final comma = url.indexOf(',');
     if (comma == -1) return const SizedBox.shrink();
     final base64 = url.substring(comma + 1);
@@ -71,11 +89,15 @@ class AppProfileAvatar extends StatelessWidget {
       return const SizedBox.shrink();
     }
   }
+}
 
-  bool get _isLocalFile =>
-      !url.startsWith('http') && !url.startsWith('data:');
+class _AvatarPlaceholder extends StatelessWidget {
+  final double size;
 
-  Widget _placeholder(BuildContext context) {
+  const _AvatarPlaceholder({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Icon(

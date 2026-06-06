@@ -290,6 +290,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i223.UpdateProfile>(),
         gh<_i915.SignOut>(),
         gh<_i1053.ClipboardService>(),
+        gh<_i507.NwcService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1034.FilePickerService>(),
       ),
     );
     gh.factory<_i1071.AddBookToLibrary>(

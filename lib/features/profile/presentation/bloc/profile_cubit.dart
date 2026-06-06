@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/core/services/file_picker_service.dart';
+import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart';
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart';
@@ -16,6 +21,9 @@ class ProfileCubit extends Cubit<ProfileState> {
     this._updateProfile,
     this._signOut,
     this._clipboard,
+    this._nwc,
+    this._identity,
+    this._filePicker,
   ) : super(const ProfileLoading()) {
     load();
   }
@@ -24,6 +32,11 @@ class ProfileCubit extends Cubit<ProfileState> {
   final UpdateProfile _updateProfile;
   final SignOut _signOut;
   final ClipboardService _clipboard;
+  final NwcService _nwc;
+  final IdentityLocalDataSource _identity;
+  final FilePickerService _filePicker;
+
+  bool get nwcConnected => _nwc.isConnected;
 
   Future<void> load() async {
     emit(const ProfileLoading());
@@ -50,6 +63,18 @@ class ProfileCubit extends Cubit<ProfileState> {
     );
     await load();
   }
+
+  Future<String> pickImage() async {
+    final bytes = await _filePicker.pickImage();
+    if (bytes != null) {
+      return 'data:image/png;base64,${base64Encode(bytes)}';
+    }
+    return '';
+  }
+
+  Future<String?> readNsec() => _identity.readNsec();
+
+  Future<void> connectNwc(String uri) => _nwc.connect(uri);
 
   Future<void> copy(String value) => _clipboard.copy(value);
 

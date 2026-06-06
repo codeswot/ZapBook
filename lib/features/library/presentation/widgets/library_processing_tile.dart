@@ -53,18 +53,34 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
               color: failed ? colors.tomato : colors.hairline2,
             ),
           ),
-          child: failed ? _failed(colors) : _running(colors, job),
+          child: failed
+              ? _FailedContent(colors: colors, job: job)
+              : _RunningContent(colors: colors, job: job, pulse: _pulse),
         ),
       ),
     );
   }
 
-  Widget _running(SemanticColors colors, IngestionJob job) {
+}
+
+class _RunningContent extends StatelessWidget {
+  final SemanticColors colors;
+  final IngestionJob job;
+  final AnimationController pulse;
+
+  const _RunningContent({
+    required this.colors,
+    required this.job,
+    required this.pulse,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FadeTransition(
-          opacity: Tween<double>(begin: 0.45, end: 1).animate(_pulse),
+          opacity: Tween<double>(begin: 0.45, end: 1).animate(pulse),
           child: Icon(LucideIcons.sparkles, size: 16, color: colors.bitcoin),
         ),
         const Spacer(),
@@ -72,10 +88,8 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
           job.fileName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: context.typography.caption.copyWith(
-            color: colors.ink,
-            fontWeight: FontWeight.w600,
-          ),
+          style: context.typography.caption
+              .copyWith(color: colors.ink, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Text(
@@ -83,25 +97,32 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
           style: context.typography.caption.copyWith(color: colors.slate),
         ),
         const SizedBox(height: 8),
-        _Progress(value: job.progress, color: colors.bitcoin, track: colors.paper4),
+        _Progress(
+            value: job.progress, color: colors.bitcoin, track: colors.paper4),
       ],
     );
   }
+}
 
-  Widget _failed(SemanticColors colors) {
+class _FailedContent extends StatelessWidget {
+  final SemanticColors colors;
+  final IngestionJob job;
+
+  const _FailedContent({required this.colors, required this.job});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(LucideIcons.triangleAlert, size: 16, color: colors.tomato),
         const Spacer(),
         Text(
-          widget.job.fileName,
+          job.fileName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: context.typography.caption.copyWith(
-            color: colors.ink,
-            fontWeight: FontWeight.w600,
-          ),
+          style: context.typography.caption
+              .copyWith(color: colors.ink, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Text(
@@ -114,7 +135,8 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
 }
 
 class _Progress extends StatelessWidget {
-  const _Progress({required this.value, required this.color, required this.track});
+  const _Progress(
+      {required this.value, required this.color, required this.track});
 
   final double value;
   final Color color;
@@ -135,11 +157,11 @@ class _Progress extends StatelessWidget {
 }
 
 String _stageLabel(IngestionStage stage) => switch (stage) {
-  IngestionStage.fileSelected => 'Reading file',
-  IngestionStage.extracting => 'Extracting',
-  IngestionStage.assembling => 'Assembling',
-  IngestionStage.writing => 'Saving',
-  IngestionStage.needsAiProcessing => 'Saved',
-  IngestionStage.complete => 'Done',
-  IngestionStage.error => 'Error',
-};
+      IngestionStage.fileSelected => 'Reading file',
+      IngestionStage.extracting => 'Extracting',
+      IngestionStage.assembling => 'Assembling',
+      IngestionStage.writing => 'Saving',
+      IngestionStage.needsAiProcessing => 'Saved',
+      IngestionStage.complete => 'Done',
+      IngestionStage.error => 'Error',
+    };

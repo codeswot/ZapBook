@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-
+import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_input.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   late final TextEditingController _controller;
@@ -13,7 +15,7 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController()..addListener(() => setState(() {}));
   }
 
   @override
@@ -21,6 +23,15 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
     _controller.dispose();
     super.dispose();
   }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) {
+      _controller.text = data!.text!;
+    }
+  }
+
+  void _clear() => _controller.clear();
 
   Future<void> _connect() async {
     final uri = _controller.text.trim();
@@ -57,11 +68,27 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
               ),
             ),
             const SizedBox(height: 20),
-            AppInput(
-              controller: _controller,
-              icon: LucideIcons.link,
-              label: 'Connection string',
-              hintText: 'nostr+walletconnect://...',
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: AppInput(
+                    controller: _controller,
+                    icon: LucideIcons.link,
+                    label: 'Connection string',
+                    hintText: 'nostr+walletconnect://...',
+                    trailing: _controller.text.isNotEmpty
+                        ? BouncingInteractiveWidget(
+                            onTap: _clear,
+                            child: Icon(LucideIcons.x,
+                                size: 18, color: context.colors.slate),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _PasteButton(onTap: _paste),
+              ],
             ),
             const SizedBox(height: 24),
             AppButton(
@@ -97,6 +124,29 @@ class AppNwcConnectSheet extends StatefulWidget {
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AppNwcConnectSheet(onConnect: onConnect),
+    );
+  }
+}
+
+class _PasteButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _PasteButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingInteractiveWidget(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
+          color: context.colors.paper2,
+          borderRadius: AppRadii.br10,
+          border: Border.all(color: context.colors.hairline),
+        ),
+        child: Icon(LucideIcons.clipboard, color: context.colors.slate),
+      ),
     );
   }
 }

@@ -60,21 +60,29 @@ class ObWelcomeView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 48),
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildWelcomeBadge(context, "📖", "Read"),
-            const SizedBox(width: 18),
-            _buildWelcomeBadge(context, "✓", "Prove"),
-            const SizedBox(width: 18),
-            _buildWelcomeBadge(context, "⚡", "Get zapped"),
+            _WelcomeBadge(emoji: '📖', label: 'Read'),
+            SizedBox(width: 18),
+            _WelcomeBadge(emoji: '✓', label: 'Prove'),
+            SizedBox(width: 18),
+            _WelcomeBadge(emoji: '⚡', label: 'Get zapped'),
           ],
         ),
       ],
     );
   }
+}
 
-  Widget _buildWelcomeBadge(BuildContext context, String emoji, String label) {
+class _WelcomeBadge extends StatelessWidget {
+  final String emoji;
+  final String label;
+
+  const _WelcomeBadge({required this.emoji, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Container(

@@ -93,6 +93,7 @@ class _ProfileHeaderContent extends StatelessWidget {
           onTap: () => ProfileEditSheet.show(
             context,
             profile: profile,
+            pickImage: () => context.read<ProfileCubit>().pickImage(),
             onSave: ({
               required displayName,
               required lud16,
