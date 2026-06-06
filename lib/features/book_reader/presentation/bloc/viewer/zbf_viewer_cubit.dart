@@ -4,21 +4,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/book_ingestion/data/extractors/pdf_extractor.dart';
-import 'package:zapbook/features/book_ingestion/data/support/paragraph_merger.dart';
-import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
+import 'package:zapbook/core/data/paragraph_merger.dart';
+import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
-  ZbfViewerCubit({required this.handle, PdfPageRasterizer? rasterizer})
-    : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
-      super(const ZbfViewerState()) {
+  ZbfViewerCubit({
+    required this.handle,
+    PdfPageRasterizer? rasterizer,
+    PdfChunkExtractor? chunkExtractor,
+  })  : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
+        _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
+        super(const ZbfViewerState()) {
     _prefetch(0);
   }
 
   final ZbfBookHandle handle;
   final PdfPageRasterizer _rasterizer;
+  final PdfChunkExtractor _chunkExtractor;
   final _logger = Logger('ZbfViewerCubit');
 
   final List<int> _prefetchQueue = [];
@@ -87,8 +92,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     final end = chunkIndex == 0 ? 9 : start + 19;
 
     try {
-      final extractor = PdfExtractor();
-      final pages = await extractor.extractRange(
+      final pages = await _chunkExtractor.extractRange(
         pdf,
         start,
         end,

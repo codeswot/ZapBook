@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
-import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
+import 'package:zapbook/core/cubit/ai_model_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_header.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_footer.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_welcome_view.dart';
@@ -53,7 +53,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
   void _onComplete(BuildContext context, OnboardingCubit cubit) async {
     final saved = await cubit.completeOnboarding();
     if (saved && context.mounted) {
-      context.go('/');
+      const HomeRoute().go(context);
     }
   }
 
@@ -62,6 +62,9 @@ class _OnboardingViewState extends State<_OnboardingView> {
     final cubit = context.read<OnboardingCubit>();
 
     return BlocBuilder<AiModelCubit, AiModelState>(
+      buildWhen: (prev, curr) =>
+          prev.status != curr.status ||
+              prev.downloadProgress != curr.downloadProgress,
       builder: (context, aiState) {
         return BlocBuilder<OnboardingCubit, OnboardingState>(
           builder: (context, state) {

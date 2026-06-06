@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_dialog.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
@@ -32,6 +32,6 @@ class ProfileSignOutTile extends StatelessWidget {
     );
     if (confirmed != true) return;
     await cubit.signOut();
-    if (context.mounted) context.go('/onboarding');
+    if (context.mounted) const OnboardingRoute().go(context);
   }
 }

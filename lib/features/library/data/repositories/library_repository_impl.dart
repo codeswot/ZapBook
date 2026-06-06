@@ -5,7 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/book_ingestion/data/documents_directory.dart';
+import 'package:zapbook/core/data/documents_directory.dart';
 import 'package:zapbook/features/library/data/cover/cover_store.dart';
 import 'package:zapbook/features/library/data/db/library_database.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';

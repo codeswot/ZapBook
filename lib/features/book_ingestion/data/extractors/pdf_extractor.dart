@@ -2,13 +2,14 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart';
 import 'package:zapbook/features/book_ingestion/data/support/text_runs.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/isolate_book_extractor.dart';
 
-final class PdfExtractor extends IsolateBookExtractor {
+final class PdfExtractor extends IsolateBookExtractor implements PdfChunkExtractor {
   PdfExtractor({super.coverGenerator, super.assembler});
 
   @override
@@ -21,6 +22,7 @@ final class PdfExtractor extends IsolateBookExtractor {
   Future<ParsedContent> parse(Uint8List bytes, String title) =>
       Isolate.run(() => _parsePdf(bytes, title));
 
+  @override
   Future<List<BookPage>> extractRange(Uint8List bytes, int startPageIndex, int endPageIndex, String chapterTitle, int chapterIndex) =>
       Isolate.run(() => _extractRange(bytes, startPageIndex, endPageIndex, chapterTitle, chapterIndex));
 }

@@ -3,13 +3,13 @@ import 'dart:typed_data';
 
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/ingestion_progress.dart';
+import 'package:zapbook/core/domain/ingestion_progress.dart';
 import 'package:zapbook/features/book_ingestion/data/cover/canvas_cover_generator.dart';
 import 'package:zapbook/features/book_ingestion/data/cover/cover_generator.dart';
 import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
 
 abstract base class IsolateBookExtractor implements BookExtractor {
   IsolateBookExtractor({

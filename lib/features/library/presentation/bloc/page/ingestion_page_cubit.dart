@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/services/file_picker_service.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_state.dart';
+import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 
 @injectable
 class IngestionPageCubit extends Cubit<IngestionPageState> {

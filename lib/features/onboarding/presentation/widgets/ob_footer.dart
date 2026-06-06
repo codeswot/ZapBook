@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/widgets/app_button.dart';
-import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
+import 'package:zapbook/core/cubit/ai_model_cubit.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
-import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/widgets/app_button.dart';
+import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 
 class ObFooter extends StatelessWidget {
@@ -155,10 +156,11 @@ class ObFooter extends StatelessWidget {
                 : () async {
                     final url = capability?.modelUrl;
                     final hash = capability?.expectedHash;
+                    final ai = context.read<AiModelCubit>();
                     if (url != null && hash != null) {
-                      await getIt<AiService>().startDownload(url, hash);
+                      ai.startDownload(url, hash);
                     } else {
-                      await getIt<AiService>().skipSetup();
+                      ai.skipSetup();
                       cubit.nextStep();
                     }
                   },

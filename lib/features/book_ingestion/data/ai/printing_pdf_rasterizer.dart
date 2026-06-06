@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
 import 'package:printing/printing.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
+import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 
 @LazySingleton(as: PdfPageRasterizer)
 final class PrintingPdfRasterizer implements PdfPageRasterizer {

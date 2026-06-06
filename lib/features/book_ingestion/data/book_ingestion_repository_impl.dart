@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/ingestion_progress.dart';
-import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dart';
-import 'package:zapbook/features/book_ingestion/domain/repositories/book_ingestion_repository.dart';
-import 'package:zapbook/features/book_ingestion/data/documents_directory.dart';
+import 'package:zapbook/core/domain/ingestion_progress.dart';
+import 'package:zapbook/core/domain/ingestion_stage.dart';
+import 'package:zapbook/core/domain/book_ingestion_repository.dart';
+import 'package:zapbook/core/data/documents_directory.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
 
 @LazySingleton(as: BookIngestionRepository)
 final class BookIngestionRepositoryImpl implements BookIngestionRepository {

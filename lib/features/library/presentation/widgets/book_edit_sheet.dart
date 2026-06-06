@@ -8,6 +8,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/domain/usecases/update_book_metadata.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -79,6 +80,7 @@ class _BookEditSheetState extends State<BookEditSheet> {
     } on Object {
       if (mounted) {
         setState(() => _saving = false);
+        context.toast.showError('Failed to save changes');
       }
     }
   }

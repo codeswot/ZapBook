@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
-import 'package:zapbook/features/ai_model/presentation/widgets/ai_model_headsup_bridge.dart';
+import 'package:zapbook/core/router/app_router.dart';
+import 'package:zapbook/core/cubit/ai_model_cubit.dart';
+import 'package:zapbook/app/ai_model_headsup_bridge.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/widgets/app_bottom_navigation.dart';
@@ -26,17 +26,16 @@ class AppShellPage extends StatelessWidget {
   }
 
   void _onTabSelected(BuildContext context, String id) {
-    final router = GoRouter.of(context);
     if (id == 'home') {
-      router.go('/');
+      const HomeRoute().go(context);
     } else if (id == 'circles') {
-      router.go('/circles');
+      const CirclesRoute().go(context);
     } else if (id == 'cheers') {
-      router.go('/cheers');
+      const CheersRoute().go(context);
     } else if (id == 'you') {
-      router.go('/you');
+      const YouRoute().go(context);
     } else if (id == 'library') {
-      router.go('/library');
+      const LibraryRoute().go(context);
     }
   }
 

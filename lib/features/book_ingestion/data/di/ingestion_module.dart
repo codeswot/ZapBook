@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/features/book_ingestion/data/cover/canvas_cover_generator.dart';
@@ -19,6 +20,10 @@ abstract class IngestionModule {
 
   @lazySingleton
   ZbfReader zbfReader() => const ZbfReader();
+
+  @lazySingleton
+  PdfChunkExtractor pdfChunkExtractor(CoverGenerator cover) =>
+      PdfExtractor(coverGenerator: cover);
 
   @lazySingleton
   List<BookExtractor> bookExtractors(CoverGenerator cover) => [

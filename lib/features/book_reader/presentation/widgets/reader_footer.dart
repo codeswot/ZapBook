@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 import 'package:zapbook/core/theme/theme_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/reader_settings/reader_settings_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_progress.dart';
 
 class ReaderFooter extends StatelessWidget {

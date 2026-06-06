@@ -6,10 +6,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:ulid/ulid.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/ingestion_progress.dart';
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
-import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dart';
-import 'package:zapbook/features/book_ingestion/domain/usecases/ingest_book.dart';
+import 'package:zapbook/core/domain/ingestion_progress.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
+import 'package:zapbook/core/domain/ingestion_stage.dart';
+import 'package:zapbook/core/domain/ingest_book.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dart';
+import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
 import 'package:zapbook/features/library/domain/enums/ingestion_job_status.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';

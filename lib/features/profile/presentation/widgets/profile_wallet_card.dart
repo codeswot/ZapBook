@@ -103,7 +103,10 @@ class ProfileWalletCard extends StatelessWidget {
             GestureDetector(
               onTap: onCopyLightning,
               child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
                   color: colors.paper,
                   borderRadius: BorderRadius.vertical(

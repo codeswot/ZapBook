@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_wizard_sheet.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_body.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_header.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_state.dart';
+import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 
@@ -65,6 +65,8 @@ class _LibraryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<IngestionPageCubit, IngestionPageState>(
+      listenWhen: (_, curr) =>
+          curr is IngestionPageFilePicked || curr is IngestionPageError,
       listener: _onPageCubitState,
       child: Scaffold(
         backgroundColor: context.colors.paper,

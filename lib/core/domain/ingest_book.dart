@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/ingestion_progress.dart';
-import 'package:zapbook/features/book_ingestion/domain/repositories/book_ingestion_repository.dart';
+import 'package:zapbook/core/domain/ingestion_progress.dart';
+import 'package:zapbook/core/domain/book_ingestion_repository.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
 
 @injectable
 final class IngestBook {

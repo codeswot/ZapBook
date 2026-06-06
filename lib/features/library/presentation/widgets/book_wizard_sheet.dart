@@ -11,9 +11,9 @@ import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/app_chip.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/wizard/book_wizard_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/wizard/book_wizard_state.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
+import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 
 class BookWizardSheet extends StatefulWidget {
   const BookWizardSheet({super.key});

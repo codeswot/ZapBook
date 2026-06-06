@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/page/ingestion_page_cubit.dart';
+import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_icon_button.dart';
 

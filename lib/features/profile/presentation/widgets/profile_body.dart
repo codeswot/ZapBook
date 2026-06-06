@@ -31,7 +31,7 @@ class ProfileBody extends StatelessWidget {
         children: [
           ProfileWalletCard(
             profile: profile,
-            onWallet: () => context.toast.showInfo('Coming soon'),
+            onWallet: () {},
             onCopyLightning: () => _copy(
               context,
               profile.lightningAddress,
@@ -49,7 +49,7 @@ class ProfileBody extends StatelessWidget {
                 icon: LucideIcons.shieldCheck,
                 title: 'Manage keys',
                 subtitle: 'Back up or export your nsec',
-                onTap: () => context.toast.showInfo('Coming soon'),
+                onTap: () {},
               ),
             ],
           ),
@@ -60,7 +60,7 @@ class ProfileBody extends StatelessWidget {
               ProfileTile(
                 icon: LucideIcons.bell,
                 title: 'Notifications',
-                onTap: () => context.toast.showInfo('Coming soon'),
+                onTap: () {},
               ),
               const ProfileAppearanceTile(),
               const ProfileSignOutTile(),
@@ -78,11 +78,7 @@ class ProfileBody extends StatelessWidget {
     );
   }
 
-  Future<void> _copy(
-    BuildContext context,
-    String value,
-    String message,
-  ) async {
+  Future<void> _copy(BuildContext context, String value, String message) async {
     await context.read<ProfileCubit>().copy(value);
     if (context.mounted) context.toast.showInfo(message);
   }

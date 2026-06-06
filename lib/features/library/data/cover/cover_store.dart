@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/book_ingestion/data/documents_directory.dart';
+import 'package:zapbook/core/data/documents_directory.dart';
 
 @lazySingleton
 final class CoverStore {

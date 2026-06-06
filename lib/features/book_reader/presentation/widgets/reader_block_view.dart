@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/features/book_reader/presentation/widgets/reading_style.dart';
+import 'package:zapbook/theme/reading_style.dart';
 
 class ReaderBlockView extends StatelessWidget {
   const ReaderBlockView({

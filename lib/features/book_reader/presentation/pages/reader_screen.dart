@@ -10,16 +10,16 @@ import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/reader_settings/reader_settings_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
+import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
-import 'package:zapbook/features/book_reader/presentation/widgets/reading_style.dart';
+import 'package:zapbook/theme/reading_style.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({

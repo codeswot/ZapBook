@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:zapbook/features/book_ingestion/domain/enums/ingestion_stage.dart';
+import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 final class IngestionProgress extends Equatable {

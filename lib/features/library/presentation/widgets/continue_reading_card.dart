@@ -20,9 +20,7 @@ class ContinueReadingCard extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final cover = book.coverPath;
-    final image = cover != null && File(cover).existsSync()
-        ? FileImage(File(cover))
-        : null;
+    final image = cover != null ? FileImage(File(cover)) : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
@@ -73,7 +71,7 @@ class ContinueReadingCard extends StatelessWidget {
                 onTap: () => openBook(context, book),
                 icon: LucideIcons.bookOpen,
                 size: 20,
-                color: colors.paper,
+                color: colors.bitcoinDark,
                 backgroundColor: colors.bitcoin,
               ),
             ],

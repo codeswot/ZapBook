@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/features/library/presentation/widgets/zb_shimmer.dart';
+import 'package:zapbook/widgets/zb_shimmer.dart';
 
 class ReaderPageLoading extends StatelessWidget {
   const ReaderPageLoading({required this.message, super.key});

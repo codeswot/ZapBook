@@ -5,10 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_progress.dart';
 import 'package:zapbook/zbf/zbf.dart';
-import 'package:zapbook/features/book_ingestion/domain/ai/pdf_page_rasterizer.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_cubit.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/viewer/zbf_viewer_state.dart';
-import 'package:zapbook/features/library/presentation/widgets/zb_shimmer.dart';
+import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
+import 'package:zapbook/widgets/zb_shimmer.dart';
 
 class ZbfViewerMessage extends StatelessWidget {
   const ZbfViewerMessage({required this.text, super.key});

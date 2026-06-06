@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/services/ai_service.dart';
-import 'package:zapbook/features/ai_model/presentation/cubit/ai_model_cubit.dart';
-import 'package:zapbook/features/ai_model/presentation/widgets/ai_download_banner.dart';
-import 'package:zapbook/features/ai_model/presentation/widgets/ai_missing_banner.dart';
-import 'package:zapbook/features/heads_up/domain/models/heads_up_message.dart';
+import 'package:zapbook/core/cubit/ai_model_cubit.dart';
+import 'package:zapbook/widgets/ai_download_banner.dart';
+import 'package:zapbook/widgets/ai_missing_banner.dart';
+import 'package:zapbook/core/domain/heads_up_message.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 
 class AiModelHeadsUpBridge extends StatefulWidget {

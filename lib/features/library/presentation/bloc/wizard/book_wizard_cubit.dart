@@ -5,8 +5,8 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/core/data/datasources/genre_datasource.dart';
-import 'package:zapbook/features/book_ingestion/domain/entities/wizard_data.dart';
-import 'package:zapbook/features/book_ingestion/presentation/bloc/wizard/book_wizard_state.dart';
+import 'package:zapbook/core/domain/wizard_data.dart';
+import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 
 @injectable
 class BookWizardCubit extends Cubit<BookWizardState> {

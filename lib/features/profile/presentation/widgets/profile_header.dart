@@ -89,7 +89,7 @@ class _ProfileHeaderContent extends StatelessWidget {
           ),
         ),
         AppIconButton(
-          onTap: () => context.toast.showInfo('Coming soon'),
+          onTap: () {},
           icon: LucideIcons.edit2,
           size: 20,
           color: colors.ink,

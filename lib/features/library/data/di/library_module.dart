@@ -4,7 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/book_ingestion/data/documents_directory.dart';
+import 'package:zapbook/core/data/documents_directory.dart';
 import 'package:zapbook/features/library/data/db/library_database.dart';
 
 @module
