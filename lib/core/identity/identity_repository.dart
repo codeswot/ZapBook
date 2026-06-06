@@ -14,4 +14,6 @@ abstract interface class IdentityRepository {
   Future<String?> currentNsec();
 
   Future<bool> hasIdentity();
+
+  Future<void> clear();
 }

@@ -11,7 +11,7 @@ final class CanvasCoverGenerator implements CoverGenerator {
   const CanvasCoverGenerator({
     this.width = 600,
     this.height = 900,
-    this.quality = 85,
+    this.quality = 65,
   });
 
   final int width;
@@ -28,6 +28,18 @@ final class CanvasCoverGenerator implements CoverGenerator {
   static const Color _butter = Color(0xFFF7C948);
   static const Color _white = Color(0xFFFFFFFF);
   static const Color _black = Color(0xFF000000);
+  static const List<Color> _palette = [
+    _bitcoin,
+    _plum,
+    _mint,
+    _sky,
+    _coral,
+    _butter,
+    _ink,
+    Color(0xFF8B5CF6),
+    Color(0xFFEC4899),
+    Color(0xFF10B981),
+  ];
 
   @override
   Future<Uint8List> generate({
@@ -37,7 +49,11 @@ final class CanvasCoverGenerator implements CoverGenerator {
     ui.Image? illustration;
     if (sourceImage != null) {
       try {
-        final codec = await ui.instantiateImageCodec(sourceImage);
+        final codec = await ui.instantiateImageCodec(
+          sourceImage,
+          targetWidth: width,
+          targetHeight: height,
+        );
         final frame = await codec.getNextFrame();
         illustration = frame.image;
       } on Exception {
@@ -173,7 +189,7 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
   void _drawAbstractArt(Canvas canvas, Rect bounds, String title) {
     final seed = title.hashCode;
-    final palette = [_bitcoin, _plum, _mint, _sky, _coral, _butter];
+    final palette = [_getHueForTitle(title), ..._palette];
     final random = math.Random(seed);
 
     final blobCount = 20 + random.nextInt(11);

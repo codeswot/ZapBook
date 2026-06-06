@@ -1,17 +1,14 @@
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
-import 'package:zapbook/core/services/secure_storage_service.dart';
 
 @LazySingleton(as: IdentityRepository)
 class MarmotIdentityRepository implements IdentityRepository {
-  const MarmotIdentityRepository(this._storage);
+  const MarmotIdentityRepository(this._local);
 
-  final SecureStorageService _storage;
-
-  static const String _nsecKey = 'identity_nsec';
-  static const String _npubKey = 'identity_npub';
+  final IdentityLocalDataSource _local;
 
   @override
   Future<NostrKeypair> generate() => MarmotIdentity.generate();
@@ -24,20 +21,21 @@ class MarmotIdentityRepository implements IdentityRepository {
   Future<bool> validateNsec(String nsec) => MarmotIdentity.validateNsec(nsec);
 
   @override
-  Future<void> persist({required String npub, required String nsec}) async {
-    await _storage.write(_nsecKey, nsec);
-    await _storage.write(_npubKey, npub);
-  }
+  Future<void> persist({required String npub, required String nsec}) =>
+      _local.write(npub: npub, nsec: nsec);
 
   @override
-  Future<String?> currentNpub() => _storage.read(_npubKey);
+  Future<String?> currentNpub() => _local.readNpub();
 
   @override
-  Future<String?> currentNsec() => _storage.read(_nsecKey);
+  Future<String?> currentNsec() => _local.readNsec();
 
   @override
   Future<bool> hasIdentity() async {
-    final nsec = await _storage.read(_nsecKey);
+    final nsec = await _local.readNsec();
     return nsec != null && nsec.isNotEmpty;
   }
+
+  @override
+  Future<void> clear() => _local.clear();
 }

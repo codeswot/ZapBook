@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/onboarding/data/datasources/onboarding_local_datasource.dart';
+import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/features/onboarding/domain/entities/onboarding_status.dart';
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart';
 

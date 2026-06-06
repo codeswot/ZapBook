@@ -55,7 +55,7 @@ class LibraryHeader extends StatelessWidget {
                 onTap: () => context.read<IngestionPageCubit>().pickBook(),
                 icon: LucideIcons.plus,
                 size: 22,
-                color: colors.paper,
+                color: colors.bitcoinDark,
                 backgroundColor: colors.bitcoin,
               ),
             ],

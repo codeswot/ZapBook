@@ -17,9 +17,12 @@ import 'package:marmot_dart/marmot_dart.dart' as _i970;
 import 'package:ndk/ndk.dart' as _i857;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
+import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
+    as _i342;
 import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/nostr_module.dart' as _i96;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
+import 'package:zapbook/core/identity/identity_local_data_source.dart' as _i603;
 import 'package:zapbook/core/identity/identity_repository.dart' as _i63;
 import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
@@ -89,8 +92,6 @@ import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit
     as _i327;
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
-import 'package:zapbook/features/onboarding/data/datasources/onboarding_local_datasource.dart'
-    as _i638;
 import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
     as _i444;
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart'
@@ -103,6 +104,14 @@ import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart
     as _i136;
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart'
     as _i634;
+import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart'
+    as _i735;
+import 'package:zapbook/features/profile/data/repositories/profile_repository_impl.dart'
+    as _i160;
+import 'package:zapbook/features/profile/domain/repositories/profile_repository.dart'
+    as _i582;
+import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
+    as _i145;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -154,23 +163,23 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i746.DocumentsDirectory>(
       () => const _i746.PathProviderDocumentsDirectory(),
     );
+    gh.lazySingleton<_i603.IdentityLocalDataSource>(
+      () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
+    );
     gh.lazySingleton<_i1012.AiService>(
       () => _i1012.AiServiceImpl(
         gh<_i460.SharedPreferences>(),
         gh<_i447.DeviceCapabilityService>(),
       ),
     );
-    gh.lazySingleton<_i63.IdentityRepository>(
-      () => _i538.MarmotIdentityRepository(gh<_i123.SecureStorageService>()),
+    gh.lazySingleton<_i342.OnboardingLocalDataSource>(
+      () => _i342.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i465.ThemeCubit>(
       () => _i465.ThemeCubit(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i28.ReaderSettingsCubit>(
       () => _i28.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i638.OnboardingLocalDataSource>(
-      () => _i638.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
     );
     gh.factory<_i439.IngestionPageCubit>(
       () => _i439.IngestionPageCubit(gh<_i1034.FilePickerService>()),
@@ -193,8 +202,14 @@ extension GetItInjectableX on _i174.GetIt {
         initialTitle,
       ),
     );
+    gh.lazySingleton<_i735.ProfileRemoteDataSource>(
+      () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    );
     gh.lazySingleton<_i828.CoverStore>(
       () => _i828.CoverStore(gh<_i746.DocumentsDirectory>()),
+    );
+    gh.lazySingleton<_i63.IdentityRepository>(
+      () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
     );
     gh.factory<_i709.GenerateIdentity>(
       () => _i709.GenerateIdentity(gh<_i63.IdentityRepository>()),
@@ -212,10 +227,17 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
-          _i444.OnboardingRepositoryImpl(gh<_i638.OnboardingLocalDataSource>()),
+          _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
     );
     gh.factory<_i970.AiModelCubit>(
       () => _i970.AiModelCubit(gh<_i1012.AiService>()),
+    );
+    gh.lazySingleton<_i582.ProfileRepository>(
+      () => _i160.ProfileRepositoryImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+      ),
     );
     gh.lazySingleton<_i865.BookIngestionRepository>(
       () => _i785.BookIngestionRepositoryImpl(
@@ -228,6 +250,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
         gh<_i377.OnboardingRepository>(),
+      ),
+    );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i582.ProfileRepository>(),
+        gh<_i1053.ClipboardService>(),
       ),
     );
     gh.factory<_i1071.AddBookToLibrary>(

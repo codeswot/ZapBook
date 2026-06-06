@@ -119,10 +119,7 @@ class AppButton extends StatelessWidget {
           SizedBox(
             width: fontSize + 2,
             height: fontSize + 2,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: fgColor,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: fgColor),
           ),
           const SizedBox(width: 9),
         ] else if (icon != null) ...[

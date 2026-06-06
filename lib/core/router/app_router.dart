@@ -7,6 +7,7 @@ import 'package:zapbook/app/app_shell_page.dart';
 import 'package:zapbook/features/library/presentation/pages/library_page.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:zapbook/features/profile/presentation/pages/profile_page.dart';
 
 part 'app_router.g.dart';
 
@@ -133,9 +134,7 @@ class YouRoute extends GoRouteData with $YouRoute {
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
-      child: const Scaffold(
-        body: Center(child: Text('You Profile Tab Placeholder')),
-      ),
+      child: const ProfilePage(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
       },
