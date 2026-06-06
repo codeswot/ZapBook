@@ -177,16 +177,19 @@ class ObFooter extends StatelessWidget {
             label: "Continue",
             fullWidth: true,
             variant: AppButtonVariant.purple,
-            iconRight: LucideIcons.check,
+            iconRight: state.isBusy ? null : LucideIcons.check,
+            isLoading: state.isBusy,
             onTap: onComplete,
           ),
-          const SizedBox(height: 12),
-          AppButton(
-            label: "Skip",
-            variant: AppButtonVariant.ghost,
-            fullWidth: true,
-            onTap: onComplete,
-          ),
+          if (!state.isBusy) ...[
+            const SizedBox(height: 12),
+            AppButton(
+              label: "Skip",
+              variant: AppButtonVariant.ghost,
+              fullWidth: true,
+              onTap: onComplete,
+            ),
+          ],
         ];
     }
   }

@@ -218,6 +218,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       emit(state.copyWith(error: "No identity to save"));
       return false;
     }
+    emit(state.copyWith(isBusy: true));
     await _completeOnboarding(npub: npub, nsec: nsec);
     if (_nostrService.isInitialized) {
       unawaited(
@@ -230,7 +231,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         ),
       );
     }
-    emit(state.copyWith(isComplete: true));
+    emit(state.copyWith(isComplete: true, isBusy: false));
     return true;
   }
 }
