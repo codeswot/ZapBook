@@ -41,6 +41,8 @@ dependencies:
   sqlite3: ^3.3.2
   flutter_svg: ^2.3.0
   cached_network_image: ^3.4.1
+  http: ^1.2.1
+  url_launcher: ^6.3.2
 
 dependency_overrides:
   http: ^1.2.1

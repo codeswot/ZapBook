@@ -22,6 +22,7 @@ abstract class NostrModule {
           'wss://relay.primal.net',
           'wss://relay.snort.social',
           'wss://nostr.wine',
+          'wss://nwc.lay.paywithflash.com',
         ],
       ),
     );

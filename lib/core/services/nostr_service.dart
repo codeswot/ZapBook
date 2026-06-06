@@ -66,5 +66,10 @@ class NostrService {
     }
   }
 
+  void clearSession() {
+    _initialized = false;
+    _ndk.accounts.logout();
+  }
+
   Future<void> dispose() => _ndk.destroy();
 }

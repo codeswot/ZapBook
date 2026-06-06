@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/cubit/ai_model_cubit.dart';
+import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/widgets/ai_download_banner.dart';
 import 'package:zapbook/widgets/ai_missing_banner.dart';
 import 'package:zapbook/core/domain/heads_up_message.dart';
@@ -17,14 +19,27 @@ class AiModelHeadsUpBridge extends StatefulWidget {
 }
 
 class _AiModelHeadsUpBridgeState extends State<AiModelHeadsUpBridge> {
+  static const _lastShownKey = 'ai_heads_up_last_shown';
+  static const _twoDays = Duration(days: 2);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _syncAiBanner(context.read<AiModelCubit>().state);
-      }
+      if (mounted) _checkAndSync(context.read<AiModelCubit>().state);
     });
+  }
+
+  void _checkAndSync(AiModelState aiState) {
+    final prefs = getIt<SharedPreferences>();
+    final lastShown = prefs.getInt(_lastShownKey);
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    if (lastShown != null &&
+        now - lastShown < _twoDays.inMilliseconds) {
+      return;
+    }
+    _syncAiBanner(aiState);
   }
 
   void _syncAiBanner(AiModelState aiState) {
@@ -52,12 +67,15 @@ class _AiModelHeadsUpBridgeState extends State<AiModelHeadsUpBridge> {
         headsUpCubit.dismissBanner('ai_model');
         break;
     }
+
+    getIt<SharedPreferences>()
+        .setInt(_lastShownKey, DateTime.now().millisecondsSinceEpoch);
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AiModelCubit, AiModelState>(
-      listener: (context, state) => _syncAiBanner(state),
+      listener: (context, state) => _checkAndSync(state),
       child: widget.child,
     );
   }

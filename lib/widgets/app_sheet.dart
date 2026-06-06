@@ -24,7 +24,12 @@ class AppSheet extends StatelessWidget {
         ),
         border: Border(top: BorderSide(color: semanticColors.hairline)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 48),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        16 + mediaQuery.viewInsets.bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

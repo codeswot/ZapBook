@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 
-@injectable
+@lazySingleton
 class AiModelCubit extends Cubit<AiModelState> {
   final AiService _aiService;
   StreamSubscription<AiModelState>? _subscription;

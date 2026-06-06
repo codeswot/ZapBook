@@ -38,8 +38,11 @@ import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
+import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
+import 'package:zapbook/core/services/nwc_service.dart' as _i507;
 import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
+import 'package:zapbook/core/services/zap_service.dart' as _i362;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
@@ -143,6 +146,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );
+    gh.lazySingleton<_i96.LnurlService>(() => const _i96.LnurlService());
     gh.lazySingleton<_i123.SecureStorageService>(
       () => _i123.SecureStorageService(),
     );
@@ -176,6 +180,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i283.PdfPageRasterizer>(
       () => const _i217.PrintingPdfRasterizer(),
     );
+    gh.lazySingleton<_i507.NwcService>(
+      () => _i507.NwcService(
+        gh<_i460.SharedPreferences>(),
+        gh<_i857.Ndk>(),
+        gh<_i11.NostrService>(),
+      ),
+    );
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
     );
@@ -193,6 +204,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i58.ReaderSettingsCubit>(
       () => _i58.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i362.ZapService>(
+      () => _i362.ZapService(gh<_i96.LnurlService>(), gh<_i857.Ndk>()),
     );
     gh.factory<_i696.IngestionPageCubit>(
       () => _i696.IngestionPageCubit(gh<_i1034.FilePickerService>()),
@@ -231,15 +245,8 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
     );
-    gh.factory<_i421.AiModelCubit>(
+    gh.lazySingleton<_i421.AiModelCubit>(
       () => _i421.AiModelCubit(gh<_i1012.AiService>()),
-    );
-    gh.lazySingleton<_i582.ProfileRepository>(
-      () => _i160.ProfileRepositoryImpl(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i342.OnboardingLocalDataSource>(),
-      ),
     );
     gh.lazySingleton<_i379.BookIngestionRepository>(
       () => _i785.BookIngestionRepositoryImpl(
@@ -252,6 +259,15 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
         gh<_i377.OnboardingRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i582.ProfileRepository>(
+      () => _i160.ProfileRepositoryImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+        gh<_i11.NostrService>(),
+        gh<_i507.NwcService>(),
       ),
     );
     gh.lazySingleton<_i516.LibraryRepository>(

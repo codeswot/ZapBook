@@ -13,11 +13,13 @@ class ProfileWalletCard extends StatelessWidget {
     required this.profile,
     required this.onWallet,
     required this.onCopyLightning,
+    this.nwcLabel,
   });
 
   final UserProfile profile;
   final VoidCallback onWallet;
   final VoidCallback onCopyLightning;
+  final String? nwcLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +91,7 @@ class ProfileWalletCard extends StatelessWidget {
                   ),
                 ),
                 AppButton(
-                  label: 'Wallet',
+                  label: nwcLabel ?? 'Wallet',
                   variant: AppButtonVariant.tonal,
                   size: AppButtonSize.sm,
                   onTap: onWallet,
