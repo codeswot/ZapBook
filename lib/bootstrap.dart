@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
+import 'package:zapbook/core/services/ai_service.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,5 +28,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   Bloc.observer = AppBlocObserver();
   await configureDependencies();
+  await getIt<AiService>().ready;
+
   runApp(await builder());
 }

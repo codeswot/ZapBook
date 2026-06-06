@@ -22,12 +22,13 @@ class ObModelView extends StatelessWidget {
     final status = aiState?.status ?? AiModelStatus.notSet;
     final isDownloading = status == AiModelStatus.downloading;
     final isReady = status == AiModelStatus.ready;
-    final isCapable = capability != DeviceCapability.incapable;
+    final isCapable = capability != null &&
+        capability != DeviceCapability.incapable;
 
-    final modelName = capability?.modelName;
+    final modelName = capability?.modelName ?? 'Checking device…';
     final modelSize = capability?.expectedFileSize != null
         ? '${(capability!.expectedFileSize! / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB'
-        : '650 MB';
+        : '…';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +75,7 @@ class ObModelView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          modelName ?? 'None',
+                          modelName,
                           style: context.typography.bodyL.copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.colors.ink,

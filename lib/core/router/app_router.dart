@@ -17,7 +17,9 @@ class AppRouter {
     initialLocation: '/',
     routes: $appRoutes,
     redirect: (context, state) {
-      final onboardingComplete = getIt<OnboardingRepository>().status().isComplete;
+      final onboardingComplete = getIt<OnboardingRepository>()
+          .status()
+          .isComplete;
 
       final isOnboarding = state.matchedLocation == '/onboarding';
 

@@ -58,6 +58,7 @@ class AiModelState extends Equatable {
 abstract class AiService {
   Stream<AiModelState> get aiState;
   AiModelState get currentState;
+  Future<void> get ready;
 
   Future<void> startDownload(String modelUrl, String expectedHash);
   Future<void> pauseDownload();
@@ -79,12 +80,16 @@ class AiServiceImpl implements AiService {
   static const _progressKey = 'ai_model_progress';
 
   final _stateController = StreamController<AiModelState>.broadcast();
+  final _readyCompleter = Completer<void>();
   late AiModelState _currentState;
 
   AiServiceImpl(this._prefs, this._deviceCapabilityService) {
     _currentState = const AiModelState(status: AiModelStatus.notSet);
     _init();
   }
+
+  @override
+  Future<void> get ready => _readyCompleter.future;
 
   Future<void> _init() async {
     final statusString = _prefs.getString(_statusKey);
@@ -110,6 +115,7 @@ class AiServiceImpl implements AiService {
       capability: capability,
     );
     _stateController.add(_currentState);
+    if (!_readyCompleter.isCompleted) _readyCompleter.complete();
 
     FileDownloader().registerCallbacks(
       taskProgressCallback: (update) {

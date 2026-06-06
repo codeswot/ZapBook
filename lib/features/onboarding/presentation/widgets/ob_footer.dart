@@ -128,7 +128,18 @@ class ObFooter extends StatelessWidget {
         final status = aiState?.status ?? AiModelStatus.notSet;
         final isDownloading = status == AiModelStatus.downloading;
         final isReady = status == AiModelStatus.ready;
-        final isCapable = capability != DeviceCapability.incapable;
+        final isCapable = capability != null &&
+            capability != DeviceCapability.incapable;
+
+        if (capability == null) {
+          return [
+            AppButton(
+              label: "Detecting device…",
+              fullWidth: true,
+              isLoading: true,
+            ),
+          ];
+        }
 
         if (!isCapable) {
           return [
