@@ -37,4 +37,19 @@ class ProfileRemoteDataSource {
       return null;
     }
   }
+
+  Future<void> publish({
+    required String npub,
+    required String nsec,
+    String? displayName,
+    String? lud16,
+    String? picture,
+  }) async {
+    _nostr.initialize(nsec: nsec, npub: npub);
+    await _nostr.publishMetadata(
+      displayName: displayName,
+      lud16: lud16,
+      picture: picture,
+    );
+  }
 }

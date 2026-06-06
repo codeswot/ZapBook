@@ -9,6 +9,7 @@ import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_icon_button.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_shimmer.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_edit_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
@@ -89,7 +90,20 @@ class _ProfileHeaderContent extends StatelessWidget {
           ),
         ),
         AppIconButton(
-          onTap: () {},
+          onTap: () => ProfileEditSheet.show(
+            context,
+            profile: profile,
+            onSave: ({
+              required displayName,
+              required lud16,
+              required picture,
+            }) =>
+                context.read<ProfileCubit>().updateProfile(
+                  displayName: displayName,
+                  lud16: lud16,
+                  picture: picture,
+                ),
+          ),
           icon: LucideIcons.edit2,
           size: 20,
           color: colors.ink,

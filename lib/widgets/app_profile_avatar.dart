@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -33,6 +36,16 @@ class AppProfileAvatar extends StatelessWidget {
   }
 
   Widget _buildImage(BuildContext context) {
+    if (url.startsWith('data:image')) {
+      return _buildDataUri();
+    }
+    if (_isLocalFile) {
+      return Image.file(
+        File(url),
+        fit: BoxFit.cover,
+        errorBuilder: (_, err, stack) => _placeholder(context),
+      );
+    }
     if (url.endsWith('.svg') || url.contains('dicebear.com')) {
       return SvgPicture.network(
         url,
@@ -43,10 +56,24 @@ class AppProfileAvatar extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
-      placeholder: (_, _) => _placeholder(context),
-      errorWidget: (_, _, _) => _placeholder(context),
+      placeholder: (_, url) => _placeholder(context),
+      errorWidget: (_, err, stack) => _placeholder(context),
     );
   }
+
+  Widget _buildDataUri() {
+    final comma = url.indexOf(',');
+    if (comma == -1) return const SizedBox.shrink();
+    final base64 = url.substring(comma + 1);
+    try {
+      return Image.memory(base64Decode(base64), fit: BoxFit.cover);
+    } on Object {
+      return const SizedBox.shrink();
+    }
+  }
+
+  bool get _isLocalFile =>
+      !url.startsWith('http') && !url.startsWith('data:');
 
   Widget _placeholder(BuildContext context) {
     return Container(

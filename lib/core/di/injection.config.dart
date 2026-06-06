@@ -109,6 +109,8 @@ import 'package:zapbook/features/profile/domain/usecases/load_profile.dart'
     as _i385;
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart'
     as _i915;
+import 'package:zapbook/features/profile/domain/usecases/update_profile.dart'
+    as _i223;
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
     as _i145;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
@@ -216,6 +218,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i136.ImportIdentity>(
       () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
     );
+    gh.factory<_i223.UpdateProfile>(
+      () => _i223.UpdateProfile(
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i828.CoverStore>(
       () => _i828.CoverStore(gh<_i240.DocumentsDirectory>()),
     );
@@ -259,6 +267,14 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i915.SignOut>(
       () => _i915.SignOut(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i385.LoadProfile>(),
+        gh<_i223.UpdateProfile>(),
+        gh<_i915.SignOut>(),
+        gh<_i1053.ClipboardService>(),
+      ),
     );
     gh.factory<_i1071.AddBookToLibrary>(
       () => _i1071.AddBookToLibrary(gh<_i516.LibraryRepository>()),
@@ -309,13 +325,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1071.AddBookToLibrary>(),
         gh<_i917.FileHasher>(),
         gh<_i190.FindBookByContentHash>(),
-      ),
-    );
-    gh.factory<_i145.ProfileCubit>(
-      () => _i145.ProfileCubit(
-        gh<_i385.LoadProfile>(),
-        gh<_i915.SignOut>(),
-        gh<_i1053.ClipboardService>(),
       ),
     );
     return this;
