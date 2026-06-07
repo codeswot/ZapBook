@@ -7,7 +7,6 @@ import 'package:injectable/injectable.dart';
 class LnurlService {
   const LnurlService();
 
-
   Future<LnurlPayResponse> resolveLightningAddress(String lud16) async {
     final parts = lud16.split('@');
     if (parts.length != 2) throw LnurlException('Invalid lightning address');
@@ -19,12 +18,11 @@ class LnurlService {
   }
 
   Future<LnurlPayResponse> _fetchPayResponse(Uri lnurlpUrl) async {
-    final response = await http.get(lnurlpUrl).timeout(
-          const Duration(seconds: 10),
-        );
+    final response = await http
+        .get(lnurlpUrl)
+        .timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
-      throw LnurlException(
-          'LNURL server returned ${response.statusCode}');
+      throw LnurlException('LNURL server returned ${response.statusCode}');
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -50,25 +48,25 @@ class LnurlService {
     required int amountMillisats,
     String? comment,
   }) async {
-    final url = payResponse.callback.replace(queryParameters: {
-      ...payResponse.callback.queryParameters,
-      'amount': amountMillisats.toString(),
-      'comment': ?comment,
-    });
+    final url = payResponse.callback.replace(
+      queryParameters: {
+        ...payResponse.callback.queryParameters,
+        'amount': amountMillisats.toString(),
+        'comment': ?comment,
+      },
+    );
 
-    final response = await http.get(url).timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await http.get(url).timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
-      throw LnurlException(
-          'Invoice request returned ${response.statusCode}');
+      throw LnurlException('Invoice request returned ${response.statusCode}');
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final pr = json['pr'] as String?;
     if (pr == null) {
       throw LnurlException(
-          'No invoice in response: ${json['reason'] ?? response.body}');
+        'No invoice in response: ${json['reason'] ?? response.body}',
+      );
     }
     return LnurlInvoice(
       pr: pr,
@@ -99,11 +97,7 @@ class LnurlInvoice {
   final Map<String, dynamic>? successAction;
   final List? routes;
 
-  const LnurlInvoice({
-    required this.pr,
-    this.successAction,
-    this.routes,
-  });
+  const LnurlInvoice({required this.pr, this.successAction, this.routes});
 }
 
 class LnurlException implements Exception {

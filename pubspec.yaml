@@ -33,7 +33,7 @@ dependencies:
   syncfusion_flutter_pdf: ^33.2.8
   ulid: ^2.0.1
   xml: ^6.6.1  
-  marmot_dart: ^0.0.3
+  marmot_dart: ^0.0.4
   image: ^4.8.0
   flutter_secure_storage: ^10.3.1  
   ndk: ^0.7.1

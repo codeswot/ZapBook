@@ -5,6 +5,7 @@ import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_ai_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_appearance_tile.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_donate_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_section.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_stats_row.dart';
@@ -70,7 +71,11 @@ class ProfileBody extends StatelessWidget {
           const SizedBox(height: 26),
           ProfileSection(
             label: 'App',
-            tiles: [const ProfileAppearanceTile(), const ProfileSignOutTile()],
+            tiles: [
+              const ProfileDonateTile(),
+              const ProfileAppearanceTile(),
+              const ProfileSignOutTile(),
+            ],
           ),
           const SizedBox(height: 20),
           Center(

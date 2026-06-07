@@ -113,6 +113,8 @@ import 'package:zapbook/features/profile/domain/repositories/profile_repository.
     as _i582;
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart'
     as _i385;
+import 'package:zapbook/features/profile/domain/usecases/send_donation.dart'
+    as _i693;
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart'
     as _i915;
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart'
@@ -182,6 +184,9 @@ extension GetItInjectableX on _i174.GetIt {
         _completer,
         initialTitle,
       ),
+    );
+    gh.factory<_i693.SendDonation>(
+      () => _i693.SendDonation(gh<_i96.LnurlService>()),
     );
     gh.lazySingleton<_i240.DocumentsDirectory>(
       () => const _i240.PathProviderDocumentsDirectory(),
