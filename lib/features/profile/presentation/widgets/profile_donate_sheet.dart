@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_gift_chip.dart';
@@ -31,7 +30,7 @@ class ProfileDonateSheet extends StatelessWidget {
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider(
-        create: (_) => DonateCubit(getIt<ZapService>()),
+        create: (_) => getIt<DonateCubit>(),
         child: const _Body(),
       ),
     );

@@ -10,4 +10,5 @@ export 'enums/book_source_format.dart';
 export 'support/asset_naming.dart';
 export 'zbf_assembler.dart';
 export 'zbf_reader.dart';
+export 'zbf_segmenter.dart';
 export 'zbf_writer.dart';

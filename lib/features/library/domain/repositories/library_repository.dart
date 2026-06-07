@@ -30,5 +30,15 @@ abstract interface class LibraryRepository {
 
   Future<void> touchOpened(String id);
 
+  Future<void> shareBook(String id, String memberNpub);
+
+  Future<void> shareBookWith(String id, List<String> memberNpubs);
+
+  Future<List<String>> bookMembers(String id);
+
+  Future<void> removeBookMember(String id, String memberNpub);
+
+  Future<void> refresh();
+
   Future<void> backfill();
 }

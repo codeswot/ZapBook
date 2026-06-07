@@ -19,6 +19,7 @@ final class LibraryBook extends Equatable {
     required this.addedAt,
     this.lastOpenedAt,
     this.contentHash,
+    this.memberCount = 1,
   });
 
   final String id;
@@ -36,6 +37,9 @@ final class LibraryBook extends Equatable {
   final DateTime addedAt;
   final DateTime? lastOpenedAt;
   final String? contentHash;
+  final int memberCount;
+
+  bool get isShared => memberCount > 1;
 
   LibraryBook copyWith({
     String? title,
@@ -43,6 +47,7 @@ final class LibraryBook extends Equatable {
     String? genre,
     String? coverPath,
     DateTime? lastOpenedAt,
+    int? memberCount,
   }) {
     return LibraryBook(
       id: id,
@@ -60,6 +65,7 @@ final class LibraryBook extends Equatable {
       addedAt: addedAt,
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       contentHash: contentHash,
+      memberCount: memberCount ?? this.memberCount,
     );
   }
 
@@ -80,5 +86,6 @@ final class LibraryBook extends Equatable {
     addedAt,
     lastOpenedAt,
     contentHash,
+    memberCount,
   ];
 }

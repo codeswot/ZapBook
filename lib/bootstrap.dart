@@ -9,6 +9,8 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
 import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/services/key_package_service.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +34,11 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   await getIt<AiService>().ready;
 
   try {
-    await getIt<NostrSession>().login();
+    final ok = await getIt<NostrSession>().login();
+    if (ok) {
+      unawaited(getIt<KeyPackageService>().publishIfNeeded());
+      unawaited(getIt<ContactService>().warm());
+    }
   } on Exception catch (error, stack) {
     Logger.root.warning('NostrSession.login failed at bootstrap', error, stack);
   }

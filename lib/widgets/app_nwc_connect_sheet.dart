@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_input.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
@@ -38,15 +40,13 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
     if (uri.isEmpty) return;
     if (!uri.startsWith('nostr+walletconnect://') &&
         !uri.startsWith('bunker://')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid connection string')),
-      );
+      context.toast.showError('Invalid connection string', rootNavigator: true);
       return;
     }
     setState(() => _connecting = true);
     try {
       await widget.onConnect(uri);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.pop();
     } on Exception {
       if (mounted) setState(() => _connecting = false);
     }

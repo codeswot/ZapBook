@@ -10,6 +10,7 @@ import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
@@ -25,12 +26,14 @@ class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
     required this.handle,
     this.rasterizer,
+    this.segmentLoader,
     this.onExit,
     super.key,
   });
 
   final ZbfBookHandle handle;
   final PdfPageRasterizer? rasterizer;
+  final BookSegmentLoader? segmentLoader;
   final VoidCallback? onExit;
 
   @override
@@ -77,6 +80,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           create: (_) => ZbfViewerCubit(
             handle: widget.handle,
             rasterizer: widget.rasterizer,
+            segmentLoader: widget.segmentLoader,
           ),
         ),
         BlocProvider.value(value: getIt<ReaderSettingsCubit>()),

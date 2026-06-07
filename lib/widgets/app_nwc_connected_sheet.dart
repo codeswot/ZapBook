@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -12,7 +13,7 @@ class _AppNwcConnectedSheetState extends State<AppNwcConnectedSheet> {
     setState(() => _disconnecting = true);
     try {
       await widget.onDisconnect();
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.pop();
     } on Exception {
       if (mounted) setState(() => _disconnecting = false);
     }

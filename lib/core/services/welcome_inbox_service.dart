@@ -1,0 +1,70 @@
+import 'dart:convert';
+
+import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
+import 'package:marmot_dart/marmot_dart.dart';
+import 'package:ndk/ndk.dart';
+
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/nostr_service.dart';
+
+@lazySingleton
+class WelcomeInboxService {
+  WelcomeInboxService(this._marmot, this._ndk, this._identity);
+
+  final Marmot _marmot;
+  final Ndk _ndk;
+  final IdentityLocalDataSource _identity;
+  final _log = logging.Logger('WelcomeInboxService');
+
+  static const _giftWrapKind = 1059;
+
+  Future<int> sync() async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return 0;
+
+    var joined = 0;
+    try {
+      final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+      final wraps = await _ndk.requests
+          .query(
+            filter: Filter(kinds: const [_giftWrapKind], pTags: [hex]),
+            explicitRelays: NostrService.broadcastRelays,
+          )
+          .future;
+
+      for (final wrap in wraps) {
+        try {
+          final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: wrap);
+          await _marmot.processWelcome(wrap.id, _eventJson(rumor));
+        } on Object catch (error) {
+          _log.fine('Skipping gift-wrap ${wrap.id}: $error');
+        }
+      }
+
+      final pending = await _marmot.getPendingWelcomes();
+      for (final welcome in pending) {
+        try {
+          await _marmot.acceptWelcome(welcome.id);
+          joined++;
+        } on Object catch (error) {
+          _log.fine('Accept welcome ${welcome.id} failed: $error');
+        }
+      }
+      if (joined > 0) _log.info('Joined $joined group(s) from welcomes');
+    } on Object catch (error, stack) {
+      _log.warning('Welcome inbox sync failed', error, stack);
+    }
+    return joined;
+  }
+
+  String _eventJson(Nip01Event event) => jsonEncode({
+    'id': event.id,
+    'pubkey': event.pubKey,
+    'created_at': event.createdAt,
+    'kind': event.kind,
+    'tags': event.tags,
+    'content': event.content,
+    'sig': event.sig,
+  });
+}

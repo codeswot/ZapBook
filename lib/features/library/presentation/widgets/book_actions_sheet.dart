@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
-import 'package:zapbook/features/library/domain/usecases/delete_library_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
+import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
+import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
@@ -15,16 +17,36 @@ import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class BookActionsSheet extends StatelessWidget {
-  const BookActionsSheet({super.key, required this.book});
+  const BookActionsSheet({
+    super.key,
+    required this.book,
+    required this.isAdmin,
+    required this.ownerLabel,
+    required this.onDelete,
+  });
 
   final LibraryBook book;
+  final bool isAdmin;
+  final String ownerLabel;
+  final VoidCallback onDelete;
 
-  static Future<void> show(BuildContext context, LibraryBook book) {
+  static Future<void> show(
+    BuildContext context, {
+    required LibraryBook book,
+    required bool isAdmin,
+    required String ownerLabel,
+    required VoidCallback onDelete,
+  }) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: context.colors.transparent,
-      builder: (_) => BookActionsSheet(book: book),
+      builder: (_) => BookActionsSheet(
+        book: book,
+        isAdmin: isAdmin,
+        ownerLabel: ownerLabel,
+        onDelete: onDelete,
+      ),
     );
   }
 
@@ -58,38 +80,75 @@ class BookActionsSheet extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: typography.h3.copyWith(color: colors.ink),
                     ),
-                    Text(
-                      book.author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: typography.bodyS.copyWith(color: colors.slate),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          book.author,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: typography.bodyS.copyWith(color: colors.slate),
+                        ),
+                      ],
                     ),
+                    if (isAdmin || ownerLabel.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        isAdmin ? 'You own this book' : 'Shared by $ownerLabel',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: typography.caption.copyWith(color: colors.slate2),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _ActionRow(
-            icon: LucideIcons.pencil,
-            label: 'Edit details',
-            onTap: () {
-              Navigator.of(context).pop();
-              BookEditSheet.show(context, book);
-            },
-          ),
+          if (isAdmin) ...[
+            _ActionRow(
+              icon: LucideIcons.pencil,
+              label: 'Edit details',
+              onTap: () {
+                context.pop();
+                BookEditSheet.show(context, book);
+              },
+            ),
+            const SizedBox(height: 10),
+            _ActionRow(
+              icon: LucideIcons.userPlus,
+              label: book.isShared ? 'Add to circle' : 'Share to circle',
+              onTap: () {
+                context.pop();
+                ShareCircleSheet.show(context, book);
+              },
+            ),
+          ],
+          if (book.isShared) ...[
+            const SizedBox(height: 10),
+            _ActionRow(
+              icon: LucideIcons.users,
+              label: 'Manage circle',
+              onTap: () {
+                context.pop();
+                CircleMembersSheet.show(context, book: book, isAdmin: isAdmin);
+              },
+            ),
+          ],
           const SizedBox(height: 10),
           _ActionRow(
             icon: LucideIcons.trash2,
             label: 'Delete book',
             tone: colors.tomato,
-            onTap: () async {
-              Navigator.of(context).pop();
-              final confirmed = await _confirmDelete(context, book);
-              if (confirmed) {
-                await getIt<DeleteLibraryBook>()(book.id);
-              }
-            },
+            onTap: isAdmin
+                ? () {
+                    context.pop();
+                    unawaited(_confirmDelete(context, book).then(
+                      (confirmed) { if (confirmed) onDelete(); },
+                    ));
+                  }
+                : null,
           ),
         ],
       ),
@@ -101,13 +160,13 @@ class _ActionRow extends StatelessWidget {
   const _ActionRow({
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.onTap,
     this.tone,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? tone;
 
   @override

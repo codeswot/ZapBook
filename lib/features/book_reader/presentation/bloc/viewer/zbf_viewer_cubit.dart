@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/data/paragraph_merger.dart';
@@ -13,15 +14,18 @@ import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   ZbfViewerCubit({
     required this.handle,
+    this.segmentLoader,
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
   })  : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
         _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
         super(const ZbfViewerState()) {
+    _ensureSegment(0);
     _prefetch(0);
   }
 
   final ZbfBookHandle handle;
+  final BookSegmentLoader? segmentLoader;
   final PdfPageRasterizer _rasterizer;
   final PdfChunkExtractor _chunkExtractor;
   final _logger = Logger('ZbfViewerCubit');
@@ -29,6 +33,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   final List<int> _prefetchQueue = [];
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
+  final Set<int> _loadedSegments = {};
 
   bool _isSkippable(int index) {
     final page = handle.pageAt(index);
@@ -63,6 +68,9 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (isClosed) return;
     emit(state.copyWith(currentPage: index));
 
+    _ensureSegment(index);
+    _ensureSegment(index + ZbfSegmenter.pagesPerSegment);
+
     final currentChunk = index < 10 ? 0 : 1 + ((index - 10) ~/ 20);
     final page = handle.pageAt(index);
     if (page.layoutType == BookLayoutType.processing) {
@@ -78,6 +86,32 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     _prefetch(index);
+  }
+
+  Future<void> _ensureSegment(int pageIndex) async {
+    final loader = segmentLoader;
+    if (loader == null) return;
+    if (pageIndex < 0 || pageIndex >= handle.manifest.pageCount) return;
+
+    final segmentIndex = pageIndex ~/ ZbfSegmenter.pagesPerSegment;
+    if (!_loadedSegments.add(segmentIndex)) return;
+
+    try {
+      final data = await loader(pageIndex);
+      if (data == null) {
+        _loadedSegments.remove(segmentIndex);
+        return;
+      }
+      for (var i = 0; i < data.pages.length; i++) {
+        handle.updatePage(data.pageStart + i, data.pages[i]);
+      }
+      data.assets.forEach(handle.updateAsset);
+      if (isClosed) return;
+      emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+    } catch (error, stack) {
+      _loadedSegments.remove(segmentIndex);
+      _logger.warning('Segment load failed for page $pageIndex', error, stack);
+    }
   }
 
   Future<void> _ensureChunkIngested(int chunkIndex) async {

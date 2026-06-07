@@ -11,10 +11,13 @@ class AppSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final semanticColors = context.colors;
     final mediaQuery = MediaQuery.of(context);
-    final maxHeight =
-        (mediaQuery.size.height - mediaQuery.viewInsets.bottom) * 0.9;
+    final bottomInset = mediaQuery.viewInsets.bottom;
+    final bottomPadding = mediaQuery.padding.bottom;
+    final maxHeight = (mediaQuery.size.height - bottomInset) * 0.9;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: semanticColors.paper,
@@ -24,12 +27,7 @@ class AppSheet extends StatelessWidget {
         ),
         border: Border(top: BorderSide(color: semanticColors.hairline)),
       ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        12,
-        24,
-        16 + mediaQuery.viewInsets.bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 12 + bottomPadding + bottomInset),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

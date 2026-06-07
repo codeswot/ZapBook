@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -74,7 +75,7 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
     setState(() => _saving = true);
     try {
       await widget.onSave(displayName: name, lud16: lud16, picture: _picture);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.pop();
     } on Exception {
       if (mounted) setState(() => _saving = false);
     }

@@ -71,7 +71,6 @@ class MarmotLibraryRepository implements LibraryRepository {
     final added = await _datasource.importExisting(
       manifest: manifest,
       coverBytes: _asset(handle, manifest.coverAsset),
-      originalBytes: _asset(handle, AssetNaming.sourceDocument),
     );
     _upsert(added);
     return added;
@@ -91,6 +90,21 @@ class MarmotLibraryRepository implements LibraryRepository {
     _books = _books
         .map((book) =>
             book.id == id ? book.copyWith(lastOpenedAt: now) : book)
+        .toList(growable: false);
+    _emit();
+  }
+
+  @override
+  Future<void> shareBook(String id, String memberNpub) =>
+      shareBookWith(id, [memberNpub]);
+
+  @override
+  Future<void> shareBookWith(String id, List<String> memberNpubs) async {
+    await _datasource.shareBookWith(id, memberNpubs);
+    _books = _books
+        .map((book) => book.id == id
+            ? book.copyWith(memberCount: book.memberCount + memberNpubs.length)
+            : book)
         .toList(growable: false);
     _emit();
   }
@@ -165,7 +179,6 @@ class MarmotLibraryRepository implements LibraryRepository {
         final added = await _datasource.importExisting(
           manifest: manifest,
           coverBytes: _asset(handle, manifest.coverAsset),
-          originalBytes: _asset(handle, AssetNaming.sourceDocument),
         );
         _upsert(added, emit: false);
       } on Object catch (error, stack) {
@@ -175,6 +188,27 @@ class MarmotLibraryRepository implements LibraryRepository {
     _emit();
   }
 
+  @override
+  Future<List<String>> bookMembers(String id) async {
+    final members = await _datasource.members(id);
+    return members.map((member) => member.npub).toList(growable: false);
+  }
+
+  @override
+  Future<void> removeBookMember(String id, String memberNpub) async {
+    await _datasource.removeMember(id, memberNpub);
+    _books = _books
+        .map((book) => book.id == id
+            ? book.copyWith(
+                memberCount: book.memberCount > 1 ? book.memberCount - 1 : 1)
+            : book)
+        .toList(growable: false);
+    _emit();
+  }
+
+  @override
+  Future<void> refresh() => _load();
+
   Future<void> _ensureLoaded() => _loading ??= _load();
 
   Future<void> _load() async {
@@ -182,6 +216,28 @@ class MarmotLibraryRepository implements LibraryRepository {
     books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
     _books = books;
     _loaded = true;
+    _emit();
+    unawaited(_ensureContent());
+  }
+
+  Future<void> _ensureContent() async {
+    for (final book in List<LibraryBook>.from(_books)) {
+      if (book.coverPath == null) {
+        final coverPath = await _datasource.hydrateCover(book.id);
+        if (coverPath != null) _patchCover(book.id, coverPath);
+      }
+      if (await _fileStore.hasZbf(book.id)) continue;
+      final ok = await _datasource.downloadBookContent(book.id);
+      if (!ok) continue;
+      final coverPath = await _fileStore.coverPathIfExists(book.id);
+      if (coverPath != null) _patchCover(book.id, coverPath);
+    }
+  }
+
+  void _patchCover(String id, String coverPath) {
+    _books = _books
+        .map((b) => b.id == id ? b.copyWith(coverPath: coverPath) : b)
+        .toList(growable: false);
     _emit();
   }
 
