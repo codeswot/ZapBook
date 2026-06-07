@@ -62,24 +62,21 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
   @override
   Widget build(BuildContext context) {
     final typography = context.typography;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final cubit = context.read<BookWizardCubit>();
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) cubit.cancel();
       },
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: AppSheet(
-          child: BlocBuilder<BookWizardCubit, BookWizardState>(
-            builder: (context, state) {
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SafeArea(child: Text('Book Details', style: typography.h3)),
+      child: AppSheet(
+        child: BlocBuilder<BookWizardCubit, BookWizardState>(
+          builder: (context, state) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Book Details', style: typography.h3),
                     const SizedBox(height: 24),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +166,6 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
             },
           ),
         ),
-      ),
     );
   }
 }

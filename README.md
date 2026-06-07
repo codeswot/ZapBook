@@ -34,22 +34,6 @@ Immutable value types are hand-written with const constructors and
 [equatable](https://pub.dev/packages/equatable) value equality, matching the ZBF
 JSON shape exactly.
 
-### Ingestion flow
-
-```text
-File ─▶ BookExtractor ─▶ ZbfBook ─▶ ZbfWriter ─▶ book.zbf
-         (per format)    (in-memory)  (ZIP)        (documents dir)
-   └──────────────── Stream<IngestionProgress> ──────────────┘
-                              │
-                         IngestionBloc ─▶ IngestionProgressWidget
-```
-
-Each extractor emits an `IngestionProgress` stream (stage, 0→1 progress,
-current item, terminal result/error). The BLoC maps that stream to states and
-cancels cleanly on request.
-
----
-
 ## ZapBook Format (ZBF)
 
 A `.zbf` file is a ZIP archive:

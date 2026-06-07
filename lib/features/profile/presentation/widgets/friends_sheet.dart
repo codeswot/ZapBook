@@ -6,6 +6,7 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_input.dart';
+import 'package:zapbook/widgets/app_loading_list.dart';
 import 'package:zapbook/widgets/app_paste_button.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
@@ -62,8 +63,9 @@ class _FriendsSheetState extends State<FriendsSheet> {
     if (npub.isEmpty || _adding) return;
 
     if (!widget.contacts.isValidNpub(npub)) {
-      if (mounted)
+      if (mounted) {
         context.toast.showError('Not a valid npub', rootNavigator: true);
+      }
       return;
     }
 
@@ -75,8 +77,9 @@ class _FriendsSheetState extends State<FriendsSheet> {
     } on ContactException catch (e) {
       if (mounted) context.toast.showError(e.message, rootNavigator: true);
     } on Object {
-      if (mounted)
+      if (mounted) {
         context.toast.showError('Could not add contact', rootNavigator: true);
+      }
     } finally {
       if (mounted) setState(() => _adding = false);
     }
@@ -173,12 +176,7 @@ class _FriendsSheetState extends State<FriendsSheet> {
             ),
             const SizedBox(height: 18),
             if (friends == null)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
-                ),
-              )
+              const AppLoadingList()
             else if (friends.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),

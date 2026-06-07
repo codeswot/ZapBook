@@ -73,6 +73,8 @@ import 'package:zapbook/features/library/data/marmot/progressive_book_opener.dar
     as _i1063;
 import 'package:zapbook/features/library/data/repositories/marmot_library_repository.dart'
     as _i894;
+import 'package:zapbook/features/library/domain/entities/library_book.dart'
+    as _i297;
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart'
     as _i516;
 import 'package:zapbook/features/library/domain/usecases/add_book_to_library.dart'
@@ -101,6 +103,8 @@ import 'package:zapbook/features/library/domain/usecases/update_book_metadata.da
     as _i96;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
     as _i1024;
+import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart'
+    as _i404;
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart'
     as _i906;
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart'
@@ -109,6 +113,8 @@ import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart'
     as _i696;
+import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart'
+    as _i659;
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i405;
 import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
@@ -374,6 +380,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
     );
+    gh.factory<_i404.BookEditCubit>(
+      () => _i404.BookEditCubit(
+        gh<_i850.GenreDataSource>(),
+        gh<_i1034.FilePickerService>(),
+        gh<_i96.UpdateBookMetadata>(),
+        gh<_i297.LibraryBook>(),
+      ),
+    );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(
         gh<_i1024.WatchLibraryBooks>(),
@@ -386,6 +400,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i398.BookGroupDatasource>(),
         gh<_i516.LibraryRepository>(),
         gh<_i244.ContactService>(),
+      ),
+    );
+    gh.factory<_i659.ShareCircleCubit>(
+      () => _i659.ShareCircleCubit(
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i286.ShareBookWith>(),
       ),
     );
     gh.factory<_i327.IngestionQueueCubit>(

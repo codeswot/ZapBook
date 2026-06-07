@@ -7,6 +7,7 @@ import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/widgets/app_loading_list.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
@@ -71,7 +72,7 @@ class _Body extends StatelessWidget {
               Text('Circle members', style: typography.h3),
               const SizedBox(height: 14),
               if (state is CircleMembersLoading)
-                const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+                const AppLoadingList()
               else if (entries.isEmpty)
                 Text('No members yet.', style: typography.body.copyWith(color: colors.slate))
               else
