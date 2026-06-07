@@ -29,7 +29,7 @@ class LibraryCubit extends Cubit<LibraryState> {
   Future<void> _init() async {
     try {
       await _backfillLibrary();
-    } on Object catch (error) {
+    } on Exception catch (error) {
       emit(LibraryError('$error'));
     }
     _subscription = _watchLibraryBooks().listen(

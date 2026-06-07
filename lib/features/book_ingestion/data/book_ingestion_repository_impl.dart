@@ -60,7 +60,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       final directory = await _documentsDirectory.resolve();
       final path = await _writer.write(book, directory);
       yield IngestionProgress.written(result: book, zbfPath: path);
-    } on Object catch (error) {
+    } on Exception catch (error) {
       yield IngestionProgress.failed(error.toString());
     }
   }

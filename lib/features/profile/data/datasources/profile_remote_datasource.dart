@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 
 typedef ProfileMetadata = ({
@@ -14,15 +15,11 @@ class ProfileRemoteDataSource {
 
   final NostrService _nostr;
 
-  Future<ProfileMetadata?> fetchMetadata({
-    required String npub,
-    required String nsec,
-  }) async {
-    if (npub.isEmpty || nsec.isEmpty) return null;
+  Future<ProfileMetadata?> fetchMetadata({required String npub}) async {
+    if (npub.isEmpty) return null;
     try {
-      _nostr.initialize(nsec: nsec, npub: npub);
-      final pubkey = _nostr.pubkey;
-      if (pubkey == null) return null;
+      final pubkey = Nip19.decode(npub);
+      if (pubkey.isEmpty) return null;
       final metadata = await _nostr
           .getMetadata(pubkey)
           .timeout(const Duration(seconds: 8));
@@ -33,19 +30,16 @@ class ProfileRemoteDataSource {
         picture: metadata.picture,
         lud16: metadata.lud16,
       );
-    } on Object {
+    } on Exception {
       return null;
     }
   }
 
   Future<void> publish({
-    required String npub,
-    required String nsec,
     String? displayName,
     String? lud16,
     String? picture,
   }) async {
-    _nostr.initialize(nsec: nsec, npub: npub);
     await _nostr.publishMetadata(
       displayName: displayName,
       lud16: lud16,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
+import 'package:ndk/ndk.dart' show Nip19;
 import 'package:zapbook/core/services/clipboard_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -118,10 +119,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         ),
       );
 
-      _nostrService.initialize(
-        nsec: keypair.nsec ?? trimmed,
-        npub: keypair.npub,
-      );
       await _fetchExistingProfile();
       emit(state.copyWith(isBusy: false));
       return true;
@@ -171,13 +168,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   void _onEnterProfile() {
-    if (!_nostrService.isInitialized) {
-      _nostrService.initialize(
-        nsec: state.generatedNsec,
-        npub: state.generatedNpub,
-      );
-    }
-
     if (state.displayName.isEmpty) {
       final meta = ProfileMetaGenerator.generate(seed: state.generatedNpub);
       emit(state.copyWith(displayName: meta.displayName, picture: meta.avatar));
@@ -185,10 +175,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> _fetchExistingProfile() async {
+    final pubkey = Nip19.decode(state.generatedNpub);
+    if (pubkey.isEmpty) return;
     emit(state.copyWith(isFetchingMetadata: true));
     try {
       final metadata = await _nostrService
-          .getMetadata(_nostrService.pubkey!)
+          .getMetadata(pubkey)
           .timeout(const Duration(seconds: 10));
       if (metadata != null) {
         final fetchedName = metadata.displayName ?? metadata.name;
@@ -220,7 +212,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
     emit(state.copyWith(isBusy: true));
     await _completeOnboarding(npub: npub, nsec: nsec);
-    if (_nostrService.isInitialized) {
+    if (_nostrService.isLoggedIn) {
       unawaited(
         _nostrService.publishMetadata(
           displayName: state.displayName.isNotEmpty ? state.displayName : null,

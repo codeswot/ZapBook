@@ -27,7 +27,7 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text != null) {
-      _controller.text = data!.text!;
+      _controller.text = data!.text!.trim();
     }
   }
 
@@ -36,11 +36,18 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   Future<void> _connect() async {
     final uri = _controller.text.trim();
     if (uri.isEmpty) return;
+    if (!uri.startsWith('nostr+walletconnect://') &&
+        !uri.startsWith('bunker://')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid connection string')),
+      );
+      return;
+    }
     setState(() => _connecting = true);
     try {
       await widget.onConnect(uri);
       if (mounted) Navigator.of(context).pop();
-    } on Object {
+    } on Exception {
       if (mounted) setState(() => _connecting = false);
     }
   }
@@ -80,8 +87,11 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
                     trailing: _controller.text.isNotEmpty
                         ? BouncingInteractiveWidget(
                             onTap: _clear,
-                            child: Icon(LucideIcons.x,
-                                size: 18, color: context.colors.slate),
+                            child: Icon(
+                              LucideIcons.x,
+                              size: 18,
+                              color: context.colors.slate,
+                            ),
                           )
                         : null,
                   ),

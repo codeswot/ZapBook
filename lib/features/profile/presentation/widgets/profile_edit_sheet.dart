@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -8,6 +10,7 @@ import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_input.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class _ProfileEditSheetState extends State<ProfileEditSheet> {
@@ -22,7 +25,7 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
     _nameController = TextEditingController(text: widget.profile.displayName);
     _lud16Controller = TextEditingController(
       text: widget.profile.lightningAddress,
-    );
+    )..addListener(() => setState(() {}));
     _picture = widget.profile.picture;
   }
 
@@ -46,19 +49,34 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
     }
   }
 
+  Future<void> _pasteLud16() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) {
+      _lud16Controller.text = data!.text!.trim();
+    }
+  }
+
   Future<void> _save() async {
+    final name = _nameController.text.trim();
+    final lud16 = _lud16Controller.text.trim();
+
+    final nameError = Validators.displayName(name);
+    if (nameError != null) {
+      context.toast.showError(nameError);
+      return;
+    }
+    final lud16Error = Validators.lud16(lud16);
+    if (lud16Error != null) {
+      context.toast.showError(lud16Error);
+      return;
+    }
+
     setState(() => _saving = true);
     try {
-      await widget.onSave(
-        displayName: _nameController.text.trim(),
-        lud16: _lud16Controller.text.trim(),
-        picture: _picture,
-      );
+      await widget.onSave(displayName: name, lud16: lud16, picture: _picture);
       if (mounted) Navigator.of(context).pop();
-    } on Object {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
+    } on Exception {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -139,11 +157,30 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
               hintText: 'Your reader alias',
             ),
             const SizedBox(height: 16),
-            AppInput(
-              controller: _lud16Controller,
-              icon: LucideIcons.zap,
-              label: 'Lightning Address (lud16)',
-              hintText: 'you@getalby.com',
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: AppInput(
+                    controller: _lud16Controller,
+                    icon: LucideIcons.zap,
+                    label: 'Lightning Address (lud16)',
+                    hintText: 'you@getalby.com',
+                    trailing: _lud16Controller.text.isNotEmpty
+                        ? BouncingInteractiveWidget(
+                            onTap: () => _lud16Controller.clear(),
+                            child: Icon(
+                              LucideIcons.x,
+                              size: 18,
+                              color: context.colors.slate,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _PasteButton(onTap: _pasteLud16),
+              ],
             ),
             const SizedBox(height: 28),
             AppButton(
@@ -167,7 +204,8 @@ class ProfileEditSheet extends StatefulWidget {
     required String displayName,
     required String lud16,
     required String picture,
-  }) onSave;
+  })
+  onSave;
   final Future<String> Function() pickImage;
 
   const ProfileEditSheet({
@@ -187,7 +225,8 @@ class ProfileEditSheet extends StatefulWidget {
       required String displayName,
       required String lud16,
       required String picture,
-    }) onSave,
+    })
+    onSave,
     required Future<String> Function() pickImage,
   }) {
     return showModalBottomSheet(
@@ -199,6 +238,29 @@ class ProfileEditSheet extends StatefulWidget {
         profile: profile,
         onSave: onSave,
         pickImage: pickImage,
+      ),
+    );
+  }
+}
+
+class _PasteButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _PasteButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingInteractiveWidget(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
+          color: context.colors.paper2,
+          borderRadius: AppRadii.br10,
+          border: Border.all(color: context.colors.hairline),
+        ),
+        child: Icon(LucideIcons.clipboard, color: context.colors.slate),
       ),
     );
   }

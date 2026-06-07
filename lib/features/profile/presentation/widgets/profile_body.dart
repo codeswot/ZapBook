@@ -12,13 +12,15 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart'
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
 import 'package:zapbook/widgets/app_nwc_connect_sheet.dart';
+import 'package:zapbook/widgets/app_nwc_connected_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 
 class ProfileBody extends StatelessWidget {
-  const ProfileBody({super.key, required this.profile});
+  const ProfileBody({super.key, required this.profile, this.nwcWalletName});
 
   final UserProfile profile;
+  final String? nwcWalletName;
 
   static const String _appVersion = '0.0.1';
 
@@ -33,15 +35,8 @@ class ProfileBody extends StatelessWidget {
         children: [
           ProfileWalletCard(
             profile: profile,
-            nwcLabel: context.read<ProfileCubit>().nwcConnected ? 'Connected' : null,
-            onWallet: () {
-              final cubit = context.read<ProfileCubit>();
-              if (cubit.nwcConnected) return;
-              AppNwcConnectSheet.show(
-                context,
-                onConnect: (uri) => cubit.connectNwc(uri),
-              );
-            },
+            nwcLabel: nwcWalletName != null ? 'Connected' : null,
+            onWallet: () => _onWallet(context),
             onCopyLightning: () => _copy(
               context,
               profile.lightningAddress,
@@ -60,8 +55,7 @@ class ProfileBody extends StatelessWidget {
                 title: 'Manage keys',
                 subtitle: 'Back up or export your nsec',
                 onTap: () async {
-                  final nsec =
-                      await context.read<ProfileCubit>().readNsec();
+                  final nsec = await context.read<ProfileCubit>().readNsec();
                   if (nsec != null && context.mounted) {
                     ProfileKeyManageSheet.show(
                       context,
@@ -87,6 +81,37 @@ class ProfileBody extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _onWallet(BuildContext context) {
+    final cubit = context.read<ProfileCubit>();
+    if (nwcWalletName != null) {
+      AppNwcConnectedSheet.show(
+        context,
+        walletName: nwcWalletName!,
+        connectionString: cubit.nwcConnectionString ?? '',
+        onDisconnect: () async {
+          await cubit.disconnectNwc();
+          if (context.mounted) context.toast.showInfo('Wallet disconnected');
+        },
+      );
+      return;
+    }
+
+    AppNwcConnectSheet.show(
+      context,
+      onConnect: (uri) async {
+        try {
+          await cubit.connectNwc(uri);
+          if (context.mounted) context.toast.showSuccess('Wallet connected');
+        } on Exception {
+          if (context.mounted) {
+            context.toast.showError('Connection failed. Check the string.');
+          }
+          rethrow;
+        }
+      },
     );
   }
 

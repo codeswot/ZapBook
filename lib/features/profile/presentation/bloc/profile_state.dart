@@ -15,11 +15,14 @@ final class ProfileLoading extends ProfileState {
 
 final class ProfileLoaded extends ProfileState {
   final UserProfile profile;
+  final String? nwcWalletName;
 
-  const ProfileLoaded(this.profile);
+  const ProfileLoaded(this.profile, {this.nwcWalletName});
+
+  bool get nwcConnected => nwcWalletName != null;
 
   @override
-  List<Object?> get props => [profile];
+  List<Object?> get props => [profile, nwcWalletName];
 }
 
 final class ProfileError extends ProfileState {

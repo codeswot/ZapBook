@@ -748,10 +748,10 @@ packages:
     dependency: "direct main"
     description:
       name: marmot_dart
-      sha256: "0bb34023753dd6349b161589565f70dafcf1fca4a55cb5d206c659e2261a1e49"
+      sha256: "9b84ae42f3c270061468f497bc031cbce7dfce72f55f98ebd4b335f2ac781612"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.3"
   matcher:
     dependency: transitive
     description:

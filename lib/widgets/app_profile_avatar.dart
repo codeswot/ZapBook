@@ -31,7 +31,9 @@ class AppProfileAvatar extends StatelessWidget {
             ? Border.all(color: borderColor!, width: borderWidth)
             : null,
       ),
-      child: ClipOval(child: _AvatarImage(url: url, size: size)),
+      child: ClipOval(
+        child: _AvatarImage(url: url, size: size),
+      ),
     );
   }
 }
@@ -42,8 +44,7 @@ class _AvatarImage extends StatelessWidget {
 
   const _AvatarImage({required this.url, required this.size});
 
-  bool get _isLocalFile =>
-      !url.startsWith('http') && !url.startsWith('data:');
+  bool get _isLocalFile => !url.startsWith('http') && !url.startsWith('data:');
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +86,7 @@ class _DataUriImage extends StatelessWidget {
     final base64 = url.substring(comma + 1);
     try {
       return Image.memory(base64Decode(base64), fit: BoxFit.cover);
-    } on Object {
+    } on Exception {
       return const SizedBox.shrink();
     }
   }

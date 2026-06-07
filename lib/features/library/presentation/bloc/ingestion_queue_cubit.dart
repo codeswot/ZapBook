@@ -147,7 +147,7 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
           ),
         ),
       );
-    } on Object catch (error) {
+    } on Exception catch (error) {
       _onError(jobId, '$error');
       return;
     }

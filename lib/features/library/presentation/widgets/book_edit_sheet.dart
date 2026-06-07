@@ -36,10 +36,12 @@ class BookEditSheet extends StatefulWidget {
 }
 
 class _BookEditSheetState extends State<BookEditSheet> {
-  late final TextEditingController _titleController =
-      TextEditingController(text: widget.book.title);
-  late final TextEditingController _authorController =
-      TextEditingController(text: widget.book.author);
+  late final TextEditingController _titleController = TextEditingController(
+    text: widget.book.title,
+  );
+  late final TextEditingController _authorController = TextEditingController(
+    text: widget.book.author,
+  );
 
   late String? _genre = widget.book.genre;
   Uint8List? _newCover;
@@ -77,7 +79,7 @@ class _BookEditSheetState extends State<BookEditSheet> {
         await FileImage(File(coverPath)).evict();
       }
       navigator.pop();
-    } on Object {
+    } on Exception {
       if (mounted) {
         setState(() => _saving = false);
         context.toast.showError('Failed to save changes');
@@ -159,7 +161,8 @@ class _BookEditSheetState extends State<BookEditSheet> {
                     label: genre,
                     selected: selected,
                     tone: selected ? AppChipTone.zap : null,
-                    onTap: () => setState(() => _genre = selected ? null : genre),
+                    onTap: () =>
+                        setState(() => _genre = selected ? null : genre),
                   );
                 }).toList(),
               ),

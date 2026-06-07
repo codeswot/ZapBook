@@ -1,27 +1,24 @@
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
+import 'package:ndk/domain_layer/entities/read_write_marker.dart';
+import 'package:ndk/domain_layer/entities/user_relay_list.dart';
 
 @lazySingleton
 class NostrService {
   NostrService(this._ndk);
 
   final Ndk _ndk;
+  final _log = logging.Logger('NostrService');
 
-  bool _initialized = false;
+  static const List<String> broadcastRelays = [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://relay.primal.net',
+  ];
 
-  bool get isInitialized => _initialized;
   bool get isLoggedIn => _ndk.accounts.isLoggedIn;
   String? get pubkey => _ndk.accounts.getPublicKey();
-
-  void initialize({required String nsec, required String npub}) {
-    if (_initialized) return;
-
-    final hexPrivkey = Nip19.decode(nsec);
-    final hexPubkey = Nip19.decode(npub);
-
-    _ndk.accounts.loginPrivateKey(pubkey: hexPubkey, privkey: hexPrivkey);
-    _initialized = true;
-  }
 
   Future<Metadata> publishMetadata({
     String? name,
@@ -33,10 +30,13 @@ class NostrService {
     String? website,
     String? nip05,
   }) async {
-    _ensureInitialized();
+    final pubKey = _ndk.accounts.getPublicKey();
+    if (pubKey == null) {
+      throw StateError('No logged-in account. Sign in before publishing.');
+    }
 
     final metadata = Metadata(
-      pubKey: _ndk.accounts.getPublicKey()!,
+      pubKey: pubKey,
       name: name,
       displayName: displayName,
       lud16: lud16,
@@ -47,7 +47,34 @@ class NostrService {
       nip05: nip05,
     );
 
-    return _ndk.metadata.broadcastMetadata(metadata);
+    return _ndk.metadata.broadcastMetadata(
+      metadata,
+      specificRelays: broadcastRelays,
+    );
+  }
+
+  Future<void> ensureRelayListPublished() async {
+    final pubKey = _ndk.accounts.getPublicKey();
+    if (pubKey == null) return;
+
+    try {
+      final existing = await _ndk.userRelayLists.getSingleUserRelayList(pubKey);
+      if (existing != null && existing.relays.isNotEmpty) return;
+
+      await _ndk.userRelayLists.setInitialUserRelayList(
+        UserRelayList(
+          pubKey: pubKey,
+          relays: {
+            for (final url in broadcastRelays) url: ReadWriteMarker.readWrite,
+          },
+          createdAt: 0,
+          refreshedTimestamp: 0,
+        ),
+      );
+      _log.info('Published NIP-65 relay list');
+    } on Object catch (error, stack) {
+      _log.warning('ensureRelayListPublished failed', error, stack);
+    }
   }
 
   Future<Metadata?> getMetadata(String pubkey) =>
@@ -58,18 +85,6 @@ class NostrService {
     RelaySet? relaySet,
     void Function(Metadata)? onLoad,
   }) => _ndk.metadata.loadMetadatas(pubkeys, relaySet, onLoad: onLoad);
-
-  void _ensureInitialized() {
-    if (!_initialized) {
-      throw StateError(
-          'NostrService not initialized. Call initialize() first.');
-    }
-  }
-
-  void clearSession() {
-    _initialized = false;
-    _ndk.accounts.logout();
-  }
 
   Future<void> dispose() => _ndk.destroy();
 }

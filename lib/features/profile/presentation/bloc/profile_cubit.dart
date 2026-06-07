@@ -36,14 +36,21 @@ class ProfileCubit extends Cubit<ProfileState> {
   final IdentityLocalDataSource _identity;
   final FilePickerService _filePicker;
 
-  bool get nwcConnected => _nwc.isConnected;
+  String? get nwcConnectionString => _nwc.connectionString;
 
   Future<void> load() async {
     emit(const ProfileLoading());
     try {
-      emit(ProfileLoaded(await _loadProfile()));
-    } on Object catch (error) {
+      emit(ProfileLoaded(await _loadProfile(), nwcWalletName: _nwc.walletName));
+    } on Exception catch (error) {
       emit(ProfileError('$error'));
+    }
+  }
+
+  void _refreshNwc() {
+    final state = this.state;
+    if (state is ProfileLoaded) {
+      emit(ProfileLoaded(state.profile, nwcWalletName: _nwc.walletName));
     }
   }
 
@@ -54,9 +61,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   }) async {
     final state = this.state;
     if (state is! ProfileLoaded) return;
-    final profile = state.profile;
     await _updateProfile(
-      npub: profile.npub,
       displayName: displayName,
       lud16: lud16,
       picture: picture,
@@ -74,7 +79,15 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<String?> readNsec() => _identity.readNsec();
 
-  Future<void> connectNwc(String uri) => _nwc.connect(uri);
+  Future<void> connectNwc(String uri) async {
+    await _nwc.connect(uri);
+    _refreshNwc();
+  }
+
+  Future<void> disconnectNwc() async {
+    await _nwc.disconnect();
+    _refreshNwc();
+  }
 
   Future<void> copy(String value) => _clipboard.copy(value);
 

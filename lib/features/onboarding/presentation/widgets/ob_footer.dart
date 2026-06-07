@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/cubit/ai_model_cubit.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
+import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/widgets/app_toast.dart';
@@ -109,10 +110,17 @@ class ObFooter extends StatelessWidget {
             fullWidth: true,
             iconRight: LucideIcons.arrowRight,
             onTap: () {
-              if (lnAddressController.text.trim().isEmpty) {
+              final addr = lnAddressController.text.trim();
+              if (addr.isEmpty) {
                 context.toast.showError("Please enter a Lightning address");
                 return;
               }
+              final error = Validators.lud16(addr);
+              if (error != null) {
+                context.toast.showError(error);
+                return;
+              }
+              cubit.updateLightningAddress(addr);
               cubit.nextStep();
             },
           ),

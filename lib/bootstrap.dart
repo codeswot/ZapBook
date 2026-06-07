@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 
@@ -29,6 +30,12 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Bloc.observer = AppBlocObserver();
   await configureDependencies();
   await getIt<AiService>().ready;
+
+  try {
+    await getIt<NostrSession>().login();
+  } on Exception catch (error, stack) {
+    Logger.root.warning('NostrSession.login failed at bootstrap', error, stack);
+  }
 
   runApp(await builder());
 }
