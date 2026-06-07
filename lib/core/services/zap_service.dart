@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/lnurl_service.dart';
 
@@ -12,12 +13,22 @@ class ZapService {
   final LnurlService _lnurl;
   final Ndk _ndk;
 
+  Future<ZapResult> donate({required int amountSats, String? comment}) => send(
+    recipientLud16: ZapbookConfig.lnAddress,
+    recipientPubkey: ZapbookConfig.npub,
+    targetEventId: '',
+    gesture: ZapGesture.gift,
+    customSats: amountSats,
+    comment: comment,
+  );
+
   Future<ZapResult> send({
     required String recipientLud16,
     required String recipientPubkey,
     required String targetEventId,
     required ZapGesture gesture,
     int? customSats,
+    String? comment,
   }) async {
     final amountSats = gesture.sats ?? customSats ?? 21;
     if (amountSats <= 0) throw ZapException('Amount must be positive');
@@ -36,7 +47,7 @@ class ZapService {
     final invoice = await _lnurl.fetchInvoice(
       payResponse: payResponse,
       amountMillisats: amountMillisats,
-      comment: gesture.label,
+      comment: comment ?? gesture.label,
     );
 
     return ZapResult(

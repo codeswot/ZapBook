@@ -113,12 +113,12 @@ import 'package:zapbook/features/profile/domain/repositories/profile_repository.
     as _i582;
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart'
     as _i385;
-import 'package:zapbook/features/profile/domain/usecases/send_donation.dart'
-    as _i693;
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart'
     as _i915;
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart'
     as _i223;
+import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart'
+    as _i469;
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
     as _i145;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
@@ -184,9 +184,6 @@ extension GetItInjectableX on _i174.GetIt {
         _completer,
         initialTitle,
       ),
-    );
-    gh.factory<_i693.SendDonation>(
-      () => _i693.SendDonation(gh<_i96.LnurlService>()),
     );
     gh.lazySingleton<_i240.DocumentsDirectory>(
       () => const _i240.PathProviderDocumentsDirectory(),
@@ -288,6 +285,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1024.WatchLibraryBooks>(
       () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
+    );
+    gh.factory<_i469.DonateCubit>(
+      () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
