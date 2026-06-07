@@ -7,11 +7,13 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
 import 'package:zapbook/features/library/domain/usecases/share_book_with.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_chip.dart';
 import 'package:zapbook/widgets/app_input.dart';
+import 'package:zapbook/widgets/app_paste_button.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_row.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
@@ -43,6 +45,7 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
 
   final Map<String, Contact> _known = {};
   final List<String> _selected = [];
+  final Set<String> _existingMembers = {};
   List<Contact> _friends = const [];
   bool _loadingFriends = true;
   bool _addingNpub = false;
@@ -63,8 +66,10 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
   Future<void> _loadFriends() async {
     final friends = await _contacts.friends();
     final myNpub = await getIt<IdentityLocalDataSource>().readNpub();
+    final members = await getIt<GetBookMembers>()(widget.book.id);
     if (!mounted) return;
     setState(() {
+      _existingMembers.addAll(members);
       _friends = friends.where((c) => c.npub != myNpub).toList();
       for (final contact in _friends) {
         _known[contact.npub] = contact;
@@ -72,6 +77,8 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
       _loadingFriends = false;
     });
   }
+
+  bool _isExistingMember(String npub) => _existingMembers.contains(npub);
 
   Future<void> _addPasted() async {
     final npub = _npubController.text.trim();
@@ -83,6 +90,10 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
     final myNpub = await getIt<IdentityLocalDataSource>().readNpub();
     if (npub == myNpub) {
       _snack('That is your own npub');
+      return;
+    }
+    if (_isExistingMember(npub)) {
+      _snack('Already a member of this circle');
       return;
     }
     if (_known.containsKey(npub)) {
@@ -169,30 +180,60 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
               style: typography.body.copyWith(color: colors.slate),
             ),
             const SizedBox(height: 18),
-            AppInput(
-              label: 'Add by npub',
-              hintText: 'npub1…',
-              icon: LucideIcons.atSign,
-              controller: _npubController,
-              onChanged: (_) => setState(() {}),
-              trailing: _addingNpub
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : BouncingInteractiveWidget(
-                      onTap: _addPasted,
-                      child: Text(
-                        'Add',
-                        style: typography.body.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: _npubController.text.trim().isEmpty
-                              ? colors.slate2
-                              : colors.bitcoin,
-                        ),
-                      ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: AppInput(
+                    label: 'Add by npub',
+                    hintText: 'npub1…',
+                    icon: LucideIcons.atSign,
+                    controller: _npubController,
+                    onChanged: (_) => setState(() {}),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_npubController.text.isNotEmpty)
+                          BouncingInteractiveWidget(
+                            onTap: () {
+                              _npubController.clear();
+                              setState(() {});
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: Icon(
+                                LucideIcons.x,
+                                size: 16,
+                                color: colors.slate2,
+                              ),
+                            ),
+                          ),
+                        if (_addingNpub)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          BouncingInteractiveWidget(
+                            onTap: _addPasted,
+                            child: Text(
+                              'Add',
+                              style: typography.body.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _npubController.text.trim().isEmpty
+                                    ? colors.slate2
+                                    : colors.bitcoin,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                AppPasteButton(onPaste: () async => setState(() {})),
+              ],
             ),
             if (_selected.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -269,11 +310,17 @@ class _ShareCircleSheetState extends State<ShareCircleSheet> {
           AppRow(
             leading: AppProfileAvatar(url: contact.picture ?? '', size: 40),
             title: contact.label,
-            subtitle: contact.shortNpub,
-            trailing: _selected.contains(contact.npub)
+            subtitle: _isExistingMember(contact.npub)
+                ? 'Already in circle'
+                : contact.shortNpub,
+            trailing: _isExistingMember(contact.npub)
+                ? Icon(LucideIcons.checkCheck, size: 20, color: colors.slate2)
+                : _selected.contains(contact.npub)
                 ? Icon(LucideIcons.checkCheck, size: 20, color: colors.mint)
                 : Icon(LucideIcons.plus, size: 20, color: colors.slate),
-            onTap: () => _toggle(contact.npub),
+            onTap: _isExistingMember(contact.npub)
+                ? null
+                : () => _toggle(contact.npub),
           ),
           const SizedBox(height: 10),
         ],

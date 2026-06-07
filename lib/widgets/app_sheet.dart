@@ -15,9 +15,7 @@ class AppSheet extends StatelessWidget {
     final bottomPadding = mediaQuery.padding.bottom;
     final maxHeight = (mediaQuery.size.height - bottomInset) * 0.9;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
+    return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: semanticColors.paper,
