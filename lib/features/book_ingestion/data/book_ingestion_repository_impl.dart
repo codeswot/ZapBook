@@ -6,7 +6,7 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/domain/ingestion_progress.dart';
 import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
-import 'package:zapbook/core/data/documents_directory.dart';
+import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart';
 
 import 'package:zapbook/core/domain/wizard_data.dart';
@@ -15,12 +15,12 @@ import 'package:zapbook/core/domain/wizard_data.dart';
 final class BookIngestionRepositoryImpl implements BookIngestionRepository {
   BookIngestionRepositoryImpl({
     required this._extractors,
-    required this._documentsDirectory,
+    required this._fileStore,
     this._writer = const ZbfWriter(),
   });
 
   final List<BookExtractor> _extractors;
-  final DocumentsDirectory _documentsDirectory;
+  final LibraryFileStore _fileStore;
   final ZbfWriter _writer;
 
   @override
@@ -57,8 +57,8 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       }
       book = await _stashSourceForAi(book, file);
       yield IngestionProgress.writing('Writing ${book.manifest.title}');
-      final directory = await _documentsDirectory.resolve();
-      final path = await _writer.write(book, directory);
+      final bytes = _writer.encode(book);
+      final path = await _fileStore.writeZbf(book.manifest.id, bytes);
       yield IngestionProgress.written(result: book, zbfPath: path);
     } on Exception catch (error) {
       yield IngestionProgress.failed(error.toString());

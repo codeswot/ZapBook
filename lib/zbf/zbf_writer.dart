@@ -10,13 +10,16 @@ import 'package:zapbook/zbf/support/asset_naming.dart';
 final class ZbfWriter {
   const ZbfWriter();
 
-  Future<String> write(ZbfBook book, Directory directory) async {
+  Uint8List encode(ZbfBook book) {
     final archive = Archive();
     _addManifest(archive, book);
     _addChapters(archive, book);
     _addAssets(archive, book);
+    return Uint8List.fromList(ZipEncoder().encodeBytes(archive));
+  }
 
-    final bytes = ZipEncoder().encodeBytes(archive);
+  Future<String> write(ZbfBook book, Directory directory) async {
+    final bytes = encode(book);
     final file = File('${directory.path}/${_fileName(book)}');
     await file.writeAsBytes(bytes, flush: true);
     return file.path;

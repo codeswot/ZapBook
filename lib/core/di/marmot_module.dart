@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 @module
 abstract class MarmotModule {
+  @preResolve
   @lazySingleton
   Future<Marmot> marmot() async {
     await Marmot.initKeyringStore();

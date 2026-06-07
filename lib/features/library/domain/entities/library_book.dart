@@ -37,6 +37,32 @@ final class LibraryBook extends Equatable {
   final DateTime? lastOpenedAt;
   final String? contentHash;
 
+  LibraryBook copyWith({
+    String? title,
+    String? author,
+    String? genre,
+    String? coverPath,
+    DateTime? lastOpenedAt,
+  }) {
+    return LibraryBook(
+      id: id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      genre: genre ?? this.genre,
+      sourceFormat: sourceFormat,
+      pageCount: pageCount,
+      chapterCount: chapterCount,
+      zbfPath: zbfPath,
+      coverPath: coverPath ?? this.coverPath,
+      needsAiProcessing: needsAiProcessing,
+      zbfVersion: zbfVersion,
+      createdAt: createdAt,
+      addedAt: addedAt,
+      lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
+      contentHash: contentHash,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,
