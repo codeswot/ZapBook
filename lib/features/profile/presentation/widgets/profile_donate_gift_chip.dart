@@ -18,7 +18,6 @@ class DonateGiftChip extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 50,
-        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: active ? colors.bitcoinTint : colors.paper2,

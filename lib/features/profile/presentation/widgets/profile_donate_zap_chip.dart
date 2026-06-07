@@ -26,7 +26,6 @@ class DonateZapChip extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 50,
-        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: colors.paper2,

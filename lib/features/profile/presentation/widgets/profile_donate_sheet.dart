@@ -85,7 +85,10 @@ class _BodyState extends State<_Body> {
     if (!opened) {
       await Clipboard.setData(ClipboardData(text: pr));
       if (!context.mounted) return;
-      context.toast.showInfo('Invoice copied — paste in any Lightning wallet', rootNavigator: true);
+      context.toast.showInfo(
+        'Invoice copied — paste in any Lightning wallet',
+        rootNavigator: true,
+      );
     }
     if (context.mounted) context.pop();
   }
@@ -124,7 +127,10 @@ class _BodyState extends State<_Body> {
                 BouncingInteractiveWidget(
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: cubit.recipient));
-                    context.toast.showInfo('Lightning address copied', rootNavigator: true);
+                    context.toast.showInfo(
+                      'Lightning address copied',
+                      rootNavigator: true,
+                    );
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -153,8 +159,10 @@ class _BodyState extends State<_Body> {
                   style: typography.eyebrow.copyWith(color: colors.slate2),
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+
                   children: [
                     DonateZapChip(
                       gesture: ZapGesture.thumbsUp,
