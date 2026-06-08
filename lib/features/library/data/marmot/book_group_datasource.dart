@@ -274,10 +274,10 @@ class BookGroupDatasource {
       try {
         final change = await _marmot.leaveGroup(groupId);
         _publish(change.evolutionEventJson);
-        await _marmot.deleteGroup(groupId);
       } on Object catch (error, stack) {
-        _log.warning('leaveCircle marmot failed for $bookId, cleaning up locally', error, stack);
+        _log.warning('leaveGroup failed for $bookId, will still delete locally', error, stack);
       }
+      await _marmot.deleteGroup(groupId);
     }
     _groupIdByBookId.remove(bookId);
     await _fileStore.deleteBook(bookId);
