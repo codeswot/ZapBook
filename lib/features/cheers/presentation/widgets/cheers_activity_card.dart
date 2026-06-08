@@ -12,11 +12,13 @@ class CheersActivityCard extends StatelessWidget {
     required this.activity,
     required this.onTap,
     required this.onReactionTap,
+    this.onLongPress,
   });
 
   final CheersActivity activity;
   final VoidCallback onTap;
   final void Function(String reactionType) onReactionTap;
+  final VoidCallback? onLongPress;
 
   String _formatTimeAgo(DateTime dateTime) {
     final difference = DateTime.now().difference(dateTime);
@@ -42,6 +44,7 @@ class CheersActivityCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: BouncingInteractiveWidget(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -203,7 +206,7 @@ class CheersActivityCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              left: 32,
+              left: 24,
               child: Container(
                 width: 32,
                 height: 32,
@@ -214,7 +217,7 @@ class CheersActivityCard extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 16,
+              left: 12,
               child: Container(
                 width: 32,
                 height: 32,
@@ -229,8 +232,12 @@ class CheersActivityCard extends StatelessWidget {
               child: Container(
                 width: 32,
                 height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.paper3,
+                ),
                 alignment: Alignment.center,
-                child: Icon(LucideIcons.plus, size: 14, color: colors.slate),
+                child: Icon(LucideIcons.plus, size: 14, color: colors.ink),
               ),
             ),
           ],

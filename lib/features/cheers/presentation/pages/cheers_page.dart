@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/di/injection.dart';
@@ -14,6 +15,11 @@ import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart
 import 'package:zapbook/widgets/zap_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 class CheersPage extends StatelessWidget {
@@ -67,7 +73,6 @@ class _CheersViewState extends State<_CheersView> {
 
   void _showZapSheet(BuildContext context, CheersActivity activity) {
     if (activity.type == 'mine') {
-      context.toast.showInfo('You cannot zap yourself');
       return;
     }
     final colors = context.colors;
@@ -117,7 +122,6 @@ class _CheersViewState extends State<_CheersView> {
     String? comment,
   ) async {
     if (activity.type == 'mine') {
-      context.toast.showInfo('You cannot zap yourself');
       return;
     }
 
@@ -166,6 +170,130 @@ class _CheersViewState extends State<_CheersView> {
     } catch (_) {
       messenger.showInfo('Reacted with ${gesture.emoji}!');
     }
+  }
+
+  void _showLongPressMenu(BuildContext context, CheersActivity activity) {
+    final colors = context.colors;
+    final typography = context.typography;
+    final isMine = activity.type == 'mine';
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return AppSheet(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  AppProfileAvatar(url: activity.actorAvatar ?? '', size: 44),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isMine ? 'My Progress' : activity.actorName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: typography.h3.copyWith(color: colors.ink),
+                        ),
+                        Text(
+                          '${activity.activityDescription} • ${activity.bookTitle}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: typography.bodyS.copyWith(color: colors.slate),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (isMine) ...[
+                _buildMenuRow(
+                  context: context,
+                  icon: LucideIcons.share2,
+                  label: 'Share progress externally',
+                  onTap: () async {
+                    context.pop();
+                    final text =
+                        'Look at my progress on ZapBook! Just ${activity.activityDescription} of "${activity.bookTitle}" ⚡';
+                    await SharePlus.instance.share(ShareParams(text: text));
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildMenuRow(
+                  context: context,
+                  icon: LucideIcons.copy,
+                  label: 'Copy achievement text',
+                  onTap: () async {
+                    final messenger = context.toast;
+                    context.pop();
+                    final text =
+                        'Look at my progress on ZapBook! Just ${activity.activityDescription} of "${activity.bookTitle}" ⚡';
+                    await Clipboard.setData(ClipboardData(text: text));
+                    messenger.showInfo('Achievement text copied to clipboard!');
+                  },
+                ),
+              ] else ...[
+                _buildMenuRow(
+                  context: context,
+                  icon: LucideIcons.zap,
+                  label: 'Zap ${activity.actorName}',
+                  tone: colors.bitcoin,
+                  onTap: () {
+                    context.pop();
+                    _showZapSheet(context, activity);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? tone,
+  }) {
+    final colors = context.colors;
+    final color = tone ?? colors.ink;
+    return BouncingInteractiveWidget(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colors.paper3,
+          borderRadius: AppRadii.br12,
+          border: Border.all(color: colors.hairline),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: context.typography.body.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -316,9 +444,9 @@ class _CheersViewState extends State<_CheersView> {
                       return CheersActivityCard(
                         activity: item,
                         onTap: () => _showZapSheet(context, item),
+                        onLongPress: () => _showLongPressMenu(context, item),
                         onReactionTap: (type) {
                           if (item.type == 'mine') {
-                            context.toast.showInfo('You cannot zap yourself');
                             return;
                           }
                           final gesture = type == 'like'
