@@ -10,6 +10,7 @@ import 'package:zapbook/features/library/presentation/pages/circle_detail_page.d
 import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:zapbook/features/profile/presentation/pages/profile_page.dart';
+import 'package:zapbook/features/home/presentation/pages/home_page.dart';
 
 part 'app_router.g.dart';
 
@@ -85,11 +86,7 @@ class HomeRoute extends GoRouteData with $HomeRoute {
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
-      child: const Scaffold(
-        body: Center(
-          child: Text('Home (Feed & Reading Circles) Tab Placeholder'),
-        ),
-      ),
+      child: const HomePage(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
       },
