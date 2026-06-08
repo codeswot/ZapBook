@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 abstract interface class LibraryRepository {
@@ -30,9 +31,9 @@ abstract interface class LibraryRepository {
 
   Future<void> touchOpened(String id);
 
-  Future<void> shareBook(String id, String memberNpub);
+  Future<List<ShareSkip>> shareBook(String id, String memberNpub);
 
-  Future<void> shareBookWith(String id, List<String> memberNpubs);
+  Future<List<ShareSkip>> shareBookWith(String id, List<String> memberNpubs);
 
   Future<List<String>> bookMembers(String id);
 

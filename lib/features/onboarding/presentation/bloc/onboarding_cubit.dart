@@ -46,8 +46,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         emit(state.copyWith(step: OnboardingStep.model));
         break;
       case OnboardingStep.model:
-        emit(state.copyWith(step: OnboardingStep.profile));
-        _onEnterProfile();
+        if (state.hasExistingProfile) {
+          completeOnboarding();
+        } else {
+          emit(state.copyWith(step: OnboardingStep.profile));
+          _onEnterProfile();
+        }
         break;
       case OnboardingStep.profile:
         completeOnboarding();
@@ -184,14 +188,14 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           .timeout(const Duration(seconds: 10));
       if (metadata != null) {
         final fetchedName = metadata.displayName ?? metadata.name;
+        final hasName = fetchedName != null && fetchedName.isNotEmpty;
         emit(
           state.copyWith(
-            displayName: (fetchedName != null && fetchedName.isNotEmpty)
-                ? fetchedName
-                : state.displayName,
+            displayName: hasName ? fetchedName : state.displayName,
             picture: metadata.picture ?? state.picture,
             lightningAddress: metadata.lud16 ?? state.lightningAddress,
             isFetchingMetadata: false,
+            hasExistingProfile: hasName || metadata.picture != null,
           ),
         );
       } else {

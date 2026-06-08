@@ -19,13 +19,11 @@ class AppSheet extends StatelessWidget {
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: semanticColors.paper,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
+        borderRadius: BorderRadius.circular(32),
         border: Border(top: BorderSide(color: semanticColors.hairline)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 12, 24, 12 + bottomPadding + bottomInset),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + bottomInset),
+      margin: EdgeInsets.all(6).copyWith(bottom: 4 + bottomPadding),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

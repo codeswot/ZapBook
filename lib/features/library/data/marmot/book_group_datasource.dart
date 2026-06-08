@@ -15,6 +15,7 @@ import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/features/library/data/marmot/book_payloads.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 @lazySingleton
@@ -207,20 +208,22 @@ class BookGroupDatasource {
     await _fileStore.deleteBook(bookId);
   }
 
-  Future<void> shareBook(String bookId, String memberNpub) =>
+  Future<List<ShareSkip>> shareBook(String bookId, String memberNpub) =>
       shareBookWith(bookId, [memberNpub]);
 
-  Future<void> shareBookWith(String bookId, List<String> memberNpubs) async {
+  Future<List<ShareSkip>> shareBookWith(String bookId, List<String> memberNpubs) async {
     final groupId = await _resolveGroupId(bookId);
     if (groupId == null) {
       throw StateError('Book not found: $bookId');
     }
 
+    final skipped = <ShareSkip>[];
     var added = 0;
     for (final memberNpub in memberNpubs) {
       final keyPackage = await _keyPackages.fetchKeyPackage(memberNpub);
       if (keyPackage == null) {
         _log.warning('No key package for $memberNpub — skipped');
+        skipped.add(ShareSkip(npub: memberNpub, reason: ShareSkipReason.noKeyPackage));
         continue;
       }
       final change = await _marmot.addMember(groupId, keyPackage);
@@ -233,13 +236,13 @@ class BookGroupDatasource {
       added++;
     }
 
-    if (added == 0) return;
-
-    final meta = await currentMeta(bookId);
-    if (meta != null) {
-      await sendMeta(bookId, meta);
+    if (added > 0) {
+      final meta = await currentMeta(bookId);
+      if (meta != null) await sendMeta(bookId, meta);
+      await _uploadContent(groupId, bookId);
     }
-    await _uploadContent(groupId, bookId);
+
+    return skipped;
   }
 
   Future<List<MarmotMember>> members(String bookId) async {

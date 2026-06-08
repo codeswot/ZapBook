@@ -5,6 +5,7 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
 import 'package:zapbook/features/library/domain/usecases/share_book_with.dart';
+import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_state.dart';
 
 @injectable
@@ -61,13 +62,17 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     }
   }
 
-  Future<void> share(String bookId) async {
+  Future<List<ShareSkip>> share(String bookId) async {
     final s = _currentLoaded;
     emit(ShareCircleBusy(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, sharing: true));
     try {
-      await _shareBookWith(bookId, List<String>.from(s.selectedNpubs));
+      final skipped = await _shareBookWith(bookId, List<String>.from(s.selectedNpubs));
+      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, shareResult: skipped));
+      return skipped;
     } on Object {
-      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers));
+      final allSkipped = s.selectedNpubs.map((n) => ShareSkip(npub: n, reason: ShareSkipReason.noKeyPackage)).toList();
+      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, shareResult: allSkipped));
+      return allSkipped;
     }
   }
 

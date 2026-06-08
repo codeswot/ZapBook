@@ -10,6 +10,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
@@ -95,18 +96,22 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   @override
-  Future<void> shareBook(String id, String memberNpub) =>
+  Future<List<ShareSkip>> shareBook(String id, String memberNpub) =>
       shareBookWith(id, [memberNpub]);
 
   @override
-  Future<void> shareBookWith(String id, List<String> memberNpubs) async {
-    await _datasource.shareBookWith(id, memberNpubs);
-    _books = _books
-        .map((book) => book.id == id
-            ? book.copyWith(memberCount: book.memberCount + memberNpubs.length)
-            : book)
-        .toList(growable: false);
-    _emit();
+  Future<List<ShareSkip>> shareBookWith(String id, List<String> memberNpubs) async {
+    final skipped = await _datasource.shareBookWith(id, memberNpubs);
+    final added = memberNpubs.length - skipped.length;
+    if (added > 0) {
+      _books = _books
+          .map((book) => book.id == id
+              ? book.copyWith(memberCount: book.memberCount + added)
+              : book)
+          .toList(growable: false);
+      _emit();
+    }
+    return skipped;
   }
 
   @override

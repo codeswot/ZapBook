@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:zapbook/core/domain/contact.dart';
@@ -16,6 +17,7 @@ class ContactService {
   final IdentityLocalDataSource _identity;
 
   static const _key = 'contacts.npubs';
+  final _log = logging.Logger('ContactService');
 
   bool isValidNpub(String value) => Nip19.isPubkey(value.trim());
 
@@ -26,7 +28,9 @@ class ContactService {
   Future<void> warm() async {
     try {
       await friends();
-    } on Object catch (_) {}
+    } on Exception catch (e, stack) {
+      _log.warning('Warm contact service failed', e, stack);
+    }
   }
 
   List<String> _stored() => _prefs.getStringList(_key) ?? const [];
@@ -50,14 +54,21 @@ class ContactService {
   }
 
   Future<Contact> resolve(String npub) async {
-    final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+    String hex;
+    try {
+      hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+    } on Object {
+      throw ContactException('Invalid npub format');
+    }
     final meta = await _nostr.getMetadata(hex);
     return _contact(npub, meta);
   }
 
   Future<Contact> add(String npub) async {
     final myNpub = await _identity.readNpub();
-    if (npub == myNpub) throw ContactException('Cannot add yourself as a contact');
+    if (npub == myNpub) {
+      throw ContactException('Cannot add yourself as a contact');
+    }
     final contact = await resolve(npub);
     if (!_stored().contains(npub)) {
       await _prefs.setStringList(_key, [..._stored(), npub]);

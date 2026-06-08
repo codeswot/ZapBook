@@ -143,6 +143,8 @@ import 'package:zapbook/features/profile/domain/usecases/update_profile.dart'
     as _i223;
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart'
     as _i469;
+import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart'
+    as _i397;
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
     as _i145;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
@@ -321,6 +323,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i421.AiModelCubit>(
       () => _i421.AiModelCubit(gh<_i1012.AiService>()),
     );
+    gh.factory<_i397.FriendsCubit>(
+      () => _i397.FriendsCubit(gh<_i244.ContactService>()),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.MarmotLibraryRepository(
         gh<_i398.BookGroupDatasource>(),
@@ -380,14 +385,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
     );
-    gh.factory<_i404.BookEditCubit>(
-      () => _i404.BookEditCubit(
-        gh<_i850.GenreDataSource>(),
-        gh<_i1034.FilePickerService>(),
-        gh<_i96.UpdateBookMetadata>(),
-        gh<_i297.LibraryBook>(),
-      ),
-    );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(
         gh<_i1024.WatchLibraryBooks>(),
@@ -431,6 +428,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i63.IdentityRepository>(),
         gh<_i377.OnboardingRepository>(),
         gh<_i1073.NostrSession>(),
+      ),
+    );
+    gh.factoryParam<_i404.BookEditCubit, _i297.LibraryBook, dynamic>(
+      (book, _) => _i404.BookEditCubit(
+        gh<_i850.GenreDataSource>(),
+        gh<_i1034.FilePickerService>(),
+        gh<_i96.UpdateBookMetadata>(),
+        book,
       ),
     );
     gh.lazySingleton<_i582.ProfileRepository>(

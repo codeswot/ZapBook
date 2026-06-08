@@ -8,15 +8,16 @@ import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 class AppPasteButton extends StatelessWidget {
   const AppPasteButton({super.key, required this.onPaste});
 
-  final VoidCallback onPaste;
+  final ValueChanged<String> onPaste;
 
   @override
   Widget build(BuildContext context) {
     return BouncingInteractiveWidget(
       onTap: () async {
         final data = await Clipboard.getData(Clipboard.kTextPlain);
-        if (data?.text != null) {
-          onPaste();
+        final text = data?.text;
+        if (text != null && text.isNotEmpty) {
+          onPaste(text.trim());
         }
       },
       child: Container(

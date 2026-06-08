@@ -17,6 +17,7 @@ import 'package:zapbook/widgets/app_paste_button.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_row.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/features/library/presentation/widgets/share_result_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class ShareCircleSheet extends StatelessWidget {
@@ -115,7 +116,13 @@ class _BodyState extends State<_Body> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Share to circle', style: typography.h3),
+                Text(
+                  'Share to circle',
+                  style: context.typography.displayM.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.colors.ink,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Pick friends or paste an npub. They join "${widget.book.title}" and it appears in their library.',
@@ -182,7 +189,12 @@ class _BodyState extends State<_Body> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    AppPasteButton(onPaste: () => setState(() {})),
+                    AppPasteButton(
+                      onPaste: (text) {
+                        _npubController.text = text;
+                        setState(() {});
+                      },
+                    ),
                   ],
                 ),
                 if (error != null) ...[
@@ -294,7 +306,12 @@ class _BodyState extends State<_Body> {
   }
 
   void _onStateChanged(BuildContext context, ShareCircleState state) {
-    if (state is ShareCircleBusy && state.sharing) return;
-    if (state is ShareCircleLoaded && state.selectedNpubs.isEmpty) return;
+    if (state is ShareCircleLoaded && state.shareResult != null) {
+      final result = state.shareResult!;
+      context.pop();
+      if (result.isNotEmpty) {
+        ShareResultSheet.show(context, result, state.friends);
+      }
+    }
   }
 }

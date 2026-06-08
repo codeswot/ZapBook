@@ -15,6 +15,7 @@ class OnboardingState extends Equatable {
   final bool isBusy;
   final String? error;
   final bool isComplete;
+  final bool hasExistingProfile;
 
   const OnboardingState({
     required this.step,
@@ -29,6 +30,7 @@ class OnboardingState extends Equatable {
     this.isBusy = false,
     this.error,
     this.isComplete = false,
+    this.hasExistingProfile = false,
   });
 
   @override
@@ -45,6 +47,7 @@ class OnboardingState extends Equatable {
     isBusy,
     error,
     isComplete,
+    hasExistingProfile,
   ];
 
   OnboardingState copyWith({
@@ -60,6 +63,7 @@ class OnboardingState extends Equatable {
     bool? isBusy,
     String? error,
     bool? isComplete,
+    bool? hasExistingProfile,
   }) {
     return OnboardingState(
       step: step ?? this.step,
@@ -74,6 +78,7 @@ class OnboardingState extends Equatable {
       isBusy: isBusy ?? this.isBusy,
       error: error,
       isComplete: isComplete ?? this.isComplete,
+      hasExistingProfile: hasExistingProfile ?? this.hasExistingProfile,
     );
   }
 }
