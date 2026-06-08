@@ -12,6 +12,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_t
 import 'package:zapbook/features/profile/presentation/widgets/profile_stats_row.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage_sheet.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_key_package_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
 import 'package:zapbook/widgets/app_nwc_connect_sheet.dart';
 import 'package:zapbook/widgets/app_nwc_connected_sheet.dart';
@@ -52,6 +53,7 @@ class ProfileBody extends StatelessWidget {
             label: 'Account',
             tiles: [
               const ProfileAiTile(),
+              const ProfileKeyPackageTile(),
               ProfileTile(
                 icon: LucideIcons.shieldCheck,
                 title: 'Manage keys',

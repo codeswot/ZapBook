@@ -8,6 +8,7 @@ import 'package:zapbook/core/services/clipboard_service.dart';
 import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
+import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart';
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart';
@@ -25,6 +26,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     this._nwc,
     this._identity,
     this._filePicker,
+    this._keyPackage,
   ) : super(const ProfileLoading()) {
     load();
   }
@@ -36,6 +38,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   final NwcService _nwc;
   final IdentityLocalDataSource _identity;
   final FilePickerService _filePicker;
+  final KeyPackageService _keyPackage;
 
   String? get nwcConnectionString => _nwc.connectionString;
   String get donationRecipient => ZapbookConfig.lnAddress;
@@ -92,6 +95,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<void> copy(String value) => _clipboard.copy(value);
+
+  Future<bool> rotateKeyPackage() => _keyPackage.forceRotate();
 
   Future<void> signOut() => _signOut();
 }

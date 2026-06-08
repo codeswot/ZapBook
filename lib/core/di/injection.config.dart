@@ -297,6 +297,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
         gh<_i603.IdentityLocalDataSource>(),
       ),
+      dispose: (i) => i.dispose(),
     );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
@@ -401,6 +402,20 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1024.WatchLibraryBooks>(
       () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i107.LibraryCubit>(
+      () => _i107.LibraryCubit(
+        gh<_i1024.WatchLibraryBooks>(),
+        gh<_i887.BackfillLibrary>(),
+        gh<_i296.TouchBookOpened>(),
+        gh<_i555.ShareBook>(),
+        gh<_i1038.DeleteLibraryBook>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i398.BookGroupDatasource>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i244.ContactService>(),
+        gh<_i82.WelcomeInboxService>(),
+      ),
+    );
     gh.factory<_i906.CircleMembersCubit>(
       () => _i906.CircleMembersCubit(
         gh<_i1000.GetBookMembers>(),
@@ -424,20 +439,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i668.CirclesCubit>(
       () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
-    );
-    gh.factory<_i107.LibraryCubit>(
-      () => _i107.LibraryCubit(
-        gh<_i1024.WatchLibraryBooks>(),
-        gh<_i887.BackfillLibrary>(),
-        gh<_i296.TouchBookOpened>(),
-        gh<_i555.ShareBook>(),
-        gh<_i626.SyncWelcomes>(),
-        gh<_i1038.DeleteLibraryBook>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i398.BookGroupDatasource>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i244.ContactService>(),
-      ),
     );
     gh.factory<_i659.ShareCircleCubit>(
       () => _i659.ShareCircleCubit(
@@ -517,6 +518,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i507.NwcService>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i1034.FilePickerService>(),
+        gh<_i397.KeyPackageService>(),
       ),
     );
     return this;

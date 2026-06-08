@@ -71,20 +71,20 @@ class KeyPackageService {
     await _rotate(nsec, dTag);
   }
 
-  Future<void> forceRotate() async {
+  Future<bool> forceRotate() async {
     final npub = await _identity.readNpub();
     final nsec = await _identity.readNsec();
-    if (npub == null || nsec == null) return;
+    if (npub == null || nsec == null) return false;
 
     final dTag = await _identity.readDtag(_dTagKey);
     if (dTag == null) {
-      await _publishInitial(nsec);
+      return _publishInitial(nsec);
     } else {
-      await _rotate(nsec, dTag);
+      return _rotate(nsec, dTag);
     }
   }
 
-  Future<void> _publishInitial(String nsec) async {
+  Future<bool> _publishInitial(String nsec) async {
     try {
       final signed = await _marmot.createSignedKeyPackage(
         nsec,
@@ -100,15 +100,17 @@ class KeyPackageService {
 
       _broadcast(signed);
       _log.info('Key package published (initial)');
+      return true;
     } on Object catch (error, stack) {
       _log.warning('Failed to publish initial key package', error, stack);
+      return false;
     }
   }
 
-  Future<void> _rotate(String nsec, String dTag) async {
+  Future<bool> _rotate(String nsec, String dTag) async {
     try {
       final npub = await _identity.readNpub();
-      if (npub == null) return;
+      if (npub == null) return false;
 
       final kp = await _marmot.createKeyPackage(
         npub,
@@ -131,8 +133,10 @@ class KeyPackageService {
 
       _broadcast(signed);
       _log.info('Key package rotated');
+      return true;
     } on Object catch (error, stack) {
       _log.warning('Failed to rotate key package', error, stack);
+      return false;
     }
   }
 

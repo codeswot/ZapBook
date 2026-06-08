@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
@@ -10,7 +11,9 @@ import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class WelcomeInboxService {
-  WelcomeInboxService(this._marmot, this._ndk, this._identity);
+  WelcomeInboxService(this._marmot, this._ndk, this._identity) {
+    _start();
+  }
 
   final Marmot _marmot;
   final Ndk _ndk;
@@ -18,6 +21,26 @@ class WelcomeInboxService {
   final _log = logging.Logger('WelcomeInboxService');
 
   static const _giftWrapKind = 1059;
+  static const _interval = Duration(seconds: 30);
+
+  Timer? _timer;
+  final _onJoinedController = StreamController<int>.broadcast();
+
+  Stream<int> get onJoined => _onJoinedController.stream;
+
+  void _start() {
+    _syncLoop();
+    _timer = Timer.periodic(_interval, (_) => _syncLoop());
+  }
+
+  Future<void> _syncLoop() async {
+    try {
+      final joined = await sync();
+      if (joined > 0) _onJoinedController.add(joined);
+    } on Object catch (error, stack) {
+      _log.warning('Welcome sync loop error', error, stack);
+    }
+  }
 
   Future<int> sync() async {
     final npub = await _identity.readNpub();
@@ -67,4 +90,10 @@ class WelcomeInboxService {
     'content': event.content,
     'sig': event.sig,
   });
+
+  @disposeMethod
+  void dispose() {
+    _timer?.cancel();
+    _onJoinedController.close();
+  }
 }
