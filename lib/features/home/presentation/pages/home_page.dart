@@ -64,9 +64,7 @@ class _HomeView extends StatelessWidget {
               return Column(
                 children: [
                   const HomeHeader(streakCount: 0),
-                  const Expanded(
-                    child: HomeShimmer(),
-                  ),
+                  const Expanded(child: HomeShimmer()),
                 ],
               );
             }
@@ -121,7 +119,8 @@ class _HomeView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 24),
                                 FilledButton.icon(
-                                  onPressed: () => const LibraryRoute().go(context),
+                                  onPressed: () =>
+                                      const LibraryRoute().go(context),
                                   icon: const Icon(LucideIcons.plus),
                                   label: const Text('Go to Library'),
                                   style: FilledButton.styleFrom(

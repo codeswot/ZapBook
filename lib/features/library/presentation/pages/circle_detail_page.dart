@@ -167,6 +167,7 @@ class _Loaded extends StatelessWidget {
       cubit: context.read<CircleDetailCubit>(),
       entry: entry,
       bookId: bookId,
+      bookTitle: book.title,
       canRemove: state.isAdmin,
     );
   }
@@ -222,6 +223,7 @@ class _Loaded extends StatelessWidget {
                   entry: entry,
                   isOwner: state.isMemberAdmin(entry.npub),
                   pageCount: book.pageCount,
+                  bookTitle: book.title,
                   onLongPress: entry.isSelf
                       ? null
                       : () => _readerActions(context, entry),

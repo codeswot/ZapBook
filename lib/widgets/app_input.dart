@@ -11,6 +11,7 @@ class AppInput extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final String? hintText;
+  final TextInputType? keyboardType;
 
   const AppInput({
     super.key,
@@ -21,6 +22,7 @@ class AppInput extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.hintText,
+    this.keyboardType,
   });
 
   @override
@@ -115,6 +117,8 @@ class _AppInputState extends State<AppInput> {
               Expanded(
                 child: TextFormField(
                   controller: _controller,
+                  onTapOutside: (event) => FocusScope.of(context).unfocus(),
+                  keyboardType: widget.keyboardType,
                   onChanged: widget.onChanged,
                   style: typography.body.copyWith(
                     fontWeight: FontWeight.w500,

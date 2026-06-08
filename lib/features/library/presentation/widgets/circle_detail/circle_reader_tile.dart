@@ -5,7 +5,12 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
     show MemberEntry;
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_placeholders.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
-import 'package:zapbook/features/library/presentation/widgets/reader_zap_sheet.dart';
+import 'package:flutter/services.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/widgets/zap_sheet.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
@@ -17,13 +22,90 @@ class CircleReaderTile extends StatelessWidget {
     required this.entry,
     required this.isOwner,
     required this.pageCount,
+    required this.bookTitle,
     this.onLongPress,
   });
 
   final MemberEntry entry;
   final bool isOwner;
   final int pageCount;
+  final String bookTitle;
   final VoidCallback? onLongPress;
+
+  void _showZapSheet(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    ZapSheet.show(
+      context: context,
+      header: Row(
+        children: [
+          AppProfileAvatar(url: entry.contact.picture ?? '', size: 48),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Zap ${entry.contact.label}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typography.h3.copyWith(
+                    color: colors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Reading $bookTitle',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typography.bodyS.copyWith(color: colors.slate),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      onZapSelected: (gesture, amount, message) =>
+          _handleZap(context, gesture, amount, message),
+    );
+  }
+
+  Future<void> _handleZap(
+    BuildContext context,
+    ZapGesture gesture,
+    int amount,
+    String? comment,
+  ) async {
+    final messenger = context.toast;
+    final lud16 = entry.contact.lud16;
+    if (lud16 == null || lud16.isEmpty) {
+      messenger.showError('${entry.contact.label} has no lightning address');
+      return;
+    }
+
+    try {
+      final zap = getIt<ZapService>();
+      final result = await zap.send(
+        recipientLud16: lud16,
+        recipientPubkey: entry.npub,
+        targetEventId: '',
+        gesture: gesture,
+        customSats: amount,
+        comment: comment,
+      );
+      final launched = await zap.payWithFallback(result.invoice);
+      if (!launched) {
+        await Clipboard.setData(ClipboardData(text: result.invoice));
+        messenger.showInfo('Invoice copied to clipboard');
+      } else {
+        messenger.showSuccess('Zapping $amount sats to ${entry.contact.label}');
+      }
+    } catch (_) {
+      messenger.showError('Could not zap ${entry.contact.label}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +181,7 @@ class CircleReaderTile extends StatelessWidget {
             if (!isSelf) ...[
               const SizedBox(width: 12),
               _ZapButton(
-                onTap: () => ReaderZapSheet.show(context, entry.contact),
+                onTap: () => _showZapSheet(context),
               ),
             ],
           ],

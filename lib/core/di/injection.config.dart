@@ -65,6 +65,18 @@ import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.d
     as _i751;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
     as _i58;
+import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart'
+    as _i64;
+import 'package:zapbook/features/cheers/data/repositories/cheers_repository_impl.dart'
+    as _i489;
+import 'package:zapbook/features/cheers/domain/repositories/cheers_repository.dart'
+    as _i314;
+import 'package:zapbook/features/cheers/domain/usecases/send_cheers_zap.dart'
+    as _i636;
+import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.dart'
+    as _i654;
+import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart'
+    as _i584;
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart'
     as _i539;
 import 'package:zapbook/features/home/data/datasources/home_dashboard_data_source.dart'
@@ -275,6 +287,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i696.IngestionPageCubit>(
       () => _i696.IngestionPageCubit(gh<_i1034.FilePickerService>()),
     );
+    gh.lazySingleton<_i64.CheersDataSource>(
+      () => _i64.CheersDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i148.NostrSignerSource>(
       () => _i429.LocalKeySignerSource(gh<_i603.IdentityLocalDataSource>()),
     );
@@ -316,6 +335,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
+    );
+    gh.lazySingleton<_i314.CheersRepository>(
+      () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
@@ -364,11 +386,23 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i265.HomeDashboardDataSource>(),
       ),
     );
+    gh.factory<_i636.SendCheersZap>(
+      () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
+    );
+    gh.factory<_i654.WatchCheersActivities>(
+      () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.MarmotLibraryRepository(
         gh<_i398.BookGroupDatasource>(),
         gh<_i854.LibraryFileStore>(),
         gh<_i1.ZbfReader>(),
+      ),
+    );
+    gh.factory<_i584.CheersCubit>(
+      () => _i584.CheersCubit(
+        gh<_i654.WatchCheersActivities>(),
+        gh<_i636.SendCheersZap>(),
       ),
     );
     gh.lazySingleton<_i140.MarmotSyncService>(

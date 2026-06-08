@@ -23,6 +23,8 @@ class DonateCubit extends Cubit<DonateState> {
     ZapGesture.thumbsUp: 'Well done',
     ZapGesture.clap: 'ZapBook is awesome',
     ZapGesture.fire: 'Keep building ZapBook',
+    ZapGesture.rocket: 'ZapBook To the moon!',
+    ZapGesture.trophy: 'Absolutely legendary!',
   };
 
   void toggleGift() {

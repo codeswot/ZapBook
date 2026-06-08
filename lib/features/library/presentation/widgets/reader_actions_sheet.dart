@@ -6,7 +6,12 @@ import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.d
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/reader_zap_sheet.dart';
+import 'package:flutter/services.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/widgets/zap_sheet.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
@@ -19,12 +24,14 @@ class ReaderActionsSheet extends StatelessWidget {
     required this.cubit,
     required this.entry,
     required this.bookId,
+    required this.bookTitle,
     required this.canRemove,
   });
 
   final CircleDetailCubit cubit;
   final MemberEntry entry;
   final String bookId;
+  final String bookTitle;
   final bool canRemove;
 
   static Future<void> show(
@@ -32,6 +39,7 @@ class ReaderActionsSheet extends StatelessWidget {
     required CircleDetailCubit cubit,
     required MemberEntry entry,
     required String bookId,
+    required String bookTitle,
     required bool canRemove,
   }) {
     return showModalBottomSheet(
@@ -42,6 +50,7 @@ class ReaderActionsSheet extends StatelessWidget {
         cubit: cubit,
         entry: entry,
         bookId: bookId,
+        bookTitle: bookTitle,
         canRemove: canRemove,
       ),
     );
@@ -58,6 +67,81 @@ class ReaderActionsSheet extends StatelessWidget {
       action: 'Remove reader',
     );
     if (ok) await cubit.removeMember(bookId, entry.npub);
+  }
+
+  void _showZapSheet(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    ZapSheet.show(
+      context: context,
+      header: Row(
+        children: [
+          AppProfileAvatar(url: entry.contact.picture ?? '', size: 48),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Zap ${entry.contact.label}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typography.h3.copyWith(
+                    color: colors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Reading $bookTitle',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typography.bodyS.copyWith(color: colors.slate),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      onZapSelected: (gesture, amount, message) =>
+          _handleZap(context, gesture, amount, message),
+    );
+  }
+
+  Future<void> _handleZap(
+    BuildContext context,
+    ZapGesture gesture,
+    int amount,
+    String? comment,
+  ) async {
+    final messenger = context.toast;
+    final lud16 = entry.contact.lud16;
+    if (lud16 == null || lud16.isEmpty) {
+      messenger.showError('${entry.contact.label} has no lightning address');
+      return;
+    }
+
+    try {
+      final zap = getIt<ZapService>();
+      final result = await zap.send(
+        recipientLud16: lud16,
+        recipientPubkey: entry.npub,
+        targetEventId: '',
+        gesture: gesture,
+        customSats: amount,
+        comment: comment,
+      );
+      final launched = await zap.payWithFallback(result.invoice);
+      if (!launched) {
+        await Clipboard.setData(ClipboardData(text: result.invoice));
+        messenger.showInfo('Invoice copied to clipboard');
+      } else {
+        messenger.showSuccess('Zapping $amount sats to ${entry.contact.label}');
+      }
+    } catch (_) {
+      messenger.showError('Could not zap ${entry.contact.label}');
+    }
   }
 
   @override
@@ -101,7 +185,7 @@ class ReaderActionsSheet extends StatelessWidget {
             tone: colors.bitcoin,
             onTap: () {
               context.pop();
-              ReaderZapSheet.show(context, entry.contact);
+              _showZapSheet(context);
             },
           ),
           if (canRemove) ...[
