@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
-import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_dialog.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
@@ -26,9 +26,12 @@ class ProfileSignOutTile extends StatelessWidget {
 
   Future<void> _confirm(BuildContext context) async {
     final cubit = context.read<ProfileCubit>();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (_) => const ProfileSignOutDialog(),
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: context.colors.transparent,
+      builder: (_) => const ProfileSignOutSheet(),
     );
     if (confirmed != true) return;
     await cubit.signOut();

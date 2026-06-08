@@ -83,12 +83,18 @@ import 'package:zapbook/features/library/domain/usecases/backfill_library.dart'
     as _i887;
 import 'package:zapbook/features/library/domain/usecases/delete_library_book.dart'
     as _i1038;
+import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart'
+    as _i210;
 import 'package:zapbook/features/library/domain/usecases/find_book_by_content_hash.dart'
     as _i190;
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart'
     as _i1000;
+import 'package:zapbook/features/library/domain/usecases/get_circle_admins.dart'
+    as _i428;
 import 'package:zapbook/features/library/domain/usecases/get_library_book.dart'
     as _i807;
+import 'package:zapbook/features/library/domain/usecases/leave_circle.dart'
+    as _i1056;
 import 'package:zapbook/features/library/domain/usecases/remove_book_member.dart'
     as _i310;
 import 'package:zapbook/features/library/domain/usecases/share_book.dart'
@@ -101,12 +107,18 @@ import 'package:zapbook/features/library/domain/usecases/touch_book_opened.dart'
     as _i296;
 import 'package:zapbook/features/library/domain/usecases/update_book_metadata.dart'
     as _i96;
+import 'package:zapbook/features/library/domain/usecases/watch_circles.dart'
+    as _i96;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
     as _i1024;
 import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart'
     as _i404;
+import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart'
+    as _i458;
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart'
     as _i906;
+import 'package:zapbook/features/library/presentation/bloc/circles_cubit.dart'
+    as _i668;
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart'
     as _i327;
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
@@ -350,14 +362,23 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1038.DeleteLibraryBook>(
       () => _i1038.DeleteLibraryBook(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i210.DissolveCircle>(
+      () => _i210.DissolveCircle(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i190.FindBookByContentHash>(
       () => _i190.FindBookByContentHash(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i1000.GetBookMembers>(
       () => _i1000.GetBookMembers(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i428.GetCircleAdmins>(
+      () => _i428.GetCircleAdmins(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i807.GetLibraryBook>(
       () => _i807.GetLibraryBook(gh<_i516.LibraryRepository>()),
+    );
+    gh.factory<_i1056.LeaveCircle>(
+      () => _i1056.LeaveCircle(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i310.RemoveBookMember>(
       () => _i310.RemoveBookMember(gh<_i516.LibraryRepository>()),
@@ -374,6 +395,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i96.UpdateBookMetadata>(
       () => _i96.UpdateBookMetadata(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i96.WatchCircles>(
+      () => _i96.WatchCircles(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i1024.WatchLibraryBooks>(
       () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
     );
@@ -384,6 +408,22 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i244.ContactService>(),
         gh<_i603.IdentityLocalDataSource>(),
       ),
+    );
+    gh.factory<_i458.CircleDetailCubit>(
+      () => _i458.CircleDetailCubit(
+        gh<_i807.GetLibraryBook>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i428.GetCircleAdmins>(),
+        gh<_i310.RemoveBookMember>(),
+        gh<_i1056.LeaveCircle>(),
+        gh<_i210.DissolveCircle>(),
+        gh<_i296.TouchBookOpened>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
+    gh.factory<_i668.CirclesCubit>(
+      () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
     );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,12 +6,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
+import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
@@ -23,12 +22,14 @@ class BookActionsSheet extends StatelessWidget {
     required this.isAdmin,
     required this.ownerLabel,
     required this.onDelete,
+    required this.onLeave,
   });
 
   final LibraryBook book;
   final bool isAdmin;
   final String ownerLabel;
   final VoidCallback onDelete;
+  final VoidCallback onLeave;
 
   static Future<void> show(
     BuildContext context, {
@@ -36,6 +37,7 @@ class BookActionsSheet extends StatelessWidget {
     required bool isAdmin,
     required String ownerLabel,
     required VoidCallback onDelete,
+    required VoidCallback onLeave,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -46,8 +48,24 @@ class BookActionsSheet extends StatelessWidget {
         isAdmin: isAdmin,
         ownerLabel: ownerLabel,
         onDelete: onDelete,
+        onLeave: onLeave,
       ),
     );
+  }
+
+  Future<void> _onDeleteTap(BuildContext context) async {
+    context.pop();
+    final confirmed = await CircleConfirmSheet.show(
+      context,
+      title: 'Delete this book?',
+      message: isAdmin
+          ? '“${book.title}” will be removed from your shelf and its file '
+                'deleted from this device. This can’t be undone.'
+          : 'You’re leaving this shared book. It’ll be removed from this '
+                'device and you’ll no longer be part of its circle.',
+      action: 'Delete book',
+    );
+    if (confirmed) (isAdmin ? onDelete : onLeave)();
   }
 
   ImageProvider? get _coverImage {
@@ -141,14 +159,7 @@ class BookActionsSheet extends StatelessWidget {
             icon: LucideIcons.trash2,
             label: 'Delete book',
             tone: colors.tomato,
-            onTap: isAdmin
-                ? () {
-                    context.pop();
-                    unawaited(_confirmDelete(context, book).then(
-                      (confirmed) { if (confirmed) onDelete(); },
-                    ));
-                  }
-                : null,
+            onTap: () => _onDeleteTap(context),
           ),
         ],
       ),
@@ -200,45 +211,3 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
-Future<bool> _confirmDelete(BuildContext context, LibraryBook book) async {
-  final result = await showModalBottomSheet<bool>(
-    context: context,
-    useRootNavigator: true,
-    backgroundColor: context.colors.transparent,
-    builder: (sheetContext) {
-      final colors = sheetContext.colors;
-      final typography = sheetContext.typography;
-      return AppSheet(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Delete this book?', style: typography.h3),
-            const SizedBox(height: 10),
-            Text(
-              '“${book.title}” will be removed from your shelf and its file '
-              'deleted from this device. This can’t be undone.',
-              style: typography.body.copyWith(color: colors.slate),
-            ),
-            const SizedBox(height: 28),
-            AppButton(
-              label: 'Delete book',
-              icon: LucideIcons.trash2,
-              variant: AppButtonVariant.danger,
-              fullWidth: true,
-              onTap: () => Navigator.of(sheetContext).pop(true),
-            ),
-            const SizedBox(height: 10),
-            AppButton(
-              label: 'Cancel',
-              variant: AppButtonVariant.ghost,
-              fullWidth: true,
-              onTap: () => Navigator.of(sheetContext).pop(false),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-  return result ?? false;
-}

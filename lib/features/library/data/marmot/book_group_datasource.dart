@@ -268,6 +268,28 @@ class BookGroupDatasource {
     _publish(change.evolutionEventJson);
   }
 
+  Future<void> leaveCircle(String bookId) async {
+    final groupId = await _resolveGroupId(bookId);
+    if (groupId != null) {
+      final change = await _marmot.leaveGroup(groupId);
+      _publish(change.evolutionEventJson);
+      await _marmot.deleteGroup(groupId);
+    }
+    _groupIdByBookId.remove(bookId);
+    await _fileStore.deleteBook(bookId);
+  }
+
+  Future<void> dissolveCircle(String bookId) async {
+    final groupId = await _resolveGroupId(bookId);
+    if (groupId == null) return;
+    final myNpub = await _requireNpub();
+    for (final member in await _marmot.getMembers(groupId)) {
+      if (member.npub == myNpub) continue;
+      final change = await _marmot.removeMember(groupId, member.npub);
+      _publish(change.evolutionEventJson);
+    }
+  }
+
   Future<void> _giftWrapAndPublish(
     String rumorJson,
     String recipientHex,

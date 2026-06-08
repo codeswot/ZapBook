@@ -49,6 +49,8 @@ class LibraryCubit extends Cubit<LibraryState> {
 
   Future<void> deleteBook(String id) => _deleteLibraryBook(id);
 
+  Future<void> leaveCircle(String id) => _libraryRepository.leaveCircle(id);
+
   Future<bool> isAdminOf(String bookId) async {
     final myNpub = await _identity.readNpub();
     if (myNpub == null) return false;

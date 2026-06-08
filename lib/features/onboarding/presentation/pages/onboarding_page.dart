@@ -66,8 +66,14 @@ class _OnboardingViewState extends State<_OnboardingView> {
           prev.status != curr.status ||
               prev.downloadProgress != curr.downloadProgress,
       builder: (context, aiState) {
-        return BlocBuilder<OnboardingCubit, OnboardingState>(
-          builder: (context, state) {
+        return BlocListener<OnboardingCubit, OnboardingState>(
+          listener: (context, state) {
+            if (state.isComplete) {
+              const HomeRoute().go(context);
+            }
+          },
+          child: BlocBuilder<OnboardingCubit, OnboardingState>(
+            builder: (context, state) {
             final currentStepIndex = _getStepIndex(state.step);
 
             return Scaffold(
@@ -116,9 +122,10 @@ class _OnboardingViewState extends State<_OnboardingView> {
               ),
             );
           },
-        );
-      },
+        ),
     );
+  },
+  );
   }
 
   int _getStepIndex(OnboardingStep step) {

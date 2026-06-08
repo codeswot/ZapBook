@@ -5,6 +5,8 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:zapbook/app/app_shell_page.dart';
 import 'package:zapbook/features/library/presentation/pages/library_page.dart';
+import 'package:zapbook/features/library/presentation/pages/circles_page.dart';
+import 'package:zapbook/features/library/presentation/pages/circle_detail_page.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:zapbook/features/profile/presentation/pages/profile_page.dart';
@@ -102,9 +104,7 @@ class CirclesRoute extends GoRouteData with $CirclesRoute {
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
-      child: const Scaffold(
-        body: Center(child: Text('Circles Tab Placeholder')),
-      ),
+      child: const CirclesPage(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
       },
@@ -153,4 +153,15 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       ZbfViewerPage(zbfPath: zbfPath);
+}
+
+@TypedGoRoute<CircleDetailRoute>(path: '/circle')
+class CircleDetailRoute extends GoRouteData with $CircleDetailRoute {
+  final String bookId;
+
+  const CircleDetailRoute({required this.bookId});
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      CircleDetailPage(bookId: bookId);
 }

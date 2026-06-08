@@ -37,7 +37,13 @@ abstract interface class LibraryRepository {
 
   Future<List<String>> bookMembers(String id);
 
+  Future<List<String>> bookAdmins(String id);
+
   Future<void> removeBookMember(String id, String memberNpub);
+
+  Future<void> leaveCircle(String id);
+
+  Future<void> dissolveCircle(String id);
 
   Future<void> refresh();
 

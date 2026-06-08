@@ -48,6 +48,7 @@ class LibraryBookTile extends StatelessWidget {
         isAdmin: isAdmin,
         ownerLabel: ownerLabel,
         onDelete: () => cubit.deleteBook(book.id),
+        onLeave: () => cubit.leaveCircle(book.id),
       );
     }
   }

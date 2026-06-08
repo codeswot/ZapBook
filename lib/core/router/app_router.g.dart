@@ -10,6 +10,7 @@ List<RouteBase> get $appRoutes => [
   $onboardingRoute,
   $appShellRoute,
   $zbfViewerRoute,
+  $circleDetailRoute,
 ];
 
 RouteBase get $onboardingRoute => GoRouteData.$route(
@@ -167,6 +168,33 @@ mixin $ZbfViewerRoute on GoRouteData {
     '/viewer',
     queryParams: {'zbf-path': _self.zbfPath},
   );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $circleDetailRoute =>
+    GoRouteData.$route(path: '/circle', factory: $CircleDetailRoute._fromState);
+
+mixin $CircleDetailRoute on GoRouteData {
+  static CircleDetailRoute _fromState(GoRouterState state) =>
+      CircleDetailRoute(bookId: state.uri.queryParameters['book-id']!);
+
+  CircleDetailRoute get _self => this as CircleDetailRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/circle', queryParams: {'book-id': _self.bookId});
 
   @override
   void go(BuildContext context) => context.go(location);

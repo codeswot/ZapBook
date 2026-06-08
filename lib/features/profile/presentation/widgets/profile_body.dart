@@ -69,12 +69,9 @@ class ProfileBody extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 26),
-          ProfileSection(
-            label: 'Friends',
-            tiles: [const ProfileFriendsTile()],
-          ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 16),
+          ProfileSection(label: 'Friends', tiles: [const ProfileFriendsTile()]),
+          const SizedBox(height: 16),
           ProfileSection(
             label: 'App',
             tiles: [

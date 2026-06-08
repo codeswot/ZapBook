@@ -200,6 +200,9 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   @override
+  Future<List<String>> bookAdmins(String id) => _datasource.adminNpubs(id);
+
+  @override
   Future<void> removeBookMember(String id, String memberNpub) async {
     await _datasource.removeMember(id, memberNpub);
     _books = _books
@@ -207,6 +210,22 @@ class MarmotLibraryRepository implements LibraryRepository {
             ? book.copyWith(
                 memberCount: book.memberCount > 1 ? book.memberCount - 1 : 1)
             : book)
+        .toList(growable: false);
+    _emit();
+  }
+
+  @override
+  Future<void> leaveCircle(String id) async {
+    await _datasource.leaveCircle(id);
+    _books = _books.where((book) => book.id != id).toList(growable: false);
+    _emit();
+  }
+
+  @override
+  Future<void> dissolveCircle(String id) async {
+    await _datasource.dissolveCircle(id);
+    _books = _books
+        .map((book) => book.id == id ? book.copyWith(memberCount: 1) : book)
         .toList(growable: false);
     _emit();
   }

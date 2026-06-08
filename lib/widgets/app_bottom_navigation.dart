@@ -34,7 +34,7 @@ class AppBottomNavigation extends StatelessWidget {
     AppBottomNavigationItem(
       id: 'circles',
       label: 'Circles',
-      icon: LucideIcons.circleDashed,
+      icon: LucideIcons.users,
     ),
     AppBottomNavigationItem(
       id: 'cheers',
