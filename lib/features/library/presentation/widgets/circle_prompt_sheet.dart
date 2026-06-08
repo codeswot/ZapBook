@@ -1,39 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/theme/app_theme.dart';
+
+import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
+import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/zbf/zbf.dart';
 
 class CirclePromptSheet extends StatelessWidget {
-  final BookManifest? manifest;
-  final VoidCallback onCreateCircle;
-  final VoidCallback onJustRead;
+  const CirclePromptSheet({super.key, required this.book});
 
-  const CirclePromptSheet({
-    super.key,
-    required this.manifest,
-    required this.onCreateCircle,
-    required this.onJustRead,
-  });
+  final LibraryBook book;
 
-  static Future<void> show(
-    BuildContext context, {
-    required BookManifest? manifest,
-    required VoidCallback onCreateCircle,
-    required VoidCallback onJustRead,
-  }) {
+  static Future<void> show(BuildContext context, LibraryBook book) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CirclePromptSheet(
-        manifest: manifest,
-        onCreateCircle: onCreateCircle,
-        onJustRead: onJustRead,
-      ),
+      builder: (_) => CirclePromptSheet(book: book),
     );
   }
 
@@ -60,7 +47,7 @@ class CirclePromptSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            "Nice — first book added",
+            'Nice — first book added',
             style: context.typography.bodyS.copyWith(
               fontWeight: FontWeight.w700,
               color: context.colors.plum,
@@ -69,7 +56,7 @@ class CirclePromptSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            "Start a reading circle with ${manifest?.title ?? 'your new book'}?",
+            'Start a reading circle with ${book.title}?',
             style: context.typography.h2.copyWith(
               fontWeight: FontWeight.w700,
               color: context.colors.ink,
@@ -78,7 +65,7 @@ class CirclePromptSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            "Invite up to 100 people to read it together. Anyone in the circle can zap anyone who hits a milestone.",
+            'Invite up to 100 people to read it together. Anyone in the circle can zap anyone who hits a milestone.',
             style: context.typography.body.copyWith(
               color: context.colors.slate,
             ),
@@ -86,18 +73,21 @@ class CirclePromptSheet extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           AppButton(
-            label: "Yes, create a circle",
+            label: 'Yes, create a circle',
             variant: AppButtonVariant.purple,
             fullWidth: true,
             icon: LucideIcons.users,
-            onTap: onCreateCircle,
+            onTap: () {
+              context.pop();
+              ShareCircleSheet.show(context, book);
+            },
           ),
           const SizedBox(height: 11),
           AppButton(
-            label: "Not now — just read",
+            label: 'Not now — just read',
             variant: AppButtonVariant.ghost,
             fullWidth: true,
-            onTap: onJustRead,
+            onTap: () => context.pop(),
           ),
         ],
       ),

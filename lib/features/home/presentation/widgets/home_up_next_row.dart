@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
@@ -14,8 +14,8 @@ class HomeUpNextRow extends StatelessWidget {
     required this.onBookTap,
   });
 
-  final List<LibraryBook> books;
-  final void Function(BuildContext, LibraryBook) onBookTap;
+  final List<HomeDashboardBook> books;
+  final void Function(BuildContext, HomeDashboardBook) onBookTap;
 
   @override
   Widget build(BuildContext context) {

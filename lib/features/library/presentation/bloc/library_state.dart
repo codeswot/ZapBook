@@ -18,12 +18,13 @@ final class LibraryEmpty extends LibraryState {
 }
 
 final class LibraryLoaded extends LibraryState {
-  const LibraryLoaded(this.books);
+  const LibraryLoaded(this.books, {this.showCirclePrompt = false});
 
   final List<LibraryBook> books;
+  final bool showCirclePrompt;
 
   @override
-  List<Object?> get props => [books];
+  List<Object?> get props => [books, showCirclePrompt];
 }
 
 final class LibraryError extends LibraryState {

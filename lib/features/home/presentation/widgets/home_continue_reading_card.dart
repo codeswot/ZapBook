@@ -1,12 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_placeholders.dart';
+import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+
+double _circleProgressFraction(String npub) =>
+    (((npub.hashCode & 0x7fffffff) % 86) + 8) / 100;
+
+int _circleReaderPage(String npub, int pageCount) => pageCount <= 0
+    ? 0
+    : (_circleProgressFraction(npub) * pageCount).round().clamp(1, pageCount);
 
 class HomeContinueReadingCard extends StatelessWidget {
   const HomeContinueReadingCard({
@@ -15,7 +21,7 @@ class HomeContinueReadingCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final LibraryBook book;
+  final HomeDashboardBook book;
   final VoidCallback onTap;
 
   @override
@@ -27,8 +33,8 @@ class HomeContinueReadingCard extends StatelessWidget {
         ? FileImage(File(cover))
         : null;
 
-    final progress = circleProgressFraction(book.id);
-    final page = circleReaderPage(book.id, book.pageCount);
+    final progress = _circleProgressFraction(book.id);
+    final page = _circleReaderPage(book.id, book.pageCount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -118,9 +124,9 @@ class HomeContinueReadingCard extends StatelessWidget {
                           Row(
                             children: [
                               Icon(
-                                LucideIcons.bookOpen,
+                                LucideIcons.user,
                                 size: 14,
-                                color: colors.bitcoinDark,
+                                color: colors.ink,
                               ),
                               const SizedBox(width: 6),
                               Text(

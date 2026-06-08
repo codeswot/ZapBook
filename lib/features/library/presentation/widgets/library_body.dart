@@ -6,6 +6,7 @@ import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
     hide LibraryEmpty;
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
+import 'package:zapbook/features/library/presentation/widgets/circle_prompt_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
@@ -17,7 +18,13 @@ class LibraryBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<IngestionQueueCubit, IngestionQueueState>(
       builder: (context, queue) {
-        return BlocBuilder<LibraryCubit, LibraryState>(
+        return BlocConsumer<LibraryCubit, LibraryState>(
+          listener: (context, library) {
+            if (library is LibraryLoaded && library.showCirclePrompt && library.books.isNotEmpty) {
+              CirclePromptSheet.show(context, library.books.first);
+              context.read<LibraryCubit>().dismissCirclePrompt();
+            }
+          },
           builder: (context, library) {
             final jobs = queue.visibleJobs;
             final books = switch (library) {

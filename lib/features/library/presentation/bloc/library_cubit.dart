@@ -45,8 +45,16 @@ class LibraryCubit extends Cubit<LibraryState> {
   final WelcomeInboxService _welcomeInbox;
   StreamSubscription<List<LibraryBook>>? _booksSubscription;
   StreamSubscription<int>? _welcomeSubscription;
+  bool _circlePromptShown = false;
 
   void markOpened(String id) => _touchBookOpened(id);
+
+  void dismissCirclePrompt() {
+    final s = state;
+    if (s is LibraryLoaded) {
+      emit(LibraryLoaded(s.books, showCirclePrompt: false));
+    }
+  }
 
   Future<void> deleteBook(String id) => _deleteLibraryBook(id);
 
@@ -71,8 +79,15 @@ class LibraryCubit extends Cubit<LibraryState> {
 
   Future<void> _init() async {
     _booksSubscription = _watchLibraryBooks().listen(
-      (books) =>
-          emit(books.isEmpty ? const LibraryEmpty() : LibraryLoaded(books)),
+      (books) {
+        if (books.isEmpty) {
+          emit(const LibraryEmpty());
+        } else {
+          final show = !_circlePromptShown && books.length == 1;
+          if (show) _circlePromptShown = true;
+          emit(LibraryLoaded(books, showCirclePrompt: show));
+        }
+      },
       onError: (Object error) => emit(LibraryError('$error')),
     );
     _welcomeSubscription = _welcomeInbox.onJoined.listen((_) {
