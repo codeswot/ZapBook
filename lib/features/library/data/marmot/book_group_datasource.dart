@@ -271,9 +271,13 @@ class BookGroupDatasource {
   Future<void> leaveCircle(String bookId) async {
     final groupId = await _resolveGroupId(bookId);
     if (groupId != null) {
-      final change = await _marmot.leaveGroup(groupId);
-      _publish(change.evolutionEventJson);
-      await _marmot.deleteGroup(groupId);
+      try {
+        final change = await _marmot.leaveGroup(groupId);
+        _publish(change.evolutionEventJson);
+        await _marmot.deleteGroup(groupId);
+      } on Object catch (error, stack) {
+        _log.warning('leaveCircle marmot failed for $bookId, cleaning up locally', error, stack);
+      }
     }
     _groupIdByBookId.remove(bookId);
     await _fileStore.deleteBook(bookId);
