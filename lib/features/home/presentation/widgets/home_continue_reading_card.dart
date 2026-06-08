@@ -60,13 +60,7 @@ class HomeContinueReadingCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppBookCover(
-                    width: 64,
-                    height: 84,
-                    title: book.title,
-                    author: book.author,
-                    image: image,
-                  ),
+                  AppBookCover(width: 64, height: 84, image: image),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

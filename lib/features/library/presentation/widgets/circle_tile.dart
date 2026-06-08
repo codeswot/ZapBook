@@ -56,8 +56,6 @@ class CircleTile extends StatelessWidget {
                   height: 92,
                   hue: _hue,
                   image: image,
-                  title: circle.title,
-                  author: circle.author,
                 ),
               ),
             ),

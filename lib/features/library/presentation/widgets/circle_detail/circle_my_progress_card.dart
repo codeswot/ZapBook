@@ -41,13 +41,7 @@ class CircleMyProgressCard extends StatelessWidget {
             tag: 'circle-cover-${book.id}',
             child: Material(
               type: MaterialType.transparency,
-              child: AppBookCover(
-                width: 72,
-                height: 92,
-                title: book.title,
-                author: book.author,
-                image: cover,
-              ),
+              child: AppBookCover(width: 72, height: 92, image: cover),
             ),
           ),
           const SizedBox(width: 14),
