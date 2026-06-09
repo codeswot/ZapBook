@@ -67,8 +67,12 @@ class MarmotLibraryRepository implements LibraryRepository {
     String? contentHash,
   }) async {
     await _ensureLoaded();
-    final added = await _datasource.addBook(book, contentHash: contentHash);
-    unawaited(_density.precalc(added.id, book));
+    final enriched = _density.enrich(book);
+    final added = await _datasource.addBook(
+      enriched,
+      contentHash: contentHash,
+    );
+    unawaited(_density.precalc(added.id, enriched));
     _upsert(added);
     return added;
   }

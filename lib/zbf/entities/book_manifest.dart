@@ -17,6 +17,8 @@ final class BookManifest extends Equatable {
     required this.needsAiProcessing,
     this.chapters = const [],
     this.zbfVersion = currentZbfVersion,
+    this.pageWords,
+    this.skippablePages,
   });
 
   static const String currentZbfVersion = '1.0.0';
@@ -33,6 +35,8 @@ final class BookManifest extends Equatable {
   final DateTime createdAt;
   final bool needsAiProcessing;
   final List<ChapterSummary> chapters;
+  final List<int>? pageWords;
+  final List<int>? skippablePages;
 
   Map<String, Object?> toJson() => {
     'zbfVersion': zbfVersion,
@@ -47,6 +51,8 @@ final class BookManifest extends Equatable {
     'createdAt': createdAt.toUtc().toIso8601String(),
     'needsAiProcessing': needsAiProcessing,
     'chapters': chapters.map((chapter) => chapter.toJson()).toList(),
+    if (pageWords != null) 'pageWords': pageWords,
+    if (skippablePages != null) 'skippablePages': skippablePages!.toList(),
   };
 
   factory BookManifest.fromJson(Map<String, Object?> json) {
@@ -71,6 +77,12 @@ final class BookManifest extends Equatable {
               )
               .toList() ??
           const [],
+      pageWords:
+          (json['pageWords'] as List?)?.map((e) => (e as num).toInt()).toList(),
+      skippablePages: (json['skippablePages'] as List?)
+          ?.map((e) => (e as num).toInt())
+          .toSet()
+          .toList(),
     );
   }
 
@@ -87,6 +99,8 @@ final class BookManifest extends Equatable {
     DateTime? createdAt,
     bool? needsAiProcessing,
     List<ChapterSummary>? chapters,
+    List<int>? pageWords,
+    List<int>? skippablePages,
   }) {
     return BookManifest(
       zbfVersion: zbfVersion ?? this.zbfVersion,
@@ -101,6 +115,8 @@ final class BookManifest extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       needsAiProcessing: needsAiProcessing ?? this.needsAiProcessing,
       chapters: chapters ?? this.chapters,
+      pageWords: pageWords ?? this.pageWords,
+      skippablePages: skippablePages ?? this.skippablePages,
     );
   }
 
@@ -118,5 +134,7 @@ final class BookManifest extends Equatable {
     createdAt,
     needsAiProcessing,
     chapters,
+    pageWords,
+    skippablePages,
   ];
 }

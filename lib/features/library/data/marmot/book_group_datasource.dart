@@ -403,6 +403,8 @@ class BookGroupDatasource {
       needsAiProcessing: manifest.needsAiProcessing,
       createdAtMs: manifest.createdAt.millisecondsSinceEpoch,
       addedAtMs: DateTime.now().millisecondsSinceEpoch,
+      pageWords: manifest.pageWords,
+      skippablePages: manifest.skippablePages,
     );
   }
 

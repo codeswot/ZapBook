@@ -17,6 +17,8 @@ class BookMetaPayload {
     required this.needsAiProcessing,
     required this.createdAtMs,
     required this.addedAtMs,
+    this.pageWords,
+    this.skippablePages,
   });
 
   final String bookId;
@@ -31,22 +33,26 @@ class BookMetaPayload {
   final bool needsAiProcessing;
   final int createdAtMs;
   final int addedAtMs;
+  final List<int>? pageWords;
+  final List<int>? skippablePages;
 
   Map<String, dynamic> toJson() => {
-    'type': BookMessageType.meta,
-    'bookId': bookId,
-    'title': title,
-    'author': author,
-    'genre': genre,
-    'contentHash': contentHash,
-    'sourceFormat': sourceFormat,
-    'pageCount': pageCount,
-    'chapterCount': chapterCount,
-    'zbfVersion': zbfVersion,
-    'needsAiProcessing': needsAiProcessing,
-    'createdAtMs': createdAtMs,
-    'addedAtMs': addedAtMs,
-  };
+        'type': BookMessageType.meta,
+        'bookId': bookId,
+        'title': title,
+        'author': author,
+        'genre': genre,
+        'contentHash': contentHash,
+        'sourceFormat': sourceFormat,
+        'pageCount': pageCount,
+        'chapterCount': chapterCount,
+        'zbfVersion': zbfVersion,
+        'needsAiProcessing': needsAiProcessing,
+        'createdAtMs': createdAtMs,
+        'addedAtMs': addedAtMs,
+        if (pageWords != null) 'pageWords': pageWords,
+        if (skippablePages != null) 'skippablePages': skippablePages,
+      };
 
   BookMetaPayload copyWith({
     String? title,
@@ -66,23 +72,31 @@ class BookMetaPayload {
       needsAiProcessing: needsAiProcessing,
       createdAtMs: createdAtMs,
       addedAtMs: addedAtMs,
+      pageWords: pageWords,
+      skippablePages: skippablePages,
     );
   }
 
   factory BookMetaPayload.fromJson(Map<String, dynamic> json) => BookMetaPayload(
-    bookId: json['bookId'] as String,
-    title: json['title'] as String? ?? 'Untitled',
-    author: json['author'] as String? ?? '',
-    genre: json['genre'] as String?,
-    contentHash: json['contentHash'] as String?,
-    sourceFormat: json['sourceFormat'] as String? ?? 'unknown',
-    pageCount: (json['pageCount'] as num?)?.toInt() ?? 0,
-    chapterCount: (json['chapterCount'] as num?)?.toInt() ?? 0,
-    zbfVersion: json['zbfVersion'] as String? ?? '',
-    needsAiProcessing: json['needsAiProcessing'] as bool? ?? false,
-    createdAtMs: (json['createdAtMs'] as num?)?.toInt() ?? 0,
-    addedAtMs: (json['addedAtMs'] as num?)?.toInt() ?? 0,
-  );
+        bookId: json['bookId'] as String,
+        title: json['title'] as String? ?? 'Untitled',
+        author: json['author'] as String? ?? '',
+        genre: json['genre'] as String?,
+        contentHash: json['contentHash'] as String?,
+        sourceFormat: json['sourceFormat'] as String? ?? 'unknown',
+        pageCount: (json['pageCount'] as num?)?.toInt() ?? 0,
+        chapterCount: (json['chapterCount'] as num?)?.toInt() ?? 0,
+        zbfVersion: json['zbfVersion'] as String? ?? '',
+        needsAiProcessing: json['needsAiProcessing'] as bool? ?? false,
+        createdAtMs: (json['createdAtMs'] as num?)?.toInt() ?? 0,
+        addedAtMs: (json['addedAtMs'] as num?)?.toInt() ?? 0,
+        pageWords: (json['pageWords'] as List?)
+            ?.map((e) => (e as num).toInt())
+            .toList(),
+        skippablePages: (json['skippablePages'] as List?)
+            ?.map((e) => (e as num).toInt())
+            .toList(),
+      );
 }
 
 class BookProgressPayload {

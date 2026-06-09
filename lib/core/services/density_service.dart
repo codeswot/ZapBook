@@ -24,14 +24,28 @@ class DensityService {
   }
 
   Future<void> precalc(String bookId, ZbfBook book) async {
+    final density = _densityFromBook(book);
+    final json = _toJson(density);
+    final dir = await _dir();
+    await File('$dir/$bookId.json').writeAsString(jsonEncode(json));
+  }
+
+  ZbfBook enrich(ZbfBook book) {
+    final density = _densityFromBook(book);
+    return book.copyWith(
+      manifest: book.manifest.copyWith(
+        pageWords: density.pageWords,
+        skippablePages: density.skippablePages.toList(),
+      ),
+    );
+  }
+
+  BookDensity _densityFromBook(ZbfBook book) {
     final pages = <BookPage>[];
     for (final chapter in book.chapters) {
       pages.addAll(chapter.pages);
     }
-    final density = bookDensityFromPages(pages, genre: book.manifest.genre);
-    final json = _toJson(density);
-    final dir = await _dir();
-    await File('$dir/$bookId.json').writeAsString(jsonEncode(json));
+    return bookDensityFromPages(pages, genre: book.manifest.genre);
   }
 
   BookDensity? load(String bookId) {
