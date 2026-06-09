@@ -12,12 +12,12 @@ import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.d
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
-import 'package:zapbook/core/domain/milestone_payload.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_settings_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/reader_actions_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_bottom_bar.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
+import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_shimmer.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_my_progress_card.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_reader_tile.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -56,7 +56,7 @@ class _CircleDetailView extends StatelessWidget {
             return switch (state) {
               CircleDetailLoaded() => _Loaded(bookId: bookId, state: state),
               CircleDetailError(:final message) => _Error(message: message),
-              _ => const Center(child: CircularProgressIndicator()),
+              _ => CircleDetailShimmer(bookId: bookId),
             };
           },
         ),

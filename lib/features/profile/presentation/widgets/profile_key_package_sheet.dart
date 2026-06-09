@@ -31,7 +31,13 @@ class ProfileKeyPackageSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Rotate key package?', style: typography.h3),
+          Text(
+            'Rotate key package?',
+            style: context.typography.displayM.copyWith(
+              fontWeight: FontWeight.w700,
+              color: context.colors.ink,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             'Your key package lets others add you to shared books. Rotating publishes a fresh one — this can fix issues where people can\'t share with you. Old shares and circles are unaffected.',
@@ -46,9 +52,15 @@ class ProfileKeyPackageSheet extends StatelessWidget {
               if (context.mounted) {
                 Navigator.of(context).pop(true);
                 if (ok) {
-                  context.toast.showSuccess('Key package rotated', rootNavigator: true);
+                  context.toast.showSuccess(
+                    'Key package rotated',
+                    rootNavigator: true,
+                  );
                 } else {
-                  context.toast.showError('Rotation failed — check your connection', rootNavigator: true);
+                  context.toast.showError(
+                    'Rotation failed — check your connection',
+                    rootNavigator: true,
+                  );
                 }
               }
             },

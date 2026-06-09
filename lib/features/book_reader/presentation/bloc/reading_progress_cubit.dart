@@ -16,10 +16,7 @@ int _systemClock() => DateTime.now().millisecondsSinceEpoch;
 ProgressConfig _configFor(int totalWords) {
   if (totalWords >= 900) return const ProgressConfig();
   final unit = (totalWords / 3).ceil().clamp(1, 300);
-  return ProgressConfig(
-    wordUnitSize: unit,
-    milestoneThresholdUnits: 1,
-  );
+  return ProgressConfig(wordUnitSize: unit, milestoneThresholdUnits: 1);
 }
 
 class ReadingProgressCubit extends Cubit<ReadingState> {
@@ -197,13 +194,13 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
         _save();
         _publishMilestone(effect);
         _stashQuiz(effect);
-        unawaited(statsService?.recordMilestone());
+        statsService?.recordMilestone();
       }
       if (effect is BookCompleted) {
         _save();
         milestoneService?.recordBookCompleted(bookId);
         unawaited(milestoneService?.publishBookCompleted(bookId));
-        unawaited(statsService?.recordBookCompleted());
+        statsService?.recordBookCompleted();
       }
     }
   }

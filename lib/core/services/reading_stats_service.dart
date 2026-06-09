@@ -18,6 +18,7 @@ class ReadingStatsService {
 
   static const _statsKind = 30078;
   static const _statsTag = 'zapbook:stats';
+  static const _rawTag = 'zapbook:stats:raw';
 
   int _satsEarned = 0;
   final _milestoneDates = <String>{};
@@ -28,7 +29,7 @@ class ReadingStatsService {
   int get satsEarned => _satsEarned;
 
   int get streak {
-    final dates = {..._milestoneService.allMilestoneDates, ..._milestoneDates};
+    final dates = { ..._milestoneService.allMilestoneDates, ..._milestoneDates };
     if (dates.isEmpty) return 0;
     final sorted = dates.toList()..sort();
     final today = _today();
@@ -53,23 +54,38 @@ class ReadingStatsService {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return;
 
-    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_statsKind]);
-    final match = events.where((e) {
-      final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
-      return dTag.isNotEmpty && dTag.first[1] == _statsTag;
-    });
-    if (match.isEmpty) return;
-
-    final account = _ndk.accounts.getLoggedAccount();
-    if (account == null) return;
-
-    final plaintext = await account.signer.decryptNip44(
-      ciphertext: match.first.content,
-      senderPubKey: pubkey,
+    final events = _cache.loadEvents(
+      pubKeys: [pubkey],
+      kinds: [_statsKind],
     );
-    if (plaintext == null) return;
 
-    final json = jsonDecode(plaintext) as Map<String, dynamic>;
+    Map<String, dynamic>? json;
+    for (final e in events) {
+      final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
+      if (dTag.isEmpty) continue;
+      final tag = dTag.first[1];
+      if (tag == _rawTag) {
+        try {
+          json = jsonDecode(e.content) as Map<String, dynamic>;
+        } on Object {
+          continue;
+        }
+        break;
+      }
+      if (tag == _statsTag && json == null) {
+        final account = _ndk.accounts.getLoggedAccount();
+        if (account == null) continue;
+        final plaintext = await account.signer.decryptNip44(
+          ciphertext: e.content,
+          senderPubKey: pubkey,
+        );
+        if (plaintext != null) {
+          json = jsonDecode(plaintext) as Map<String, dynamic>;
+        }
+      }
+    }
+    if (json == null) return;
+
     _satsEarned = (json['sats_earned'] as num?)?.toInt() ?? 0;
     _lastPublishDate = json['last_publish_date'] as String?;
     _milestoneDates
@@ -78,10 +94,28 @@ class ReadingStatsService {
     _loaded = true;
   }
 
-  Future<void> _save() async {
+  void _writeCache() {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return;
+    final event = Nip01Event(
+      pubKey: pubkey,
+      kind: _statsKind,
+      tags: [
+        ['d', _rawTag],
+      ],
+      content: jsonEncode({
+        'sats_earned': _satsEarned,
+        'last_publish_date': _lastPublishDate,
+        'milestone_dates': _milestoneDates.toList(),
+      }),
+      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+    _cache.saveEvent(event);
+  }
 
+  Future<void> _syncToRelays() async {
+    final pubkey = _ndk.accounts.getPublicKey();
+    if (pubkey == null) return;
     final account = _ndk.accounts.getLoggedAccount();
     if (account == null) return;
 
@@ -90,7 +124,6 @@ class ReadingStatsService {
       'last_publish_date': _lastPublishDate,
       'milestone_dates': _milestoneDates.toList(),
     });
-
     final encrypted = await account.signer.encryptNip44(
       plaintext: plaintext,
       recipientPubKey: pubkey,
@@ -106,7 +139,6 @@ class ReadingStatsService {
       content: encrypted,
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
-
     _cache.saveEvent(event);
     _ndk.broadcast.broadcast(
       nostrEvent: event,
@@ -114,18 +146,21 @@ class ReadingStatsService {
     );
   }
 
-  Future<void> recordMilestone() async {
+  void recordMilestone() {
     _milestoneDates.add(_today());
-    await _save();
+    _writeCache();
+    unawaited(_syncToRelays());
   }
 
-  Future<void> recordBookCompleted() async {
-    await _save();
+  void recordBookCompleted() {
+    _writeCache();
+    unawaited(_syncToRelays());
   }
 
   void addSats(int amount) {
     _satsEarned += amount;
-    unawaited(_save());
+    _writeCache();
+    unawaited(_syncToRelays());
   }
 
   Future<void> publishDailyHeartbeat() async {
@@ -156,10 +191,11 @@ class ReadingStatsService {
     );
 
     _lastPublishDate = today;
-    unawaited(_save());
+    _writeCache();
   }
 
-  String _today() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
+  String _today() =>
+      DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
   String _dayOffset(int offset) {
     final d = DateTime.now().toUtc().add(Duration(days: offset));
@@ -167,9 +203,8 @@ class ReadingStatsService {
   }
 
   String _dayBefore(String date) {
-    final d = DateTime.parse(
-      '${date}T00:00:00Z',
-    ).subtract(const Duration(days: 1));
+    final d =
+        DateTime.parse('${date}T00:00:00Z').subtract(const Duration(days: 1));
     return d.toIso8601String().substring(0, 10);
   }
 }

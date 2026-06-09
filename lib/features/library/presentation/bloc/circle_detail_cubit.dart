@@ -110,6 +110,29 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
   void open(String bookId) => _touchBookOpened(bookId);
 
+  void toggleContact(String npub, bool isContact) {
+    if (isContact) {
+      _contacts.remove(npub);
+    } else {
+      _contacts.add(npub);
+    }
+    final s = state;
+    if (s is CircleDetailLoaded) {
+      final updated = s.members.map((m) {
+        if (m.npub == npub) {
+          return MemberEntry(
+            npub: m.npub,
+            contact: m.contact,
+            isSelf: m.isSelf,
+            isContact: !isContact,
+          );
+        }
+        return m;
+      }).toList();
+      emit(s.copyWith(members: updated));
+    }
+  }
+
   Future<String?> _resolveGroupId(String bookId) async {
     try {
       final groups = await _marmot.listGroups();

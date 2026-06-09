@@ -188,6 +188,18 @@ class ReaderActionsSheet extends StatelessWidget {
               _showZapSheet(context);
             },
           ),
+          const SizedBox(height: 10),
+          _ActionRow(
+            icon: entry.isContact
+                ? LucideIcons.userMinus
+                : LucideIcons.userPlus,
+            label: entry.isContact ? 'Remove from contacts' : 'Add to contacts',
+            tone: entry.isContact ? colors.tomato : colors.plum,
+            onTap: () {
+              context.pop();
+              cubit.toggleContact(entry.npub, entry.isContact);
+            },
+          ),
           if (canRemove) ...[
             const SizedBox(height: 10),
             _ActionRow(
