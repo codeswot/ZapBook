@@ -4,6 +4,7 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
 import 'package:zapbook/features/library/domain/usecases/get_circle_admins.dart';
@@ -27,6 +28,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._touchBookOpened,
     this._contacts,
     this._identity,
+    this._milestoneService,
   ) : super(const CircleDetailLoading());
 
   final GetLibraryBook _getLibraryBook;
@@ -38,6 +40,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final TouchBookOpened _touchBookOpened;
   final ContactService _contacts;
   final IdentityLocalDataSource _identity;
+  final MilestoneService _milestoneService;
 
   final _log = logging.Logger('CircleDetailCubit');
 
@@ -64,11 +67,13 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
       ));
     }
 
+    final milestones = _milestoneService.getMilestones(bookId);
     emit(CircleDetailLoaded(
       book: book,
       members: entries,
       adminNpubs: admins,
       myNpub: myNpub,
+      milestones: milestones,
     ));
   }
 

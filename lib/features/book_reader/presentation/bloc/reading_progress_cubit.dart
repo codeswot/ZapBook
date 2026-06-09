@@ -87,15 +87,17 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   Stream<ProgressEffect> get effects => _effects.stream;
 
   Timer? _timer;
+  Timer? _saveTimer;
   bool _paused = false;
   bool _closed = false;
   bool _dirty = false;
+  final _publishedMilestones = <int>{};
 
-  Future<void> restore() async {
+  Future<int?> restore() async {
     final repo = repository;
-    if (repo == null) return;
+    if (repo == null) return null;
     final saved = await repo.loadSnapshot(bookId);
-    if (saved == null) return;
+    if (saved == null) return null;
     emit(state.copyWith(
       wpm: saved.wpm,
       completedPages: saved.completedPages,
@@ -105,6 +107,10 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       pointsBanked: saved.pointsBanked,
       milestonesReached: saved.milestonesReached,
     ));
+    for (var i = 0; i < saved.milestonesReached; i++) {
+      _publishedMilestones.add(i);
+    }
+    return saved.currentPage;
   }
 
   void start({int initialPage = 0}) {
@@ -112,8 +118,14 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     _timer ??= Timer.periodic(heartbeat, (_) => tick());
   }
 
-  void openPage(int page) =>
-      _dispatch(PageOpened(page: page, atMs: _now()));
+  void openPage(int page) {
+    _dispatch(PageOpened(page: page, atMs: _now()));
+    _dirty = true;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(seconds: 2), () {
+      _save();
+    });
+  }
 
   void tap() =>
       _dispatch(Interaction(kind: InteractionKind.tap, atMs: _now()));
@@ -171,12 +183,15 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       }
       if (effect is BookCompleted) {
         _save();
+        milestoneService?.recordBookCompleted(bookId);
         statsService?.recordBookCompleted();
       }
     }
   }
 
   void _publishMilestone(MilestoneReached effect) {
+    if (_publishedMilestones.contains(effect.index)) return;
+    _publishedMilestones.add(effect.index);
     milestoneService?.publishMilestone(
       bookId: bookId,
       milestoneIdx: effect.index,
@@ -218,7 +233,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   @override
   Future<void> close() {
     _timer?.cancel();
+    _saveTimer?.cancel();
     _timer = null;
+    _saveTimer = null;
     _effects.close();
     return super.close();
   }

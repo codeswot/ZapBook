@@ -103,20 +103,6 @@ class CheersActivityCard extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              LucideIcons.check,
-                              size: 12,
-                              color: colors.positive,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '3/3',
-                              style: typography.caption.copyWith(
-                                color: colors.positive,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
                           ],
                         ),
                       ],

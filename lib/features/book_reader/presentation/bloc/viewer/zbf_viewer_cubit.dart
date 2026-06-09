@@ -17,11 +17,12 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     this.segmentLoader,
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
+    int initialPage = 0,
   })  : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
         _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
-        super(const ZbfViewerState()) {
-    _ensureSegment(0);
-    _prefetch(0);
+        super(ZbfViewerState(currentPage: initialPage)) {
+    _ensureSegment(initialPage);
+    _prefetch(initialPage);
   }
 
   final ZbfBookHandle handle;

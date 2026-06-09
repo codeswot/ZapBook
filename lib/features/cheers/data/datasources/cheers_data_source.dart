@@ -169,7 +169,7 @@ class CheersDataSourceImpl implements CheersDataSource {
         } catch (_) {}
       }
 
-      final progressMsgs = <MarmotMessage>[];
+      final activityMsgs = <MarmotMessage>[];
       final cheersMsgs = <Map<String, dynamic>>[];
 
       for (final msg in messages) {
@@ -179,8 +179,9 @@ class CheersDataSourceImpl implements CheersDataSource {
           final decoded = jsonDecode(raw);
           if (decoded is Map<String, dynamic>) {
             final type = decoded['type'];
-            if (type == 'zapbook.book.progress') {
-              progressMsgs.add(msg);
+            if (type == 'zapbook.book.milestone' ||
+                type == 'zapbook.book.progress') {
+              activityMsgs.add(msg);
             } else if (type == 'zapbook.cheer') {
               cheersMsgs.add({
                 'activityId': decoded['activityId'],
@@ -192,12 +193,24 @@ class CheersDataSourceImpl implements CheersDataSource {
         } catch (_) {}
       }
 
-      for (final msg in progressMsgs) {
+      final seenIds = <String>{};
+      for (final msg in activityMsgs) {
+        final messageId = msg.id;
+        if (seenIds.contains(messageId)) continue;
+        seenIds.add(messageId);
+
         final raw = msg.payloadJson!;
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        final messageId = msg.id;
+        final isMilestone = decoded['type'] == 'zapbook.book.milestone';
 
-        final currentPage = (decoded['currentPage'] as num?)?.toInt() ?? 1;
+        final milestoneIdx =
+            (decoded['milestone_idx'] as num?)?.toInt() ?? 0;
+        final page = (decoded['current_page'] as num?)?.toInt() ?? 1;
+        final pct = (decoded['progress_pct'] as num?)?.toDouble();
+        final pctStr = pct != null ? ' (${pct.toStringAsFixed(1)}%)' : '';
+        final description = isMilestone
+            ? 'Milestone ${milestoneIdx + 1}: page $page$pctStr'
+            : 'read page $page';
         final senderNpub = msg.senderNpub;
 
         final fallback = ProfileMetaGenerator.generate(seed: senderNpub);
@@ -228,7 +241,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorName: actorName,
             actorAvatar: actorAvatar,
             bookTitle: bookTitle,
-            activityDescription: 'passed Chapter $currentPage',
+            activityDescription: description,
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               msg.timestampSecs.toInt() * 1000,
             ),

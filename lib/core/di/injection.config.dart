@@ -329,9 +329,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i11.NostrService>(
       () => _i11.NostrService(gh<_i857.Ndk>()),
     );
-    gh.lazySingleton<_i182.ReadingStatsService>(
-      () => _i182.ReadingStatsService(gh<_i857.Ndk>()),
-    );
     gh.lazySingleton<_i63.IdentityRepository>(
       () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
     );
@@ -398,6 +395,13 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
+    );
+    gh.lazySingleton<_i182.ReadingStatsService>(
+      () => _i182.ReadingStatsService(
+        gh<_i857.Ndk>(),
+        gh<_i68.NostrCacheStore>(),
+        gh<_i31.MilestoneService>(),
+      ),
     );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
@@ -514,6 +518,17 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
     );
+    gh.factory<_i668.CirclesCubit>(
+      () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
+    );
+    gh.factory<_i659.ShareCircleCubit>(
+      () => _i659.ShareCircleCubit(
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i286.ShareBookWith>(),
+      ),
+    );
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(
         gh<_i807.GetLibraryBook>(),
@@ -525,17 +540,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i296.TouchBookOpened>(),
         gh<_i244.ContactService>(),
         gh<_i603.IdentityLocalDataSource>(),
-      ),
-    );
-    gh.factory<_i668.CirclesCubit>(
-      () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
-    );
-    gh.factory<_i659.ShareCircleCubit>(
-      () => _i659.ShareCircleCubit(
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1000.GetBookMembers>(),
-        gh<_i286.ShareBookWith>(),
+        gh<_i31.MilestoneService>(),
       ),
     );
     gh.factory<_i327.IngestionQueueCubit>(

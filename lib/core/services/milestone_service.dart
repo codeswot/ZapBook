@@ -22,6 +22,27 @@ class MilestoneService {
 
   final _log = logging.Logger('MilestoneService');
   final Map<String, String> _groupIdByBookId = {};
+  final Map<String, List<MilestonePayload>> _milestonesByBook = {};
+  final _completedBooks = <String>{};
+
+  List<MilestonePayload> getMilestones(String bookId) =>
+      List.unmodifiable(_milestonesByBook[bookId] ?? []);
+
+  int get totalBooksCompleted => _completedBooks.length;
+
+  Set<String> get allMilestoneDates {
+    final dates = <String>{};
+    for (final list in _milestonesByBook.values) {
+      for (final m in list) {
+        dates.add(m.reachedAt.substring(0, 10));
+      }
+    }
+    return dates;
+  }
+
+  void recordBookCompleted(String bookId) {
+    _completedBooks.add(bookId);
+  }
 
   Future<void> publishMilestone({
     required String bookId,
@@ -51,6 +72,7 @@ class MilestoneService {
       reachedAt: DateTime.now().toUtc().toIso8601String(),
     );
 
+    _storeLocal(payload);
     try {
       final event = await _marmot.sendStructured(
         npub,
@@ -61,6 +83,12 @@ class MilestoneService {
     } on Object catch (error, stack) {
       _log.warning('Publish milestone failed', error, stack);
     }
+  }
+
+  void _storeLocal(MilestonePayload payload) {
+    final list = _milestonesByBook.putIfAbsent(payload.bookId, () => []);
+    final exists = list.any((m) => m.milestoneIdx == payload.milestoneIdx);
+    if (!exists) list.add(payload);
   }
 
   Future<String?> _resolveGroupId(String bookId) async {

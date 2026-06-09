@@ -55,6 +55,7 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   late final ReadingProgressCubit _progress;
   double _lastScrollDelta = 0;
+  int _savedPage = 0;
 
   @override
   void initState() {
@@ -68,8 +69,9 @@ class _ReaderScreenState extends State<ReaderScreen>
       quizService: getIt<QuizService>(),
       statsService: getIt<ReadingStatsService>(),
     );
-    _progress.restore().then((_) {
-      if (mounted) _progress.start();
+    _progress.restore().then((savedPage) {
+      if (savedPage != null) _savedPage = savedPage;
+      if (mounted) _progress.start(initialPage: _savedPage);
     });
     WidgetsBinding.instance.addObserver(this);
   }
@@ -127,6 +129,7 @@ class _ReaderScreenState extends State<ReaderScreen>
             handle: widget.handle,
             rasterizer: widget.rasterizer,
             segmentLoader: widget.segmentLoader,
+            initialPage: _savedPage,
           ),
         ),
         BlocProvider.value(value: getIt<ReaderSettingsCubit>()),

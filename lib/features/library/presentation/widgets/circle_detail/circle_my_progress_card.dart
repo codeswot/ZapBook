@@ -14,19 +14,20 @@ class CircleMyProgressCard extends StatelessWidget {
     required this.book,
     required this.cover,
     required this.myNpub,
+    required this.myProgressFraction,
+    required this.myPage,
   });
 
   final LibraryBook book;
   final ImageProvider? cover;
   final String? myNpub;
+  final double myProgressFraction;
+  final int myPage;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final npub = myNpub ?? book.id;
-    final fraction = circleProgressFraction(npub);
-    final page = circleReaderPage(npub, book.pageCount);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -59,7 +60,10 @@ class CircleMyProgressCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                CircleProgressBar(value: fraction, color: colors.nostr),
+                CircleProgressBar(
+                  value: myProgressFraction,
+                  color: colors.nostr,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -82,7 +86,7 @@ class CircleMyProgressCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   book.pageCount > 0
-                      ? 'Page $page of ${book.pageCount}'
+                      ? 'Page $myPage of ${book.pageCount}'
                       : 'Not started',
                   style: typography.bodyS.copyWith(color: colors.slate),
                 ),

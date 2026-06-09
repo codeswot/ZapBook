@@ -44,7 +44,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     await stats.load();
     unawaited(stats.publishDailyHeartbeat());
   } on Exception catch (error, stack) {
-    Logger.root.warning('NostrSession.login failed at bootstrap', error, stack);
+    Logger.root.warning('Bootstrap setup Error', error, stack);
   }
 
   runApp(await builder());
