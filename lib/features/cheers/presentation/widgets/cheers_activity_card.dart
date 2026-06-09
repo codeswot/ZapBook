@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/features/cheers/presentation/widgets/cheers_reaction_pill.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
@@ -32,6 +32,7 @@ class CheersActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
+    final isMine = activity.type == 'mine';
 
     final hasReactions =
         activity.thumbsUpCount > 0 ||
@@ -94,16 +95,12 @@ class CheersActivityCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text(
-                              activity.bookTitle,
-                              style: typography.caption.copyWith(
-                                color: colors.slate,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          activity.bookTitle,
+                          style: typography.caption.copyWith(
+                            color: colors.slate,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -112,197 +109,85 @@ class CheersActivityCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (hasReactions)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (activity.thumbsUpCount > 0)
-                      _buildReactionPill(
-                        context: context,
-                        emoji: '👍',
-                        count: activity.thumbsUpCount,
-                        onTap: () => onReactionTap('like'),
-                      ),
-                    if (activity.clapCount > 0)
-                      _buildReactionPill(
-                        context: context,
-                        emoji: '👏',
-                        count: activity.clapCount,
-                        onTap: () => onReactionTap('clap'),
-                      ),
-                    if (activity.fireCount > 0)
-                      _buildReactionPill(
-                        context: context,
-                        emoji: '🔥',
-                        count: activity.fireCount,
-                        onTap: () => onReactionTap('fire'),
-                      ),
-                    if (activity.rocketCount > 0)
-                      _buildReactionPill(
-                        context: context,
-                        emoji: '🚀',
-                        count: activity.rocketCount,
-                        onTap: () => onReactionTap('rocket'),
-                      ),
-                    if (activity.trophyCount > 0)
-                      _buildReactionPill(
-                        context: context,
-                        emoji: '🏆',
-                        count: activity.trophyCount,
-                        onTap: () => onReactionTap('trophy'),
-                      ),
-                    _buildAddReactionButton(context),
-                  ],
+                _ReactionsRow(
+                  activity: activity,
+                  onReactionTap: onReactionTap,
+                  onTap: onTap,
+                  isMine: isMine,
                 )
-              else
-                _buildEmptyReactionSkeleton(context),
+              else if (!isMine)
+                _EmptyReactions(onTap: onTap),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildAddReactionButton(BuildContext context) {
-    final colors = context.colors;
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: CustomPaint(
-        painter: _DottedCirclePainter(
-          color: colors.slate.withValues(alpha: 0.6),
-        ),
-        child: Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          child: Icon(LucideIcons.plus, size: 14, color: colors.slate),
-        ),
-      ),
-    );
-  }
+class _ReactionsRow extends StatelessWidget {
+  const _ReactionsRow({
+    required this.activity,
+    required this.onReactionTap,
+    required this.onTap,
+    required this.isMine,
+  });
 
-  Widget _buildEmptyReactionSkeleton(BuildContext context) {
-    final colors = context.colors;
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: SizedBox(
-        height: 32,
-        width: 80,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 24,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.paper2,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 12,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.paper4,
-                ),
-              ),
-            ),
-            CustomPaint(
-              painter: _DottedCirclePainter(color: colors.slate),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.paper3,
-                ),
-                alignment: Alignment.center,
-                child: Icon(LucideIcons.plus, size: 14, color: colors.ink),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  final CheersActivity activity;
+  final void Function(String) onReactionTap;
+  final VoidCallback onTap;
+  final bool isMine;
 
-  Widget _buildReactionPill({
-    required BuildContext context,
-    required String emoji,
-    required int count,
-    required VoidCallback onTap,
-  }) {
-    final colors = context.colors;
-    final typography = context.typography;
-
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: colors.paper4,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: colors.hairline2),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 6),
-            Text(
-              '$count',
-              style: typography.caption.copyWith(
-                color: colors.ink,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (activity.thumbsUpCount > 0)
+          ReactionPill(
+            emoji: '👍',
+            count: activity.thumbsUpCount,
+            onTap: () => onReactionTap('like'),
+          ),
+        if (activity.clapCount > 0)
+          ReactionPill(
+            emoji: '👏',
+            count: activity.clapCount,
+            onTap: () => onReactionTap('clap'),
+          ),
+        if (activity.fireCount > 0)
+          ReactionPill(
+            emoji: '🔥',
+            count: activity.fireCount,
+            onTap: () => onReactionTap('fire'),
+          ),
+        if (activity.rocketCount > 0)
+          ReactionPill(
+            emoji: '🚀',
+            count: activity.rocketCount,
+            onTap: () => onReactionTap('rocket'),
+          ),
+        if (activity.trophyCount > 0)
+          ReactionPill(
+            emoji: '🏆',
+            count: activity.trophyCount,
+            onTap: () => onReactionTap('trophy'),
+          ),
+        if (!isMine) AddReactionButton(onTap: onTap),
+      ],
     );
   }
 }
 
-class _DottedCirclePainter extends CustomPainter {
-  final Color color;
-  _DottedCirclePainter({required this.color});
+class _EmptyReactions extends StatelessWidget {
+  const _EmptyReactions({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()..addOval(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final dashedPath = Path();
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      var draw = true;
-      while (distance < metric.length) {
-        final len = draw ? 3.0 : 3.0;
-        if (draw) {
-          dashedPath.addPath(
-            metric.extractPath(distance, distance + len),
-            Offset.zero,
-          );
-        }
-        distance += len;
-        draw = !draw;
-      }
-    }
-    canvas.drawPath(dashedPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _DottedCirclePainter oldDelegate) {
-    return oldDelegate.color != color;
+  Widget build(BuildContext context) {
+    return AddReactionButton(onTap: onTap);
   }
 }

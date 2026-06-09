@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart'
+    show MemberProgress;
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_placeholders.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:zapbook/core/di/injection.dart';
@@ -21,18 +22,23 @@ class CircleReaderTile extends StatelessWidget {
     super.key,
     required this.entry,
     required this.isOwner,
+    required this.isYou,
     required this.pageCount,
     required this.bookTitle,
     this.onLongPress,
+    required this.memberProgress,
   });
 
   final MemberEntry entry;
   final bool isOwner;
+  final bool isYou;
   final int pageCount;
   final String bookTitle;
   final VoidCallback? onLongPress;
+  final Map<String, MemberProgress> memberProgress;
 
   void _showZapSheet(BuildContext context) {
+    if (isYou) return;
     final colors = context.colors;
     final typography = context.typography;
     ZapSheet.show(
@@ -112,12 +118,13 @@ class CircleReaderTile extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final isSelf = entry.isSelf;
-    final fraction = circleProgressFraction(entry.npub);
-    final page = circleReaderPage(entry.npub, pageCount);
+    final progress = memberProgress[entry.npub];
+    final fraction = progress?.fraction ?? 0;
+    final page = progress?.currentPage ?? 0;
 
-    return GestureDetector(
+    return BouncingInteractiveWidget(
       onLongPress: onLongPress,
-      behavior: HitTestBehavior.opaque,
+      onTap: () => _showZapSheet(context),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -159,7 +166,7 @@ class CircleReaderTile extends StatelessWidget {
                       Expanded(
                         child: CircleProgressBar(
                           value: fraction,
-                          color: colors.bitcoin,
+                          color: colors.bitcoin.withValues(alpha: 0.3),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -233,10 +240,11 @@ class _ZapButton extends StatelessWidget {
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: colors.bitcoin,
+          color: colors.bitcoin.withValues(alpha: 0.1),
+          border: Border.all(color: colors.bitcoin.withValues(alpha: 0.2)),
           borderRadius: AppRadii.br12,
         ),
-        child: Icon(LucideIcons.zap, size: 19, color: colors.bitcoinDark),
+        child: Icon(LucideIcons.zap, size: 19, color: colors.bitcoin),
       ),
     );
   }

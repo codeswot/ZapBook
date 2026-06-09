@@ -2,6 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
+import 'dart:convert';
+
+import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
@@ -29,6 +32,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._contacts,
     this._identity,
     this._milestoneService,
+    this._marmot,
   ) : super(const CircleDetailLoading());
 
   final GetLibraryBook _getLibraryBook;
@@ -41,6 +45,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final ContactService _contacts;
   final IdentityLocalDataSource _identity;
   final MilestoneService _milestoneService;
+  final Marmot _marmot;
 
   final _log = logging.Logger('CircleDetailCubit');
 
@@ -68,18 +73,90 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     }
 
     final milestones = _milestoneService.getMilestones(bookId);
+    final groupId = await _resolveGroupId(bookId);
+    final progress = groupId != null
+        ? await _fetchMemberProgress(groupId)
+        : <String, MemberProgress>{};
+    if (myNpub != null) {
+      final live = _milestoneService.progressFor(bookId);
+      final livePage = live.$1;
+      if (progress.containsKey(myNpub) && livePage > 0) {
+        final existing = progress[myNpub]!;
+        progress[myNpub] = MemberProgress(
+          currentPage: livePage > existing.currentPage ? livePage : existing.currentPage,
+          currentWordCount: live.$2,
+          totalWordCount: live.$3 > 0 ? live.$3 : existing.totalWordCount,
+        );
+      } else if (livePage > 0) {
+        progress[myNpub] = MemberProgress(
+          currentPage: livePage,
+          currentWordCount: live.$2,
+          totalWordCount: live.$3,
+        );
+      }
+    }
     emit(CircleDetailLoaded(
       book: book,
       members: entries,
       adminNpubs: admins,
       myNpub: myNpub,
       milestones: milestones,
+      memberProgress: progress,
     ));
   }
 
   Future<void> refresh(String bookId) => load(bookId);
 
   void open(String bookId) => _touchBookOpened(bookId);
+
+  Future<String?> _resolveGroupId(String bookId) async {
+    try {
+      final groups = await _marmot.listGroups();
+      final name = 'zapbook-book-$bookId';
+      for (final g in groups) {
+        if (g.name == name) return g.id;
+      }
+    } on Object catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, MemberProgress>> _fetchMemberProgress(
+    String groupId,
+  ) async {
+    final result = <String, MemberProgress>{};
+    try {
+      final messages = await _marmot.getMessages(groupId);
+      for (final msg in messages) {
+        final raw = msg.payloadJson;
+        if (raw == null || raw.isEmpty) continue;
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map<String, dynamic>) continue;
+        final type = decoded['type'];
+        final npub = msg.senderNpub;
+        int cp, cw, tw;
+        if (type == 'zapbook.book.progress') {
+          cp = (decoded['currentPage'] as num?)?.toInt() ?? 0;
+          cw = (decoded['currentWordCount'] as num?)?.toInt() ?? 0;
+          tw = (decoded['totalWordCount'] as num?)?.toInt() ?? 0;
+        } else if (type == 'zapbook.book.milestone') {
+          cp = (decoded['current_page'] as num?)?.toInt() ?? 0;
+          cw = (decoded['current_word_count'] as num?)?.toInt() ?? 0;
+          tw = (decoded['total_word_count'] as num?)?.toInt() ?? 0;
+        } else {
+          continue;
+        }
+        final existing = result[npub];
+        if (existing == null || cp >= existing.currentPage) {
+          result[npub] = MemberProgress(
+            currentPage: cp,
+            currentWordCount: cw,
+            totalWordCount: tw,
+          );
+        }
+      }
+    } on Object catch (_) {}
+    return result;
+  }
 
   Future<void> removeMember(String bookId, String npub) async {
     final s = state;

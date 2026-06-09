@@ -62,7 +62,7 @@ class CircleMyProgressCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 CircleProgressBar(
                   value: myProgressFraction,
-                  color: colors.nostr,
+                  color: colors.bitcoin,
                 ),
                 const SizedBox(height: 8),
                 Row(

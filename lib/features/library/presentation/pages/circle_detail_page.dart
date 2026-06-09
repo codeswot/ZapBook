@@ -19,7 +19,6 @@ import 'package:zapbook/features/library/presentation/widgets/reader_actions_she
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_bottom_bar.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_my_progress_card.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_placeholders.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_reader_tile.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -112,16 +111,6 @@ class _Loaded extends StatelessWidget {
     return path != null ? FileImage(File(path)) : null;
   }
 
-  List<MemberEntry> get _sortedReaders {
-    final readers = [...state.members];
-    readers.sort(
-      (a, b) => circleProgressFraction(
-        b.npub,
-      ).compareTo(circleProgressFraction(a.npub)),
-    );
-    return readers;
-  }
-
   void _openBook(BuildContext context) {
     context.read<CircleDetailCubit>().open(bookId);
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
@@ -196,8 +185,12 @@ class _Loaded extends StatelessWidget {
                 book: book,
                 cover: _coverImage,
                 myNpub: state.myNpub,
-                myProgressFraction: state.myProgressFraction,
-                myPage: state.myPage,
+                myProgressFraction:
+                    state.memberProgress[state.myNpub]?.fraction ??
+                    state.myProgressFraction,
+                myPage:
+                    state.memberProgress[state.myNpub]?.currentPage ??
+                    state.myPage,
               ),
               const SizedBox(height: 14),
               AppButton(
@@ -223,20 +216,17 @@ class _Loaded extends StatelessWidget {
                     'Readers',
                     style: typography.h3.copyWith(color: colors.ink),
                   ),
-                  const Spacer(),
-                  Text(
-                    'by progress',
-                    style: typography.caption.copyWith(color: colors.slate2),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              for (final entry in _sortedReaders) ...[
+              for (final entry in state.members) ...[
                 CircleReaderTile(
                   entry: entry,
                   isOwner: state.isMemberAdmin(entry.npub),
+                  isYou: entry.isSelf,
                   pageCount: book.pageCount,
                   bookTitle: book.title,
+                  memberProgress: state.memberProgress,
                   onLongPress: entry.isSelf
                       ? null
                       : () => _readerActions(context, entry),

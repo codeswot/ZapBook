@@ -99,10 +99,17 @@ class _CheersViewState extends State<_CheersView> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${activity.activityDescription} • ${activity.bookTitle}',
+                  '${activity.activityDescription}:',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: typography.bodyS.copyWith(color: colors.slate),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  activity.bookTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typography.body.copyWith(color: colors.slate2),
                 ),
               ],
             ),
@@ -215,7 +222,7 @@ class _CheersViewState extends State<_CheersView> {
               ),
               const SizedBox(height: 20),
               if (isMine) ...[
-                _buildMenuRow(
+                MenuRow(
                   context: context,
                   icon: LucideIcons.share2,
                   label: 'Share progress externally',
@@ -227,7 +234,7 @@ class _CheersViewState extends State<_CheersView> {
                   },
                 ),
                 const SizedBox(height: 10),
-                _buildMenuRow(
+                MenuRow(
                   context: context,
                   icon: LucideIcons.copy,
                   label: 'Copy achievement text',
@@ -241,7 +248,7 @@ class _CheersViewState extends State<_CheersView> {
                   },
                 ),
               ] else ...[
-                _buildMenuRow(
+                MenuRow(
                   context: context,
                   icon: LucideIcons.zap,
                   label: 'Zap ${activity.actorName}',
@@ -256,43 +263,6 @@ class _CheersViewState extends State<_CheersView> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildMenuRow({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color? tone,
-  }) {
-    final colors = context.colors;
-    final color = tone ?? colors.ink;
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: colors.paper3,
-          borderRadius: AppRadii.br12,
-          border: Border.all(color: colors.hairline),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: context.typography.body.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -472,6 +442,53 @@ class _CheersViewState extends State<_CheersView> {
                     },
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MenuRow extends StatelessWidget {
+  const MenuRow({
+    super.key,
+    required this.context,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.tone,
+  });
+  final BuildContext context;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? tone;
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final color = tone ?? colors.ink;
+    return BouncingInteractiveWidget(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colors.paper3,
+          borderRadius: AppRadii.br12,
+          border: Border.all(color: colors.hairline),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: context.typography.body.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

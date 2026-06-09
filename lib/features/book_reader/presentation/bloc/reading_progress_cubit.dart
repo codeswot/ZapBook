@@ -197,13 +197,13 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
         _save();
         _publishMilestone(effect);
         _stashQuiz(effect);
-        statsService?.recordMilestone();
+        unawaited(statsService?.recordMilestone());
       }
       if (effect is BookCompleted) {
         _save();
         milestoneService?.recordBookCompleted(bookId);
-        milestoneService?.publishBookCompleted(bookId);
-        statsService?.recordBookCompleted();
+        unawaited(milestoneService?.publishBookCompleted(bookId));
+        unawaited(statsService?.recordBookCompleted());
       }
     }
   }

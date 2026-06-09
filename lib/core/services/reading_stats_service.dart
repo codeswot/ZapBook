@@ -107,19 +107,20 @@ class ReadingStatsService {
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
 
+    _cache.saveEvent(event);
     _ndk.broadcast.broadcast(
       nostrEvent: event,
       specificRelays: NostrService.broadcastRelays,
     );
   }
 
-  void recordMilestone() {
+  Future<void> recordMilestone() async {
     _milestoneDates.add(_today());
-    unawaited(_save());
+    await _save();
   }
 
-  void recordBookCompleted() {
-    unawaited(_save());
+  Future<void> recordBookCompleted() async {
+    await _save();
   }
 
   void addSats(int amount) {

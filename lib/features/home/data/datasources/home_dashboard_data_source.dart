@@ -164,6 +164,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   }
 
   Future<List<HomeDashboardBook>> _fetchBooks() async {
+    final myNpub = await _identityLocal.readNpub();
     final groups = await _marmot.listGroups();
     final books = <HomeDashboardBook>[];
     for (final group in groups) {
@@ -182,6 +183,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       for (final msg in messages) {
         final raw = msg.payloadJson;
         if (raw == null || raw.isEmpty) continue;
+        final isMine = myNpub != null && msg.senderNpub == myNpub;
         try {
           final decoded = jsonDecode(raw);
           if (decoded is Map<String, dynamic>) {
@@ -193,6 +195,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
                 latestMeta = decoded;
               }
             } else if (type == 'zapbook.book.progress') {
+              if (!isMine) continue;
               final lastReadAtMs = decoded['lastReadAtMs'] as num?;
               if (lastReadAtMs != null &&
                   lastReadAtMs.toInt() >= latestProgressMs) {
@@ -207,6 +210,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
                     (decoded['totalWordCount'] as num?)?.toInt() ?? 0;
               }
             } else if (type == 'zapbook.book.milestone') {
+              if (!isMine) continue;
               final cp = (decoded['current_page'] as num?)?.toInt() ?? 0;
               if (cp >= latestPage) {
                 latestPage = cp;

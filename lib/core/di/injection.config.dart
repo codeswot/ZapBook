@@ -520,17 +520,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
     );
-    gh.factory<_i668.CirclesCubit>(
-      () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
-    );
-    gh.factory<_i659.ShareCircleCubit>(
-      () => _i659.ShareCircleCubit(
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1000.GetBookMembers>(),
-        gh<_i286.ShareBookWith>(),
-      ),
-    );
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(
         gh<_i807.GetLibraryBook>(),
@@ -543,6 +532,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i244.ContactService>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i31.MilestoneService>(),
+        gh<_i970.Marmot>(),
+      ),
+    );
+    gh.factory<_i668.CirclesCubit>(
+      () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
+    );
+    gh.factory<_i659.ShareCircleCubit>(
+      () => _i659.ShareCircleCubit(
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i286.ShareBookWith>(),
       ),
     );
     gh.factory<_i327.IngestionQueueCubit>(
