@@ -42,12 +42,14 @@ import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
+import 'package:zapbook/core/services/density_service.dart' as _i740;
 import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
+import 'package:zapbook/core/services/milestone_service.dart' as _i31;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
 import 'package:zapbook/core/services/nwc_service.dart' as _i507;
 import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
@@ -215,6 +217,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
     gh.lazySingleton<_i1053.ClipboardService>(() => _i1053.ClipboardService());
+    gh.lazySingleton<_i740.DensityService>(() => _i740.DensityService());
     gh.lazySingleton<_i917.FileHasher>(() => const _i917.FileHasher());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
@@ -332,6 +335,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i136.ImportIdentity>(
       () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
     );
+    gh.lazySingleton<_i31.MilestoneService>(
+      () => _i31.MilestoneService(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i82.WelcomeInboxService>(
       () => _i82.WelcomeInboxService(
         gh<_i970.Marmot>(),
@@ -405,18 +415,25 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
     );
-    gh.lazySingleton<_i516.LibraryRepository>(
-      () => _i894.MarmotLibraryRepository(
-        gh<_i398.BookGroupDatasource>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i1.ZbfReader>(),
-      ),
-    );
     gh.factory<_i584.CheersCubit>(
       () => _i584.CheersCubit(
         gh<_i654.WatchCheersActivities>(),
         gh<_i636.SendCheersZap>(),
       ),
+    );
+    gh.lazySingleton<_i516.LibraryRepository>(
+      () => _i894.MarmotLibraryRepository(
+        gh<_i398.BookGroupDatasource>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i1.ZbfReader>(),
+        gh<_i740.DensityService>(),
+      ),
+    );
+    gh.factory<_i899.TouchDashboardBookOpened>(
+      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
+    );
+    gh.factory<_i1021.WatchHomeDashboard>(
+      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
     gh.lazySingleton<_i140.MarmotSyncService>(
       () => _i140.MarmotSyncService(
@@ -520,6 +537,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i286.ShareBookWith>(),
       ),
     );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
+      ),
+    );
     gh.factory<_i327.IngestionQueueCubit>(
       () => _i327.IngestionQueueCubit(
         gh<_i696.IngestBook>(),
@@ -527,12 +550,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i917.FileHasher>(),
         gh<_i190.FindBookByContentHash>(),
       ),
-    );
-    gh.factory<_i899.TouchDashboardBookOpened>(
-      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
-    );
-    gh.factory<_i1021.WatchHomeDashboard>(
-      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
     gh.lazySingleton<_i1073.NostrSession>(
       () => _i1073.NostrSession(
@@ -573,12 +590,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i709.GenerateIdentity>(),
         gh<_i136.ImportIdentity>(),
         gh<_i341.CompleteOnboarding>(),
-      ),
-    );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     gh.factory<_i223.UpdateProfile>(

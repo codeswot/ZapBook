@@ -8,6 +8,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/data/library_file_store.dart';
+import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/domain/entities/share_skip.dart';
@@ -16,11 +17,17 @@ import 'package:zapbook/zbf/zbf.dart';
 
 @LazySingleton(as: LibraryRepository)
 class MarmotLibraryRepository implements LibraryRepository {
-  MarmotLibraryRepository(this._datasource, this._fileStore, this._reader);
+  MarmotLibraryRepository(
+    this._datasource,
+    this._fileStore,
+    this._reader,
+    this._density,
+  );
 
   final BookGroupDatasource _datasource;
   final LibraryFileStore _fileStore;
   final ZbfReader _reader;
+  final DensityService _density;
 
   final _log = logging.Logger('MarmotLibraryRepository');
   final _controller = StreamController<List<LibraryBook>>.broadcast();
@@ -61,6 +68,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   }) async {
     await _ensureLoaded();
     final added = await _datasource.addBook(book, contentHash: contentHash);
+    unawaited(_density.precalc(added.id, book));
     _upsert(added);
     return added;
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:reading_progress/reading_progress.dart';
 
+import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -16,10 +17,12 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     int Function()? clock,
     Duration heartbeat = const Duration(seconds: 10),
     ReadingProgressRepository? repository,
+    DensityService? densityService,
   }) {
-    final deps = ReadingDeps(density: bookDensityFromHandle(handle));
+    final density = densityService?.load(bookId) ??
+        bookDensityFromHandle(handle);
     return ReadingProgressCubit._(
-      deps: deps,
+      deps: ReadingDeps(density: density),
       bookId: bookId,
       clock: clock,
       heartbeat: heartbeat,
@@ -58,6 +61,8 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   final int Function() _now;
   final Duration heartbeat;
   final ReadingProgressRepository? repository;
+
+  int get totalWords => _deps.density.totalWords;
 
   final _effects = StreamController<ProgressEffect>.broadcast(sync: true);
   Stream<ProgressEffect> get effects => _effects.stream;

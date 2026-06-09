@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +22,9 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
+import 'package:reading_progress/reading_progress.dart';
+import 'package:zapbook/core/services/density_service.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
@@ -49,6 +54,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   ReaderPullState? _pull;
 
   late final ReadingProgressCubit _progress;
+  StreamSubscription<ProgressEffect>? _effectsSub;
+  double _lastScrollDelta = 0;
 
   @override
   void initState() {
@@ -57,7 +64,9 @@ class _ReaderScreenState extends State<ReaderScreen>
       widget.handle,
       bookId: widget.handle.manifest.id,
       repository: getIt<ReadingProgressRepository>(),
+      densityService: getIt<DensityService>(),
     );
+    _effectsSub = _progress.effects.listen(_onEffect);
     _progress.restore().then((_) {
       if (mounted) _progress.start();
     });
@@ -67,9 +76,29 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _effectsSub?.cancel();
     _progress.closeSession();
     _progress.close();
     super.dispose();
+  }
+
+  void _onEffect(ProgressEffect effect) {
+    if (effect is MilestoneReached) {
+      final ms = getIt<MilestoneService>();
+      unawaited(
+        ms.publishMilestone(
+          bookId: widget.handle.manifest.id,
+          milestoneIdx: effect.index,
+          currentWordCount: effect.wordsRead,
+          totalWordCount: _progress.totalWords,
+          progressPct: _progress.totalWords > 0
+              ? (effect.wordsRead / _progress.totalWords) * 100
+              : 0,
+          currentPage: _progress.state.currentPage ?? 0,
+          sessionEngagedMs: _progress.state.sessionEngagedMs,
+        ),
+      );
+    }
   }
 
   @override
@@ -177,20 +206,29 @@ class _ReaderScreenState extends State<ReaderScreen>
                                 key: ValueKey<String>('raster_$index'),
                                 message: 'Rendering page ${index + 1}…',
                               )
-                            : ReaderBody(
-                                blocks: blocks,
-                                style: style,
-                                asset: widget.handle.asset,
-                                canGoForward: index < total - 1,
-                                canGoBack: index > 0,
-                                onTap: () {
-                                  _toggleChrome();
-                                  _progress.tap();
+                            : NotificationListener<ScrollUpdateNotification>(
+                                onNotification: (n) {
+                                  _lastScrollDelta =
+                                      n.scrollDelta?.abs() ?? 0;
+                                  return false;
                                 },
-                                onUserScrollDirection: (direction) {
-                                  _onScrollDirection(direction);
-                                  _progress.scroll();
-                                },
+                                child: ReaderBody(
+                                  blocks: blocks,
+                                  style: style,
+                                  asset: widget.handle.asset,
+                                  canGoForward: index < total - 1,
+                                  canGoBack: index > 0,
+                                  onTap: () {
+                                    _toggleChrome();
+                                    _progress.tap();
+                                  },
+                                  onUserScrollDirection: (direction) {
+                                    _onScrollDirection(direction);
+                                    _progress.scroll(
+                                      velocity: _lastScrollDelta,
+                                    );
+                                    _lastScrollDelta = 0;
+                                  },
                                 onTurnForward: () {
                                   _turningForward = true;
                                   cubit.nextPage();
@@ -200,6 +238,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   cubit.previousPage();
                                 },
                                 onPullChanged: _onPullChanged,
+                              ),
                               ),
                       ),
                     ),
