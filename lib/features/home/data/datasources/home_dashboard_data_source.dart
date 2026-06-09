@@ -5,6 +5,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
@@ -22,6 +23,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     this._identityLocal,
     this._fileStore,
     this._stats,
+    this._milestones,
   );
 
   final Marmot _marmot;
@@ -29,6 +31,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   final IdentityLocalDataSource _identityLocal;
   final LibraryFileStore _fileStore;
   final ReadingStatsService _stats;
+  final MilestoneService _milestones;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -172,6 +175,9 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       Map<String, dynamic>? latestMeta;
       var latestMetaTs = -1;
       var latestProgressMs = -1;
+      var latestPage = 0;
+      var latestTotalWords = 0;
+      var latestWordCount = 0;
 
       for (final msg in messages) {
         final raw = msg.payloadJson;
@@ -192,6 +198,23 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
                   lastReadAtMs.toInt() >= latestProgressMs) {
                 latestProgressMs = lastReadAtMs.toInt();
               }
+              final cp = (decoded['currentPage'] as num?)?.toInt() ?? 0;
+              if (cp > latestPage) {
+                latestPage = cp;
+                latestWordCount =
+                    (decoded['currentWordCount'] as num?)?.toInt() ?? 0;
+                latestTotalWords =
+                    (decoded['totalWordCount'] as num?)?.toInt() ?? 0;
+              }
+            } else if (type == 'zapbook.book.milestone') {
+              final cp = (decoded['current_page'] as num?)?.toInt() ?? 0;
+              if (cp >= latestPage) {
+                latestPage = cp;
+                latestTotalWords =
+                    (decoded['total_word_count'] as num?)?.toInt() ?? 0;
+                latestWordCount =
+                    (decoded['current_word_count'] as num?)?.toInt() ?? 0;
+              }
             }
           }
         } catch (_) {}
@@ -207,6 +230,11 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       final zbf = await _fileStore.zbfFile(metaBookId);
       final coverPath = await _fileStore.coverPathIfExists(metaBookId);
 
+      final live = _milestones.progressFor(metaBookId);
+      final displayPage = live.$1 > 0 ? live.$1 : latestPage;
+      final displayWords = live.$2 > 0 ? live.$2 : latestWordCount;
+      final displayTotal = live.$3 > 0 ? live.$3 : latestTotalWords;
+
       books.add(
         HomeDashboardBook(
           id: metaBookId,
@@ -219,6 +247,9 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
           lastOpenedAt: latestProgressMs == -1
               ? null
               : DateTime.fromMillisecondsSinceEpoch(latestProgressMs),
+          currentPage: displayPage,
+          totalWords: displayTotal,
+          currentWordCount: displayWords,
         ),
       );
     }

@@ -86,7 +86,7 @@ class CircleMyProgressCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   book.pageCount > 0
-                      ? 'Page $myPage of ${book.pageCount}'
+                      ? 'Page ${myPage + 1} of ${book.pageCount}'
                       : 'Not started',
                   style: typography.bodyS.copyWith(color: colors.slate),
                 ),

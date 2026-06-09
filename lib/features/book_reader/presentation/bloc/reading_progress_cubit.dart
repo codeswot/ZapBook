@@ -13,6 +13,15 @@ import 'package:zapbook/zbf/zbf.dart';
 
 int _systemClock() => DateTime.now().millisecondsSinceEpoch;
 
+ProgressConfig _configFor(int totalWords) {
+  if (totalWords >= 900) return const ProgressConfig();
+  final unit = (totalWords / 3).ceil().clamp(1, 300);
+  return ProgressConfig(
+    wordUnitSize: unit,
+    milestoneThresholdUnits: 1,
+  );
+}
+
 class ReadingProgressCubit extends Cubit<ReadingState> {
   factory ReadingProgressCubit.forBook(
     ZbfBookHandle handle, {
@@ -25,10 +34,10 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     QuizService? quizService,
     ReadingStatsService? statsService,
   }) {
-    final density = densityService?.load(bookId) ??
-        bookDensityFromHandle(handle);
+    final density = bookDensityFromHandle(handle);
+    final config = _configFor(density.totalWords);
     return ReadingProgressCubit._(
-      deps: ReadingDeps(density: density),
+      deps: ReadingDeps(density: density, config: config),
       bookId: bookId,
       clock: clock,
       heartbeat: heartbeat,
@@ -65,11 +74,10 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     this.milestoneService,
     this.quizService,
     this.statsService,
-    ZbfBookHandle? handle,
-  })  : _deps = deps,
-        _now = clock ?? _systemClock,
-        _handle = handle,
-        super(ReadingState.initial(deps));
+    this._handle,
+  }) : _deps = deps,
+       _now = clock ?? _systemClock,
+       super(ReadingState.initial(deps));
 
   final ReadingDeps _deps;
   final String bookId;
@@ -82,6 +90,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   final ZbfBookHandle? _handle;
 
   int get totalWords => _deps.density.totalWords;
+
+  double get wordProgress =>
+      totalWords > 0 ? (state.wordsRead / totalWords).clamp(0.0, 1.0) : 0;
 
   final _effects = StreamController<ProgressEffect>.broadcast(sync: true);
   Stream<ProgressEffect> get effects => _effects.stream;
@@ -98,15 +109,17 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     if (repo == null) return null;
     final saved = await repo.loadSnapshot(bookId);
     if (saved == null) return null;
-    emit(state.copyWith(
-      wpm: saved.wpm,
-      completedPages: saved.completedPages,
-      visitedPages: saved.visitedPages,
-      partials: saved.partials,
-      wordsRead: saved.wordsRead,
-      pointsBanked: saved.pointsBanked,
-      milestonesReached: saved.milestonesReached,
-    ));
+    emit(
+      state.copyWith(
+        wpm: saved.wpm,
+        completedPages: saved.completedPages,
+        visitedPages: saved.visitedPages,
+        partials: saved.partials,
+        wordsRead: saved.wordsRead,
+        pointsBanked: saved.pointsBanked,
+        milestonesReached: saved.milestonesReached,
+      ),
+    );
     for (var i = 0; i < saved.milestonesReached; i++) {
       _publishedMilestones.add(i);
     }
@@ -120,6 +133,12 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   void openPage(int page) {
     _dispatch(PageOpened(page: page, atMs: _now()));
+    milestoneService?.updateProgress(
+      bookId: bookId,
+      currentPage: page,
+      currentWordCount: state.wordsRead,
+      totalWords: totalWords,
+    );
     _dirty = true;
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(seconds: 2), () {
@@ -127,16 +146,15 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     });
   }
 
-  void tap() =>
-      _dispatch(Interaction(kind: InteractionKind.tap, atMs: _now()));
+  void tap() => _dispatch(Interaction(kind: InteractionKind.tap, atMs: _now()));
 
   void scroll({double velocity = 0}) => _dispatch(
-        Interaction(
-          kind: InteractionKind.scroll,
-          atMs: _now(),
-          scrollVelocity: velocity,
-        ),
-      );
+    Interaction(
+      kind: InteractionKind.scroll,
+      atMs: _now(),
+      scrollVelocity: velocity,
+    ),
+  );
 
   void tick() {
     if (_paused) return;
@@ -184,6 +202,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       if (effect is BookCompleted) {
         _save();
         milestoneService?.recordBookCompleted(bookId);
+        milestoneService?.publishBookCompleted(bookId);
         statsService?.recordBookCompleted();
       }
     }
@@ -197,9 +216,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       milestoneIdx: effect.index,
       currentWordCount: effect.wordsRead,
       totalWordCount: totalWords,
-      progressPct: totalWords > 0
-          ? (effect.wordsRead / totalWords) * 100
-          : 0,
+      progressPct: totalWords > 0 ? (effect.wordsRead / totalWords) * 100 : 0,
       currentPage: state.currentPage ?? 0,
       sessionEngagedMs: state.sessionEngagedMs,
     );
@@ -210,17 +227,8 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     if (qs == null) return;
     final handle = _handle;
     if (handle == null) return;
-    final text = extractMilestoneText(
-      handle,
-      _deps.density,
-      effect.index,
-    );
-    qs.stashMilestone(
-      effect.index,
-      effect.wordsRead,
-      state.pointsBanked,
-      text,
-    );
+    final text = extractMilestoneText(handle, _deps.density, effect.index);
+    qs.stashMilestone(effect.index, effect.wordsRead, state.pointsBanked, text);
   }
 
   void _save() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
@@ -23,6 +24,8 @@ class MilestoneService {
   final _log = logging.Logger('MilestoneService');
   final Map<String, String> _groupIdByBookId = {};
   final Map<String, List<MilestonePayload>> _milestonesByBook = {};
+  final Map<String, _BookProgress> _progressByBook = {};
+  final Map<String, Timer> _progressTimers = {};
   final _completedBooks = <String>{};
 
   List<MilestonePayload> getMilestones(String bookId) =>
@@ -42,6 +45,81 @@ class MilestoneService {
 
   void recordBookCompleted(String bookId) {
     _completedBooks.add(bookId);
+  }
+
+  Future<void> publishBookCompleted(String bookId) async {
+    final groupId = await _resolveGroupId(bookId);
+    if (groupId == null) return;
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return;
+
+    final payload = {
+      'type': 'zapbook.book.completed',
+      'book_id': bookId,
+      'reached_at': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    try {
+      final event = await _marmot.sendStructured(npub, groupId, payload);
+      _publish(event);
+    } on Object catch (error, stack) {
+      _log.warning('Publish book completed failed', error, stack);
+    }
+  }
+
+  static const _progressDebounce = Duration(seconds: 5);
+
+  void updateProgress({
+    required String bookId,
+    required int currentPage,
+    required int currentWordCount,
+    required int totalWords,
+  }) {
+    _progressByBook[bookId] = _BookProgress(
+      currentPage: currentPage,
+      currentWordCount: currentWordCount,
+      totalWords: totalWords,
+    );
+    _progressTimers[bookId]?.cancel();
+    _progressTimers[bookId] = Timer(_progressDebounce, () {
+      _publishProgress(bookId);
+    });
+  }
+
+  Future<void> _publishProgress(String bookId) async {
+    final groupId = await _resolveGroupId(bookId);
+    if (groupId == null) return;
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return;
+    final p = _progressByBook[bookId];
+    if (p == null) return;
+
+    final payload = {
+      'type': 'zapbook.book.progress',
+      'bookId': bookId,
+      'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
+      'currentPage': p.currentPage,
+      'currentWordCount': p.currentWordCount,
+      'totalWordCount': p.totalWords,
+    };
+
+    try {
+      final event = await _marmot.sendStructured(npub, groupId, payload);
+      _publish(event);
+    } on Object catch (error, stack) {
+      _log.warning('Publish progress failed', error, stack);
+    }
+  }
+
+  (int page, int words, int total) progressFor(String bookId) {
+    final p = _progressByBook[bookId];
+    if (p != null) return (p.currentPage, p.currentWordCount, p.totalWords);
+    final milestones = _milestonesByBook[bookId];
+    if (milestones != null && milestones.isNotEmpty) {
+      final last = milestones.last;
+      return (last.currentPage, last.currentWordCount, last.totalWordCount);
+    }
+    return (0, 0, 0);
   }
 
   Future<void> publishMilestone({
@@ -128,4 +206,16 @@ class MilestoneService {
       _log.warning('Relay publish failed', error, stack);
     }
   }
+}
+
+class _BookProgress {
+  const _BookProgress({
+    required this.currentPage,
+    required this.currentWordCount,
+    required this.totalWords,
+  });
+
+  final int currentPage;
+  final int currentWordCount;
+  final int totalWords;
 }

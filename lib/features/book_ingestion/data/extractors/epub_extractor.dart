@@ -57,6 +57,31 @@ ParsedContent _parseEpub(Uint8List bytes, String fallbackTitle) {
   final coverHref = package.coverHref;
   final coverSource = coverHref == null ? null : archive.binaryFile(coverHref);
 
+  final pageWords = <int>[];
+  final skippable = <int>[];
+  for (final chapter in chapters) {
+    for (final page in chapter.pages) {
+      var words = 0;
+      for (final block in page.blocks) {
+        final text = switch (block) {
+          ParagraphBlock(:final text) => text,
+          HeadingBlock(:final text) => text,
+          PullquoteBlock(:final text) => text,
+          CaptionBlock(:final text) => text,
+          CodeBlock(:final text) => text,
+          _ => '',
+        };
+        words += text
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .length;
+      }
+      pageWords.add(words);
+      if (words == 0) skippable.add(pageWords.length - 1);
+    }
+  }
+
   return ParsedContent(
     title: package.title.isEmpty ? fallbackTitle : package.title,
     author: package.author,
@@ -64,6 +89,8 @@ ParsedContent _parseEpub(Uint8List bytes, String fallbackTitle) {
     chapters: chapters,
     assets: assetRegistry.assets,
     coverSource: coverSource,
+    pageWords: pageWords,
+    skippablePages: skippable,
   );
 }
 

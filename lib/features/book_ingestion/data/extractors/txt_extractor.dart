@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:zapbook/zbf/zbf.dart';
+import 'package:zapbook/zbf/entities/book_block.dart';
+import 'package:zapbook/zbf/entities/book_page.dart';
+import 'package:zapbook/zbf/entities/book_chapter.dart';
+import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 import 'package:zapbook/features/book_ingestion/data/support/page_layout.dart';
 import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart';
@@ -38,11 +41,36 @@ ParsedContent _parseTxt(Uint8List bytes, String title) {
     builder.add(paragraph);
   }
 
+  final chapters = builder.build();
+  final pageWords = <int>[];
+  final skippable = <int>[];
+  for (final chapter in chapters) {
+    for (final page in chapter.pages) {
+      var words = 0;
+      for (final block in page.blocks) {
+        final text = switch (block) {
+          ParagraphBlock(:final text) => text,
+          HeadingBlock(:final text) => text,
+          _ => '',
+        };
+        words += text
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .length;
+      }
+      pageWords.add(words);
+      if (words == 0) skippable.add(pageWords.length - 1);
+    }
+  }
+
   return ParsedContent(
     title: title,
     author: 'Unknown',
     needsAiProcessing: false,
-    chapters: builder.build(),
+    chapters: chapters,
+    pageWords: pageWords,
+    skippablePages: skippable,
   );
 }
 

@@ -10,6 +10,9 @@ final class HomeDashboardBook extends Equatable {
     required this.memberCount,
     required this.zbfPath,
     this.lastOpenedAt,
+    this.currentPage = 0,
+    this.totalWords = 0,
+    this.currentWordCount = 0,
   });
 
   final String id;
@@ -20,8 +23,16 @@ final class HomeDashboardBook extends Equatable {
   final int memberCount;
   final String zbfPath;
   final DateTime? lastOpenedAt;
+  final int currentPage;
+  final int totalWords;
+  final int currentWordCount;
 
   bool get isShared => memberCount > 1;
+
+  double get progressFraction =>
+      totalWords > 0
+          ? (currentWordCount / totalWords).clamp(0.0, 1.0)
+          : 0;
 
   @override
   List<Object?> get props => [
@@ -33,6 +44,9 @@ final class HomeDashboardBook extends Equatable {
         memberCount,
         zbfPath,
         lastOpenedAt,
+        currentPage,
+        totalWords,
+        currentWordCount,
       ];
 }
 

@@ -121,13 +121,9 @@ class CircleReaderTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelf ? colors.nostrTint : colors.paper,
+          color: colors.paper,
           borderRadius: AppRadii.br16,
-          border: Border.all(
-            color: isSelf
-                ? colors.nostrTint2
-                : colors.ink.withValues(alpha: 0.09),
-          ),
+          border: Border.all(color: colors.ink.withValues(alpha: 0.09)),
         ),
         child: Row(
           children: [
@@ -142,7 +138,7 @@ class CircleReaderTile extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          isSelf ? 'You' : entry.contact.label,
+                          entry.contact.label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: typography.bodyL.copyWith(
@@ -163,7 +159,7 @@ class CircleReaderTile extends StatelessWidget {
                       Expanded(
                         child: CircleProgressBar(
                           value: fraction,
-                          color: isSelf ? colors.nostr : colors.bitcoin,
+                          color: colors.bitcoin,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -180,9 +176,7 @@ class CircleReaderTile extends StatelessWidget {
             ),
             if (!isSelf) ...[
               const SizedBox(width: 12),
-              _ZapButton(
-                onTap: () => _showZapSheet(context),
-              ),
+              _ZapButton(onTap: () => _showZapSheet(context)),
             ],
           ],
         ),
@@ -203,14 +197,13 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final isYou = tone == _BadgeTone.you;
     return Container(
       margin: const EdgeInsets.only(left: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isYou ? colors.nostr : colors.paper3,
+        color: colors.paper3,
         borderRadius: AppRadii.br999,
-        border: Border.all(color: isYou ? colors.nostr : colors.hairline),
+        border: Border.all(color: colors.hairline),
       ),
       child: Text(
         label,
@@ -218,7 +211,7 @@ class _Badge extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
-          color: isYou ? colors.white : colors.slate2,
+          color: colors.ink2,
         ),
       ),
     );

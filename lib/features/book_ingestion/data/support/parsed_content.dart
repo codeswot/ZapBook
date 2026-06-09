@@ -10,6 +10,8 @@ final class ParsedContent {
     required this.chapters,
     this.assets = const {},
     this.coverSource,
+    this.pageWords,
+    this.skippablePages,
   });
 
   final String title;
@@ -18,4 +20,6 @@ final class ParsedContent {
   final List<BookChapter> chapters;
   final Map<String, Uint8List> assets;
   final Uint8List? coverSource;
+  final List<int>? pageWords;
+  final List<int>? skippablePages;
 }

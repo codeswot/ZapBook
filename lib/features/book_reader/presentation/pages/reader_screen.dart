@@ -56,6 +56,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   late final ReadingProgressCubit _progress;
   double _lastScrollDelta = 0;
   int _savedPage = 0;
+  bool _ready = false;
 
   @override
   void initState() {
@@ -71,7 +72,10 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
     _progress.restore().then((savedPage) {
       if (savedPage != null) _savedPage = savedPage;
-      if (mounted) _progress.start(initialPage: _savedPage);
+      if (mounted) {
+        _progress.start(initialPage: _savedPage);
+        setState(() => _ready = true);
+      }
     });
     WidgetsBinding.instance.addObserver(this);
   }
@@ -121,6 +125,12 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (!_ready) {
+      return Scaffold(
+        backgroundColor: context.colors.paper,
+        body: const ReaderPageLoading(message: 'Opening…'),
+      );
+    }
     final colors = context.colors;
     return MultiBlocProvider(
       providers: [
@@ -254,7 +264,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                     visible: _chromeVisible,
                     fromTop: false,
                     child: ReaderFooter(
-                      progress: total == 0 ? 0 : (index + 1) / total,
+                      progress: _progress.wordProgress,
                       currentPage: index,
                       totalPages: total,
                     ),

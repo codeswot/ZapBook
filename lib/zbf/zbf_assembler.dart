@@ -21,6 +21,8 @@ final class ZbfAssembler {
     required Map<String, Uint8List> assets,
     required Uint8List cover,
     required bool needsAiProcessing,
+    List<int>? pageWords,
+    List<int>? skippablePages,
   }) {
     final pageCount = chapters.fold<int>(
       0,
@@ -47,6 +49,8 @@ final class ZbfAssembler {
       createdAt: DateTime.now().toUtc(),
       needsAiProcessing: needsAiProcessing,
       chapters: summaries,
+      pageWords: pageWords,
+      skippablePages: skippablePages,
     );
     final fullAssets = <String, Uint8List>{
       ...assets,

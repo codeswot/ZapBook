@@ -58,18 +58,11 @@ BookDensity bookDensityFromPages(List<BookPage> pages, {String? genre}) {
 
 BookDensity bookDensityFromHandle(ZbfBookHandle handle) {
   final m = handle.manifest;
-  if (m.pageWords != null) {
-    return BookDensity(
-      pageWords: m.pageWords!,
-      skippablePages: m.skippablePages?.toSet() ?? const {},
-      genre: genreFromLabel(m.genre),
-    );
-  }
-  final pages = [
-    for (var index = 0; index < m.pageCount; index++)
-      handle.pageAt(index),
-  ];
-  return bookDensityFromPages(pages, genre: m.genre);
+  return BookDensity(
+    pageWords: m.pageWords ?? [],
+    skippablePages: m.skippablePages?.toSet() ?? const {},
+    genre: genreFromLabel(m.genre),
+  );
 }
 
 final _sentenceEnd = RegExp(r'[.!?]\s');

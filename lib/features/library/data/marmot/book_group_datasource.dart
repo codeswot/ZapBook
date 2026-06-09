@@ -181,15 +181,25 @@ class BookGroupDatasource {
     _publish(event);
   }
 
-  Future<void> sendProgress(String bookId, DateTime lastReadAt) async {
+  Future<void> sendProgress(
+    String bookId,
+    DateTime lastReadAt, {
+    int? currentPage,
+    int? currentWordCount,
+    int? totalWordCount,
+  }) async {
     final groupId = await _resolveGroupId(bookId);
     if (groupId == null) return;
     final npub = await _requireNpub();
     final payload = BookProgressPayload(
       bookId: bookId,
       lastReadAtMs: lastReadAt.millisecondsSinceEpoch,
+      currentPage: currentPage,
+      currentWordCount: currentWordCount,
+      totalWordCount: totalWordCount,
     );
-    final event = await _marmot.sendStructured(npub, groupId, payload.toJson());
+    final event =
+        await _marmot.sendStructured(npub, groupId, payload.toJson());
     _publish(event);
   }
 

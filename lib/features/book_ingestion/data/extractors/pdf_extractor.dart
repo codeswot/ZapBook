@@ -55,11 +55,30 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
       }
     }
 
+    final pageWords = <int>[];
+    final skippable = <int>[];
+    for (var i = 0; i < pageCount; i++) {
+      final lines = extractor.extractTextLines(
+        startPageIndex: i,
+        endPageIndex: i,
+      );
+      var wordCount = 0;
+      for (final line in lines) {
+        wordCount += line.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+      }
+      pageWords.add(wordCount);
+      if (wordCount == 0) {
+        skippable.add(i);
+      }
+    }
+
     return ParsedContent(
       title: metadata.title,
       author: metadata.author,
       needsAiProcessing: builder.needsAiProcessing,
       chapters: builder.build(),
+      pageWords: pageWords,
+      skippablePages: skippable,
     );
   } finally {
     document.dispose();

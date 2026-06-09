@@ -75,6 +75,8 @@ abstract base class IsolateBookExtractor implements BookExtractor {
       assets: parsed.assets,
       cover: cover,
       needsAiProcessing: parsed.needsAiProcessing,
+      pageWords: parsed.pageWords,
+      skippablePages: parsed.skippablePages,
     );
     yield IngestionProgress.complete(book);
   }

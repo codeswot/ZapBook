@@ -104,23 +104,31 @@ class BookProgressPayload {
     required this.bookId,
     required this.lastReadAtMs,
     this.currentPage,
+    this.currentWordCount,
+    this.totalWordCount,
   });
 
   final String bookId;
   final int lastReadAtMs;
   final int? currentPage;
+  final int? currentWordCount;
+  final int? totalWordCount;
 
   Map<String, dynamic> toJson() => {
-    'type': BookMessageType.progress,
-    'bookId': bookId,
-    'lastReadAtMs': lastReadAtMs,
-    'currentPage': currentPage,
-  };
+        'type': BookMessageType.progress,
+        'bookId': bookId,
+        'lastReadAtMs': lastReadAtMs,
+        if (currentPage != null) 'currentPage': currentPage,
+        if (currentWordCount != null) 'currentWordCount': currentWordCount,
+        if (totalWordCount != null) 'totalWordCount': totalWordCount,
+      };
 
   factory BookProgressPayload.fromJson(Map<String, dynamic> json) =>
       BookProgressPayload(
         bookId: json['bookId'] as String,
         lastReadAtMs: (json['lastReadAtMs'] as num?)?.toInt() ?? 0,
         currentPage: (json['currentPage'] as num?)?.toInt(),
+        currentWordCount: (json['currentWordCount'] as num?)?.toInt(),
+        totalWordCount: (json['totalWordCount'] as num?)?.toInt(),
       );
 }

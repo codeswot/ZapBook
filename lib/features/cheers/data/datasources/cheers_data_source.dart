@@ -180,7 +180,7 @@ class CheersDataSourceImpl implements CheersDataSource {
           if (decoded is Map<String, dynamic>) {
             final type = decoded['type'];
             if (type == 'zapbook.book.milestone' ||
-                type == 'zapbook.book.progress') {
+                type == 'zapbook.book.completed') {
               activityMsgs.add(msg);
             } else if (type == 'zapbook.cheer') {
               cheersMsgs.add({
@@ -201,16 +201,18 @@ class CheersDataSourceImpl implements CheersDataSource {
 
         final raw = msg.payloadJson!;
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        final isMilestone = decoded['type'] == 'zapbook.book.milestone';
-
-        final milestoneIdx =
-            (decoded['milestone_idx'] as num?)?.toInt() ?? 0;
-        final page = (decoded['current_page'] as num?)?.toInt() ?? 1;
-        final pct = (decoded['progress_pct'] as num?)?.toDouble();
-        final pctStr = pct != null ? ' (${pct.toStringAsFixed(1)}%)' : '';
-        final description = isMilestone
-            ? 'Milestone ${milestoneIdx + 1}: page $page$pctStr'
-            : 'read page $page';
+        final isCompleted = decoded['type'] == 'zapbook.book.completed';
+        String description;
+        if (isCompleted) {
+          description = 'Finished the book';
+        } else {
+          final milestoneIdx =
+              (decoded['milestone_idx'] as num?)?.toInt() ?? 0;
+          final page = (decoded['current_page'] as num?)?.toInt() ?? 1;
+          final pct = (decoded['progress_pct'] as num?)?.toDouble();
+          final pctStr = pct != null ? ' (${pct.toStringAsFixed(1)}%)' : '';
+          description = 'Milestone ${milestoneIdx + 1}: page $page$pctStr';
+        }
         final senderNpub = msg.senderNpub;
 
         final fallback = ProfileMetaGenerator.generate(seed: senderNpub);

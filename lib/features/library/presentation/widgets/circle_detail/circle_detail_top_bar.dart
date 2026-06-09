@@ -48,12 +48,17 @@ class CircleDetailTopBar extends StatelessWidget {
                 tag: 'circle-title-$bookId',
                 child: Material(
                   type: MaterialType.transparency,
-                  child: Text(
-                    bookTitle,
-                    style: typography.h1.copyWith(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 200),
+                    child: Text(
+                      bookTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: typography.h1.copyWith(
+                        color: colors.ink,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                 ),

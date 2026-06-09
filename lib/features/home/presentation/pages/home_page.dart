@@ -41,13 +41,18 @@ class _HomeView extends StatelessWidget {
     return opened ?? books.first;
   }
 
-  void _onBookTap(BuildContext context, HomeDashboardBook book) {
+  void _onCardTap(BuildContext context, HomeDashboardBook book) {
     if (book.isShared) {
       CircleDetailRoute(bookId: book.id).push(context);
     } else {
       context.read<HomeCubit>().touchBookOpened(book.id);
       ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
     }
+  }
+
+  void _onBookOpen(BuildContext context, HomeDashboardBook book) {
+    context.read<HomeCubit>().touchBookOpened(book.id);
+    ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
   }
 
   @override
@@ -147,7 +152,9 @@ class _HomeView extends StatelessWidget {
                               if (currentBook != null) {
                                 return HomeContinueReadingCard(
                                   book: currentBook,
-                                  onTap: () => _onBookTap(context, currentBook),
+                                  onTap: () => _onCardTap(context, currentBook),
+                                  onBookOpen: () =>
+                                      _onBookOpen(context, currentBook),
                                 );
                               }
                               return const SizedBox.shrink();
@@ -163,7 +170,7 @@ class _HomeView extends StatelessWidget {
                               if (otherBooks.isNotEmpty) {
                                 return HomeUpNextRow(
                                   books: otherBooks,
-                                  onBookTap: _onBookTap,
+                                  onBookTap: _onCardTap,
                                 );
                               }
                               return const SizedBox.shrink();

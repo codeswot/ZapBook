@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
+import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/welcome_inbox_service.dart';
@@ -29,8 +30,10 @@ class LibraryCubit extends Cubit<LibraryState> {
     this._libraryRepository,
     this._contacts,
     this._welcomeInbox,
+    this._onboarding,
   ) : super(const LibraryLoading()) {
     _init();
+    _circlePromptShown = _onboarding.circlePromptShown();
   }
 
   final WatchLibraryBooks _watchLibraryBooks;
@@ -43,6 +46,7 @@ class LibraryCubit extends Cubit<LibraryState> {
   final LibraryRepository _libraryRepository;
   final ContactService _contacts;
   final WelcomeInboxService _welcomeInbox;
+  final OnboardingLocalDataSource _onboarding;
   StreamSubscription<List<LibraryBook>>? _booksSubscription;
   StreamSubscription<int>? _welcomeSubscription;
   bool _circlePromptShown = false;
@@ -84,7 +88,10 @@ class LibraryCubit extends Cubit<LibraryState> {
           emit(const LibraryEmpty());
         } else {
           final show = !_circlePromptShown && books.length == 1;
-          if (show) _circlePromptShown = true;
+          if (show) {
+            _circlePromptShown = true;
+            _onboarding.setCirclePromptShown();
+          }
           emit(LibraryLoaded(books, showCirclePrompt: show));
         }
       },

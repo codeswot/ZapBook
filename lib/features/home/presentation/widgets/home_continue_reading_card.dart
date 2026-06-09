@@ -7,22 +7,17 @@ import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
-double _circleProgressFraction(String npub) =>
-    (((npub.hashCode & 0x7fffffff) % 86) + 8) / 100;
-
-int _circleReaderPage(String npub, int pageCount) => pageCount <= 0
-    ? 0
-    : (_circleProgressFraction(npub) * pageCount).round().clamp(1, pageCount);
-
 class HomeContinueReadingCard extends StatelessWidget {
   const HomeContinueReadingCard({
     super.key,
     required this.book,
     required this.onTap,
+    required this.onBookOpen,
   });
 
   final HomeDashboardBook book;
   final VoidCallback onTap;
+  final VoidCallback onBookOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +27,6 @@ class HomeContinueReadingCard extends StatelessWidget {
     final image = cover != null && File(cover).existsSync()
         ? FileImage(File(cover))
         : null;
-
-    final progress = _circleProgressFraction(book.id);
-    final page = _circleReaderPage(book.id, book.pageCount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -87,7 +79,7 @@ class HomeContinueReadingCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           book.pageCount > 0
-                              ? 'Page $page of ${book.pageCount}'
+                              ? 'Page ${book.currentPage + 1} of ${book.pageCount}'
                               : 'Not started',
                           style: typography.bodyS.copyWith(color: colors.slate),
                         ),
@@ -143,7 +135,7 @@ class HomeContinueReadingCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: AppRadii.br10,
                       child: LinearProgressIndicator(
-                        value: progress,
+                        value: book.progressFraction,
                         backgroundColor: context.colors.paper4,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           colors.bitcoin,
@@ -154,16 +146,19 @@ class HomeContinueReadingCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
                       color: colors.bitcoin,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      LucideIcons.bookOpen,
-                      size: 16,
-                      color: colors.bitcoinDark,
+                    child: BouncingInteractiveWidget(
+                      onTap: onBookOpen,
+                      child: Icon(
+                        LucideIcons.bookOpen,
+                        size: 16,
+                        color: colors.bitcoinDark,
+                      ),
                     ),
                   ),
                 ],

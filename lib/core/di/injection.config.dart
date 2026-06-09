@@ -406,15 +406,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i182.ReadingStatsService>(),
-      ),
-    );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
     );
@@ -433,6 +424,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.LibraryFileStore>(),
         gh<_i1.ZbfReader>(),
         gh<_i740.DensityService>(),
+      ),
+    );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i31.MilestoneService>(),
       ),
     );
     gh.lazySingleton<_i326.HomeDashboardRepository>(
@@ -508,6 +509,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i516.LibraryRepository>(),
         gh<_i244.ContactService>(),
         gh<_i82.WelcomeInboxService>(),
+        gh<_i342.OnboardingLocalDataSource>(),
       ),
     );
     gh.factory<_i906.CircleMembersCubit>(

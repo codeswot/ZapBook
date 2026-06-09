@@ -24,14 +24,14 @@ class DensityService {
   }
 
   Future<void> precalc(String bookId, ZbfBook book) async {
-    final density = _densityFromBook(book);
-    final json = _toJson(density);
+    final density = _fromManifest(book.manifest);
     final dir = await _dir();
-    await File('$dir/$bookId.json').writeAsString(jsonEncode(json));
+    await File('$dir/$bookId.json').writeAsString(jsonEncode(_toJson(density)));
   }
 
   ZbfBook enrich(ZbfBook book) {
-    final density = _densityFromBook(book);
+    if (book.manifest.pageWords != null) return book;
+    final density = _fromManifest(book.manifest);
     return book.copyWith(
       manifest: book.manifest.copyWith(
         pageWords: density.pageWords,
@@ -40,13 +40,11 @@ class DensityService {
     );
   }
 
-  BookDensity _densityFromBook(ZbfBook book) {
-    final pages = <BookPage>[];
-    for (final chapter in book.chapters) {
-      pages.addAll(chapter.pages);
-    }
-    return bookDensityFromPages(pages, genre: book.manifest.genre);
-  }
+  BookDensity _fromManifest(BookManifest m) => BookDensity(
+        pageWords: m.pageWords ?? [],
+        skippablePages: m.skippablePages?.toSet() ?? const {},
+        genre: genreFromLabel(m.genre),
+      );
 
   BookDensity? load(String bookId) {
     final dir = _dirPath;
