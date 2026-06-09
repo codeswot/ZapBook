@@ -20,6 +20,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
 class ReaderScreen extends StatefulWidget {
@@ -40,10 +41,38 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenState extends State<ReaderScreen>
+    with WidgetsBindingObserver {
   bool _chromeVisible = false;
   bool _turningForward = true;
   ReaderPullState? _pull;
+
+  late final ReadingProgressCubit _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = ReadingProgressCubit.forBook(widget.handle);
+    _progress.start();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _progress.closeSession();
+    _progress.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    if (lifecycle == AppLifecycleState.resumed) {
+      _progress.resume();
+    } else {
+      _progress.pause();
+    }
+  }
 
   void _toggleChrome() => setState(() => _chromeVisible = !_chromeVisible);
 
@@ -87,110 +116,121 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ],
       child: Scaffold(
         backgroundColor: colors.paper,
-        body: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
-          builder: (context, state) {
-            final cubit = context.read<ZbfViewerCubit>();
-            final total = widget.handle.manifest.pageCount;
-            final index = state.currentPage;
-            final font = context.select<ReaderSettingsCubit, ReaderFont>(
-              (c) => c.state.font,
-            );
-            final style = ReadingStyle.of(font, colors);
-            final blocks = _blocksFor(index, state);
-            final page = widget.handle.pageAt(index);
+        body: BlocListener<ZbfViewerCubit, ZbfViewerState>(
+          listenWhen: (previous, current) =>
+              previous.currentPage != current.currentPage,
+          listener: (context, state) => _progress.openPage(state.currentPage),
+          child: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
+            builder: (context, state) {
+              final cubit = context.read<ZbfViewerCubit>();
+              final total = widget.handle.manifest.pageCount;
+              final index = state.currentPage;
+              final font = context.select<ReaderSettingsCubit, ReaderFont>(
+                (c) => c.state.font,
+              );
+              final style = ReadingStyle.of(font, colors);
+              final blocks = _blocksFor(index, state);
+              final page = widget.handle.pageAt(index);
 
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) {
-                      final isIncoming = child.key == ValueKey<int>(index);
-                      final beginOffset = _turningForward
-                          ? const Offset(0, 0.06)
-                          : const Offset(0, -0.06);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: isIncoming ? beginOffset : Offset.zero,
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: KeyedSubtree(
-                      key: ValueKey<int>(index),
-                      child: blocks == null
-                          ? ReaderPageLoading(
-                              key: ValueKey<String>('loading_$index'),
-                              message: 'Preparing page ${index + 1}…',
-                            )
-                          : (state.rasterizingPages.contains(index) &&
-                                page.layoutType ==
-                                    BookLayoutType.illustration &&
-                                !state.imagePages.containsKey(index))
-                          ? ReaderPageLoading(
-                              key: ValueKey<String>('raster_$index'),
-                              message: 'Rendering page ${index + 1}…',
-                            )
-                          : ReaderBody(
-                              blocks: blocks,
-                              style: style,
-                              asset: widget.handle.asset,
-                              canGoForward: index < total - 1,
-                              canGoBack: index > 0,
-                              onTap: _toggleChrome,
-                              onUserScrollDirection: _onScrollDirection,
-                              onTurnForward: () {
-                                _turningForward = true;
-                                cubit.nextPage();
-                              },
-                              onTurnBackward: () {
-                                _turningForward = false;
-                                cubit.previousPage();
-                              },
-                              onPullChanged: _onPullChanged,
-                            ),
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        final isIncoming = child.key == ValueKey<int>(index);
+                        final beginOffset = _turningForward
+                            ? const Offset(0, 0.06)
+                            : const Offset(0, -0.06);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: isIncoming ? beginOffset : Offset.zero,
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(index),
+                        child: blocks == null
+                            ? ReaderPageLoading(
+                                key: ValueKey<String>('loading_$index'),
+                                message: 'Preparing page ${index + 1}…',
+                              )
+                            : (state.rasterizingPages.contains(index) &&
+                                  page.layoutType ==
+                                      BookLayoutType.illustration &&
+                                  !state.imagePages.containsKey(index))
+                            ? ReaderPageLoading(
+                                key: ValueKey<String>('raster_$index'),
+                                message: 'Rendering page ${index + 1}…',
+                              )
+                            : ReaderBody(
+                                blocks: blocks,
+                                style: style,
+                                asset: widget.handle.asset,
+                                canGoForward: index < total - 1,
+                                canGoBack: index > 0,
+                                onTap: () {
+                                  _toggleChrome();
+                                  _progress.tap();
+                                },
+                                onUserScrollDirection: (direction) {
+                                  _onScrollDirection(direction);
+                                  _progress.scroll();
+                                },
+                                onTurnForward: () {
+                                  _turningForward = true;
+                                  cubit.nextPage();
+                                },
+                                onTurnBackward: () {
+                                  _turningForward = false;
+                                  cubit.previousPage();
+                                },
+                                onPullChanged: _onPullChanged,
+                              ),
+                      ),
                     ),
                   ),
-                ),
-                AppFadeOverlay.top(color: colors.paper, height: 130),
-                ReaderChromeSlot(
-                  alignment: Alignment.topCenter,
-                  visible: _chromeVisible,
-                  fromTop: true,
-                  child: ReaderHeader(
-                    title: widget.handle.manifest.title,
-                    chapterTitle: page.chapterTitle,
-                    onBack: widget.onExit ?? () => context.pop(),
-                    onOpenContents: () => ReaderTocSheet.show(
-                      context,
-                      manifest: widget.handle.manifest,
+                  AppFadeOverlay.top(color: colors.paper, height: 130),
+                  ReaderChromeSlot(
+                    alignment: Alignment.topCenter,
+                    visible: _chromeVisible,
+                    fromTop: true,
+                    child: ReaderHeader(
+                      title: widget.handle.manifest.title,
+                      chapterTitle: page.chapterTitle,
+                      onBack: widget.onExit ?? () => context.pop(),
+                      onOpenContents: () => ReaderTocSheet.show(
+                        context,
+                        manifest: widget.handle.manifest,
+                        currentPage: index,
+                        onSelect: cubit.goToPage,
+                      ),
+                    ),
+                  ),
+                  AppFadeOverlay.bottom(color: colors.paper, height: 135),
+
+                  ReaderChromeSlot(
+                    alignment: Alignment.bottomCenter,
+                    visible: _chromeVisible,
+                    fromTop: false,
+                    child: ReaderFooter(
+                      progress: total == 0 ? 0 : (index + 1) / total,
                       currentPage: index,
-                      onSelect: cubit.goToPage,
+                      totalPages: total,
                     ),
                   ),
-                ),
-                AppFadeOverlay.bottom(color: colors.paper, height: 135),
-
-                ReaderChromeSlot(
-                  alignment: Alignment.bottomCenter,
-                  visible: _chromeVisible,
-                  fromTop: false,
-                  child: ReaderFooter(
-                    progress: total == 0 ? 0 : (index + 1) / total,
-                    currentPage: index,
-                    totalPages: total,
-                  ),
-                ),
-                ReaderPullIndicator(pull: _pull),
-              ],
-            );
-          },
+                  ReaderPullIndicator(pull: _pull),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

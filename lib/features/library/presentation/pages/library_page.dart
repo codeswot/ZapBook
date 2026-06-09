@@ -22,8 +22,39 @@ class LibraryPage extends StatelessWidget {
   }
 }
 
-class _LibraryView extends StatelessWidget {
+class _LibraryView extends StatefulWidget {
   const _LibraryView();
+
+  @override
+  State<_LibraryView> createState() => _LibraryViewState();
+}
+
+class _LibraryViewState extends State<_LibraryView> {
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
 
   Future<void> _onPageCubitState(
     BuildContext context,
@@ -72,9 +103,17 @@ class _LibraryView extends StatelessWidget {
         backgroundColor: context.colors.paper,
         body: SafeArea(
           child: Column(
-            children: const [
-              LibraryHeader(),
-              Expanded(child: LibraryBody()),
+            children: [
+              LibraryHeader(
+                isSearching: _isSearching,
+                searchQuery: _searchQuery,
+                searchController: _searchController,
+                onSearchChanged: _onSearchChanged,
+                onToggleSearch: _toggleSearch,
+              ),
+              Expanded(
+                child: LibraryBody(searchQuery: _searchQuery),
+              ),
             ],
           ),
         ),

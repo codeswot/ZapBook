@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
@@ -10,9 +11,15 @@ import 'package:zapbook/features/library/presentation/widgets/circle_prompt_shee
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
+import 'package:zapbook/theme/app_theme.dart';
 
 class LibraryBody extends StatelessWidget {
-  const LibraryBody({super.key});
+  const LibraryBody({
+    super.key,
+    required this.searchQuery,
+  });
+
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +42,53 @@ class LibraryBody extends StatelessWidget {
             if (library is LibraryLoading) {
               return const LibraryShimmer();
             }
-            if (books.isEmpty && jobs.isEmpty) {
+
+            final filteredBooks = books.where((book) {
+              final query = searchQuery.trim().toLowerCase();
+              if (query.isEmpty) return true;
+              return book.title.toLowerCase().contains(query) ||
+                  book.author.toLowerCase().contains(query);
+            }).toList();
+
+            if (filteredBooks.isEmpty && searchQuery.isNotEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.searchX,
+                        size: 48,
+                        color: context.colors.slate,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "No results found",
+                        style: context.typography.h3.copyWith(
+                          color: context.colors.ink,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "No books matching \"$searchQuery\" were found on your shelf.",
+                        textAlign: TextAlign.center,
+                        style: context.typography.bodyS.copyWith(
+                          color: context.colors.slate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (filteredBooks.isEmpty && jobs.isEmpty) {
               return const SingleChildScrollView(child: LibraryEmpty());
             }
-            return Shelf(jobs: jobs, books: books);
+
+            return Shelf(jobs: jobs, books: filteredBooks);
           },
         );
       },
