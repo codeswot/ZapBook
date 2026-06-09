@@ -20,6 +20,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
+import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
@@ -52,8 +53,14 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   void initState() {
     super.initState();
-    _progress = ReadingProgressCubit.forBook(widget.handle);
-    _progress.start();
+    _progress = ReadingProgressCubit.forBook(
+      widget.handle,
+      bookId: widget.handle.manifest.id,
+      repository: getIt<ReadingProgressRepository>(),
+    );
+    _progress.restore().then((_) {
+      if (mounted) _progress.start();
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 

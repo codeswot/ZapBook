@@ -8,8 +8,11 @@ import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 abstract class NostrModule {
   @preResolve
   @lazySingleton
-  Future<Ndk> ndk() async {
-    final store = await NostrCacheStore.open();
+  Future<NostrCacheStore> cacheStore() async => NostrCacheStore.open();
+
+  @preResolve
+  @lazySingleton
+  Future<Ndk> ndk(NostrCacheStore store) async {
     return Ndk(
       NdkConfig(
         engine: NdkEngine.JIT,

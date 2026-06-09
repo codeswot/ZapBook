@@ -17,6 +17,7 @@ import 'package:marmot_dart/marmot_dart.dart' as _i970;
 import 'package:ndk/ndk.dart' as _i857;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 import 'package:zapbook/core/cubit/ai_model_cubit.dart' as _i421;
+import 'package:zapbook/core/data/cache/nostr_cache_store.dart' as _i68;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
     as _i342;
@@ -63,6 +64,8 @@ import 'package:zapbook/features/book_ingestion/data/di/ingestion_module.dart'
     as _i627;
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart'
     as _i751;
+import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart'
+    as _i898;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
     as _i58;
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart'
@@ -206,8 +209,8 @@ extension GetItInjectableX on _i174.GetIt {
       () => marmotModule.marmot(),
       preResolve: true,
     );
-    await gh.lazySingletonAsync<_i857.Ndk>(
-      () => nostrModule.ndk(),
+    await gh.lazySingletonAsync<_i68.NostrCacheStore>(
+      () => nostrModule.cacheStore(),
       preResolve: true,
     );
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
@@ -229,12 +232,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i447.DeviceCapabilityService>(
       () => _i447.DeviceCapabilityServiceImpl(),
     );
-    gh.lazySingleton<_i873.BlossomService>(
-      () => _i873.BlossomService(gh<_i857.Ndk>()),
-    );
-    gh.lazySingleton<_i11.NostrService>(
-      () => _i11.NostrService(gh<_i857.Ndk>()),
-    );
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -246,6 +243,10 @@ extension GetItInjectableX on _i174.GetIt {
         _completer,
         initialTitle,
       ),
+    );
+    await gh.lazySingletonAsync<_i857.Ndk>(
+      () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
+      preResolve: true,
     );
     gh.lazySingleton<_i240.DocumentsDirectory>(
       () => const _i240.PathProviderDocumentsDirectory(),
@@ -281,6 +282,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
       ),
     );
+    gh.lazySingleton<_i898.ReadingProgressRepository>(
+      () => _i898.ReadingProgressRepository(
+        gh<_i857.Ndk>(),
+        gh<_i68.NostrCacheStore>(),
+      ),
+    );
     gh.lazySingleton<_i507.NwcService>(
       () => _i507.NwcService(gh<_i460.SharedPreferences>(), gh<_i857.Ndk>()),
     );
@@ -310,8 +317,11 @@ extension GetItInjectableX on _i174.GetIt {
         writer: gh<_i1.ZbfWriter>(),
       ),
     );
-    gh.lazySingleton<_i735.ProfileRemoteDataSource>(
-      () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    gh.lazySingleton<_i873.BlossomService>(
+      () => _i873.BlossomService(gh<_i857.Ndk>()),
+    );
+    gh.lazySingleton<_i11.NostrService>(
+      () => _i11.NostrService(gh<_i857.Ndk>()),
     );
     gh.lazySingleton<_i63.IdentityRepository>(
       () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
@@ -385,6 +395,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i139.HomeDashboardRepositoryImpl(
         gh<_i265.HomeDashboardDataSource>(),
       ),
+    );
+    gh.lazySingleton<_i735.ProfileRemoteDataSource>(
+      () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
