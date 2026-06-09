@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:reading_progress/reading_progress.dart';
 
 import 'package:zapbook/core/services/density_service.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -18,6 +21,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     Duration heartbeat = const Duration(seconds: 10),
     ReadingProgressRepository? repository,
     DensityService? densityService,
+    MilestoneService? milestoneService,
+    QuizService? quizService,
+    ReadingStatsService? statsService,
   }) {
     final density = densityService?.load(bookId) ??
         bookDensityFromHandle(handle);
@@ -27,6 +33,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       clock: clock,
       heartbeat: heartbeat,
       repository: repository,
+      milestoneService: milestoneService,
+      quizService: quizService,
+      statsService: statsService,
     );
   }
 
@@ -52,6 +61,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     int Function()? clock,
     this.heartbeat = const Duration(seconds: 10),
     this.repository,
+    this.milestoneService,
+    this.quizService,
+    this.statsService,
   })  : _deps = deps,
         _now = clock ?? _systemClock,
         super(ReadingState.initial(deps));
@@ -61,6 +73,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   final int Function() _now;
   final Duration heartbeat;
   final ReadingProgressRepository? repository;
+  final MilestoneService? milestoneService;
+  final QuizService? quizService;
+  final ReadingStatsService? statsService;
 
   int get totalWords => _deps.density.totalWords;
 
@@ -117,6 +132,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     _paused = true;
     _dispatch(AppBackgrounded(atMs: _now()));
     _save();
+    quizService?.onPause();
   }
 
   void resume() => _paused = false;
@@ -133,6 +149,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       );
     }
     _save();
+    quizService?.onPause();
   }
 
   void _dispatch(ReadingEvent event) {
@@ -142,10 +159,39 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     for (final effect in out.effects) {
       _dirty = true;
       _effects.add(effect);
-      if (effect is MilestoneReached || effect is BookCompleted) {
+      if (effect is MilestoneReached) {
         _save();
+        _publishMilestone(effect);
+        _stashQuiz(effect);
+        statsService?.recordMilestone();
+      }
+      if (effect is BookCompleted) {
+        _save();
+        statsService?.recordBookCompleted();
       }
     }
+  }
+
+  void _publishMilestone(MilestoneReached effect) {
+    milestoneService?.publishMilestone(
+      bookId: bookId,
+      milestoneIdx: effect.index,
+      currentWordCount: effect.wordsRead,
+      totalWordCount: totalWords,
+      progressPct: totalWords > 0
+          ? (effect.wordsRead / totalWords) * 100
+          : 0,
+      currentPage: state.currentPage ?? 0,
+      sessionEngagedMs: state.sessionEngagedMs,
+    );
+  }
+
+  void _stashQuiz(MilestoneReached effect) {
+    quizService?.stashMilestone(
+      effect.index,
+      effect.wordsRead,
+      state.pointsBanked,
+    );
   }
 
   void _save() {

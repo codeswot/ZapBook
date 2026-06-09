@@ -6,6 +6,7 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 
 abstract interface class HomeDashboardDataSource {
@@ -20,12 +21,14 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     this._ndk,
     this._identityLocal,
     this._fileStore,
+    this._stats,
   );
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
   final LibraryFileStore _fileStore;
+  final ReadingStatsService _stats;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -150,10 +153,10 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   }
 
   Future<HomeDashboardStats> _fetchStats() async {
-    return const HomeDashboardStats(
-      dayStreak: 0,
-      satsEarned: 0,
-      booksRead: 0,
+    return HomeDashboardStats(
+      dayStreak: _stats.streak,
+      satsEarned: _stats.satsEarned,
+      booksRead: _stats.booksRead,
     );
   }
 

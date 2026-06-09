@@ -11,6 +11,7 @@ import 'package:zapbook/core/observers/app_bloc_observer.dart';
 import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
       unawaited(getIt<KeyPackageService>().publishIfNeeded());
       unawaited(getIt<ContactService>().warm());
     }
+    unawaited(getIt<ReadingStatsService>().load());
   } on Exception catch (error, stack) {
     Logger.root.warning('NostrSession.login failed at bootstrap', error, stack);
   }

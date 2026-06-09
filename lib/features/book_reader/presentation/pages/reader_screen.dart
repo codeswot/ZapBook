@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +12,11 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/core/services/density_service.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
@@ -22,10 +25,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
-import 'package:reading_progress/reading_progress.dart';
-import 'package:zapbook/core/services/density_service.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
@@ -54,7 +54,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   ReaderPullState? _pull;
 
   late final ReadingProgressCubit _progress;
-  StreamSubscription<ProgressEffect>? _effectsSub;
   double _lastScrollDelta = 0;
 
   @override
@@ -65,8 +64,10 @@ class _ReaderScreenState extends State<ReaderScreen>
       bookId: widget.handle.manifest.id,
       repository: getIt<ReadingProgressRepository>(),
       densityService: getIt<DensityService>(),
+      milestoneService: getIt<MilestoneService>(),
+      quizService: getIt<QuizService>(),
+      statsService: getIt<ReadingStatsService>(),
     );
-    _effectsSub = _progress.effects.listen(_onEffect);
     _progress.restore().then((_) {
       if (mounted) _progress.start();
     });
@@ -76,29 +77,9 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _effectsSub?.cancel();
     _progress.closeSession();
     _progress.close();
     super.dispose();
-  }
-
-  void _onEffect(ProgressEffect effect) {
-    if (effect is MilestoneReached) {
-      final ms = getIt<MilestoneService>();
-      unawaited(
-        ms.publishMilestone(
-          bookId: widget.handle.manifest.id,
-          milestoneIdx: effect.index,
-          currentWordCount: effect.wordsRead,
-          totalWordCount: _progress.totalWords,
-          progressPct: _progress.totalWords > 0
-              ? (effect.wordsRead / _progress.totalWords) * 100
-              : 0,
-          currentPage: _progress.state.currentPage ?? 0,
-          sessionEngagedMs: _progress.state.sessionEngagedMs,
-        ),
-      );
-    }
   }
 
   @override
@@ -149,6 +130,9 @@ class _ReaderScreenState extends State<ReaderScreen>
           ),
         ),
         BlocProvider.value(value: getIt<ReaderSettingsCubit>()),
+        BlocProvider(
+          create: (_) => QuizCubit(getIt<QuizService>())..start(),
+        ),
       ],
       child: Scaffold(
         backgroundColor: colors.paper,
@@ -273,10 +257,89 @@ class _ReaderScreenState extends State<ReaderScreen>
                     ),
                   ),
                   ReaderPullIndicator(pull: _pull),
+                  BlocBuilder<QuizCubit, QuizCubitState>(
+                    builder: (context, quizState) {
+                      if (quizState.screen == QuizScreenState.idle ||
+                          quizState.screen == QuizScreenState.done) {
+                        return const SizedBox.shrink();
+                      }
+                      return _QuizPill(state: quizState);
+                    },
+                  ),
                 ],
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuizPill extends StatelessWidget {
+  const _QuizPill({required this.state});
+
+  final QuizCubitState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final cubit = context.read<QuizCubit>();
+    final set = state.set;
+    final totalQuestions = set?.questions.length ?? 0;
+    final textColor = colors.ink;
+    final isReveal = state.screen == QuizScreenState.reveal;
+
+    return Positioned(
+      bottom: 160,
+      left: 20,
+      right: 20,
+      child: Material(
+        borderRadius: BorderRadius.circular(16),
+        color: colors.paper3,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: isReveal
+              ? Row(
+                  children: [
+                    Text(
+                      '${((state.score ?? 0) * 100).round()}%',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => cubit.dismiss(),
+                      child: Text('OK', style: TextStyle(color: textColor)),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Text(
+                      'Q${state.currentIndex + 1}/$totalQuestions',
+                      style: TextStyle(color: textColor),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => cubit.skip(),
+                      child: const Text('Skip'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (set != null &&
+                            state.currentIndex < set.questions.length) {
+                          cubit.answer(0);
+                        }
+                      },
+                      child: const Text('Answer'),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
