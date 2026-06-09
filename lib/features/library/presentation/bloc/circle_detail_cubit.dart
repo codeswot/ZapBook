@@ -8,6 +8,8 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
 import 'package:zapbook/features/library/domain/usecases/get_circle_admins.dart';
@@ -33,7 +35,13 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._identity,
     this._milestoneService,
     this._marmot,
-  ) : super(const CircleDetailLoading());
+    this._stats,
+    this._library,
+  ) : super(const CircleDetailLoading()) {
+    _library.watchBooks().listen((_) {
+      if (!isClosed) refresh(_currentBookId);
+    });
+  }
 
   final GetLibraryBook _getLibraryBook;
   final GetBookMembers _getBookMembers;
@@ -46,10 +54,20 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final IdentityLocalDataSource _identity;
   final MilestoneService _milestoneService;
   final Marmot _marmot;
+  final ReadingStatsService _stats;
+  final LibraryRepository _library;
 
   final _log = logging.Logger('CircleDetailCubit');
+  String _currentBookId = '';
+
+  @override
+  Future<void> close() {
+    _currentBookId = '';
+    return super.close();
+  }
 
   Future<void> load(String bookId) async {
+    _currentBookId = bookId;
     final book = await _getLibraryBook(bookId);
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
@@ -77,24 +95,6 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     final progress = groupId != null
         ? await _fetchMemberProgress(groupId)
         : <String, MemberProgress>{};
-    if (myNpub != null) {
-      final live = _milestoneService.progressFor(bookId);
-      final livePage = live.$1;
-      if (progress.containsKey(myNpub) && livePage > 0) {
-        final existing = progress[myNpub]!;
-        progress[myNpub] = MemberProgress(
-          currentPage: livePage > existing.currentPage ? livePage : existing.currentPage,
-          currentWordCount: live.$2,
-          totalWordCount: live.$3 > 0 ? live.$3 : existing.totalWordCount,
-        );
-      } else if (livePage > 0) {
-        progress[myNpub] = MemberProgress(
-          currentPage: livePage,
-          currentWordCount: live.$2,
-          totalWordCount: live.$3,
-        );
-      }
-    }
     emit(CircleDetailLoaded(
       book: book,
       members: entries,
@@ -102,6 +102,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
       myNpub: myNpub,
       milestones: milestones,
       memberProgress: progress,
+      satsEarned: _stats.satsEarned,
     ));
   }
 

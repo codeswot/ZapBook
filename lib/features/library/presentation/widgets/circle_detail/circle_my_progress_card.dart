@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_placeholders.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -16,6 +15,7 @@ class CircleMyProgressCard extends StatelessWidget {
     required this.myNpub,
     required this.myProgressFraction,
     required this.myPage,
+    required this.satsEarned,
   });
 
   final LibraryBook book;
@@ -23,6 +23,7 @@ class CircleMyProgressCard extends StatelessWidget {
   final String? myNpub;
   final double myProgressFraction;
   final int myPage;
+  final int satsEarned;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +71,7 @@ class CircleMyProgressCard extends StatelessWidget {
                     Icon(LucideIcons.zap, size: 14, color: colors.bitcoin),
                     const SizedBox(width: 5),
                     Text(
-                      '${formatSats(circleZapTotal(book.id))} sats',
+                      '$satsEarned sats',
                       style: typography.bodyS.copyWith(
                         color: colors.bitcoin,
                         fontWeight: FontWeight.w700,

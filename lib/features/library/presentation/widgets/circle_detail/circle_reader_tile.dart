@@ -171,7 +171,7 @@ class CircleReaderTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        pageCount > 0 ? 'p.$page' : '—',
+                        pageCount > 0 ? 'p.${page + 1}' : '—',
                         style: typography.caption.copyWith(
                           color: colors.slate2,
                         ),

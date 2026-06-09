@@ -191,6 +191,7 @@ class _Loaded extends StatelessWidget {
                 myPage:
                     state.memberProgress[state.myNpub]?.currentPage ??
                     state.myPage,
+                satsEarned: state.satsEarned,
               ),
               const SizedBox(height: 14),
               AppButton(
@@ -199,16 +200,6 @@ class _Loaded extends StatelessWidget {
                 fullWidth: true,
                 onTap: () => _openBook(context),
               ),
-              if (state.milestones.isNotEmpty) ...[
-                const SizedBox(height: 26),
-                Text(
-                  'Milestones',
-                  style: typography.h3.copyWith(color: colors.ink),
-                ),
-                const SizedBox(height: 12),
-                for (final m in state.milestones.reversed)
-                  _MilestoneCard(payload: m),
-              ],
               const SizedBox(height: 26),
               Row(
                 children: [
@@ -243,53 +234,6 @@ class _Loaded extends StatelessWidget {
           onLeave: () => _leave(context),
         ),
       ],
-    );
-  }
-}
-
-class _MilestoneCard extends StatelessWidget {
-  const _MilestoneCard({required this.payload});
-
-  final MilestonePayload payload;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final typography = context.typography;
-    final pct = payload.progressPct.toStringAsFixed(1);
-    final mins = (payload.sessionReadingSeconds / 60).round();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.paper2,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Milestone ${payload.milestoneIdx + 1}',
-                    style: typography.bodyL.copyWith(color: colors.ink),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$pct%  •  $mins min read',
-                    style: typography.caption.copyWith(color: colors.slate2),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(LucideIcons.zap, size: 18, color: colors.slate2),
-          ],
-        ),
-      ),
     );
   }
 }

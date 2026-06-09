@@ -38,6 +38,7 @@ class CircleDetailLoaded extends CircleDetailState {
     this.processing = false,
     this.milestones = const [],
     this.memberProgress = const {},
+    this.satsEarned = 0,
   });
 
   final LibraryBook book;
@@ -48,6 +49,7 @@ class CircleDetailLoaded extends CircleDetailState {
   final bool processing;
   final List<MilestonePayload> milestones;
   final Map<String, MemberProgress> memberProgress;
+  final int satsEarned;
 
   double get myProgressFraction {
     if (milestones.isEmpty || book.pageCount == 0) return 0;
@@ -74,6 +76,7 @@ class CircleDetailLoaded extends CircleDetailState {
     bool? processing,
     List<MilestonePayload>? milestones,
     Map<String, MemberProgress>? memberProgress,
+    int? satsEarned,
   }) {
     return CircleDetailLoaded(
       book: book ?? this.book,
@@ -84,6 +87,7 @@ class CircleDetailLoaded extends CircleDetailState {
       processing: processing ?? this.processing,
       milestones: milestones ?? this.milestones,
       memberProgress: memberProgress ?? this.memberProgress,
+      satsEarned: satsEarned ?? this.satsEarned,
     );
   }
 }

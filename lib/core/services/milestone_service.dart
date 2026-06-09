@@ -25,7 +25,7 @@ class MilestoneService {
   final Map<String, String> _groupIdByBookId = {};
   final Map<String, List<MilestonePayload>> _milestonesByBook = {};
   final Map<String, _BookProgress> _progressByBook = {};
-  final Map<String, Timer> _progressTimers = {};
+  final Map<String, _BookProgress> _lastPublished = {};
   final _completedBooks = <String>{};
 
   List<MilestonePayload> getMilestones(String bookId) =>
@@ -67,23 +67,27 @@ class MilestoneService {
     }
   }
 
-  static const _progressDebounce = Duration(seconds: 5);
-
   void updateProgress({
     required String bookId,
     required int currentPage,
     required int currentWordCount,
     required int totalWords,
   }) {
-    _progressByBook[bookId] = _BookProgress(
+    final p = _BookProgress(
       currentPage: currentPage,
       currentWordCount: currentWordCount,
       totalWords: totalWords,
     );
-    _progressTimers[bookId]?.cancel();
-    _progressTimers[bookId] = Timer(_progressDebounce, () {
-      _publishProgress(bookId);
-    });
+    _progressByBook[bookId] = p;
+
+    final last = _lastPublished[bookId];
+    if (last != null &&
+        last.currentPage == currentPage &&
+        last.currentWordCount == currentWordCount) {
+      return;
+    }
+    _lastPublished[bookId] = p;
+    unawaited(_publishProgress(bookId));
   }
 
   Future<void> _publishProgress(String bookId) async {

@@ -4,6 +4,7 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
@@ -17,6 +18,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     this._onboardingLocal,
     this._session,
     this._nwc,
+    this._stats,
   );
 
   final IdentityLocalDataSource _identityLocal;
@@ -24,6 +26,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final OnboardingLocalDataSource _onboardingLocal;
   final NostrSession _session;
   final NwcService _nwc;
+  final ReadingStatsService _stats;
 
   @override
   Future<UserProfile> load() async {
@@ -44,9 +47,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
           ? fetchedPicture
           : fallback.avatar,
       lightningAddress: metadata?.lud16 ?? '',
-      satsEarned: 0,
-      dayStreak: 0,
-      booksRead: 0,
+      satsEarned: _stats.satsEarned,
+      dayStreak: _stats.streak,
+      booksRead: _stats.booksRead,
       milestones: 0,
       joinedYear: DateTime.now().year,
     );

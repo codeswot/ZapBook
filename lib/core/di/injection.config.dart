@@ -433,7 +433,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i854.LibraryFileStore>(),
         gh<_i182.ReadingStatsService>(),
-        gh<_i31.MilestoneService>(),
+        gh<_i516.LibraryRepository>(),
       ),
     );
     gh.lazySingleton<_i326.HomeDashboardRepository>(
@@ -512,14 +512,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i342.OnboardingLocalDataSource>(),
       ),
     );
-    gh.factory<_i906.CircleMembersCubit>(
-      () => _i906.CircleMembersCubit(
-        gh<_i1000.GetBookMembers>(),
-        gh<_i310.RemoveBookMember>(),
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-    );
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(
         gh<_i807.GetLibraryBook>(),
@@ -533,6 +525,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i31.MilestoneService>(),
         gh<_i970.Marmot>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i516.LibraryRepository>(),
+      ),
+    );
+    gh.factory<_i906.CircleMembersCubit>(
+      () => _i906.CircleMembersCubit(
+        gh<_i1000.GetBookMembers>(),
+        gh<_i310.RemoveBookMember>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
       ),
     );
     gh.factory<_i668.CirclesCubit>(
@@ -583,15 +585,6 @@ extension GetItInjectableX on _i174.GetIt {
         book,
       ),
     );
-    gh.lazySingleton<_i582.ProfileRepository>(
-      () => _i160.ProfileRepositoryImpl(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i342.OnboardingLocalDataSource>(),
-        gh<_i1073.NostrSession>(),
-        gh<_i507.NwcService>(),
-      ),
-    );
     gh.factory<_i634.OnboardingCubit>(
       () => _i634.OnboardingCubit(
         gh<_i1053.ClipboardService>(),
@@ -611,6 +604,16 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i223.UpdateProfile(
         gh<_i735.ProfileRemoteDataSource>(),
         gh<_i1073.NostrSession>(),
+      ),
+    );
+    gh.lazySingleton<_i582.ProfileRepository>(
+      () => _i160.ProfileRepositoryImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+        gh<_i1073.NostrSession>(),
+        gh<_i507.NwcService>(),
+        gh<_i182.ReadingStatsService>(),
       ),
     );
     gh.factory<_i385.LoadProfile>(
