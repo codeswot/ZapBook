@@ -52,6 +52,8 @@ import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
 import 'package:zapbook/core/services/milestone_service.dart' as _i31;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
 import 'package:zapbook/core/services/nwc_service.dart' as _i507;
+import 'package:zapbook/core/services/quiz_service.dart' as _i995;
+import 'package:zapbook/core/services/reading_stats_service.dart' as _i182;
 import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
 import 'package:zapbook/core/services/welcome_inbox_service.dart' as _i82;
 import 'package:zapbook/core/services/zap_service.dart' as _i362;
@@ -223,6 +225,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i1034.FilePickerService(),
     );
     gh.lazySingleton<_i96.LnurlService>(() => const _i96.LnurlService());
+    gh.lazySingleton<_i995.QuizService>(() => _i995.QuizService());
     gh.lazySingleton<_i123.SecureStorageService>(
       () => _i123.SecureStorageService(),
     );
@@ -326,6 +329,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i11.NostrService>(
       () => _i11.NostrService(gh<_i857.Ndk>()),
     );
+    gh.lazySingleton<_i182.ReadingStatsService>(
+      () => _i182.ReadingStatsService(gh<_i857.Ndk>()),
+    );
     gh.lazySingleton<_i63.IdentityRepository>(
       () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
     );
@@ -377,14 +383,6 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
     );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i854.LibraryFileStore>(),
-      ),
-    );
     gh.lazySingleton<_i244.ContactService>(
       () => _i244.ContactService(
         gh<_i460.SharedPreferences>(),
@@ -401,13 +399,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
     );
-    gh.lazySingleton<_i326.HomeDashboardRepository>(
-      () => _i139.HomeDashboardRepositoryImpl(
-        gh<_i265.HomeDashboardDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i182.ReadingStatsService>(),
+      ),
     );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
@@ -429,11 +431,10 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i740.DensityService>(),
       ),
     );
-    gh.factory<_i899.TouchDashboardBookOpened>(
-      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
-    );
-    gh.factory<_i1021.WatchHomeDashboard>(
-      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
+    gh.lazySingleton<_i326.HomeDashboardRepository>(
+      () => _i139.HomeDashboardRepositoryImpl(
+        gh<_i265.HomeDashboardDataSource>(),
+      ),
     );
     gh.lazySingleton<_i140.MarmotSyncService>(
       () => _i140.MarmotSyncService(
@@ -537,12 +538,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i286.ShareBookWith>(),
       ),
     );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
-      ),
-    );
     gh.factory<_i327.IngestionQueueCubit>(
       () => _i327.IngestionQueueCubit(
         gh<_i696.IngestBook>(),
@@ -550,6 +545,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i917.FileHasher>(),
         gh<_i190.FindBookByContentHash>(),
       ),
+    );
+    gh.factory<_i899.TouchDashboardBookOpened>(
+      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
+    );
+    gh.factory<_i1021.WatchHomeDashboard>(
+      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
     gh.lazySingleton<_i1073.NostrSession>(
       () => _i1073.NostrSession(
@@ -590,6 +591,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i709.GenerateIdentity>(),
         gh<_i136.ImportIdentity>(),
         gh<_i341.CompleteOnboarding>(),
+      ),
+    );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     gh.factory<_i223.UpdateProfile>(

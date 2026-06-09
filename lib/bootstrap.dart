@@ -40,7 +40,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
       unawaited(getIt<KeyPackageService>().publishIfNeeded());
       unawaited(getIt<ContactService>().warm());
     }
-    unawaited(getIt<ReadingStatsService>().load());
+    final stats = getIt<ReadingStatsService>();
+    await stats.load();
+    unawaited(stats.publishDailyHeartbeat());
   } on Exception catch (error, stack) {
     Logger.root.warning('NostrSession.login failed at bootstrap', error, stack);
   }
