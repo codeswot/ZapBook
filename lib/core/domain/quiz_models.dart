@@ -27,17 +27,19 @@ class QuizSet extends Equatable {
   const QuizSet({
     required this.milestoneIdx,
     required this.questions,
+    required this.textContent,
     required this.wordStart,
     required this.wordEnd,
   });
 
   final int milestoneIdx;
   final List<QuizQuestion> questions;
+  final String textContent;
   final int wordStart;
   final int wordEnd;
 
   @override
-  List<Object?> get props => [milestoneIdx, questions, wordStart, wordEnd];
+  List<Object?> get props => [milestoneIdx, questions, textContent, wordStart, wordEnd];
 }
 
 class QuizStashEntry extends Equatable {
@@ -45,14 +47,16 @@ class QuizStashEntry extends Equatable {
     required this.milestoneIdx,
     required this.wordsRead,
     required this.quizOutlook,
+    required this.textContent,
   });
 
   final int milestoneIdx;
   final int wordsRead;
   final QuizOutlook quizOutlook;
+  final String textContent;
 
   @override
-  List<Object?> get props => [milestoneIdx, wordsRead, quizOutlook];
+  List<Object?> get props => [milestoneIdx, wordsRead, quizOutlook, textContent];
 }
 
 class QuizResult extends Equatable {

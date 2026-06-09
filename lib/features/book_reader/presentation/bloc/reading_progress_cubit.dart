@@ -36,6 +36,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       milestoneService: milestoneService,
       quizService: quizService,
       statsService: statsService,
+      handle: handle,
     );
   }
 
@@ -64,8 +65,10 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     this.milestoneService,
     this.quizService,
     this.statsService,
+    ZbfBookHandle? handle,
   })  : _deps = deps,
         _now = clock ?? _systemClock,
+        _handle = handle,
         super(ReadingState.initial(deps));
 
   final ReadingDeps _deps;
@@ -76,6 +79,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   final MilestoneService? milestoneService;
   final QuizService? quizService;
   final ReadingStatsService? statsService;
+  final ZbfBookHandle? _handle;
 
   int get totalWords => _deps.density.totalWords;
 
@@ -187,10 +191,20 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   }
 
   void _stashQuiz(MilestoneReached effect) {
-    quizService?.stashMilestone(
+    final qs = quizService;
+    if (qs == null) return;
+    final handle = _handle;
+    if (handle == null) return;
+    final text = extractMilestoneText(
+      handle,
+      _deps.density,
+      effect.index,
+    );
+    qs.stashMilestone(
       effect.index,
       effect.wordsRead,
       state.pointsBanked,
+      text,
     );
   }
 
