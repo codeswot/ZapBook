@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_banner.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_step_intro.dart';
@@ -22,8 +22,8 @@ class ObModelView extends StatelessWidget {
     final status = aiState?.status ?? AiModelStatus.notSet;
     final isDownloading = status == AiModelStatus.downloading;
     final isReady = status == AiModelStatus.ready;
-    final isCapable = capability != null &&
-        capability != DeviceCapability.incapable;
+    final isCapable =
+        capability != null && capability != DeviceCapability.incapable;
 
     final modelName = capability?.modelName ?? 'Checking device…';
     final modelSize = capability?.expectedFileSize != null

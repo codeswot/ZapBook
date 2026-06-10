@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 
 @lazySingleton
 class AiModelCubit extends Cubit<AiModelState> {
-  final AiService _aiService;
+  final AiModelService _aiService;
   StreamSubscription<AiModelState>? _subscription;
 
   AiModelCubit(this._aiService) : super(_aiService.currentState) {
@@ -14,7 +14,8 @@ class AiModelCubit extends Cubit<AiModelState> {
     });
   }
 
-  void startDownload(String url, String hash) => _aiService.startDownload(url, hash);
+  void startDownload(String url, String hash) =>
+      _aiService.startDownload(url, hash);
   void pauseDownload() => _aiService.pauseDownload();
   void resumeDownload() => _aiService.resumeDownload();
   void cancelDownload() => _aiService.cancelDownload();

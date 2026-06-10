@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
@@ -64,7 +64,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
     return BlocBuilder<AiModelCubit, AiModelState>(
       buildWhen: (prev, curr) =>
           prev.status != curr.status ||
-              prev.downloadProgress != curr.downloadProgress,
+          prev.downloadProgress != curr.downloadProgress,
       builder: (context, aiState) {
         return BlocListener<OnboardingCubit, OnboardingState>(
           listener: (context, state) {
@@ -74,58 +74,58 @@ class _OnboardingViewState extends State<_OnboardingView> {
           },
           child: BlocBuilder<OnboardingCubit, OnboardingState>(
             builder: (context, state) {
-            final currentStepIndex = _getStepIndex(state.step);
+              final currentStepIndex = _getStepIndex(state.step);
 
-            return Scaffold(
-              backgroundColor: context.colors.paper,
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    if (currentStepIndex > 0)
-                      ObHeader(
-                        currentStep: currentStepIndex,
-                        onBack: () => cubit.previousStep(),
-                      ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
+              return Scaffold(
+                backgroundColor: context.colors.paper,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      if (currentStepIndex > 0)
+                        ObHeader(
+                          currentStep: currentStepIndex,
+                          onBack: () => cubit.previousStep(),
+                        ),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              child: _buildStepContent(state, cubit, aiState),
                             ),
-                            child: _buildStepContent(state, cubit, aiState),
-                          ),
-                          AppFadeOverlay.top(
-                            color: context.colors.paper,
-                            height: 16,
-                          ),
-                          AppFadeOverlay.bottom(
-                            color: context.colors.paper,
-                            height: 16,
-                          ),
-                        ],
+                            AppFadeOverlay.top(
+                              color: context.colors.paper,
+                              height: 16,
+                            ),
+                            AppFadeOverlay.bottom(
+                              color: context.colors.paper,
+                              height: 16,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    ObFooter(
-                      state: state,
-                      cubit: cubit,
-                      capability: aiState.capability,
-                      aiState: aiState,
-                      nsecController: _nsecController,
-                      lnAddressController: _lnAddressController,
-                      displayNameController: _displayNameController,
-                      onComplete: () => _onComplete(context, cubit),
-                    ),
-                  ],
+                      ObFooter(
+                        state: state,
+                        cubit: cubit,
+                        capability: aiState.capability,
+                        aiState: aiState,
+                        nsecController: _nsecController,
+                        lnAddressController: _lnAddressController,
+                        displayNameController: _displayNameController,
+                        onComplete: () => _onComplete(context, cubit),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
+        );
+      },
     );
-  },
-  );
   }
 
   int _getStepIndex(OnboardingStep step) {

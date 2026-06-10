@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/core/cubit/ai_model_cubit.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/widgets/ai_download_banner.dart';
@@ -35,8 +35,7 @@ class _AiModelHeadsUpBridgeState extends State<AiModelHeadsUpBridge> {
     final lastShown = prefs.getInt(_lastShownKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    if (lastShown != null &&
-        now - lastShown < _twoDays.inMilliseconds) {
+    if (lastShown != null && now - lastShown < _twoDays.inMilliseconds) {
       return;
     }
     _syncAiBanner(aiState);
@@ -68,8 +67,10 @@ class _AiModelHeadsUpBridgeState extends State<AiModelHeadsUpBridge> {
         break;
     }
 
-    getIt<SharedPreferences>()
-        .setInt(_lastShownKey, DateTime.now().millisecondsSinceEpoch);
+    getIt<SharedPreferences>().setInt(
+      _lastShownKey,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   @override

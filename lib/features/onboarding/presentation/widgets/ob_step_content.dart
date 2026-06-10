@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_welcome_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_identity_view.dart';
@@ -43,10 +43,7 @@ class ObStepContent extends StatelessWidget {
           lnAddressController: lnAddressController,
         );
       case OnboardingStep.model:
-        return ObModelView(
-          capability: capability,
-          aiState: aiState,
-        );
+        return ObModelView(capability: capability, aiState: aiState);
       case OnboardingStep.profile:
         return const SizedBox.shrink();
     }

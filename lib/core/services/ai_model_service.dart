@@ -55,7 +55,7 @@ class AiModelState extends Equatable {
   }
 }
 
-abstract class AiService {
+abstract class AiModelService {
   Stream<AiModelState> get aiState;
   AiModelState get currentState;
   Future<void> get ready;
@@ -69,8 +69,8 @@ abstract class AiService {
   void dismissBanner();
 }
 
-@LazySingleton(as: AiService)
-class AiServiceImpl implements AiService {
+@LazySingleton(as: AiModelService)
+class AiServiceModelImpl implements AiModelService {
   final SharedPreferences _prefs;
   final DeviceCapabilityService _deviceCapabilityService;
 
@@ -83,7 +83,7 @@ class AiServiceImpl implements AiService {
   final _readyCompleter = Completer<void>();
   late AiModelState _currentState;
 
-  AiServiceImpl(this._prefs, this._deviceCapabilityService) {
+  AiServiceModelImpl(this._prefs, this._deviceCapabilityService) {
     _currentState = const AiModelState(status: AiModelStatus.notSet);
     _init();
   }

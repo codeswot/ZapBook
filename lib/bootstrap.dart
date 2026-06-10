@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
@@ -32,7 +32,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   Bloc.observer = AppBlocObserver();
   await configureDependencies();
-  await getIt<AiService>().ready;
+  await getIt<AiModelService>().ready;
 
   try {
     final ok = await getIt<NostrSession>().login();

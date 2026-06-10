@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/cubit/ai_model_cubit.dart';
-import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -136,8 +136,8 @@ class ObFooter extends StatelessWidget {
         final status = aiState?.status ?? AiModelStatus.notSet;
         final isDownloading = status == AiModelStatus.downloading;
         final isReady = status == AiModelStatus.ready;
-        final isCapable = capability != null &&
-            capability != DeviceCapability.incapable;
+        final isCapable =
+            capability != null && capability != DeviceCapability.incapable;
 
         if (capability == null) {
           return [
