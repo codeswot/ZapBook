@@ -33,6 +33,8 @@ class CheersActivityCard extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final isMine = activity.type == 'mine';
+    final isNotice =
+        activity.type == 'zap_nudge' || activity.type == 'zap_ready';
 
     final hasReactions =
         activity.thumbsUpCount > 0 ||
@@ -107,16 +109,18 @@ class CheersActivityCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (hasReactions)
-                _ReactionsRow(
-                  activity: activity,
-                  onReactionTap: onReactionTap,
-                  onTap: onTap,
-                  isMine: isMine,
-                )
-              else if (!isMine)
-                _EmptyReactions(onTap: onTap),
+              if (!isNotice) ...[
+                const SizedBox(height: 12),
+                if (hasReactions)
+                  _ReactionsRow(
+                    activity: activity,
+                    onReactionTap: onReactionTap,
+                    onTap: onTap,
+                    isMine: isMine,
+                  )
+                else if (!isMine)
+                  _EmptyReactions(onTap: onTap),
+              ],
             ],
           ),
         ),

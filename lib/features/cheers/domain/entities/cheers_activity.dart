@@ -11,6 +11,7 @@ final class CheersActivity extends Equatable {
     required this.timestamp,
     required this.type,
     required this.isUnread,
+    this.nudgeId,
     this.thumbsUpCount = 0,
     this.clapCount = 0,
     this.fireCount = 0,
@@ -27,6 +28,7 @@ final class CheersActivity extends Equatable {
   final DateTime timestamp;
   final String type;
   final bool isUnread;
+  final String? nudgeId;
   final int thumbsUpCount;
   final int clapCount;
   final int fireCount;
@@ -44,6 +46,7 @@ final class CheersActivity extends Equatable {
         timestamp,
         type,
         isUnread,
+        nudgeId,
         thumbsUpCount,
         clapCount,
         fireCount,

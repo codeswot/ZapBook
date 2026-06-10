@@ -5,9 +5,12 @@ import 'package:logging/logging.dart' as logging;
 import 'dart:async';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
@@ -35,6 +38,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._milestoneService,
     this._stats,
     this._library,
+    this._zapService,
+    this._nudgeService,
   ) : super(const CircleDetailLoading()) {
     _library.watchBooks().listen((_) {
       if (!isClosed) refresh(_currentBookId);
@@ -53,6 +58,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final MilestoneService _milestoneService;
   final ReadingStatsService _stats;
   final LibraryRepository _library;
+  final ZapService _zapService;
+  final ZapNudgeService _nudgeService;
 
   final _log = logging.Logger('CircleDetailCubit');
   String _currentBookId = '';
@@ -135,6 +142,26 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> refresh(String bookId) => load(bookId);
 
   void open(String bookId) => _touchBookOpened(bookId);
+
+  Future<ZapResult> sendReaderZap({
+    required String recipientLud16,
+    required String recipientPubkey,
+    required ZapGesture gesture,
+    required int amount,
+    String? comment,
+  }) => _zapService.send(
+    recipientLud16: recipientLud16,
+    recipientPubkey: recipientPubkey,
+    targetEventId: '',
+    gesture: gesture,
+    customSats: amount,
+    comment: comment,
+  );
+
+  Future<bool> payInvoice(String invoice) => _zapService.payWithFallback(invoice);
+
+  Future<void> nudgeReader({required String bookId, required String toNpub}) =>
+      _nudgeService.nudgeForBook(bookId: bookId, toNpub: toNpub);
 
   void toggleContact(String npub, bool isContact) {
     if (isContact) {

@@ -78,11 +78,7 @@ class CheersDataSourceImpl implements CheersDataSource {
       'reactionType': reactionType,
     };
 
-    await _marmot.sendStructured(
-      npub,
-      groupId,
-      payload,
-    );
+    await _marmot.sendStructured(npub, groupId, payload);
 
     _changeController.add(null);
 
@@ -116,11 +112,12 @@ class CheersDataSourceImpl implements CheersDataSource {
           final eventJson = jsonEncode({
             'id': latestCheer['id'],
             'pubkey': latestCheer['pubkey'] ?? npub,
-            'created_at': latestCheer['created_at'] ??
+            'created_at':
+                latestCheer['created_at'] ??
                 (DateTime.now().millisecondsSinceEpoch ~/ 1000),
             'kind': 445,
             'tags': [
-              ['h', match.nostrGroupId]
+              ['h', match.nostrGroupId],
             ],
             'content': jsonEncode(latestCheer),
             'sig': latestCheer['sig'],
@@ -150,42 +147,48 @@ class CheersDataSourceImpl implements CheersDataSource {
 
   Future<List<CheersActivity>> _fetchActivities() async {
     final myNpub = await _identityLocal.readNpub() ?? '';
-    await _milestone.syncAll();
-    final events = _milestone.milestoneEvents();
-    if (events.isEmpty) return [];
-
-    final byGroup = <String, List<MilestoneEvent>>{};
-    for (final event in events) {
-      byGroup.putIfAbsent(event.groupId, () => []).add(event);
-    }
-
+    final groups = await _marmot.listGroups();
     final activities = <CheersActivity>[];
     final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
 
-    for (final entry in byGroup.entries) {
-      final messages = await _marmot.getMessages(entry.key);
+    for (final group in groups) {
+      if (!group.name.startsWith('zapbook-book-')) continue;
+      final messages = await _marmot.getMessages(group.id);
 
       var bookTitle = 'Unknown Book';
       final cheers = <Map<String, dynamic>>[];
+      final nudges = <Map<String, dynamic>>[];
+      final resolvedNudgeIds = <String>{};
+      final readyForMe = <Map<String, dynamic>>[];
+
       for (final msg in messages) {
         final raw = msg.payloadJson;
         if (raw == null || raw.isEmpty) continue;
         try {
           final decoded = jsonDecode(raw);
           if (decoded is! Map<String, dynamic>) continue;
-          final type = decoded['type'];
-          if (type == 'zapbook.book.meta') {
-            bookTitle = decoded['title'] as String? ?? bookTitle;
-          } else if (type == 'zapbook.cheer') {
-            cheers.add({
-              'activityId': decoded['activityId'],
-              'reactionType': decoded['reactionType'],
-            });
+          switch (decoded['type']) {
+            case 'zapbook.book.milestone':
+            case 'zapbook.book.completed':
+              _milestone.ingestMessage(msg);
+            case 'zapbook.book.meta':
+              bookTitle = decoded['title'] as String? ?? bookTitle;
+            case 'zapbook.cheer':
+              cheers.add({
+                'activityId': decoded['activityId'],
+                'reactionType': decoded['reactionType'],
+              });
+            case 'zapbook.zap.nudge':
+              nudges.add(decoded);
+            case 'zapbook.zap.ready':
+              final id = decoded['nudgeId'] as String? ?? '';
+              resolvedNudgeIds.add(id);
+              if (decoded['toNpub'] == myNpub) readyForMe.add(decoded);
           }
         } catch (_) {}
       }
 
-      for (final event in entry.value) {
+      for (final event in _milestone.eventsForGroup(group.id)) {
         final isMine = event.npub == myNpub;
         final pctStr = event.progressPct > 0
             ? ' (${event.progressPct.toStringAsFixed(1)}%)'
@@ -227,13 +230,66 @@ class CheersDataSourceImpl implements CheersDataSource {
             activityDescription: description,
             timestamp: event.timestamp,
             type: isMine ? 'mine' : 'milestone',
-            isUnread: !isMine &&
+            isUnread:
+                !isMine &&
                 event.timestamp.millisecondsSinceEpoch ~/ 1000 > cutoffSecs,
             thumbsUpCount: thumbsUp,
             clapCount: claps,
             fireCount: fire,
             rocketCount: rocket,
             trophyCount: trophy,
+          ),
+        );
+      }
+
+      for (final nudge in nudges) {
+        if (nudge['toNpub'] != myNpub) continue;
+        final nudgeId = nudge['nudgeId'] as String? ?? '';
+        if (nudgeId.isEmpty || resolvedNudgeIds.contains(nudgeId)) continue;
+        final fromNpub = nudge['fromNpub'] as String? ?? '';
+        final gen = ProfileMetaGenerator.generate(seed: fromNpub);
+        final fromName = nudge['fromName'] as String? ?? gen.displayName;
+        final createdMs =
+            (nudge['createdAtMs'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch;
+        activities.add(
+          CheersActivity(
+            id: '${group.id}:$nudgeId',
+            actorNpub: fromNpub,
+            actorName: fromName,
+            actorAvatar: gen.avatar,
+            bookTitle: bookTitle,
+            activityDescription:
+                '$fromName wants to zap you, but your receiving address '
+                "isn't set. Set it in your profile, then tap to buzz them.",
+            timestamp: DateTime.fromMillisecondsSinceEpoch(createdMs),
+            type: 'zap_nudge',
+            isUnread: true,
+            nudgeId: nudgeId,
+          ),
+        );
+      }
+
+      for (final ready in readyForMe) {
+        final nudgeId = ready['nudgeId'] as String? ?? '';
+        final fromNpub = ready['fromNpub'] as String? ?? '';
+        final gen = ProfileMetaGenerator.generate(seed: fromNpub);
+        final fromName = ready['fromName'] as String? ?? gen.displayName;
+        final createdMs =
+            (ready['createdAtMs'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch;
+        activities.add(
+          CheersActivity(
+            id: '${group.id}:$nudgeId:ready',
+            actorNpub: fromNpub,
+            actorName: fromName,
+            actorAvatar: gen.avatar,
+            bookTitle: bookTitle,
+            activityDescription: '$fromName set up their wallet — zap them!',
+            timestamp: DateTime.fromMillisecondsSinceEpoch(createdMs),
+            type: 'zap_ready',
+            isUnread: true,
+            nudgeId: nudgeId,
           ),
         );
       }

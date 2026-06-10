@@ -216,6 +216,7 @@ class _Loaded extends StatelessWidget {
                   isYou: entry.isSelf,
                   pageCount: book.pageCount,
                   bookTitle: book.title,
+                  bookId: book.id,
                   memberProgress: state.memberProgress,
                   onLongPress: entry.isSelf
                       ? null

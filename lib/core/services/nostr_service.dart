@@ -77,8 +77,8 @@ class NostrService {
     }
   }
 
-  Future<Metadata?> getMetadata(String pubkey) =>
-      _ndk.metadata.loadMetadata(pubkey);
+  Future<Metadata?> getMetadata(String pubkey, {bool forceRefresh = false}) =>
+      _ndk.metadata.loadMetadata(pubkey, forceRefresh: forceRefresh);
 
   Future<List<Metadata>> getMetadatas(
     List<String> pubkeys, {

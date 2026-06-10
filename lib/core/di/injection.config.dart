@@ -56,6 +56,7 @@ import 'package:zapbook/core/services/quiz_service.dart' as _i995;
 import 'package:zapbook/core/services/reading_stats_service.dart' as _i182;
 import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
 import 'package:zapbook/core/services/welcome_inbox_service.dart' as _i82;
+import 'package:zapbook/core/services/zap_nudge_service.dart' as _i718;
 import 'package:zapbook/core/services/zap_service.dart' as _i362;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
@@ -346,6 +347,13 @@ extension GetItInjectableX on _i174.GetIt {
       ),
       dispose: (i) => i.dispose(),
     );
+    gh.lazySingleton<_i718.ZapNudgeService>(
+      () => _i718.ZapNudgeService(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
@@ -449,12 +457,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i140.MarmotSyncService>(),
       ),
     );
-    gh.factory<_i584.CheersCubit>(
-      () => _i584.CheersCubit(
-        gh<_i654.WatchCheersActivities>(),
-        gh<_i636.SendCheersZap>(),
-      ),
-    );
     gh.factory<_i341.CompleteOnboarding>(
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
@@ -525,6 +527,24 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i342.OnboardingLocalDataSource>(),
       ),
     );
+    gh.factory<_i458.CircleDetailCubit>(
+      () => _i458.CircleDetailCubit(
+        gh<_i807.GetLibraryBook>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i428.GetCircleAdmins>(),
+        gh<_i310.RemoveBookMember>(),
+        gh<_i1056.LeaveCircle>(),
+        gh<_i210.DissolveCircle>(),
+        gh<_i296.TouchBookOpened>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i362.ZapService>(),
+        gh<_i718.ZapNudgeService>(),
+      ),
+    );
     gh.factory<_i906.CircleMembersCubit>(
       () => _i906.CircleMembersCubit(
         gh<_i1000.GetBookMembers>(),
@@ -540,22 +560,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i709.GenerateIdentity>(),
         gh<_i136.ImportIdentity>(),
         gh<_i341.CompleteOnboarding>(),
-      ),
-    );
-    gh.factory<_i458.CircleDetailCubit>(
-      () => _i458.CircleDetailCubit(
-        gh<_i807.GetLibraryBook>(),
-        gh<_i1000.GetBookMembers>(),
-        gh<_i428.GetCircleAdmins>(),
-        gh<_i310.RemoveBookMember>(),
-        gh<_i1056.LeaveCircle>(),
-        gh<_i210.DissolveCircle>(),
-        gh<_i296.TouchBookOpened>(),
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i516.LibraryRepository>(),
       ),
     );
     gh.factory<_i668.CirclesCubit>(
@@ -596,6 +600,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1073.NostrSession>(),
         gh<_i507.NwcService>(),
         gh<_i182.ReadingStatsService>(),
+      ),
+    );
+    gh.factory<_i584.CheersCubit>(
+      () => _i584.CheersCubit(
+        gh<_i654.WatchCheersActivities>(),
+        gh<_i636.SendCheersZap>(),
+        gh<_i362.ZapService>(),
+        gh<_i718.ZapNudgeService>(),
+        gh<_i11.NostrService>(),
       ),
     );
     gh.factory<_i385.LoadProfile>(

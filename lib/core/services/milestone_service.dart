@@ -175,6 +175,9 @@ class MilestoneService {
     return List.unmodifiable(list);
   }
 
+  List<MilestoneEvent> eventsForGroup(String groupId) =>
+      _events.values.where((e) => e.groupId == groupId).toList();
+
   Future<void> syncAll() async {
     try {
       _selfNpub ??= await _identity.readNpub();

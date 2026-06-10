@@ -5,14 +5,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart';
 import 'package:zapbook/widgets/zap_sheet.dart';
+import 'package:zapbook/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:flutter/services.dart';
@@ -43,20 +43,23 @@ class _CheersView extends StatefulWidget {
 
 class _CheersViewState extends State<_CheersView> {
   String _selectedFilter = 'All';
+  final Set<String> _buzzedSeen = {};
 
   final List<String> _filters = ['All', 'Milestones', 'Zaps', 'Mine'];
 
   List<CheersActivity> _filterActivities(List<CheersActivity> list) {
-    if (_selectedFilter == 'All') return list;
+    final visible = list.where((a) => a.type != 'zap_ready');
+    if (_selectedFilter == 'All') return visible.toList();
     if (_selectedFilter == 'Milestones') {
-      return list
+      return visible
           .where((a) => a.type == 'milestone' || a.type == 'mine')
           .toList();
     }
     if (_selectedFilter == 'Zaps') {
-      return list
+      return visible
           .where(
             (a) =>
+                a.type == 'zap_nudge' ||
                 a.thumbsUpCount > 0 ||
                 a.clapCount > 0 ||
                 a.fireCount > 0 ||
@@ -66,9 +69,18 @@ class _CheersViewState extends State<_CheersView> {
           .toList();
     }
     if (_selectedFilter == 'Mine') {
-      return list.where((a) => a.type == 'mine').toList();
+      return visible.where((a) => a.type == 'mine').toList();
     }
-    return list;
+    return visible.toList();
+  }
+
+  void _surfaceBuzzes(BuildContext context, List<CheersActivity> list) {
+    for (final activity in list.where((a) => a.type == 'zap_ready')) {
+      if (!_buzzedSeen.add(activity.id)) continue;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.toast.showInfo(activity.activityDescription);
+      });
+    }
   }
 
   void _showZapSheet(BuildContext context, CheersActivity activity) {
@@ -155,23 +167,30 @@ class _CheersViewState extends State<_CheersView> {
 
     try {
       final pubkey = Nip19.decode(activity.actorNpub);
-      final meta = await getIt<NostrService>().getMetadata(pubkey);
-      final lud16 = meta?.lud16;
+      final lud16 = await cubit.lookupLud16(pubkey);
       if (lud16 != null && lud16.isNotEmpty) {
-        final zap = getIt<ZapService>();
-        final result = await zap.send(
+        final result = await cubit.externalZap(
           recipientLud16: lud16,
           recipientPubkey: pubkey,
-          targetEventId: activity.id.split(':').last,
           gesture: gesture,
-          customSats: amount,
+          amount: amount,
           comment: comment,
         );
-        await zap.payWithFallback(result.invoice);
+        await cubit.payInvoice(result.invoice);
         messenger.showSuccess('Zapping $amount sats to ${activity.actorName}');
       } else {
-        messenger.showInfo(
-          'Reacted! (No Lightning address found for ${activity.actorName})',
+        await cubit.nudge(
+          groupId: activity.id.split(':').first,
+          toNpub: activity.actorNpub,
+        );
+        if (!context.mounted) return;
+        await ZapNudgeSheet.show(
+          context,
+          title: "${activity.actorName} can't be zapped yet",
+          message:
+              "${activity.actorName} hasn't set up their lightning wallet. "
+              "We've let them know — you'll get a heads-up here when they're "
+              'ready.',
         );
       }
     } catch (_) {
@@ -264,6 +283,37 @@ class _CheersViewState extends State<_CheersView> {
         );
       },
     );
+  }
+
+  Future<void> _handleNudgeTap(
+    BuildContext context,
+    CheersActivity activity,
+  ) async {
+    final messenger = context.toast;
+    final cubit = context.read<CheersCubit>();
+    final lud16 = await cubit.getMyLud16();
+
+    if (lud16 == null || lud16.isEmpty) {
+      if (!context.mounted) return;
+      await ZapNudgeSheet.show(
+        context,
+        title: 'Set up your wallet',
+        message:
+            '${activity.actorName} wants to zap you. Add your lightning '
+            'address in your profile to receive it, then come back and tap '
+            'this card to buzz them.',
+        actionLabel: 'Go to profile',
+        onAction: () => context.go('/you'),
+      );
+      return;
+    }
+
+    await cubit.nudgeReady(
+      groupId: activity.id.split(':').first,
+      nudgeId: activity.nudgeId ?? '',
+      toNpub: activity.actorNpub,
+    );
+    messenger.showSuccess("Buzzed ${activity.actorName} — you're all set!");
   }
 
   @override
@@ -373,6 +423,7 @@ class _CheersViewState extends State<_CheersView> {
                   }
 
                   final list = (state as CheersLoaded).activities;
+                  _surfaceBuzzes(context, list);
                   final filtered = _filterActivities(list);
 
                   if (filtered.isEmpty) {
@@ -413,8 +464,12 @@ class _CheersViewState extends State<_CheersView> {
                       final item = filtered[index];
                       return CheersActivityCard(
                         activity: item,
-                        onTap: () => _showZapSheet(context, item),
-                        onLongPress: () => _showLongPressMenu(context, item),
+                        onTap: () => item.type == 'zap_nudge'
+                            ? _handleNudgeTap(context, item)
+                            : _showZapSheet(context, item),
+                        onLongPress: () => item.type == 'zap_nudge'
+                            ? _handleNudgeTap(context, item)
+                            : _showLongPressMenu(context, item),
                         onReactionTap: (type) {
                           if (item.type == 'mine') {
                             return;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart'
@@ -7,10 +8,10 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
     show MemberEntry;
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:flutter/services.dart';
-import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/widgets/zap_sheet.dart';
+import 'package:zapbook/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -25,6 +26,7 @@ class CircleReaderTile extends StatelessWidget {
     required this.isYou,
     required this.pageCount,
     required this.bookTitle,
+    required this.bookId,
     this.onLongPress,
     required this.memberProgress,
   });
@@ -34,6 +36,7 @@ class CircleReaderTile extends StatelessWidget {
   final bool isYou;
   final int pageCount;
   final String bookTitle;
+  final String bookId;
   final VoidCallback? onLongPress;
   final Map<String, MemberProgress> memberProgress;
 
@@ -85,23 +88,31 @@ class CircleReaderTile extends StatelessWidget {
     String? comment,
   ) async {
     final messenger = context.toast;
+    final cubit = context.read<CircleDetailCubit>();
     final lud16 = entry.contact.lud16;
     if (lud16 == null || lud16.isEmpty) {
-      messenger.showError('${entry.contact.label} has no lightning address');
+      await cubit.nudgeReader(bookId: bookId, toNpub: entry.npub);
+      if (!context.mounted) return;
+      await ZapNudgeSheet.show(
+        context,
+        title: "${entry.contact.label} can't be zapped yet",
+        message:
+            "${entry.contact.label} hasn't set up their lightning wallet. "
+            "We've let them know — you'll get a heads-up in Cheers when "
+            'they\'re ready.',
+      );
       return;
     }
 
     try {
-      final zap = getIt<ZapService>();
-      final result = await zap.send(
+      final result = await cubit.sendReaderZap(
         recipientLud16: lud16,
         recipientPubkey: entry.npub,
-        targetEventId: '',
         gesture: gesture,
-        customSats: amount,
+        amount: amount,
         comment: comment,
       );
-      final launched = await zap.payWithFallback(result.invoice);
+      final launched = await cubit.payInvoice(result.invoice);
       if (!launched) {
         await Clipboard.setData(ClipboardData(text: result.invoice));
         messenger.showInfo('Invoice copied to clipboard');
