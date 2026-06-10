@@ -1,3 +1,5 @@
+// ignore_for_file: experimental_member_use
+
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
