@@ -125,6 +125,13 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   void start({int initialPage = 0}) {
     _dispatch(PageOpened(page: initialPage, atMs: _now()));
+    milestoneService?.updateProgress(
+      bookId: bookId,
+      currentPage: initialPage,
+      currentWordCount: state.wordsRead,
+      totalWords: totalWords,
+      fraction: wordProgress,
+    );
     _timer ??= Timer.periodic(heartbeat, (_) => tick());
   }
 
@@ -135,6 +142,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       currentPage: page,
       currentWordCount: state.wordsRead,
       totalWords: totalWords,
+      fraction: wordProgress,
     );
     _dirty = true;
     _saveTimer?.cancel();
@@ -199,6 +207,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       if (effect is BookCompleted) {
         _save();
         milestoneService?.recordBookCompleted(bookId);
+        unawaited(milestoneService?.markCompleted(bookId, totalWords: totalWords));
         unawaited(milestoneService?.publishBookCompleted(bookId));
         statsService?.recordBookCompleted();
       }

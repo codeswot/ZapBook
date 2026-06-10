@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key, required this.streakCount});
@@ -59,29 +57,26 @@ class HomeHeader extends StatelessWidget {
               ),
             ],
           ),
-          BouncingInteractiveWidget(
-            onTap: () => const YouRoute().go(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: colors.paper2,
-                borderRadius: AppRadii.br20,
-                border: Border.all(color: colors.hairline),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.flame, size: 16, color: colors.bitcoin),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$streakCount',
-                    style: typography.body.copyWith(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: colors.paper2,
+              borderRadius: AppRadii.br20,
+              border: Border.all(color: colors.hairline),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.flame, size: 16, color: colors.bitcoin),
+                const SizedBox(width: 6),
+                Text(
+                  '$streakCount',
+                  style: typography.body.copyWith(
+                    color: colors.ink,
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

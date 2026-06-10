@@ -54,6 +54,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   ReaderPullState? _pull;
 
   late final ReadingProgressCubit _progress;
+  late final MilestoneService _milestone;
+  late final Stream<BookProgress> _progressStream;
   double _lastScrollDelta = 0;
   int _savedPage = 0;
   bool _ready = false;
@@ -70,6 +72,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       quizService: getIt<QuizService>(),
       statsService: getIt<ReadingStatsService>(),
     );
+    _milestone = getIt<MilestoneService>();
+    _progressStream = _milestone.watchProgress(widget.handle.manifest.id);
     _progress.restore().then((savedPage) {
       if (savedPage != null) _savedPage = savedPage;
       if (mounted) {
@@ -263,10 +267,16 @@ class _ReaderScreenState extends State<ReaderScreen>
                     alignment: Alignment.bottomCenter,
                     visible: _chromeVisible,
                     fromTop: false,
-                    child: ReaderFooter(
-                      progress: _progress.wordProgress,
-                      currentPage: index,
-                      totalPages: total,
+                    child: StreamBuilder<BookProgress>(
+                      stream: _progressStream,
+                      initialData: _milestone.progressOf(
+                        widget.handle.manifest.id,
+                      ),
+                      builder: (context, snapshot) => ReaderFooter(
+                        progress: snapshot.data?.fraction ?? 0,
+                        currentPage: index,
+                        totalPages: total,
+                      ),
                     ),
                   ),
                   ReaderPullIndicator(pull: _pull),

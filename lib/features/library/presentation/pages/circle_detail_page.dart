@@ -186,8 +186,7 @@ class _Loaded extends StatelessWidget {
                 cover: _coverImage,
                 myNpub: state.myNpub,
                 myProgressFraction:
-                    state.memberProgress[state.myNpub]?.fraction ??
-                    state.myProgressFraction,
+                    state.memberProgress[state.myNpub]?.fraction ?? 0,
                 myPage:
                     state.memberProgress[state.myNpub]?.currentPage ??
                     state.myPage,

@@ -5,6 +5,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
@@ -24,6 +25,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     this._fileStore,
     this._stats,
     this._library,
+    this._milestone,
   );
 
   final Marmot _marmot;
@@ -32,6 +34,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   final LibraryFileStore _fileStore;
   final ReadingStatsService _stats;
   final LibraryRepository _library;
+  final MilestoneService _milestone;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -150,8 +153,8 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   }
 
   Future<HomeDashboard> _fetchDashboard() async {
-    final stats = await _fetchStats();
     final books = await _fetchBooks();
+    final stats = await _fetchStats();
     return HomeDashboard(stats: stats, books: books);
   }
 
@@ -176,9 +179,6 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       Map<String, dynamic>? latestMeta;
       var latestMetaTs = -1;
       var latestProgressMs = -1;
-      var latestPage = 0;
-      var latestTotalWords = 0;
-      var latestWordCount = 0;
 
       for (final msg in messages) {
         final raw = msg.payloadJson;
@@ -186,39 +186,22 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
         final isMine = myNpub != null && msg.senderNpub == myNpub;
         try {
           final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic>) {
-            final type = decoded['type'];
-            if (type == 'zapbook.book.meta') {
-              final ts = msg.timestampSecs.toInt();
-              if (ts >= latestMetaTs) {
-                latestMetaTs = ts;
-                latestMeta = decoded;
-              }
-            } else if (type == 'zapbook.book.progress') {
-              if (!isMine) continue;
-              final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-              if (lastReadAtMs != null &&
-                  lastReadAtMs.toInt() >= latestProgressMs) {
-                latestProgressMs = lastReadAtMs.toInt();
-              }
-              final cp = (decoded['currentPage'] as num?)?.toInt() ?? 0;
-              if (cp > latestPage) {
-                latestPage = cp;
-                latestWordCount =
-                    (decoded['currentWordCount'] as num?)?.toInt() ?? 0;
-                latestTotalWords =
-                    (decoded['totalWordCount'] as num?)?.toInt() ?? 0;
-              }
-            } else if (type == 'zapbook.book.milestone') {
-              if (!isMine) continue;
-              final cp = (decoded['current_page'] as num?)?.toInt() ?? 0;
-              if (cp >= latestPage) {
-                latestPage = cp;
-                latestTotalWords =
-                    (decoded['total_word_count'] as num?)?.toInt() ?? 0;
-                latestWordCount =
-                    (decoded['current_word_count'] as num?)?.toInt() ?? 0;
-              }
+          if (decoded is! Map<String, dynamic>) continue;
+          final type = decoded['type'];
+          if (type == 'zapbook.book.meta') {
+            final ts = msg.timestampSecs.toInt();
+            if (ts >= latestMetaTs) {
+              latestMetaTs = ts;
+              latestMeta = decoded;
+            }
+            continue;
+          }
+          _milestone.ingestMessage(msg);
+          if (isMine && type == 'zapbook.book.progress') {
+            final lastReadAtMs = decoded['lastReadAtMs'] as num?;
+            if (lastReadAtMs != null &&
+                lastReadAtMs.toInt() >= latestProgressMs) {
+              latestProgressMs = lastReadAtMs.toInt();
             }
           }
         } catch (_) {}
@@ -233,6 +216,9 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
       final zbf = await _fileStore.zbfFile(metaBookId);
       final coverPath = await _fileStore.coverPathIfExists(metaBookId);
+      final mine = myNpub != null
+          ? _milestone.membersOf(metaBookId)[myNpub]
+          : null;
 
       books.add(
         HomeDashboardBook(
@@ -246,9 +232,10 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
           lastOpenedAt: latestProgressMs == -1
               ? null
               : DateTime.fromMillisecondsSinceEpoch(latestProgressMs),
-          currentPage: latestPage,
-          totalWords: latestTotalWords,
-          currentWordCount: latestWordCount,
+          currentPage: mine?.currentPage ?? 0,
+          totalWords: mine?.totalWordCount ?? 0,
+          currentWordCount: mine?.currentWordCount ?? 0,
+          fraction: mine?.fraction ?? 0,
         ),
       );
     }

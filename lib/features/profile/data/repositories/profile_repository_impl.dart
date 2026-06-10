@@ -32,6 +32,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<UserProfile> load() async {
     final npub = await _identityLocal.readNpub() ?? '';
 
+    await _stats.syncBookStats();
+
     final fallback = ProfileMetaGenerator.generate(seed: npub);
     final metadata = await _remote.fetchMetadata(npub: npub);
 
@@ -50,7 +52,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       satsEarned: _stats.satsEarned,
       dayStreak: _stats.streak,
       booksRead: _stats.booksRead,
-      milestones: 0,
+      milestones: _stats.milestones,
       joinedYear: DateTime.now().year,
     );
   }

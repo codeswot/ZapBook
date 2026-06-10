@@ -13,6 +13,7 @@ final class HomeDashboardBook extends Equatable {
     this.currentPage = 0,
     this.totalWords = 0,
     this.currentWordCount = 0,
+    this.fraction = 0,
   });
 
   final String id;
@@ -26,13 +27,11 @@ final class HomeDashboardBook extends Equatable {
   final int currentPage;
   final int totalWords;
   final int currentWordCount;
+  final double fraction;
 
   bool get isShared => memberCount > 1;
 
-  double get progressFraction =>
-      totalWords > 0
-          ? (currentWordCount / totalWords).clamp(0.0, 1.0)
-          : 0;
+  double get progressFraction => fraction;
 
   @override
   List<Object?> get props => [
@@ -47,6 +46,7 @@ final class HomeDashboardBook extends Equatable {
         currentPage,
         totalWords,
         currentWordCount,
+        fraction,
       ];
 }
 

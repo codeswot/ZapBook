@@ -7,17 +7,25 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 
 @lazySingleton
 class MarmotSyncService {
-  MarmotSyncService(this._marmot, this._ndk, this._identity, this._library);
+  MarmotSyncService(
+    this._marmot,
+    this._ndk,
+    this._identity,
+    this._library,
+    this._milestone,
+  );
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
   final LibraryRepository _library;
+  final MilestoneService _milestone;
   final _log = logging.Logger('MarmotSyncService');
 
   static const _giftWrapKind = 1059;
@@ -114,7 +122,8 @@ class MarmotSyncService {
 
   Future<void> _onGroupMessage(Nip01Event event) async {
     try {
-      await _marmot.processIncoming(_eventJson(event));
+      final message = await _marmot.processIncoming(_eventJson(event));
+      if (message != null) _milestone.ingestMessage(message);
     } on Object catch (error) {
       _log.fine('processIncoming skipped: $error');
     }

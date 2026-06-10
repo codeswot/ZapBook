@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -19,11 +20,13 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._marmot,
     this._ndk,
     this._identityLocal,
+    this._milestone,
   );
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
+  final MilestoneService _milestone;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -147,110 +150,85 @@ class CheersDataSourceImpl implements CheersDataSource {
 
   Future<List<CheersActivity>> _fetchActivities() async {
     final myNpub = await _identityLocal.readNpub() ?? '';
-    final groups = await _marmot.listGroups();
+    await _milestone.syncAll();
+    final events = _milestone.milestoneEvents();
+    if (events.isEmpty) return [];
+
+    final byGroup = <String, List<MilestoneEvent>>{};
+    for (final event in events) {
+      byGroup.putIfAbsent(event.groupId, () => []).add(event);
+    }
+
     final activities = <CheersActivity>[];
+    final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
 
-    for (final group in groups) {
-      if (!group.name.startsWith('zapbook-book-')) continue;
+    for (final entry in byGroup.entries) {
+      final messages = await _marmot.getMessages(entry.key);
 
-      final messages = await _marmot.getMessages(group.id);
-
-      String bookTitle = 'Unknown Book';
+      var bookTitle = 'Unknown Book';
+      final cheers = <Map<String, dynamic>>[];
       for (final msg in messages) {
         final raw = msg.payloadJson;
         if (raw == null || raw.isEmpty) continue;
         try {
           final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic> &&
-              decoded['type'] == 'zapbook.book.meta') {
-            bookTitle = decoded['title'] as String? ?? 'Unknown Book';
-            break;
+          if (decoded is! Map<String, dynamic>) continue;
+          final type = decoded['type'];
+          if (type == 'zapbook.book.meta') {
+            bookTitle = decoded['title'] as String? ?? bookTitle;
+          } else if (type == 'zapbook.cheer') {
+            cheers.add({
+              'activityId': decoded['activityId'],
+              'reactionType': decoded['reactionType'],
+            });
           }
         } catch (_) {}
       }
 
-      final activityMsgs = <MarmotMessage>[];
-      final cheersMsgs = <Map<String, dynamic>>[];
-
-      for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic>) {
-            final type = decoded['type'];
-            if (type == 'zapbook.book.milestone' ||
-                type == 'zapbook.book.completed') {
-              activityMsgs.add(msg);
-            } else if (type == 'zapbook.cheer') {
-              cheersMsgs.add({
-                'activityId': decoded['activityId'],
-                'reactionType': decoded['reactionType'],
-                'amount': decoded['amount'],
-              });
-            }
-          }
-        } catch (_) {}
-      }
-
-      final seenIds = <String>{};
-      for (final msg in activityMsgs) {
-        final messageId = msg.id;
-        if (seenIds.contains(messageId)) continue;
-        seenIds.add(messageId);
-
-        final raw = msg.payloadJson!;
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        final isCompleted = decoded['type'] == 'zapbook.book.completed';
-        String description;
-        if (isCompleted) {
-          description = 'Finished the book';
-        } else {
-          final milestoneIdx =
-              (decoded['milestone_idx'] as num?)?.toInt() ?? 0;
-          final page = (decoded['current_page'] as num?)?.toInt() ?? 1;
-          final pct = (decoded['progress_pct'] as num?)?.toDouble();
-          final pctStr = pct != null ? ' (${pct.toStringAsFixed(1)}%)' : '';
-          description = 'Milestone ${milestoneIdx + 1}: page $page$pctStr';
-        }
-        final senderNpub = msg.senderNpub;
-
-        final fallback = ProfileMetaGenerator.generate(seed: senderNpub);
-        final actorName = senderNpub == myNpub ? 'You' : fallback.displayName;
-        final actorAvatar = fallback.avatar;
+      for (final event in entry.value) {
+        final isMine = event.npub == myNpub;
+        final pctStr = event.progressPct > 0
+            ? ' (${event.progressPct.toStringAsFixed(1)}%)'
+            : '';
+        final description = event.completed
+            ? 'Finished the book'
+            : 'Milestone ${event.milestoneIdx + 1}: page ${event.currentPage}'
+                  '$pctStr';
+        final fallback = ProfileMetaGenerator.generate(seed: event.npub);
 
         var thumbsUp = 0;
         var claps = 0;
         var fire = 0;
         var rocket = 0;
         var trophy = 0;
-
-        for (final cheer in cheersMsgs) {
-          if (cheer['activityId'] == messageId) {
-            final type = cheer['reactionType'] as String?;
-            if (type == 'like') thumbsUp++;
-            if (type == 'clap') claps++;
-            if (type == 'fire') fire++;
-            if (type == 'rocket') rocket++;
-            if (type == 'trophy') trophy++;
+        for (final cheer in cheers) {
+          if (cheer['activityId'] != event.id) continue;
+          switch (cheer['reactionType']) {
+            case 'like':
+              thumbsUp++;
+            case 'clap':
+              claps++;
+            case 'fire':
+              fire++;
+            case 'rocket':
+              rocket++;
+            case 'trophy':
+              trophy++;
           }
         }
 
         activities.add(
           CheersActivity(
-            id: '${group.id}:$messageId',
-            actorNpub: senderNpub,
-            actorName: actorName,
-            actorAvatar: actorAvatar,
+            id: '${event.groupId}:${event.id}',
+            actorNpub: event.npub,
+            actorName: isMine ? 'You' : fallback.displayName,
+            actorAvatar: fallback.avatar,
             bookTitle: bookTitle,
             activityDescription: description,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(
-              msg.timestampSecs.toInt() * 1000,
-            ),
-            type: senderNpub == myNpub ? 'mine' : 'milestone',
-            isUnread: senderNpub != myNpub &&
-                msg.timestampSecs.toInt() >
-                    (DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600),
+            timestamp: event.timestamp,
+            type: isMine ? 'mine' : 'milestone',
+            isUnread: !isMine &&
+                event.timestamp.millisecondsSinceEpoch ~/ 1000 > cutoffSecs,
             thumbsUpCount: thumbsUp,
             clapCount: claps,
             fireCount: fire,

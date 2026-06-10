@@ -25,8 +25,11 @@ class ReadingStatsService {
   String? _lastPublishDate;
   bool _loaded = false;
 
-  int get booksRead => _milestoneService.totalBooksCompleted;
+  int get booksRead => _milestoneService.completedBooksCount;
+  int get milestones => _milestoneService.myMilestonesCount;
   int get satsEarned => _satsEarned;
+
+  Future<void> syncBookStats() => _milestoneService.syncAll();
 
   int get streak {
     final dates = { ..._milestoneService.allMilestoneDates, ..._milestoneDates };

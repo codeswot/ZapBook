@@ -16,16 +16,13 @@ class MemberProgress {
     required this.currentPage,
     required this.currentWordCount,
     required this.totalWordCount,
+    required this.fraction,
   });
 
   final int currentPage;
   final int currentWordCount;
   final int totalWordCount;
-
-  double get fraction =>
-      totalWordCount > 0
-          ? (currentWordCount / totalWordCount).clamp(0.0, 1.0)
-          : 0;
+  final double fraction;
 }
 
 class CircleDetailLoaded extends CircleDetailState {
@@ -50,13 +47,6 @@ class CircleDetailLoaded extends CircleDetailState {
   final List<MilestonePayload> milestones;
   final Map<String, MemberProgress> memberProgress;
   final int satsEarned;
-
-  double get myProgressFraction {
-    if (milestones.isEmpty || book.pageCount == 0) return 0;
-    final last = milestones.last;
-    if (last.totalWordCount <= 0) return 0;
-    return (last.currentWordCount / last.totalWordCount).clamp(0.0, 1.0);
-  }
 
   int get myPage {
     if (milestones.isEmpty) return 0;
