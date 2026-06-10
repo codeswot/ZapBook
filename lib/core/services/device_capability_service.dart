@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:injectable/injectable.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
@@ -66,7 +68,7 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
         final machine = iosInfo.utsname.machine;
         return _estimateIosCapability(machine);
       } else if (Platform.isAndroid) {
-        return _estimateAndroidCapability();
+        return await _estimateAndroidCapability();
       }
     } catch (_) {}
 
@@ -75,12 +77,10 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
 
   DeviceCapability _estimateIosCapability(String machine) {
     if (machine.startsWith('iPhone')) {
-      final modelNumber =
-          int.tryParse(
-            machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first,
-          ) ??
-          0;
-      if (modelNumber >= 15) {
+      final clean = machine.replaceAll('iPhone', '');
+      final majorStr = clean.split(',').first;
+      final modelNumber = int.tryParse(majorStr) ?? 0;
+      if (modelNumber >= 16) {
         return DeviceCapability.capable4B;
       }
       if (modelNumber >= 12) {
@@ -90,12 +90,10 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
     }
 
     if (machine.startsWith('iPad')) {
-      final modelNumber =
-          int.tryParse(
-            machine.replaceAll(RegExp(r'[^0-9]'), '').split(',').first,
-          ) ??
-          0;
-      if (modelNumber >= 13) {
+      final clean = machine.replaceAll('iPad', '');
+      final majorStr = clean.split(',').first;
+      final modelNumber = int.tryParse(majorStr) ?? 0;
+      if (modelNumber >= 14) {
         return DeviceCapability.capable4B;
       }
       if (modelNumber >= 8) {
@@ -107,11 +105,31 @@ class DeviceCapabilityServiceImpl implements DeviceCapabilityService {
     return DeviceCapability.capable4B;
   }
 
-  DeviceCapability _estimateAndroidCapability() {
+  Future<int> _getAndroidTotalRamKb() async {
+    try {
+      final file = File('/proc/meminfo');
+      if (await file.exists()) {
+        final lines = await file.readAsLines();
+        for (final line in lines) {
+          if (line.startsWith('MemTotal:')) {
+            final match = RegExp(r'\d+').firstMatch(line);
+            if (match != null) {
+              return int.tryParse(match.group(0)!) ?? 0;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return 0;
+  }
+
+  Future<DeviceCapability> _estimateAndroidCapability() async {
+    final ramKb = await _getAndroidTotalRamKb();
     final processors = Platform.numberOfProcessors;
-    if (processors >= 8) {
+
+    if (ramKb >= 7000000 && processors >= 8) {
       return DeviceCapability.capable4B;
-    } else if (processors >= 4) {
+    } else if (ramKb >= 3500000 && processors >= 4) {
       return DeviceCapability.capable2B;
     }
     return DeviceCapability.incapable;

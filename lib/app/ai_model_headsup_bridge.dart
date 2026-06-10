@@ -31,6 +31,11 @@ class _AiModelHeadsUpBridgeState extends State<AiModelHeadsUpBridge> {
   }
 
   void _checkAndSync(AiModelState aiState) {
+    if (aiState.status != AiModelStatus.notSet || aiState.bannerDismissed) {
+      _syncAiBanner(aiState);
+      return;
+    }
+
     final prefs = getIt<SharedPreferences>();
     final lastShown = prefs.getInt(_lastShownKey);
     final now = DateTime.now().millisecondsSinceEpoch;

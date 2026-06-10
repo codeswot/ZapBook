@@ -119,6 +119,9 @@ class AiServiceModelImpl implements AiModelService {
 
     FileDownloader().registerCallbacks(
       taskProgressCallback: (update) {
+        if (update.task.taskId != _currentState.taskId) {
+          return;
+        }
         if (_currentState.status == AiModelStatus.verifying ||
             _currentState.status == AiModelStatus.ready) {
           return;
@@ -136,6 +139,9 @@ class AiServiceModelImpl implements AiModelService {
         }
       },
       taskStatusCallback: (update) async {
+        if (update.task.taskId != _currentState.taskId) {
+          return;
+        }
         if (_currentState.status == AiModelStatus.ready) {
           return;
         }
@@ -239,10 +245,24 @@ class AiServiceModelImpl implements AiModelService {
     _prefs.setString(_statusKey, stateToEmit.status.name);
     if (stateToEmit.taskId != null) {
       _prefs.setString(_taskIdKey, stateToEmit.taskId!);
+    } else {
+      _prefs.remove(_taskIdKey);
     }
     if (stateToEmit.expectedHash != null) {
       _prefs.setString(_hashKey, stateToEmit.expectedHash!);
+    } else {
+      _prefs.remove(_hashKey);
     }
+  }
+
+  Future<String> _getModelFilePath() async {
+    final task = DownloadTask(
+      url: 'dummy',
+      filename: 'gemma_model.litertlm',
+      directory: 'ai_models',
+      baseDirectory: BaseDirectory.applicationDocuments,
+    );
+    return task.filePath();
   }
 
   @override
@@ -253,6 +273,41 @@ class AiServiceModelImpl implements AiModelService {
 
   @override
   Future<void> startDownload(String modelUrl, String expectedHash) async {
+    if (_currentState.status == AiModelStatus.ready &&
+        _currentState.expectedHash == expectedHash) {
+      return;
+    }
+    if ((_currentState.status == AiModelStatus.downloading ||
+            _currentState.status == AiModelStatus.paused) &&
+        _currentState.expectedHash == expectedHash) {
+      return;
+    }
+
+    final tasks = await FileDownloader().allTasks();
+    for (final t in tasks) {
+      if (t.filename == 'gemma_model.litertlm') {
+        await FileDownloader().cancelTaskWithId(t.taskId);
+      }
+    }
+
+    final filePath = await _getModelFilePath();
+    final file = File(filePath);
+    if (await file.exists()) {
+      try {
+        final digest = await sha256.bind(file.openRead()).first;
+        if (digest.toString() == expectedHash) {
+          await _setReady();
+          return;
+        } else {
+          await file.delete();
+        }
+      } catch (_) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+
     final task = DownloadTask(
       url: modelUrl,
       filename: 'gemma_model.litertlm',
@@ -299,13 +354,23 @@ class AiServiceModelImpl implements AiModelService {
 
   @override
   Future<void> cancelDownload() async {
-    if (_currentState.taskId != null) {
-      await FileDownloader().cancelTaskWithId(_currentState.taskId!);
-      _updateState(
-        const AiModelState(status: AiModelStatus.notSet, downloadProgress: 0.0),
-      );
-      await _clearPrefs();
+    final tasks = await FileDownloader().allTasks();
+    for (final t in tasks) {
+      if (t.filename == 'gemma_model.litertlm') {
+        await FileDownloader().cancelTaskWithId(t.taskId);
+      }
     }
+    final filePath = await _getModelFilePath();
+    final file = File(filePath);
+    if (await file.exists()) {
+      try {
+        await file.delete();
+      } catch (_) {}
+    }
+    _updateState(
+      const AiModelState(status: AiModelStatus.notSet, downloadProgress: 0.0),
+    );
+    await _clearPrefs();
   }
 
   @override
@@ -316,6 +381,19 @@ class AiServiceModelImpl implements AiModelService {
 
   @override
   Future<void> reset() async {
+    final tasks = await FileDownloader().allTasks();
+    for (final t in tasks) {
+      if (t.filename == 'gemma_model.litertlm') {
+        await FileDownloader().cancelTaskWithId(t.taskId);
+      }
+    }
+    final filePath = await _getModelFilePath();
+    final file = File(filePath);
+    if (await file.exists()) {
+      try {
+        await file.delete();
+      } catch (_) {}
+    }
     _updateState(const AiModelState(status: AiModelStatus.notSet));
     await _clearPrefs();
   }

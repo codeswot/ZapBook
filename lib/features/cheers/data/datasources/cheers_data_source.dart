@@ -159,7 +159,8 @@ class CheersDataSourceImpl implements CheersDataSource {
       final cheers = <Map<String, dynamic>>[];
       final nudges = <Map<String, dynamic>>[];
       final resolvedNudgeIds = <String>{};
-      final readyForMe = <Map<String, dynamic>>[];
+      final seenNudgeIds = <String>{};
+      final readyForMe = <Map<String, dynamic>>{};
 
       for (final msg in messages) {
         final raw = msg.payloadJson;
@@ -272,6 +273,8 @@ class CheersDataSourceImpl implements CheersDataSource {
 
       for (final ready in readyForMe) {
         final nudgeId = ready['nudgeId'] as String? ?? '';
+        if (seenNudgeIds.contains(nudgeId)) continue;
+        seenNudgeIds.add(nudgeId);
         final fromNpub = ready['fromNpub'] as String? ?? '';
         final gen = ProfileMetaGenerator.generate(seed: fromNpub);
         final fromName = ready['fromName'] as String? ?? gen.displayName;
