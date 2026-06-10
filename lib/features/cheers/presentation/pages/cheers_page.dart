@@ -43,7 +43,7 @@ class _CheersView extends StatefulWidget {
 
 class _CheersViewState extends State<_CheersView> {
   String _selectedFilter = 'All';
-  final Set<String> _buzzedSeen = {};
+
 
   final List<String> _filters = ['All', 'Milestones', 'Zaps', 'Mine'];
 
@@ -74,14 +74,7 @@ class _CheersViewState extends State<_CheersView> {
     return visible.toList();
   }
 
-  void _surfaceBuzzes(BuildContext context, List<CheersActivity> list) {
-    for (final activity in list.where((a) => a.type == 'zap_ready')) {
-      if (!_buzzedSeen.add(activity.id)) continue;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.toast.showInfo(activity.activityDescription);
-      });
-    }
-  }
+  void _surfaceBuzzes(BuildContext context, List<CheersActivity> list) {}
 
   void _showZapSheet(BuildContext context, CheersActivity activity) {
     if (activity.type == 'mine') {

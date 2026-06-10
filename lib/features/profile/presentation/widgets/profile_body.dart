@@ -65,6 +65,7 @@ class ProfileBody extends StatelessWidget {
                       context,
                       npub: profile.npub,
                       nsec: nsec,
+                      cubit: context.read<ProfileCubit>(),
                     );
                   }
                 },

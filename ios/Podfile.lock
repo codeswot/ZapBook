@@ -38,11 +38,20 @@ PODS:
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
+  - flutter_gemma (0.16.4):
+    - Flutter
+    - MediaPipeTasksGenAI (= 0.10.33)
+    - MediaPipeTasksGenAIC (= 0.10.33)
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
+  - large_file_handler (0.4.0):
+    - Flutter
   - marmot_dart (0.0.1):
     - Flutter
+  - MediaPipeTasksGenAI (0.10.33):
+    - MediaPipeTasksGenAIC (= 0.10.33)
+  - MediaPipeTasksGenAIC (0.10.33)
   - printing (1.0.0):
     - Flutter
   - SDWebImage (5.21.7):
@@ -90,7 +99,9 @@ DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
+  - flutter_gemma (from `.symlinks/plugins/flutter_gemma/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - large_file_handler (from `.symlinks/plugins/large_file_handler/ios`)
   - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
@@ -103,6 +114,8 @@ SPEC REPOS:
   trunk:
     - DKImagePickerController
     - DKPhotoGallery
+    - MediaPipeTasksGenAI
+    - MediaPipeTasksGenAIC
     - SDWebImage
     - sqlite3
     - SwiftyGif
@@ -116,8 +129,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
+  flutter_gemma:
+    :path: ".symlinks/plugins/flutter_gemma/ios"
   flutter_secure_storage_darwin:
     :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  large_file_handler:
+    :path: ".symlinks/plugins/large_file_handler/ios"
   marmot_dart:
     :path: ".symlinks/plugins/marmot_dart/ios"
   printing:
@@ -140,8 +157,12 @@ SPEC CHECKSUMS:
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_gemma: 00a30243ef43c4668ca09c537f3bb696f8ddca1d
   flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
+  large_file_handler: b0da5998ce84ea647987d9cc2c37d2383eabdca6
   marmot_dart: a5888a784f2d355809d5e9bbea29169abe5ebefe
+  MediaPipeTasksGenAI: 8eed8e6d03fe26d30c4205cb5295ec7b394432ad
+  MediaPipeTasksGenAIC: cb098ecea44e248efe8fe7e2f62b4cb0df781802
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f

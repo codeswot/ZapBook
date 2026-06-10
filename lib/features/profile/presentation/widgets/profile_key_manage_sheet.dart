@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
-import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
@@ -12,11 +12,13 @@ import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 class ProfileKeyManageSheet extends StatefulWidget {
   final String npub;
   final String nsec;
+  final ProfileCubit cubit;
 
   const ProfileKeyManageSheet({
     super.key,
     required this.npub,
     required this.nsec,
+    required this.cubit,
   });
 
   @override
@@ -26,20 +28,22 @@ class ProfileKeyManageSheet extends StatefulWidget {
     BuildContext context, {
     required String npub,
     required String nsec,
+    required ProfileCubit cubit,
   }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ProfileKeyManageSheet(npub: npub, nsec: nsec),
+      builder: (_) =>
+          ProfileKeyManageSheet(npub: npub, nsec: nsec, cubit: cubit),
     );
   }
 }
 
 class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
-  final _clipboard = ClipboardService();
   bool _nsecRevealed = false;
+  late final _cubit = widget.cubit;
 
   @override
   Widget build(BuildContext context) {
@@ -67,15 +71,25 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
             _KeyBlock(
               label: 'Public Key (npub)',
               displayValue: widget.npub.toNpubReadable(),
-              rawValue: widget.npub,
-              clipboard: _clipboard,
+              onTap: () {
+                _cubit.copy(widget.npub);
+                context.toast.showInfo(
+                  'Public Key (npub) copied to clipboard',
+                  rootNavigator: true,
+                );
+              },
             ),
             const SizedBox(height: 12),
             _KeyBlock(
               label: 'Secret Key (nsec)',
               displayValue: _nsecRevealed ? widget.nsec : _masked,
-              rawValue: widget.nsec,
-              clipboard: _clipboard,
+              onTap: () {
+                _cubit.copy(widget.nsec);
+                context.toast.showInfo(
+                  'Secret Key (nsec) copied to clipboard',
+                  rootNavigator: true,
+                );
+              },
             ),
             const SizedBox(height: 24),
             AppButton(
@@ -98,14 +112,12 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
 class _KeyBlock extends StatelessWidget {
   final String label;
   final String displayValue;
-  final String rawValue;
-  final ClipboardService clipboard;
+  final VoidCallback onTap;
 
   const _KeyBlock({
     required this.label,
     required this.displayValue,
-    required this.rawValue,
-    required this.clipboard,
+    required this.onTap,
   });
 
   @override
@@ -122,12 +134,7 @@ class _KeyBlock extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         BouncingInteractiveWidget(
-          onTap: () async {
-            await clipboard.copy(rawValue);
-            if (context.mounted) {
-              context.toast.showSuccess('$label copied');
-            }
-          },
+          onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
