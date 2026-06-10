@@ -15,9 +15,28 @@ import 'package:zapbook/core/domain/quiz_models.dart';
 
 int _systemClock() => DateTime.now().millisecondsSinceEpoch;
 
-ProgressConfig _configFor(int totalWords) {
-  if (totalWords >= 900) return const ProgressConfig();
+ProgressConfig _configFor(int totalWords, BookSourceFormat format) {
+  final isEpub = format == BookSourceFormat.epub;
+  if (totalWords >= 900) {
+    if (isEpub) {
+      return const ProgressConfig(
+        k: 0.15,
+        skimRatio: 1.0,
+        skimVelocity: 999999.0,
+      );
+    }
+    return const ProgressConfig();
+  }
   final unit = (totalWords / 3).ceil().clamp(1, 300);
+  if (isEpub) {
+    return ProgressConfig(
+      wordUnitSize: unit,
+      milestoneThresholdUnits: 1,
+      k: 0.15,
+      skimRatio: 1.0,
+      skimVelocity: 999999.0,
+    );
+  }
   return ProgressConfig(wordUnitSize: unit, milestoneThresholdUnits: 1);
 }
 
@@ -35,7 +54,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     AiService? aiService,
   }) {
     final density = bookDensityFromHandle(handle);
-    final config = _configFor(density.totalWords);
+    final config = _configFor(density.totalWords, handle.manifest.sourceFormat);
     return ReadingProgressCubit._(
       deps: ReadingDeps(density: density, config: config),
       bookId: bookId,

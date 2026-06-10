@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:archive/archive.dart';
 import 'package:reading_progress/reading_progress.dart';
+import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 
 void main() {
@@ -56,5 +58,71 @@ void main() {
 
     expect(cubit.state.open!.engagedMs, 0);
     await cubit.close();
+  });
+
+  test('epub config allows completion with less dwell time', () async {
+    final epubManifest = BookManifest(
+      id: 'epub1',
+      title: 'Epub Test',
+      author: 'Author',
+      sourceFormat: BookSourceFormat.epub,
+      pageCount: 2,
+      chapterCount: 2,
+      coverAsset: 'cover.png',
+      createdAt: DateTime.now(),
+      needsAiProcessing: false,
+      pageWords: const [1000, 1000],
+    );
+    final epubHandle = ZbfBookHandle(
+      archive: Archive(),
+      manifest: epubManifest,
+    );
+    var now = 0;
+    final epubCubit = ReadingProgressCubit.forBook(
+      epubHandle,
+      bookId: 'epub1',
+      clock: () => now,
+      heartbeat: const Duration(hours: 1),
+    );
+    epubCubit.start();
+    for (final t in [10000, 20000, 30000, 40000]) {
+      now = t;
+      epubCubit.tick();
+    }
+    epubCubit.openPage(1);
+    expect(epubCubit.state.completedPages.contains(0), isTrue);
+    await epubCubit.close();
+
+    final pdfManifest = BookManifest(
+      id: 'pdf1',
+      title: 'Pdf Test',
+      author: 'Author',
+      sourceFormat: BookSourceFormat.pdf,
+      pageCount: 2,
+      chapterCount: 2,
+      coverAsset: 'cover.png',
+      createdAt: DateTime.now(),
+      needsAiProcessing: false,
+      pageWords: const [1000, 1000],
+    );
+    final pdfHandle = ZbfBookHandle(
+      archive: Archive(),
+      manifest: pdfManifest,
+    );
+    now = 0;
+    final pdfCubit = ReadingProgressCubit.forBook(
+      pdfHandle,
+      bookId: 'pdf1',
+      clock: () => now,
+      heartbeat: const Duration(hours: 1),
+    );
+    pdfCubit.start();
+    for (final t in [10000, 20000, 30000, 40000]) {
+      now = t;
+      pdfCubit.tick();
+    }
+    pdfCubit.openPage(1);
+    expect(pdfCubit.state.completedPages.contains(0), isFalse);
+    await pdfCubit.close();
   });
 }

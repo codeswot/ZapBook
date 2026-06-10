@@ -65,6 +65,9 @@ _check-coverage:
 precommit: format analyze coverage
     @echo "precommit passed"
 
+build-apk:
+    flutter build apk --release
+
 clean:
     flutter clean
     flutter pub get
