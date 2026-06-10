@@ -84,8 +84,28 @@ class NostrCacheStore {
   }
 
   void saveEvents(List<Nip01Event> events) {
-    for (final e in events) {
-      saveEvent(e);
+    if (events.isEmpty) return;
+    _db.execute('BEGIN TRANSACTION');
+    try {
+      final stmt = _db.prepare(
+          'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      for (final e in events) {
+        stmt.execute([
+          e.id,
+          e.pubKey,
+          e.createdAt,
+          e.kind,
+          e.content,
+          e.sig,
+          jsonEncode(e.tags),
+          jsonEncode(e.sources),
+        ]);
+      }
+      stmt.close();
+      _db.execute('COMMIT');
+    } catch (_) {
+      _db.execute('ROLLBACK');
+      rethrow;
     }
   }
 

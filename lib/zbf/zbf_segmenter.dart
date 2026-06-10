@@ -41,12 +41,12 @@ class ZbfSegmenter {
 
   static const int pagesPerSegment = 20;
 
-  ParsedSegment parseSegment(Uint8List zip) {
+    ParsedSegment parseSegment(Uint8List zip) {
     final archive = ZipDecoder().decodeBytes(zip);
     final pages = <BookPage>[];
     final pagesFile = archive.findFile('pages.json');
     if (pagesFile != null) {
-      final decoded = jsonDecode(utf8.decode(pagesFile.content)) as List;
+      final decoded = utf8.decoder.fuse(const JsonDecoder()).convert(pagesFile.content) as List;
       for (final page in decoded) {
         pages.add(BookPage.fromJson(page as Map<String, Object?>));
       }
@@ -121,12 +121,12 @@ class ZbfSegmenter {
       final manifestFile = archive.findFile('manifest.json');
       if (manifest == null && manifestFile != null) {
         manifest = BookManifest.fromJson(
-          jsonDecode(utf8.decode(manifestFile.content)) as Map<String, Object?>,
+          utf8.decoder.fuse(const JsonDecoder()).convert(manifestFile.content) as Map<String, Object?>,
         );
       }
       final pagesFile = archive.findFile('pages.json');
       if (pagesFile != null) {
-        final decoded = jsonDecode(utf8.decode(pagesFile.content)) as List;
+        final decoded = utf8.decoder.fuse(const JsonDecoder()).convert(pagesFile.content) as List;
         for (final page in decoded) {
           pages.add(BookPage.fromJson(page as Map<String, Object?>));
         }
@@ -169,5 +169,5 @@ class ZbfSegmenter {
   }
 
   Uint8List _json(Object? value) =>
-      Uint8List.fromList(utf8.encode(jsonEncode(value)));
+      Uint8List.fromList(JsonUtf8Encoder().convert(value));
 }

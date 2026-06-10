@@ -1,0 +1,121 @@
+/* ZapBook — Ember · populated library + toast/snackbar system. */
+
+// ─────────────────── POPULATED LIBRARY ───────────────────
+function LibraryFull() {
+  const reading = [
+    { t: 'Alice in Wonderland', a: 'Lewis Carroll', img: 'covers/alice.png', hue: 'orange', pct: 38, circle: "Mr. Lee's Class" },
+    { t: 'Treasure Island', a: 'R. L. Stevenson', img: 'covers/treasure.png', hue: 'sky', pct: 72, circle: null },
+  ];
+  const shelf = [
+    { t: 'Peter Pan', a: 'Barrie', img: 'covers/peterpan.png', hue: 'purple' },
+    { t: 'The Jungle Book', a: 'Kipling', img: 'covers/jungle.png', hue: 'mint' },
+    { t: 'Oz', a: 'Baum', img: 'covers/oz.png', hue: 'mint' },
+  ];
+  return (
+    <Screen style={{ background: ZB.bg }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: `${SAFE_TOP + 8}px 20px 8px` }}>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div>
+            <div style={{ font: `600 13px/1 ${FONT_BODY}`, letterSpacing: '0.04em', color: ZB.orangeSoft, textTransform: 'uppercase', marginBottom: 8 }}>Library</div>
+            <h1 style={{ font: `700 28px/1.05 ${FONT_DISPLAY}`, letterSpacing: '-0.02em', color: ZB.t1, margin: 0 }}>Your shelf</h1>
+          </div>
+          <div style={{ display: 'flex', gap: 9 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: ZB.s2, border: `1px solid ${ZB.line}`, display: 'grid', placeItems: 'center' }}>
+              <Icon name="search" size={19} color={ZB.t2} />
+            </div>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: ZB.orange, display: 'grid', placeItems: 'center' }}>
+              <Icon name="plus" size={20} color="#241500" sw={2.4} />
+            </div>
+          </div>
+        </div>
+
+        {/* currently reading */}
+        <div style={{ font: `700 16px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em', marginBottom: 13 }}>Currently reading</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 24 }}>
+          {reading.map((b, i) => (
+            <div key={i} style={{ display: 'flex', gap: 14, padding: 13, borderRadius: 20, background: ZB.s2, border: `1px solid ${ZB.line}` }}>
+              <Cover w={56} h={80} hue={b.hue} img={b.img} r={11} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ font: `700 16px/1.15 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em' }}>{b.t}</div>
+                <div style={{ font: `500 12.5px/1 ${FONT_BODY}`, color: ZB.t3, marginTop: 5 }}>{b.a}</div>
+                {b.circle && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                    <Icon name="circles" size={13} color={ZB.purpleSoft} sw={2} />
+                    <span style={{ font: `500 11.5px/1 ${FONT_BODY}`, color: ZB.purpleSoft }}>{b.circle}</span>
+                  </div>
+                )}
+                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, paddingTop: 10 }}>
+                  <div style={{ flex: 1, height: 6, borderRadius: 999, background: ZB.s4, overflow: 'hidden' }}>
+                    <div style={{ width: `${b.pct}%`, height: '100%', background: ZB.orange, borderRadius: 999 }} />
+                  </div>
+                  <span style={{ font: `600 11px/1 ${FONT_MONO}`, color: ZB.t3 }}>{b.pct}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* all books grid */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 13 }}>
+          <div style={{ font: `700 16px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em' }}>All books</div>
+          <span style={{ font: `500 12.5px/1 ${FONT_BODY}`, color: ZB.t3 }}>8 finished</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 13 }}>
+          {shelf.map((b, i) => (
+            <div key={i}>
+              <Cover w={104} h={146} hue={b.hue} img={b.img} title={b.t} author={b.a} r={14} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <MNav active="library" />
+    </Screen>
+  );
+}
+
+// ─────────────────── TOAST / SNACKBAR ───────────────────
+// Material snackbar: low surface, hairline, optional leading status dot + action.
+function Toast({ tone = 'neutral', icon, children, action, mono }) {
+  const map = {
+    neutral: { c: ZB.t1, dot: null },
+    info:    { c: '#7FB0FF', dot: '#4F8EFF' },
+    success: { c: '#5BD79B', dot: '#3DCB89' },
+    error:   { c: '#F18A8D', dot: '#E5484D' },
+    zap:     { c: ZB.orangeSoft, dot: ZB.orange },
+  }[tone];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px', borderRadius: 16,
+      background: ZB.s3, border: `1px solid ${ZB.line2}`, boxShadow: '0 12px 32px rgba(0,0,0,0.45)' }}>
+      {icon
+        ? (tone === 'zap'
+            ? <Bolt size={18} color={map.c} style={{ flex: 'none' }} />
+            : <Icon name={icon} size={19} color={map.c} sw={2.2} style={{ flex: 'none' }} />)
+        : map.dot && <span style={{ width: 9, height: 9, borderRadius: 999, background: map.dot, flex: 'none' }} />}
+      <span style={{ flex: 1, font: `${mono ? '500 13px' : '500 14px'}/1.4 ${mono ? FONT_MONO : FONT_BODY}`, color: ZB.t1 }}>{children}</span>
+      {action && <span style={{ font: `700 13.5px/1 ${FONT_BODY}`, color: map.dot || ZB.orangeSoft, flex: 'none', whiteSpace: 'nowrap' }}>{action}</span>}
+    </div>
+  );
+}
+
+// Showcase frame: toasts stacked over a dimmed reader, anchored above the nav.
+function ToastShowcase() {
+  return (
+    <Screen style={{ background: ZB.bg }}>
+      {/* dim app context behind */}
+      <div style={{ position: 'absolute', inset: 0, padding: `${SAFE_TOP + 26}px 26px 0`, opacity: 0.32 }}>
+        <div style={{ font: `400 19px/1.72 ${FONT_BODY}`, color: '#E7DECB' }}>Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.</div>
+      </div>
+
+      <div style={{ position: 'absolute', left: 16, right: 16, bottom: SAFE_BOT + 18, display: 'flex', flexDirection: 'column', gap: 11 }}>
+        <Toast tone="success" icon="check">Added Peter Pan to your shelf</Toast>
+        <Toast tone="zap" icon="zap" action="View">Wren zapped you 1,000 sats</Toast>
+        <Toast tone="error" icon="warn" action="Retry">Couldn't reach the network</Toast>
+        <Toast tone="info" icon="info">Quiz unlocks in 5 minutes</Toast>
+        <Toast tone="neutral" action="Undo">Removed from your shelf</Toast>
+      </div>
+    </Screen>
+  );
+}
+
+Object.assign(window, { LibraryFull, Toast, ToastShowcase });

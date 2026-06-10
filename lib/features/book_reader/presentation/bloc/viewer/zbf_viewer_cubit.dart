@@ -7,7 +7,6 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/data/paragraph_merger.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 
@@ -20,6 +19,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     int initialPage = 0,
   })  : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
         _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
+        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
         super(ZbfViewerState(currentPage: initialPage)) {
     _ensureSegment(initialPage);
     _prefetch(initialPage);
@@ -35,13 +35,10 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
   final Set<int> _loadedSegments = {};
+  final Set<int> _skippablePageSet;
 
   bool _isSkippable(int index) {
-    final page = handle.pageAt(index);
-    if (page.layoutType == BookLayoutType.processing) return false;
-    if (page.layoutType == BookLayoutType.illustration) return false;
-    if (!pageHasContent(page.blocks)) return true;
-    return isTableOfContentsPage(page.blocks);
+    return _skippablePageSet.contains(index);
   }
 
   void nextPage() {

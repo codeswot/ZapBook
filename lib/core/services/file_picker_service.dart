@@ -9,7 +9,7 @@ class FilePickerService {
   Future<File?> pickBook() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx', 'epub', 'txt'],
+      allowedExtensions: ['pdf', 'epub'],
     );
     final path = result?.files.single.path;
     if (path != null) {

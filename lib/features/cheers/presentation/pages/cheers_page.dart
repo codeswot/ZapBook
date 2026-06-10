@@ -15,11 +15,7 @@ import 'package:zapbook/widgets/zap_sheet.dart';
 import 'package:zapbook/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/theme/app_radii.dart';
+import 'package:zapbook/features/cheers/presentation/widgets/cheers_long_press_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 class CheersPage extends StatelessWidget {
@@ -44,15 +40,14 @@ class _CheersView extends StatefulWidget {
 class _CheersViewState extends State<_CheersView> {
   String _selectedFilter = 'All';
 
-
-  final List<String> _filters = ['All', 'Milestones', 'Zaps', 'Mine'];
+  final List<String> _filters = ['All', 'Milestones', 'Zaps', 'Notification'];
 
   List<CheersActivity> _filterActivities(List<CheersActivity> list) {
     final visible = list.where((a) => a.type != 'zap_ready');
     if (_selectedFilter == 'All') return visible.toList();
     if (_selectedFilter == 'Milestones') {
       return visible
-          .where((a) => a.type == 'milestone' || a.type == 'mine')
+          .where((a) => a.type == 'milestone' || a.type == 'notification')
           .toList();
     }
     if (_selectedFilter == 'Zaps') {
@@ -68,8 +63,8 @@ class _CheersViewState extends State<_CheersView> {
           )
           .toList();
     }
-    if (_selectedFilter == 'Mine') {
-      return visible.where((a) => a.type == 'mine').toList();
+    if (_selectedFilter == 'notification') {
+      return visible.where((a) => a.type == 'notification').toList();
     }
     return visible.toList();
   }
@@ -192,89 +187,10 @@ class _CheersViewState extends State<_CheersView> {
   }
 
   void _showLongPressMenu(BuildContext context, CheersActivity activity) {
-    final colors = context.colors;
-    final typography = context.typography;
-    final isMine = activity.type == 'mine';
-
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return AppSheet(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  AppProfileAvatar(url: activity.actorAvatar ?? '', size: 44),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isMine ? 'My Progress' : activity.actorName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: typography.h3.copyWith(color: colors.ink),
-                        ),
-                        Text(
-                          '${activity.activityDescription} • ${activity.bookTitle}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: typography.bodyS.copyWith(color: colors.slate),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (isMine) ...[
-                MenuRow(
-                  context: context,
-                  icon: LucideIcons.share2,
-                  label: 'Share progress externally',
-                  onTap: () async {
-                    context.pop();
-                    final text =
-                        'Look at my progress on ZapBook! Just ${activity.activityDescription} of "${activity.bookTitle}" ⚡';
-                    await SharePlus.instance.share(ShareParams(text: text));
-                  },
-                ),
-                const SizedBox(height: 10),
-                MenuRow(
-                  context: context,
-                  icon: LucideIcons.copy,
-                  label: 'Copy achievement text',
-                  onTap: () async {
-                    final messenger = context.toast;
-                    context.pop();
-                    final text =
-                        'Look at my progress on ZapBook! Just ${activity.activityDescription} of "${activity.bookTitle}" ⚡';
-                    await Clipboard.setData(ClipboardData(text: text));
-                    messenger.showInfo('Achievement text copied to clipboard!');
-                  },
-                ),
-              ] else ...[
-                MenuRow(
-                  context: context,
-                  icon: LucideIcons.zap,
-                  label: 'Zap ${activity.actorName}',
-                  tone: colors.bitcoin,
-                  onTap: () {
-                    context.pop();
-                    _showZapSheet(context, activity);
-                  },
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+    CheersLongPressSheet.show(
+      context,
+      activity: activity,
+      cubit: context.read<CheersCubit>(),
     );
   }
 
@@ -490,53 +406,6 @@ class _CheersViewState extends State<_CheersView> {
                     },
                   );
                 },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class MenuRow extends StatelessWidget {
-  const MenuRow({
-    super.key,
-    required this.context,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.tone,
-  });
-  final BuildContext context;
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color? tone;
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final color = tone ?? colors.ink;
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: colors.paper3,
-          borderRadius: AppRadii.br12,
-          border: Border.all(color: colors.hairline),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: context.typography.body.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
             ),
           ],

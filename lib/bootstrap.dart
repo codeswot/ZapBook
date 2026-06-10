@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
@@ -31,10 +32,11 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   });
 
   Bloc.observer = AppBlocObserver();
-  await configureDependencies();
-  await getIt<AiModelService>().ready;
 
   try {
+    await configureDependencies();
+    await FlutterGemma.initialize();
+    await getIt<AiModelService>().ready;
     final ok = await getIt<NostrSession>().login();
     if (ok) {
       unawaited(getIt<KeyPackageService>().publishIfNeeded());

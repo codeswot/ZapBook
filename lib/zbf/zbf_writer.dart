@@ -51,7 +51,7 @@ final class ZbfWriter {
       name == coverAsset || name == AssetNaming.sourceDocument;
 
   Uint8List _encodeJson(Object? json) {
-    return Uint8List.fromList(utf8.encode(jsonEncode(json)));
+    return Uint8List.fromList(JsonUtf8Encoder().convert(json));
   }
 
   String _fileName(ZbfBook book) {

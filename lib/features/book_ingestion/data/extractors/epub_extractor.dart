@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:xml/xml.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/features/book_ingestion/data/support/archive_support.dart';
@@ -71,11 +72,7 @@ ParsedContent _parseEpub(Uint8List bytes, String fallbackTitle) {
           CodeBlock(:final text) => text,
           _ => '',
         };
-        words += text
-            .trim()
-            .split(RegExp(r'\s+'))
-            .where((w) => w.isNotEmpty)
-            .length;
+        words += text.wordCount;
       }
       pageWords.add(words);
       if (words == 0) skippable.add(pageWords.length - 1);

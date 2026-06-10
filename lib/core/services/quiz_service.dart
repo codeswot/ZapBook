@@ -28,6 +28,9 @@ class QuizService {
   final _onSurface = StreamController<QuizSet>.broadcast();
   Stream<QuizSet> get onSurface => _onSurface.stream;
 
+  final _onCompleted = StreamController<QuizResult>.broadcast();
+  Stream<QuizResult> get onCompleted => _onCompleted.stream;
+
   int get poolSize => _pool.length;
   int get stashSize => _stash.length;
   bool get shouldGenerate =>
@@ -113,11 +116,13 @@ class QuizService {
     }
     final score =
         set.questions.isEmpty ? 0.0 : correct / set.questions.length;
-    _results[milestoneIdx] = QuizResult(
+    final result = QuizResult(
       milestoneIdx: milestoneIdx,
       status: QuizStatus.completed,
       score: score,
     );
+    _results[milestoneIdx] = result;
+    _onCompleted.add(result);
   }
 
   QuizResult? resultFor(int milestoneIdx) => _results[milestoneIdx];

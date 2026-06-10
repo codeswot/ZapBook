@@ -33,7 +33,7 @@ class IngestionPageCubit extends Cubit<IngestionPageState> {
 
   String _sanitizeTitle(String name) {
     String stripped = name;
-    final allowedExtensions = ['pdf', 'docx', 'epub', 'txt'];
+    final allowedExtensions = ['pdf', 'epub'];
     final lower = name.toLowerCase();
     for (final ext in allowedExtensions) {
       if (lower.endsWith('.$ext')) {

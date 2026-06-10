@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:ndk/domain_layer/entities/contact_list.dart';
 import 'package:ndk/domain_layer/entities/filter_fetched_ranges.dart';
 import 'package:ndk/domain_layer/entities/metadata.dart';
@@ -16,13 +18,13 @@ class DriftCacheManager implements CacheManager {
 
   // ── In-memory hot cache ─────────────────────────────────
 
-  final Map<String, UserRelayList> _userRelayLists = {};
-  final Map<String, RelaySet> _relaySets = {};
-  final Map<String, ContactList> _contactLists = {};
-  final Map<String, Metadata> _metadatas = {};
-  final Map<String, Nip05> _nip05s = {};
-  final Map<String, Nip01Event> _events = {};
-  final Map<String, FilterFetchedRangeRecord> _filterFetchedRanges = {};
+  final _userRelayLists = _BoundedMap<String, UserRelayList>(500);
+  final _relaySets = _BoundedMap<String, RelaySet>(500);
+  final _contactLists = _BoundedMap<String, ContactList>(500);
+  final _metadatas = _BoundedMap<String, Metadata>(500);
+  final _nip05s = _BoundedMap<String, Nip05>(500);
+  final _events = _BoundedMap<String, Nip01Event>(500);
+  final _filterFetchedRanges = _BoundedMap<String, FilterFetchedRangeRecord>(500);
 
   bool _closed = false;
 
@@ -413,5 +415,36 @@ class DriftCacheManager implements CacheManager {
     if (_closed) return;
     _closed = true;
     _store.closeStore();
+  }
+}
+
+class _BoundedMap<K, V> {
+  _BoundedMap(this.maxSize);
+  final int maxSize;
+  final LinkedHashMap<K, V> _map = LinkedHashMap<K, V>();
+
+  V? operator [](K key) {
+    final val = _map.remove(key);
+    if (val != null) {
+      _map[key] = val;
+    }
+    return val;
+  }
+
+  void operator []=(K key, V value) {
+    _map.remove(key);
+    _map[key] = value;
+    if (_map.length > maxSize) {
+      _map.remove(_map.keys.first);
+    }
+  }
+
+  V? remove(K key) => _map.remove(key);
+  void clear() => _map.clear();
+  Iterable<V> get values => _map.values;
+  Iterable<K> get keys => _map.keys;
+
+  void removeWhere(bool Function(K key, V value) test) {
+    _map.removeWhere(test);
   }
 }

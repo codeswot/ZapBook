@@ -39,6 +39,7 @@ import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/ai_model_service.dart' as _i842;
+import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
@@ -69,6 +70,8 @@ import 'package:zapbook/features/book_ingestion/data/di/ingestion_module.dart'
     as _i627;
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart'
     as _i751;
+import 'package:zapbook/features/book_reader/data/quiz_repository.dart'
+    as _i246;
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart'
     as _i898;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
@@ -289,6 +292,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
       ),
     );
+    gh.lazySingleton<_i246.QuizRepository>(
+      () => _i246.QuizRepository(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
+    );
     gh.lazySingleton<_i898.ReadingProgressRepository>(
       () => _i898.ReadingProgressRepository(
         gh<_i857.Ndk>(),
@@ -388,6 +394,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
+    );
+    gh.lazySingleton<_i1012.AiService>(
+      () => _i1012.AiService(
+        gh<_i842.AiModelService>(),
+        gh<_i246.QuizRepository>(),
+        gh<_i995.QuizService>(),
+      ),
     );
     gh.lazySingleton<_i244.ContactService>(
       () => _i244.ContactService(

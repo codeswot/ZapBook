@@ -135,9 +135,13 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
         final tags = (map['tags'] as List)
             .map((tag) => (tag as List).map((e) => e.toString()).toList())
             .toList();
+        String pubKey = map['pubkey'] as String;
+        if (pubKey.startsWith('npub')) {
+          pubKey = Nip19.decode(pubKey);
+        }
         final nipEvent = Nip01Event(
           id: map['id'] as String?,
-          pubKey: map['pubkey'] as String,
+          pubKey: pubKey,
           kind: (map['kind'] as num).toInt(),
           tags: tags,
           content: map['content'] as String,

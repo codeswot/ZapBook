@@ -10,6 +10,8 @@ import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
+import 'package:zapbook/core/services/ai_service.dart';
+import 'package:zapbook/core/domain/quiz_models.dart';
 
 int _systemClock() => DateTime.now().millisecondsSinceEpoch;
 
@@ -30,6 +32,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     MilestoneService? milestoneService,
     QuizService? quizService,
     ReadingStatsService? statsService,
+    AiService? aiService,
   }) {
     final density = bookDensityFromHandle(handle);
     final config = _configFor(density.totalWords);
@@ -42,6 +45,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       milestoneService: milestoneService,
       quizService: quizService,
       statsService: statsService,
+      aiService: aiService,
       handle: handle,
     );
   }
@@ -72,9 +76,28 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     this.quizService,
     this.statsService,
     this._handle,
+    this.aiService,
   }) : _deps = deps,
        _now = clock ?? _systemClock,
-       super(ReadingState.initial(deps));
+       super(ReadingState.initial(deps)) {
+    _quizSub = quizService?.onCompleted.listen((result) {
+      if (result.score == 1.0) {
+        final handle = _handle;
+        final ai = aiService;
+        if (handle != null && ai != null) {
+          try {
+            unawaited(
+              ai.prePrepareQuizzes(
+                bookId: bookId,
+                handle: handle,
+                currentMilestone: result.milestoneIdx + 1,
+              ),
+            );
+          } catch (_) {}
+        }
+      }
+    });
+  }
 
   final ReadingDeps _deps;
   final String bookId;
@@ -85,6 +108,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   final QuizService? quizService;
   final ReadingStatsService? statsService;
   final ZbfBookHandle? _handle;
+  final AiService? aiService;
 
   int get totalWords => _deps.density.totalWords;
 
@@ -96,6 +120,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   Timer? _timer;
   Timer? _saveTimer;
+  StreamSubscription<QuizResult>? _quizSub;
   bool _paused = false;
   bool _closed = false;
   bool _dirty = false;
@@ -133,6 +158,20 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       fraction: wordProgress,
     );
     _timer ??= Timer.periodic(heartbeat, (_) => tick());
+
+    final handle = _handle;
+    final ai = aiService;
+    if (handle != null && ai != null) {
+      try {
+        unawaited(
+          ai.prePrepareQuizzes(
+            bookId: bookId,
+            handle: handle,
+            currentMilestone: state.milestonesReached,
+          ),
+        );
+      } catch (_) {}
+    }
   }
 
   void openPage(int page) {
@@ -207,7 +246,9 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       if (effect is BookCompleted) {
         _save();
         milestoneService?.recordBookCompleted(bookId);
-        unawaited(milestoneService?.markCompleted(bookId, totalWords: totalWords));
+        unawaited(
+          milestoneService?.markCompleted(bookId, totalWords: totalWords),
+        );
         unawaited(milestoneService?.publishBookCompleted(bookId));
         statsService?.recordBookCompleted();
       }
@@ -248,8 +289,10 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   Future<void> close() {
     _timer?.cancel();
     _saveTimer?.cancel();
+    _quizSub?.cancel();
     _timer = null;
     _saveTimer = null;
+    _quizSub = null;
     _effects.close();
     return super.close();
   }

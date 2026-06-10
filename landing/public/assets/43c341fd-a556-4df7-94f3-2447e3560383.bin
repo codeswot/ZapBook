@@ -1,0 +1,137 @@
+/* ZapBook — Ember · add-book flow (revised).
+   No dedicated import pages. The "+" opens the OS file picker; on pick the book
+   lands in the library immediately with a processing indicator while a bottom
+   sheet collects optional title / author / genre. Processing runs in background. */
+
+const GENRES = ['Fiction', 'Classic', "Children's", 'Adventure', 'Fantasy', 'Non-fiction'];
+
+// ─────────────── ADD BOOK · METADATA SHEET (over the library) ───────────────
+// Slides up right after the file is picked. Processing happens in the background;
+// the fields are all optional and auto-filled where possible.
+function AddBookSheet() {
+  return (
+    <Screen style={{ background: ZB.bg }}>
+      <Sheet scrimChild={
+        <div style={{ padding: `${SAFE_TOP}px 20px 0` }}>
+          <h1 style={{ font: `700 28px/1.05 ${FONT_DISPLAY}`, letterSpacing: '-0.02em', color: ZB.t1, margin: 0 }}>Your shelf</h1>
+        </div>
+      }>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 22px 16px' }}>
+          <div style={{ font: `700 21px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.015em' }}>Add book</div>
+          <div style={{ width: 34, height: 34, borderRadius: 999, background: ZB.s3, border: `1px solid ${ZB.line}`, display: 'grid', placeItems: 'center' }}>
+            <Icon name="x" size={17} color={ZB.t2} sw={2.2} />
+          </div>
+        </div>
+
+        {/* file + live processing status */}
+        <div style={{ margin: '0 22px 18px', padding: 14, borderRadius: 18, background: ZB.s2, border: `1px solid ${ZB.line}`, display: 'flex', gap: 14, alignItems: 'center' }}>
+          {/* cover placeholder with spinner while it's generated */}
+          <div style={{ width: 54, height: 76, borderRadius: 11, flex: 'none', position: 'relative', overflow: 'hidden', background: ZB.s4, border: `1px solid ${ZB.line2}`, display: 'grid', placeItems: 'center' }}>
+            <Spinner size={22} sw={2.5} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: `600 14px/1.2 ${FONT_MONO}`, color: ZB.t1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>alice.epub</div>
+            <div style={{ font: `500 12px/1 ${FONT_MONO}`, color: ZB.t3, marginTop: 6 }}>1.2 MB</div>
+            <div style={{ marginTop: 10 }}><Processing label="Preparing on your device" pct={64} /></div>
+          </div>
+        </div>
+
+        {/* optional details */}
+        <div style={{ padding: '0 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 13 }}>
+            <span style={{ font: `700 13px/1 ${FONT_BODY}`, letterSpacing: '0.05em', textTransform: 'uppercase', color: ZB.t2 }}>Details</span>
+            <span style={{ font: `500 12px/1 ${FONT_BODY}`, color: ZB.t3 }}>optional · auto-filled</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 16 }}>
+            <Input label="Title" value="Alice's Adventures in Wonderland" />
+            <Input label="Author" value="Lewis Carroll" />
+          </div>
+
+          {/* genre chips */}
+          <div style={{ font: `600 12px/1 ${FONT_BODY}`, color: ZB.t3, marginBottom: 11, letterSpacing: '0.02em' }}>Genre</div>
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 18 }}>
+            {GENRES.map((g, i) => <Chip key={i} selected={i === 0 || i === 1}>{g}</Chip>)}
+          </div>
+        </div>
+
+        {/* footer — add now; processing keeps going in the background */}
+        <div style={{ padding: '4px 22px 4px' }}>
+          <Button variant="primary" size="lg" full>Add to shelf</Button>
+          <div style={{ textAlign: 'center', font: `500 12.5px/1.4 ${FONT_BODY}`, color: ZB.t3, marginTop: 13 }}>
+            It'll keep preparing in the background — you can edit details anytime.
+          </div>
+        </div>
+      </Sheet>
+    </Screen>
+  );
+}
+
+// ─────────────── LIBRARY · BOOK STILL PROCESSING ───────────────
+// The just-added book sits in the shelf right away with a processing indicator.
+function LibraryProcessing() {
+  const shelf = [
+    { t: 'Treasure Island', a: 'Stevenson', img: 'covers/treasure.png', hue: 'sky' },
+    { t: 'Peter Pan', a: 'Barrie', img: 'covers/peterpan.png', hue: 'purple' },
+    { t: 'The Jungle Book', a: 'Kipling', img: 'covers/jungle.png', hue: 'mint' },
+  ];
+  return (
+    <Screen style={{ background: ZB.bg }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: `${SAFE_TOP + 8}px 20px 8px` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div>
+            <div style={{ font: `600 13px/1 ${FONT_BODY}`, letterSpacing: '0.04em', color: ZB.orangeSoft, textTransform: 'uppercase', marginBottom: 8 }}>Library</div>
+            <h1 style={{ font: `700 28px/1.05 ${FONT_DISPLAY}`, letterSpacing: '-0.02em', color: ZB.t1, margin: 0 }}>Your shelf</h1>
+          </div>
+          <div style={{ display: 'flex', gap: 9 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: ZB.s2, border: `1px solid ${ZB.line}`, display: 'grid', placeItems: 'center' }}>
+              <Icon name="search" size={19} color={ZB.t2} />
+            </div>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: ZB.orange, display: 'grid', placeItems: 'center' }}>
+              <Icon name="plus" size={20} color="#241500" sw={2.4} />
+            </div>
+          </div>
+        </div>
+
+        {/* the processing book — appears immediately, indicator while it prepares */}
+        <div style={{ display: 'flex', gap: 14, padding: 13, borderRadius: 20, background: ZB.s2, border: `1px solid ${ZB.orangeLine}`, marginBottom: 22 }}>
+          {/* muted cover with centered spinner overlay */}
+          <div style={{ width: 56, height: 80, borderRadius: 11, flex: 'none', position: 'relative', overflow: 'hidden' }}>
+            <Cover w={56} h={80} hue="orange" img="covers/alice.png" r={11} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(14,11,7,0.62)', display: 'grid', placeItems: 'center' }}>
+              <Spinner size={24} sw={2.5} />
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ font: `700 16px/1.15 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em' }}>Alice's Adventures in Wonderland</div>
+            <div style={{ font: `500 12.5px/1 ${FONT_BODY}`, color: ZB.t3, marginTop: 6 }}>Lewis Carroll</div>
+            <div style={{ marginTop: 11, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, background: ZB.s4, overflow: 'hidden' }}>
+                <div style={{ width: '64%', height: '100%', background: ZB.orange, borderRadius: 999 }} />
+              </div>
+              <span style={{ font: `600 11px/1 ${FONT_MONO}`, color: ZB.orangeSoft }}>Preparing 64%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* the rest of the shelf, already ready */}
+        <div style={{ font: `700 16px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.01em', marginBottom: 13 }}>Ready to read</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 13 }}>
+          {shelf.map((b, i) => (
+            <Cover key={i} w={104} h={146} hue={b.hue} img={b.img} title={b.t} author={b.a} r={14} />
+          ))}
+        </div>
+      </div>
+
+      {/* unobtrusive toast confirming the add */}
+      <div style={{ position: 'absolute', left: 16, right: 16, bottom: SAFE_BOT + 84 }}>
+        <Toast tone="success" icon="check">Added to your shelf — preparing now</Toast>
+      </div>
+
+      <MNav active="library" />
+    </Screen>
+  );
+}
+
+Object.assign(window, { AddBookSheet, LibraryProcessing });

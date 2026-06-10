@@ -105,9 +105,9 @@ final class ZbfBookHandle {
 }
 
 Map<String, Object?> _decodeJsonObject(List<int> bytes) {
-  return jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
+  return utf8.decoder.fuse(const JsonDecoder()).convert(bytes) as Map<String, Object?>;
 }
 
 List<Object?> _decodeJsonArray(List<int> bytes) {
-  return jsonDecode(utf8.decode(bytes)) as List<Object?>;
+  return utf8.decoder.fuse(const JsonDecoder()).convert(bytes) as List<Object?>;
 }

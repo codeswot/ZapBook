@@ -37,4 +37,21 @@ extension StringFormatting on String {
   }
 
   bool get isNpub => startsWith('npub1') && length >= 63;
+
+  int get wordCount {
+    var count = 0;
+    var inWord = false;
+    final len = length;
+    for (var i = 0; i < len; i++) {
+      final char = codeUnitAt(i);
+      final isWhitespace = char == 32 || char == 10 || char == 13 || char == 9 || char == 11 || char == 12;
+      if (isWhitespace) {
+        inWord = false;
+      } else if (!inWord) {
+        inWord = true;
+        count++;
+      }
+    }
+    return count;
+  }
 }

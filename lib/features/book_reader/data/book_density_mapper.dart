@@ -1,15 +1,12 @@
 import 'package:reading_progress/reading_progress.dart';
 
 import 'package:zapbook/core/data/paragraph_merger.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 final RegExp _whitespace = RegExp(r'\s+');
 
-int countWords(String text) {
-  final trimmed = text.trim();
-  if (trimmed.isEmpty) return 0;
-  return trimmed.split(_whitespace).length;
-}
+int countWords(String text) => text.wordCount;
 
 int _blockWords(BookBlock block) {
   return switch (block) {
@@ -91,14 +88,16 @@ String extractMilestoneText(
     final text = _pageText(page);
     if (text.isEmpty) continue;
     pages.add(_PageText(i, text, cumulative));
-    cumulative += density.pageWords[i];
+    final pWords = density.pageWords.length > i ? density.pageWords[i] : countWords(text);
+    cumulative += pWords;
     if (cumulative >= endWord) break;
   }
 
   final buf = StringBuffer();
   var started = false;
   for (final p in pages) {
-    final pageEnd = p.startWord + density.pageWords[p.pageIndex];
+    final pWords = density.pageWords.length > p.pageIndex ? density.pageWords[p.pageIndex] : countWords(p.text);
+    final pageEnd = p.startWord + pWords;
     if (pageEnd <= startWord) continue;
     if (p.startWord >= endWord) break;
 

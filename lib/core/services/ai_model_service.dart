@@ -59,6 +59,7 @@ abstract class AiModelService {
   Stream<AiModelState> get aiState;
   AiModelState get currentState;
   Future<void> get ready;
+  Future<File> get model;
 
   Future<void> startDownload(String modelUrl, String expectedHash);
   Future<void> pauseDownload();
@@ -90,6 +91,12 @@ class AiServiceModelImpl implements AiModelService {
 
   @override
   Future<void> get ready => _readyCompleter.future;
+
+  @override
+  Future<File> get model async {
+    final path = await _getModelFilePath();
+    return File(path);
+  }
 
   Future<void> _init() async {
     final statusString = _prefs.getString(_statusKey);

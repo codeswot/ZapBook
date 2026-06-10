@@ -1,0 +1,113 @@
+/* ZapBook — Ember · You / profile page.
+   Identity (Nostr), reading stats, sats wallet, circles, settings. Dark Material You. */
+
+// settings row
+function SRow({ icon, tint, label, value, badge, last, chevron = true }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '9px 4px',
+      borderBottom: last ? 'none' : `1px solid ${ZB.line}` }}>
+      <div style={{ width: 32, height: 32, borderRadius: 9, flex: 'none', display: 'grid', placeItems: 'center',
+        background: tint || ZB.s3, border: `1px solid ${ZB.line}` }}>
+        <Icon name={icon} size={16} color={ZB.t2} sw={1.9} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ font: `600 14.5px/1.2 ${FONT_BODY}`, color: ZB.t1 }}>{label}</div>
+        {value && <div style={{ font: `500 12px/1.2 ${FONT_MONO}`, color: ZB.t3, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>}
+      </div>
+      {badge}
+      {chevron && <Icon name="chevron" size={18} color={ZB.t3} />}
+    </div>
+  );
+}
+
+function YouProfile() {
+  return (
+    <Screen style={{ background: ZB.bg }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: `${SAFE_TOP + 4}px 20px 6px` }}>
+        {/* header row */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+          <h1 style={{ font: `700 28px/1.05 ${FONT_DISPLAY}`, letterSpacing: '-0.02em', color: ZB.t1, margin: 0 }}>You</h1>
+        </div>
+
+        {/* identity card — mirrors the wallet card: profile row + npub divider */}
+        <div style={{ borderRadius: 20, background: ZB.s2, border: `1px solid ${ZB.line}`, marginBottom: 9, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 15, padding: 13 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 999, flex: 'none', display: 'grid', placeItems: 'center', fontSize: 26, background: ZB.s3, border: `1px solid ${ZB.purpleLine}` }}>🌿</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ font: `700 20px/1.05 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.015em' }}>Wren</div>
+              <div style={{ font: `500 12px/1 ${FONT_BODY}`, color: ZB.t3, marginTop: 7 }}>reading since 2026</div>
+            </div>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: ZB.s3, border: `1px solid ${ZB.line}`, display: 'grid', placeItems: 'center', flex: 'none' }}>
+              <Icon name="pen" size={15} color={ZB.t2} sw={1.9} />
+            </div>
+          </div>
+          {/* npub divider row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: `1px solid ${ZB.line}`, background: ZB.s1 }}>
+            <Icon name="key" size={16} color={ZB.purpleSoft} sw={1.9} />
+            <span style={{ flex: 1, minWidth: 0, font: `500 13px/1 ${FONT_MONO}`, color: ZB.t2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>npub1q8s7f…j0zq</span>
+            <Icon name="copy" size={15} color={ZB.t3} />
+          </div>
+        </div>
+
+        {/* sats wallet card — balance + lightning address */}
+        <div style={{ borderRadius: 18, background: ZB.s2, border: `1px solid ${ZB.orangeLine}`, marginBottom: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 13 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, flex: 'none', background: ZB.orangeDim, border: `1px solid ${ZB.orangeLine}`, display: 'grid', placeItems: 'center' }}>
+              <Bolt size={21} color={ZB.orangeSoft} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ font: `500 12px/1 ${FONT_BODY}`, color: ZB.t3, marginBottom: 6 }}>Earned reading</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                <span style={{ font: `700 26px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>48,250</span>
+                <span style={{ font: `600 14px/1 ${FONT_BODY}`, color: ZB.orangeSoft }}>sats</span>
+              </div>
+            </div>
+            <Button variant="tonal" size="sm">Wallet</Button>
+          </div>
+          {/* lightning address row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: `1px solid ${ZB.line}`, background: ZB.s1 }}>
+            <Icon name="wallet" size={16} color={ZB.t3} sw={1.9} />
+            <span style={{ flex: 1, minWidth: 0, font: `500 13px/1 ${FONT_MONO}`, color: ZB.t2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>wren@walletofsatoshi.com</span>
+            <Icon name="copy" size={15} color={ZB.t3} />
+          </div>
+        </div>
+
+        {/* reading stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 10 }}>
+          {[
+            { v: '12', l: 'day streak', c: ZB.orangeSoft, icon: 'flame' },
+            { v: '6', l: 'books read', c: ZB.t1, icon: 'book' },
+            { v: '32', l: 'milestones', c: ZB.purpleSoft, icon: 'flag' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: ZB.s1, border: `1px solid ${ZB.line}`, borderRadius: 14, padding: '11px 12px' }}>
+              <Icon name={s.icon} size={15} color={s.c} sw={2} />
+              <div style={{ font: `700 21px/1 ${FONT_DISPLAY}`, color: ZB.t1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 8 }}>{s.v}</div>
+              <div style={{ font: `500 11px/1.2 ${FONT_BODY}`, color: ZB.t3, marginTop: 4 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* settings group */}
+        <div style={{ font: `700 12px/1 ${FONT_BODY}`, letterSpacing: '0.05em', textTransform: 'uppercase', color: ZB.t3, marginBottom: 4 }}>Account</div>
+        <div style={{ padding: '0 0 4px' }}>
+          <SRow icon="cpu" label="AI model" value="Gemma 3n · ready"
+            badge={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 999, background: 'rgba(61,203,137,0.13)', border: '1px solid rgba(61,203,137,0.32)', marginRight: 8 }}><span style={{ width: 6, height: 6, borderRadius: 999, background: '#3DCB89' }} /><span style={{ font: `600 11px/1 ${FONT_BODY}`, color: '#5BD79B' }}>On</span></span>} />
+          <SRow icon="shield" label="Manage keys" value="Back up or export your nsec" last />
+        </div>
+
+        <div style={{ font: `700 12px/1 ${FONT_BODY}`, letterSpacing: '0.05em', textTransform: 'uppercase', color: ZB.t3, margin: '10px 0 2px' }}>App</div>
+        <div>
+          <SRow icon="bell" label="Notifications" />
+          <SRow icon="moon" label="Appearance" value="Dark" />
+          <SRow icon="logout" label="Sign out" chevron={false} last />
+        </div>
+
+        <div style={{ textAlign: 'center', font: `500 11.5px/1 ${FONT_MONO}`, color: ZB.t3, margin: '8px 0 2px' }}>ZapBook · v0.4.0</div>
+      </div>
+
+      <MNav active="you" />
+    </Screen>
+  );
+}
+
+Object.assign(window, { YouProfile });

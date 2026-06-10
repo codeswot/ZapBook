@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart';
@@ -44,10 +45,16 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
     final pageCount = document.pages.count;
     final metadata = _readMetadata(document, fallbackTitle);
 
+    final lineCache = <int, List<TextLine>>{};
     final builder = _PdfChapterBuilder(fallbackTitle: metadata.title);
     final limit = pageCount < 10 ? pageCount : 10;
     for (var index = 0; index < limit; index++) {
-      builder.addPage(_buildPage(extractor, index));
+      final lines = extractor.extractTextLines(
+        startPageIndex: index,
+        endPageIndex: index,
+      );
+      lineCache[index] = lines;
+      builder.addPage(_buildPage(extractor, index, cachedLines: lines));
     }
     if (pageCount > limit) {
       for (var index = limit; index < pageCount; index++) {
@@ -58,13 +65,13 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
     final pageWords = <int>[];
     final skippable = <int>[];
     for (var i = 0; i < pageCount; i++) {
-      final lines = extractor.extractTextLines(
+      final lines = lineCache[i] ?? extractor.extractTextLines(
         startPageIndex: i,
         endPageIndex: i,
       );
       var wordCount = 0;
       for (final line in lines) {
-        wordCount += line.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+        wordCount += line.text.wordCount;
       }
       pageWords.add(wordCount);
       if (wordCount == 0) {
@@ -111,8 +118,8 @@ List<BookPage> _extractRange(Uint8List bytes, int startPageIndex, int endPageInd
   }
 }
 
-_PdfPageDraft _buildPage(PdfTextExtractor extractor, int index) {
-  final lines = extractor.extractTextLines(
+_PdfPageDraft _buildPage(PdfTextExtractor extractor, int index, {List<TextLine>? cachedLines}) {
+  final lines = cachedLines ?? extractor.extractTextLines(
     startPageIndex: index,
     endPageIndex: index,
   );
