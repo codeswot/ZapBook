@@ -1,8 +1,6 @@
 # ZapBook
 
-A Nostr-native social reading app for Flutter (iOS + Android). Read books
-together in circles of 1–100 people, hit AI-verified milestones, and zap each
-other sats as encouragement.
+A Nostr-native social reading app for Flutter (iOS + Android). Read books together in circles of 1–100 people, hit milestones share your progress with your circle and zap each other sats as encouragement.
 
 This repository is open source under the [MIT License](LICENSE).
 
@@ -58,8 +56,6 @@ seam the reader feature consumes later.
 | ------ |----------------------------------------------------------- |
 | PDF    | page 1 rendered to 600×900                                 |
 | EPUB   | cover image declared in `content.opf`                      |
-| DOCX   | first embedded image                                       |
-| TXT    | generated amber (`#F5A623`) canvas with white title text |
 
 ## Getting started
 
