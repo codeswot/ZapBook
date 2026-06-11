@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3g -Dorg.gradle.vfs.watch=false -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=1"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx5g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.daemon=false"
 
 jobs:
   build:
@@ -32,6 +32,17 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -45,7 +56,7 @@ jobs:
         run: flutter test
 
       - name: Build APK Release
-        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+        run: flutter build apk --release --split-per-abi
 
       - name: Create GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
