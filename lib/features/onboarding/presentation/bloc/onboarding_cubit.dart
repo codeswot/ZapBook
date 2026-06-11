@@ -43,15 +43,15 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         emit(state.copyWith(step: OnboardingStep.wallet));
         break;
       case OnboardingStep.wallet:
-        if (state.hasExistingProfile) {
-          completeOnboarding();
+        if (state.hasExistingProfile || state.importedNsec.isNotEmpty) {
+          completeOnboarding(publish: false);
         } else {
           emit(state.copyWith(step: OnboardingStep.profile));
           _onEnterProfile();
         }
         break;
       case OnboardingStep.profile:
-        completeOnboarding();
+        completeOnboarding(publish: true);
         break;
     }
   }
@@ -201,7 +201,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  Future<bool> completeOnboarding() async {
+  Future<bool> completeOnboarding({bool publish = true}) async {
     final npub = state.generatedNpub;
     final nsec = state.generatedNsec;
     if (npub.isEmpty || nsec.isEmpty) {
@@ -210,7 +210,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
     emit(state.copyWith(isBusy: true));
     await _completeOnboarding(npub: npub, nsec: nsec);
-    if (_nostrService.isLoggedIn) {
+    if (publish && _nostrService.isLoggedIn) {
       unawaited(
         _nostrService.publishMetadata(
           displayName: state.displayName.isNotEmpty ? state.displayName : null,

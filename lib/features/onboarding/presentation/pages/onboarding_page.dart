@@ -44,8 +44,8 @@ class _OnboardingViewState extends State<_OnboardingView> {
     super.dispose();
   }
 
-  void _onComplete(BuildContext context, OnboardingCubit cubit) async {
-    final saved = await cubit.completeOnboarding();
+  void _onComplete(BuildContext context, OnboardingCubit cubit, {required bool publish}) async {
+    final saved = await cubit.completeOnboarding(publish: publish);
     if (saved && context.mounted) {
       const HomeRoute().go(context);
     }
@@ -102,7 +102,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
                     nsecController: _nsecController,
                     lnAddressController: _lnAddressController,
                     displayNameController: _displayNameController,
-                    onComplete: () => _onComplete(context, cubit),
+                    onComplete: (publish) => _onComplete(context, cubit, publish: publish),
                   ),
                 ],
               ),

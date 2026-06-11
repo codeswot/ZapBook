@@ -11,7 +11,7 @@ class ObFooter extends StatelessWidget {
   final TextEditingController nsecController;
   final TextEditingController lnAddressController;
   final TextEditingController displayNameController;
-  final VoidCallback onComplete;
+  final void Function(bool publish) onComplete;
 
   const ObFooter({
     super.key,
@@ -127,20 +127,20 @@ class ObFooter extends StatelessWidget {
       case OnboardingStep.profile:
         return [
           AppButton(
-            label: "Continue",
+            label: "Save and continue",
             fullWidth: true,
             variant: AppButtonVariant.purple,
             iconRight: state.isBusy ? null : LucideIcons.check,
             isLoading: state.isBusy,
-            onTap: onComplete,
+            onTap: () => onComplete(true),
           ),
-          if (!state.isBusy) ...[
+          if (!state.isBusy && state.hasExistingProfile) ...[
             const SizedBox(height: 12),
             AppButton(
               label: "Skip",
               variant: AppButtonVariant.ghost,
               fullWidth: true,
-              onTap: onComplete,
+              onTap: () => onComplete(false),
             ),
           ],
         ];
