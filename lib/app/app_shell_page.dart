@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/core/cubit/ai_model_cubit.dart';
-import 'package:zapbook/app/ai_model_headsup_bridge.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
@@ -43,7 +41,6 @@ class AppShellPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AiModelCubit>(create: (_) => getIt<AiModelCubit>()),
         BlocProvider<HeadsUpCubit>(create: (_) => getIt<HeadsUpCubit>()),
         BlocProvider<LibraryCubit>(create: (_) => getIt<LibraryCubit>()),
         BlocProvider<IngestionQueueCubit>(
@@ -53,19 +50,17 @@ class AppShellPage extends StatelessWidget {
           create: (_) => getIt<IngestionPageCubit>(),
         ),
       ],
-      child: AiModelHeadsUpBridge(
-        child: Scaffold(
-          body: Column(
-            children: [
-              const AppHeadsUpBanner(),
-              Expanded(child: child),
-            ],
-          ),
-          bottomNavigationBar: AppBottomNavigation(
-            activeId: _getActiveTabId(location),
-            onSelected: (id) => _onTabSelected(context, id),
-            safeAreaBottom: MediaQuery.of(context).padding.bottom + 8,
-          ),
+      child: Scaffold(
+        body: Column(
+          children: [
+            const AppHeadsUpBanner(),
+            Expanded(child: child),
+          ],
+        ),
+        bottomNavigationBar: AppBottomNavigation(
+          activeId: _getActiveTabId(location),
+          onSelected: (id) => _onTabSelected(context, id),
+          safeAreaBottom: MediaQuery.of(context).padding.bottom + 8,
         ),
       ),
     );

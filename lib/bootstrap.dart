@@ -4,18 +4,18 @@ import 'dart:developer';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
-import 'package:flutter_gemma/flutter_gemma.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
-import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
@@ -35,8 +35,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   try {
     await configureDependencies();
-    await FlutterGemma.initialize();
-    await getIt<AiModelService>().ready;
     final ok = await getIt<NostrSession>().login();
     if (ok) {
       unawaited(getIt<KeyPackageService>().publishIfNeeded());

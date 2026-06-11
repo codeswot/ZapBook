@@ -15,7 +15,6 @@ import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/quiz_service.dart';
-import 'package:zapbook/core/services/ai_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
@@ -72,7 +71,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       milestoneService: getIt<MilestoneService>(),
       quizService: getIt<QuizService>(),
       statsService: getIt<ReadingStatsService>(),
-      aiService: getIt<AiService>(),
     );
     _milestone = getIt<MilestoneService>();
     _progressStream = _milestone.watchProgress(widget.handle.manifest.id);

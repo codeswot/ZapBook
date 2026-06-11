@@ -16,7 +16,6 @@ import 'package:injectable/injectable.dart' as _i526;
 import 'package:marmot_dart/marmot_dart.dart' as _i970;
 import 'package:ndk/ndk.dart' as _i857;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
-import 'package:zapbook/core/cubit/ai_model_cubit.dart' as _i421;
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart' as _i68;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
@@ -38,13 +37,10 @@ import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
-import 'package:zapbook/core/services/ai_model_service.dart' as _i842;
-import 'package:zapbook/core/services/ai_service.dart' as _i1012;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
 import 'package:zapbook/core/services/density_service.dart' as _i740;
-import 'package:zapbook/core/services/device_capability_service.dart' as _i447;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
@@ -239,9 +235,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1.ZbfWriter>(() => ingestionModule.zbfWriter());
     gh.lazySingleton<_i1.ZbfReader>(() => ingestionModule.zbfReader());
     gh.lazySingleton<_i539.HeadsUpCubit>(() => _i539.HeadsUpCubit());
-    gh.lazySingleton<_i447.DeviceCapabilityService>(
-      () => _i447.DeviceCapabilityServiceImpl(),
-    );
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -278,12 +271,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i362.ZapService>(
       () => _i362.ZapService(gh<_i96.LnurlService>(), gh<_i857.Ndk>()),
-    );
-    gh.lazySingleton<_i842.AiModelService>(
-      () => _i842.AiServiceModelImpl(
-        gh<_i460.SharedPreferences>(),
-        gh<_i447.DeviceCapabilityService>(),
-      ),
     );
     gh.lazySingleton<_i397.KeyPackageService>(
       () => _i397.KeyPackageService(
@@ -366,9 +353,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
-    gh.lazySingleton<_i421.AiModelCubit>(
-      () => _i421.AiModelCubit(gh<_i842.AiModelService>()),
-    );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
     );
@@ -394,13 +378,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
-    );
-    gh.lazySingleton<_i1012.AiService>(
-      () => _i1012.AiService(
-        gh<_i842.AiModelService>(),
-        gh<_i246.QuizRepository>(),
-        gh<_i995.QuizService>(),
-      ),
     );
     gh.lazySingleton<_i244.ContactService>(
       () => _i244.ContactService(

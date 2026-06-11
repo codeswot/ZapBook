@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum OnboardingStep { welcome, identity, wallet, model, profile }
+enum OnboardingStep { welcome, identity, wallet, profile }
 
 class OnboardingState extends Equatable {
   final OnboardingStep step;

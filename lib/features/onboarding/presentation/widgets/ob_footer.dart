@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/cubit/ai_model_cubit.dart';
-import 'package:zapbook/core/services/ai_model_service.dart';
-import 'package:zapbook/core/services/device_capability_service.dart';
 import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/widgets/app_button.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
@@ -12,8 +8,6 @@ import 'package:zapbook/widgets/app_toast.dart';
 class ObFooter extends StatelessWidget {
   final OnboardingState state;
   final OnboardingCubit cubit;
-  final DeviceCapability? capability;
-  final AiModelState? aiState;
   final TextEditingController nsecController;
   final TextEditingController lnAddressController;
   final TextEditingController displayNameController;
@@ -23,8 +17,6 @@ class ObFooter extends StatelessWidget {
     super.key,
     required this.state,
     required this.cubit,
-    required this.capability,
-    required this.aiState,
     required this.nsecController,
     required this.lnAddressController,
     required this.displayNameController,
@@ -87,7 +79,7 @@ class ObFooter extends StatelessWidget {
                       cubit.state.error ?? "Invalid secret key",
                     );
                   }
-                  return;
+                    return;
                 }
               }
               cubit.nextStep();
@@ -127,66 +119,6 @@ class ObFooter extends StatelessWidget {
           const SizedBox(height: 12),
           AppButton(
             label: "Skip — set up later",
-            variant: AppButtonVariant.ghost,
-            fullWidth: true,
-            onTap: () => cubit.nextStep(),
-          ),
-        ];
-      case OnboardingStep.model:
-        final status = aiState?.status ?? AiModelStatus.notSet;
-        final isDownloading = status == AiModelStatus.downloading;
-        final isReady = status == AiModelStatus.ready;
-        final isCapable =
-            capability != null && capability != DeviceCapability.incapable;
-
-        if (capability == null) {
-          return [
-            AppButton(
-              label: "Detecting device…",
-              fullWidth: true,
-              isLoading: true,
-            ),
-          ];
-        }
-
-        if (!isCapable) {
-          return [
-            AppButton(
-              label: "Continue",
-              fullWidth: true,
-              iconRight: LucideIcons.arrowRight,
-              onTap: () => cubit.nextStep(),
-            ),
-          ];
-        }
-
-        return [
-          AppButton(
-            label: (isReady || isDownloading) ? "Continue" : "Download model",
-            fullWidth: true,
-            variant: AppButtonVariant.purple,
-            iconRight: isReady
-                ? LucideIcons.arrowRight
-                : isDownloading
-                ? LucideIcons.arrowRight
-                : LucideIcons.download,
-            onTap: (isReady || isDownloading)
-                ? () => cubit.nextStep()
-                : () async {
-                    final url = capability?.modelUrl;
-                    final hash = capability?.expectedHash;
-                    final ai = context.read<AiModelCubit>();
-                    if (url != null && hash != null) {
-                      ai.startDownload(url, hash);
-                    } else {
-                      ai.skipSetup();
-                      cubit.nextStep();
-                    }
-                  },
-          ),
-          const SizedBox(height: 12),
-          AppButton(
-            label: "Skip for now",
             variant: AppButtonVariant.ghost,
             fullWidth: true,
             onTap: () => cubit.nextStep(),

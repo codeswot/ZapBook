@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/core/services/ai_model_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
-import 'package:zapbook/core/cubit/ai_model_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_header.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_footer.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_welcome_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_identity_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_wallet_view.dart';
-import 'package:zapbook/features/onboarding/presentation/widgets/ob_model_view.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_profile_view.dart';
 
 class OnboardingPage extends StatelessWidget {
@@ -20,11 +17,8 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<OnboardingCubit>(create: (_) => getIt<OnboardingCubit>()),
-        BlocProvider<AiModelCubit>(create: (_) => getIt<AiModelCubit>()),
-      ],
+    return BlocProvider<OnboardingCubit>(
+      create: (_) => getIt<OnboardingCubit>(),
       child: const _OnboardingView(),
     );
   }
@@ -61,70 +55,61 @@ class _OnboardingViewState extends State<_OnboardingView> {
   Widget build(BuildContext context) {
     final cubit = context.read<OnboardingCubit>();
 
-    return BlocBuilder<AiModelCubit, AiModelState>(
-      buildWhen: (prev, curr) =>
-          prev.status != curr.status ||
-          prev.downloadProgress != curr.downloadProgress,
-      builder: (context, aiState) {
-        return BlocListener<OnboardingCubit, OnboardingState>(
-          listener: (context, state) {
-            if (state.isComplete) {
-              const HomeRoute().go(context);
-            }
-          },
-          child: BlocBuilder<OnboardingCubit, OnboardingState>(
-            builder: (context, state) {
-              final currentStepIndex = _getStepIndex(state.step);
-
-              return Scaffold(
-                backgroundColor: context.colors.paper,
-                body: SafeArea(
-                  child: Column(
-                    children: [
-                      if (currentStepIndex > 0)
-                        ObHeader(
-                          currentStep: currentStepIndex,
-                          onBack: () => cubit.previousStep(),
-                        ),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              child: _buildStepContent(state, cubit, aiState),
-                            ),
-                            AppFadeOverlay.top(
-                              color: context.colors.paper,
-                              height: 16,
-                            ),
-                            AppFadeOverlay.bottom(
-                              color: context.colors.paper,
-                              height: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                      ObFooter(
-                        state: state,
-                        cubit: cubit,
-                        capability: aiState.capability,
-                        aiState: aiState,
-                        nsecController: _nsecController,
-                        lnAddressController: _lnAddressController,
-                        displayNameController: _displayNameController,
-                        onComplete: () => _onComplete(context, cubit),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
+    return BlocListener<OnboardingCubit, OnboardingState>(
+      listener: (context, state) {
+        if (state.isComplete) {
+          const HomeRoute().go(context);
+        }
       },
+      child: BlocBuilder<OnboardingCubit, OnboardingState>(
+        builder: (context, state) {
+          final currentStepIndex = _getStepIndex(state.step);
+
+          return Scaffold(
+            backgroundColor: context.colors.paper,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  if (currentStepIndex > 0)
+                    ObHeader(
+                      currentStep: currentStepIndex,
+                      onBack: () => cubit.previousStep(),
+                    ),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          child: _buildStepContent(state, cubit),
+                        ),
+                        AppFadeOverlay.top(
+                          color: context.colors.paper,
+                          height: 16,
+                        ),
+                        AppFadeOverlay.bottom(
+                          color: context.colors.paper,
+                          height: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ObFooter(
+                    state: state,
+                    cubit: cubit,
+                    nsecController: _nsecController,
+                    lnAddressController: _lnAddressController,
+                    displayNameController: _displayNameController,
+                    onComplete: () => _onComplete(context, cubit),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -136,17 +121,14 @@ class _OnboardingViewState extends State<_OnboardingView> {
         return 1;
       case OnboardingStep.wallet:
         return 2;
-      case OnboardingStep.model:
-        return 3;
       case OnboardingStep.profile:
-        return 4;
+        return 3;
     }
   }
 
   Widget _buildStepContent(
     OnboardingState state,
     OnboardingCubit cubit,
-    AiModelState aiState,
   ) {
     switch (state.step) {
       case OnboardingStep.welcome:
@@ -167,8 +149,6 @@ class _OnboardingViewState extends State<_OnboardingView> {
           cubit: cubit,
           lnAddressController: _lnAddressController,
         );
-      case OnboardingStep.model:
-        return ObModelView(capability: aiState.capability, aiState: aiState);
       case OnboardingStep.profile:
         if (_displayNameController.text != state.displayName) {
           _displayNameController.text = state.displayName;

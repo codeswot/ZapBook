@@ -43,9 +43,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         emit(state.copyWith(step: OnboardingStep.wallet));
         break;
       case OnboardingStep.wallet:
-        emit(state.copyWith(step: OnboardingStep.model));
-        break;
-      case OnboardingStep.model:
         if (state.hasExistingProfile) {
           completeOnboarding();
         } else {
@@ -69,11 +66,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       case OnboardingStep.wallet:
         emit(state.copyWith(step: OnboardingStep.identity));
         break;
-      case OnboardingStep.model:
-        emit(state.copyWith(step: OnboardingStep.wallet));
-        break;
       case OnboardingStep.profile:
-        emit(state.copyWith(step: OnboardingStep.model));
+        emit(state.copyWith(step: OnboardingStep.wallet));
         break;
     }
   }
