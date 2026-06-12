@@ -13,25 +13,26 @@ class HomeContinueReadingCard extends StatelessWidget {
     required this.book,
     required this.onTap,
     required this.onBookOpen,
+    this.onLongPress,
   });
 
   final HomeDashboardBook book;
   final VoidCallback onTap;
   final VoidCallback onBookOpen;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
     final cover = book.coverPath;
-    final image = cover != null && File(cover).existsSync()
-        ? FileImage(File(cover))
-        : null;
+    final image = cover != null ? FileImage(File(cover)) : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: BouncingInteractiveWidget(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

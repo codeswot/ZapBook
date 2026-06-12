@@ -24,7 +24,9 @@ class DriftCacheManager implements CacheManager {
   final _metadatas = _BoundedMap<String, Metadata>(500);
   final _nip05s = _BoundedMap<String, Nip05>(500);
   final _events = _BoundedMap<String, Nip01Event>(500);
-  final _filterFetchedRanges = _BoundedMap<String, FilterFetchedRangeRecord>(500);
+  final _filterFetchedRanges = _BoundedMap<String, FilterFetchedRangeRecord>(
+    500,
+  );
 
   bool _closed = false;
 
@@ -151,9 +153,7 @@ class DriftCacheManager implements CacheManager {
     for (final m in metadatas) {
       _metadatas[m.pubKey] = m;
     }
-    for (final m in metadatas) {
-      _store.saveMetadata(m);
-    }
+    _store.saveMetadatas(metadatas);
   }
 
   @override
@@ -167,11 +167,23 @@ class DriftCacheManager implements CacheManager {
 
   @override
   Future<List<Metadata?>> loadMetadatas(List<String> pubKeys) async {
-    final results = <Metadata?>[];
+    final byKey = <String, Metadata>{};
+    final misses = <String>{};
     for (final pk in pubKeys) {
-      results.add(await loadMetadata(pk));
+      final mem = _metadatas[pk];
+      if (mem != null) {
+        byKey[pk] = mem;
+      } else {
+        misses.add(pk);
+      }
     }
-    return results;
+    if (misses.isNotEmpty) {
+      for (final meta in _store.loadMetadatas(misses.toList())) {
+        _metadatas[meta.pubKey] = meta;
+        byKey[meta.pubKey] = meta;
+      }
+    }
+    return [for (final pk in pubKeys) byKey[pk]];
   }
 
   @override
@@ -238,9 +250,7 @@ class DriftCacheManager implements CacheManager {
   @override
   Future<void> removeAllContactLists() async {
     _contactLists.clear();
-    for (final key in _contactLists.keys.toList()) {
-      _store.removeContactList(key);
-    }
+    _store.removeAllContactLists();
   }
 
   // ── User Relay Lists ────────────────────────────────────

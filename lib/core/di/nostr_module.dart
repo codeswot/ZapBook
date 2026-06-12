@@ -4,11 +4,20 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/cache/drift_cache_manager.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 
+final class NostrCacheWarmup {
+  const NostrCacheWarmup._();
+
+  static Future<NostrCacheStore>? _warmStore;
+
+  static Future<NostrCacheStore> start() =>
+      _warmStore ??= NostrCacheStore.open();
+}
+
 @module
 abstract class NostrModule {
   @preResolve
   @lazySingleton
-  Future<NostrCacheStore> cacheStore() async => NostrCacheStore.open();
+  Future<NostrCacheStore> cacheStore() => NostrCacheWarmup.start();
 
   @preResolve
   @lazySingleton

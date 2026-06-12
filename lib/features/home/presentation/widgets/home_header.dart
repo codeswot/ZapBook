@@ -9,9 +9,11 @@ class HomeHeader extends StatelessWidget {
 
   final int streakCount;
 
+  static final DateFormat _dayFormat = DateFormat('EEEE');
+
   String _getGreeting() {
     final now = DateTime.now();
-    final dayName = DateFormat('EEEE').format(now).toUpperCase();
+    final dayName = _dayFormat.format(now).toUpperCase();
     final hour = now.hour;
     if (hour < 12) {
       return '$dayName MORNING';

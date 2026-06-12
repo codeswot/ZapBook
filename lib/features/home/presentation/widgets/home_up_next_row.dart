@@ -12,10 +12,12 @@ class HomeUpNextRow extends StatelessWidget {
     super.key,
     required this.books,
     required this.onBookTap,
+    this.onBookLongPress,
   });
 
   final List<HomeDashboardBook> books;
   final void Function(BuildContext, HomeDashboardBook) onBookTap;
+  final void Function(BuildContext, HomeDashboardBook)? onBookLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -60,12 +62,15 @@ class HomeUpNextRow extends StatelessWidget {
             itemBuilder: (context, index) {
               final book = books[index];
               final cover = book.coverPath;
-              final image = cover != null && File(cover).existsSync() ? FileImage(File(cover)) : null;
+              final image = cover != null ? FileImage(File(cover)) : null;
 
               return Padding(
                 padding: const EdgeInsets.only(right: 14),
                 child: BouncingInteractiveWidget(
                   onTap: () => onBookTap(context, book),
+                  onLongPress: onBookLongPress != null
+                      ? () => onBookLongPress!(context, book)
+                      : null,
                   child: Stack(
                     children: [
                       AppBookCover(
@@ -81,11 +86,14 @@ class HomeUpNextRow extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: (book.isShared ? colors.plum : colors.slate).withValues(alpha: 0.85),
+                            color: (book.isShared ? colors.plum : colors.slate)
+                                .withValues(alpha: 0.85),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            book.isShared ? LucideIcons.users : LucideIcons.user,
+                            book.isShared
+                                ? LucideIcons.users
+                                : LucideIcons.user,
                             size: 12,
                             color: colors.white,
                           ),

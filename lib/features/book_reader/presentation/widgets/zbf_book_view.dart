@@ -52,12 +52,10 @@ class _ZbfBookViewState extends State<ZbfBookView> {
       return const ZbfViewerMessage(text: 'No pages were extracted');
     }
     return BlocProvider(
-      create: (_) => ZbfViewerCubit(
-        handle: widget.handle,
-        rasterizer: widget.rasterizer,
-      ),
-      child: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
-        builder: (context, state) {
+      create: (_) =>
+          ZbfViewerCubit(handle: widget.handle, rasterizer: widget.rasterizer),
+      child: Builder(
+        builder: (context) {
           return Column(
             children: [
               Expanded(
@@ -73,7 +71,13 @@ class _ZbfBookViewState extends State<ZbfBookView> {
                   ),
                 ),
               ),
-              _PageFooter(index: state.currentPage, total: manifest.pageCount),
+              BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
+                buildWhen: (prev, curr) => prev.currentPage != curr.currentPage,
+                builder: (context, state) => _PageFooter(
+                  index: state.currentPage,
+                  total: manifest.pageCount,
+                ),
+              ),
             ],
           );
         },
@@ -149,11 +153,10 @@ class _PageBlocks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        for (final block in blocks)
-          ZbfBlockView(block: block, asset: handle.asset),
-      ],
+    return ListView.builder(
+      itemCount: blocks.length,
+      itemBuilder: (context, index) =>
+          ZbfBlockView(block: blocks[index], asset: handle.asset),
     );
   }
 }

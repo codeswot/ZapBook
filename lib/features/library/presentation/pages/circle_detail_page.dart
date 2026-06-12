@@ -12,10 +12,8 @@ import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.d
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
-import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_settings_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/reader_actions_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_bottom_bar.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_shimmer.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_my_progress_card.dart';
@@ -116,32 +114,6 @@ class _Loaded extends StatelessWidget {
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
   }
 
-  Future<void> _delete(BuildContext context) async {
-    final cubit = context.read<CircleDetailCubit>();
-    final confirmed = await CircleConfirmSheet.show(
-      context,
-      title: 'Delete this circle?',
-      message:
-          'Everyone except you will be removed from “${book.title}”. '
-          'The book stays in your library as a private copy.',
-      action: 'Delete circle',
-    );
-    if (confirmed) await cubit.dissolve(bookId);
-  }
-
-  Future<void> _leave(BuildContext context) async {
-    final cubit = context.read<CircleDetailCubit>();
-    final confirmed = await CircleConfirmSheet.show(
-      context,
-      title: 'Leave this circle?',
-      message:
-          'You’ll be removed from “${book.title}” and it will leave your '
-          'library on this device.',
-      action: 'Leave circle',
-    );
-    if (confirmed) await cubit.leave(bookId);
-  }
-
   void _openSettings(BuildContext context) {
     CircleSettingsSheet.show(
       context,
@@ -226,12 +198,6 @@ class _Loaded extends StatelessWidget {
               ],
             ],
           ),
-        ),
-        CircleDetailBottomBar(
-          isOwner: state.isAdmin,
-          processing: state.processing,
-          onDelete: () => _delete(context),
-          onLeave: () => _leave(context),
         ),
       ],
     );

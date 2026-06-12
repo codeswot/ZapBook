@@ -50,13 +50,18 @@ class BookGroupDatasource {
 
   Future<List<LibraryBook>> loadLibrary() async {
     final groups = await _marmot.listGroups();
+    final bookGroups = groups
+        .where((group) => group.name.startsWith(_groupPrefix))
+        .toList();
+    final reconstructed = await Future.wait(
+      bookGroups.map((group) => _reconstruct(group.id)),
+    );
     final books = <LibraryBook>[];
-    for (final group in groups) {
-      if (!group.name.startsWith(_groupPrefix)) continue;
-      final book = await _reconstruct(group.id);
+    for (var i = 0; i < bookGroups.length; i++) {
+      final book = reconstructed[i];
       if (book == null) continue;
-      _groupIdByBookId[book.id] = group.id;
-      books.add(book.copyWith(memberCount: group.memberCount));
+      _groupIdByBookId[book.id] = bookGroups[i].id;
+      books.add(book.copyWith(memberCount: bookGroups[i].memberCount));
     }
     return books;
   }
@@ -198,8 +203,7 @@ class BookGroupDatasource {
       currentWordCount: currentWordCount,
       totalWordCount: totalWordCount,
     );
-    final event =
-        await _marmot.sendStructured(npub, groupId, payload.toJson());
+    final event = await _marmot.sendStructured(npub, groupId, payload.toJson());
     _publish(event);
   }
 
@@ -221,7 +225,10 @@ class BookGroupDatasource {
   Future<List<ShareSkip>> shareBook(String bookId, String memberNpub) =>
       shareBookWith(bookId, [memberNpub]);
 
-  Future<List<ShareSkip>> shareBookWith(String bookId, List<String> memberNpubs) async {
+  Future<List<ShareSkip>> shareBookWith(
+    String bookId,
+    List<String> memberNpubs,
+  ) async {
     final groupId = await _resolveGroupId(bookId);
     if (groupId == null) {
       throw StateError('Book not found: $bookId');
@@ -233,7 +240,9 @@ class BookGroupDatasource {
       final keyPackage = await _keyPackages.fetchKeyPackage(memberNpub);
       if (keyPackage == null) {
         _log.warning('No key package for $memberNpub — skipped');
-        skipped.add(ShareSkip(npub: memberNpub, reason: ShareSkipReason.noKeyPackage));
+        skipped.add(
+          ShareSkip(npub: memberNpub, reason: ShareSkipReason.noKeyPackage),
+        );
         continue;
       }
       final change = await _marmot.addMember(groupId, keyPackage);
@@ -285,7 +294,11 @@ class BookGroupDatasource {
         final change = await _marmot.leaveGroup(groupId);
         _publish(change.evolutionEventJson);
       } on Object catch (error, stack) {
-        _log.warning('leaveGroup failed for $bookId, will still delete locally', error, stack);
+        _log.warning(
+          'leaveGroup failed for $bookId, will still delete locally',
+          error,
+          stack,
+        );
       }
       await _marmot.deleteGroup(groupId);
     }
@@ -429,7 +442,13 @@ class BookGroupDatasource {
 
     final source = handle.sourceDocument();
     if (source != null) {
-      await _uploadBlob(npub, groupId, source, 'application/octet-stream', '$bookId.source');
+      await _uploadBlob(
+        npub,
+        groupId,
+        source,
+        'application/octet-stream',
+        '$bookId.source',
+      );
     }
 
     for (final segment in _segmenter.segment(handle)) {
@@ -453,19 +472,18 @@ class BookGroupDatasource {
       final segmentRefs = _latestSegmentRefs(messages);
       if (segmentRefs.isEmpty) return false;
 
-      final zips = <Uint8List>[];
-      for (final ref in segmentRefs) {
-        zips.add(await _downloadAndDecrypt(group.id, ref));
-      }
-
       final sourceRef = _latestMediaRef(messages, contains: '.source');
       Uint8List? sourceBytes;
       if (sourceRef != null) {
         sourceBytes = await _downloadAndDecrypt(group.id, sourceRef);
       }
 
-      final zbfBytes = _segmenter.reassemble(zips, sourceBytes: sourceBytes);
-      await _fileStore.writeZbf(bookId, zbfBytes);
+      final zbf = await _fileStore.zbfFile(bookId);
+      await _segmenter.reassembleToFile(
+        _downloadSegments(group.id, segmentRefs),
+        zbf.path,
+        sourceBytes: sourceBytes,
+      );
       return true;
     } on Object catch (error, stack) {
       _log.warning('Download book content failed for $bookId', error, stack);
@@ -498,6 +516,15 @@ class BookGroupDatasource {
         stack,
       );
       return null;
+    }
+  }
+
+  Stream<Uint8List> _downloadSegments(
+    String groupId,
+    List<MarmotMediaRef> refs,
+  ) async* {
+    for (final ref in refs) {
+      yield await _downloadAndDecrypt(groupId, ref);
     }
   }
 

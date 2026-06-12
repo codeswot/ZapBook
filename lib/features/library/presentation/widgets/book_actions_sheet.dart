@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
+import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
@@ -51,6 +56,41 @@ class BookActionsSheet extends StatelessWidget {
         onLeave: onLeave,
       ),
     );
+  }
+
+  static Future<void> showWithId(BuildContext context, String bookId) async {
+    final repository = getIt<LibraryRepository>();
+    final book = await repository.getBook(bookId);
+    if (book == null) return;
+
+    final identity = getIt<IdentityLocalDataSource>();
+    final datasource = getIt<BookGroupDatasource>();
+    final contacts = getIt<ContactService>();
+
+    final myNpub = await identity.readNpub();
+    final admins = await datasource.adminNpubs(bookId);
+    final isAdmin = myNpub != null && admins.contains(myNpub);
+
+    String ownerLabel = '';
+    if (!isAdmin && admins.isNotEmpty) {
+      final contact = await contacts.resolve(admins.first);
+      ownerLabel = contact.label;
+    }
+
+    if (context.mounted) {
+      await showModalBottomSheet(
+        context: context,
+        useRootNavigator: true,
+        backgroundColor: context.colors.transparent,
+        builder: (_) => BookActionsSheet(
+          book: book,
+          isAdmin: isAdmin,
+          ownerLabel: ownerLabel,
+          onDelete: () => repository.deleteBook(bookId),
+          onLeave: () => repository.leaveCircle(bookId),
+        ),
+      );
+    }
   }
 
   Future<void> _onDeleteTap(BuildContext context) async {

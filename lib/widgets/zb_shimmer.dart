@@ -16,8 +16,7 @@ class ZbShimmer extends StatefulWidget {
   State<ZbShimmer> createState() => _ZbShimmerState();
 }
 
-class _ZbShimmerState extends State<ZbShimmer>
-    with TickerProviderStateMixin {
+class _ZbShimmerState extends State<ZbShimmer> with TickerProviderStateMixin {
   late final AnimationController _shimmerController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
@@ -42,54 +41,60 @@ class _ZbShimmerState extends State<ZbShimmer>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: 0.6 + (_pulseController.value * 0.4),
-              child: Transform.scale(
-                scale: 0.95 + (_pulseController.value * 0.05),
-                child: child,
-              ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colors.nostrTint.withValues(alpha: 0.4),
-                  colors.bitcoinTint.withValues(alpha: 0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colors.nostrTint2.withValues(alpha: 0.5),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RotationTransition(
-                  turns: _pulseController,
-                  child: Icon(LucideIcons.sparkles, size: 14, color: colors.nostr),
+        RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: 0.6 + (_pulseController.value * 0.4),
+                child: Transform.scale(
+                  scale: 0.95 + (_pulseController.value * 0.05),
+                  child: child,
                 ),
-                const SizedBox(width: 8),
-                ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [colors.nostr, colors.bitcoin2],
-                  ).createShader(bounds),
-                  child: Text(
-                    widget.message,
-                    style: context.typography.caption.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colors.nostrTint.withValues(alpha: 0.4),
+                    colors.bitcoinTint.withValues(alpha: 0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: colors.nostrTint2.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RotationTransition(
+                    turns: _pulseController,
+                    child: Icon(
+                      LucideIcons.sparkles,
+                      size: 14,
+                      color: colors.nostr,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [colors.nostr, colors.bitcoin2],
+                    ).createShader(bounds),
+                    child: Text(
+                      widget.message,
+                      style: context.typography.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -102,10 +107,10 @@ class _ZbShimmerState extends State<ZbShimmer>
               widthFactor: line == 0
                   ? 1.0
                   : line == 1
-                      ? 0.85
-                      : line == 2
-                          ? 0.95
-                          : 0.6,
+                  ? 0.85
+                  : line == 2
+                  ? 0.95
+                  : 0.6,
               base: colors.mist,
               highlight: colors.paper4,
             ),
@@ -133,26 +138,28 @@ class _ShimmerBar extends StatelessWidget {
     return FractionallySizedBox(
       alignment: Alignment.centerLeft,
       widthFactor: widthFactor,
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, child) {
-          final shift = controller.value * 2 - 1;
-          return ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [base, highlight, base],
-              stops: const [0.3, 0.5, 0.7],
-              begin: Alignment(shift - 1, -0.2),
-              end: Alignment(shift + 1, 0.2),
-            ).createShader(bounds),
-            child: child,
-          );
-        },
-        child: Container(
-          height: 14,
-          decoration: BoxDecoration(
-            color: base,
-            borderRadius: BorderRadius.circular(7),
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final shift = controller.value * 2 - 1;
+            return ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [base, highlight, base],
+                stops: const [0.3, 0.5, 0.7],
+                begin: Alignment(shift - 1, -0.2),
+                end: Alignment(shift + 1, 0.2),
+              ).createShader(bounds),
+              child: child,
+            );
+          },
+          child: Container(
+            height: 14,
+            decoration: BoxDecoration(
+              color: base,
+              borderRadius: BorderRadius.circular(7),
+            ),
           ),
         ),
       ),

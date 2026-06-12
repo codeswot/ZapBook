@@ -42,7 +42,24 @@ class _CheersViewState extends State<_CheersView> {
 
   final List<String> _filters = ['All', 'Milestones', 'Zaps', 'Notification'];
 
+  List<CheersActivity>? _cachedSource;
+  String? _cachedFilter;
+  List<CheersActivity>? _cachedResult;
+
   List<CheersActivity> _filterActivities(List<CheersActivity> list) {
+    if (identical(list, _cachedSource) &&
+        _selectedFilter == _cachedFilter &&
+        _cachedResult != null) {
+      return _cachedResult!;
+    }
+    final result = _computeFiltered(list);
+    _cachedSource = list;
+    _cachedFilter = _selectedFilter;
+    _cachedResult = result;
+    return result;
+  }
+
+  List<CheersActivity> _computeFiltered(List<CheersActivity> list) {
     final visible = list.where((a) => a.type != 'zap_ready');
     if (_selectedFilter == 'All') return visible.toList();
     if (_selectedFilter == 'Milestones') {

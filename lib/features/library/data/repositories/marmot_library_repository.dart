@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
@@ -68,10 +69,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   }) async {
     await _ensureLoaded();
     final enriched = _density.enrich(book);
-    final added = await _datasource.addBook(
-      enriched,
-      contentHash: contentHash,
-    );
+    final added = await _datasource.addBook(enriched, contentHash: contentHash);
     unawaited(_density.precalc(added.id, enriched));
     _upsert(added);
     return added;
@@ -101,8 +99,7 @@ class MarmotLibraryRepository implements LibraryRepository {
     final now = DateTime.now();
     await _datasource.sendProgress(id, now);
     _books = _books
-        .map((book) =>
-            book.id == id ? book.copyWith(lastOpenedAt: now) : book)
+        .map((book) => book.id == id ? book.copyWith(lastOpenedAt: now) : book)
         .toList(growable: false);
     _emit();
   }
@@ -112,14 +109,19 @@ class MarmotLibraryRepository implements LibraryRepository {
       shareBookWith(id, [memberNpub]);
 
   @override
-  Future<List<ShareSkip>> shareBookWith(String id, List<String> memberNpubs) async {
+  Future<List<ShareSkip>> shareBookWith(
+    String id,
+    List<String> memberNpubs,
+  ) async {
     final skipped = await _datasource.shareBookWith(id, memberNpubs);
     final added = memberNpubs.length - skipped.length;
     if (added > 0) {
       _books = _books
-          .map((book) => book.id == id
-              ? book.copyWith(memberCount: book.memberCount + added)
-              : book)
+          .map(
+            (book) => book.id == id
+                ? book.copyWith(memberCount: book.memberCount + added)
+                : book,
+          )
           .toList(growable: false);
       _emit();
     }
@@ -218,10 +220,13 @@ class MarmotLibraryRepository implements LibraryRepository {
   Future<void> removeBookMember(String id, String memberNpub) async {
     await _datasource.removeMember(id, memberNpub);
     _books = _books
-        .map((book) => book.id == id
-            ? book.copyWith(
-                memberCount: book.memberCount > 1 ? book.memberCount - 1 : 1)
-            : book)
+        .map(
+          (book) => book.id == id
+              ? book.copyWith(
+                  memberCount: book.memberCount > 1 ? book.memberCount - 1 : 1,
+                )
+              : book,
+        )
         .toList(growable: false);
     _emit();
   }
@@ -257,16 +262,30 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   Future<void> _ensureContent() async {
-    for (final book in List<LibraryBook>.from(_books)) {
+    final books = List<LibraryBook>.from(_books);
+    const concurrency = 3;
+    for (var i = 0; i < books.length; i += concurrency) {
+      final batch = books.sublist(
+        i,
+        i + concurrency > books.length ? books.length : i + concurrency,
+      );
+      await Future.wait(batch.map(_hydrateBook));
+    }
+  }
+
+  Future<void> _hydrateBook(LibraryBook book) async {
+    try {
       if (book.coverPath == null) {
         final coverPath = await _datasource.hydrateCover(book.id);
         if (coverPath != null) _patchCover(book.id, coverPath);
       }
-      if (await _fileStore.hasZbf(book.id)) continue;
+      if (await _fileStore.hasZbf(book.id)) return;
       final ok = await _datasource.downloadBookContent(book.id);
-      if (!ok) continue;
+      if (!ok) return;
       final coverPath = await _fileStore.coverPathIfExists(book.id);
       if (coverPath != null) _patchCover(book.id, coverPath);
+    } on Object catch (error, stack) {
+      _log.warning('Content hydration failed for ${book.id}', error, stack);
     }
   }
 
@@ -278,10 +297,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   void _upsert(LibraryBook book, {bool emit = true}) {
-    _books = [
-      book,
-      ..._books.where((existing) => existing.id != book.id),
-    ];
+    _books = [book, ..._books.where((existing) => existing.id != book.id)];
     if (emit) _emit();
   }
 
@@ -310,27 +326,29 @@ class MarmotLibraryRepository implements LibraryRepository {
     required String? genre,
     Uint8List? coverImage,
   }) async {
-    final file = File(zbfPath);
-    final source = ZipDecoder().decodeBytes(await file.readAsBytes());
-    final manifest = BookManifest.fromJson(
-      jsonDecode(utf8.decode(source.findFile('manifest.json')!.content))
-          as Map<String, Object?>,
-    ).copyWith(title: title, author: author, genre: genre);
-    final coverAsset = manifest.coverAsset;
+    await Isolate.run(() async {
+      final file = File(zbfPath);
+      final source = ZipDecoder().decodeBytes(await file.readAsBytes());
+      final manifest = BookManifest.fromJson(
+        jsonDecode(utf8.decode(source.findFile('manifest.json')!.content))
+            as Map<String, Object?>,
+      ).copyWith(title: title, author: author, genre: genre);
+      final coverAsset = manifest.coverAsset;
 
-    final output = Archive();
-    for (final entry in source.files) {
-      if (entry.name == 'manifest.json') continue;
-      if (coverImage != null && entry.name == coverAsset) continue;
-      output.addFile(ArchiveFile(entry.name, entry.size, entry.content));
-    }
-    final manifestBytes = utf8.encode(jsonEncode(manifest.toJson()));
-    output.addFile(
-      ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
-    );
-    if (coverImage != null) {
-      output.addFile(ArchiveFile(coverAsset, coverImage.length, coverImage));
-    }
-    await file.writeAsBytes(ZipEncoder().encodeBytes(output), flush: true);
+      final output = Archive();
+      for (final entry in source.files) {
+        if (entry.name == 'manifest.json') continue;
+        if (coverImage != null && entry.name == coverAsset) continue;
+        output.addFile(ArchiveFile(entry.name, entry.size, entry.content));
+      }
+      final manifestBytes = utf8.encode(jsonEncode(manifest.toJson()));
+      output.addFile(
+        ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
+      );
+      if (coverImage != null) {
+        output.addFile(ArchiveFile(coverAsset, coverImage.length, coverImage));
+      }
+      await file.writeAsBytes(ZipEncoder().encodeBytes(output), flush: true);
+    });
   }
 }

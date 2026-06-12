@@ -65,9 +65,12 @@ class _AvatarImage extends StatelessWidget {
         placeholderBuilder: (_) => _AvatarPlaceholder(size: size),
       );
     }
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
+      memCacheWidth: cacheSize,
+      memCacheHeight: cacheSize,
       placeholder: (_, u) => _AvatarPlaceholder(size: size),
       errorWidget: (_, err, stack) => _AvatarPlaceholder(size: size),
     );

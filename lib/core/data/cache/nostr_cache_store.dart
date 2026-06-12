@@ -31,10 +31,12 @@ class NostrCacheStore {
       )
     ''');
     db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_events_pub_key ON events(pub_key)');
+      'CREATE INDEX IF NOT EXISTS idx_events_pub_key ON events(pub_key)',
+    );
     db.execute('CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind)');
     db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)');
+      'CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)',
+    );
 
     db.execute('''
       CREATE TABLE IF NOT EXISTS metadatas (
@@ -69,7 +71,8 @@ class NostrCacheStore {
 
   void saveEvent(Nip01Event event) {
     final stmt = _db.prepare(
-        'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    );
     stmt.execute([
       event.id,
       event.pubKey,
@@ -88,7 +91,8 @@ class NostrCacheStore {
     _db.execute('BEGIN TRANSACTION');
     try {
       final stmt = _db.prepare(
-          'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      );
       for (final e in events) {
         stmt.execute([
           e.id,
@@ -237,7 +241,8 @@ class NostrCacheStore {
 
   void saveMetadata(Metadata metadata) {
     final stmt = _db.prepare(
-        'INSERT OR REPLACE INTO metadatas (pub_key, content, updated_at, refreshed_at) VALUES (?, ?, ?, ?)');
+      'INSERT OR REPLACE INTO metadatas (pub_key, content, updated_at, refreshed_at) VALUES (?, ?, ?, ?)',
+    );
     stmt.execute([
       metadata.pubKey,
       jsonEncode(metadata.toJson()),
@@ -248,12 +253,51 @@ class NostrCacheStore {
   }
 
   Metadata? loadMetadata(String pubKey) {
-    final result =
-        _db.select('SELECT * FROM metadatas WHERE pub_key = ?', [pubKey]);
+    final result = _db.select('SELECT * FROM metadatas WHERE pub_key = ?', [
+      pubKey,
+    ]);
     if (result.isEmpty) return null;
-    final row = result.first;
+    return _metadataFromRow(result.first);
+  }
+
+  List<Metadata> loadMetadatas(List<String> pubKeys) {
+    if (pubKeys.isEmpty) return const [];
+    final placeholders = List.filled(pubKeys.length, '?').join(', ');
+    final result = _db.select(
+      'SELECT * FROM metadatas WHERE pub_key IN ($placeholders)',
+      pubKeys,
+    );
+    return result.map(_metadataFromRow).toList();
+  }
+
+  void saveMetadatas(List<Metadata> metadatas) {
+    if (metadatas.isEmpty) return;
+    final stmt = _db.prepare(
+      'INSERT OR REPLACE INTO metadatas (pub_key, content, updated_at, refreshed_at) VALUES (?, ?, ?, ?)',
+    );
+    _db.execute('BEGIN');
+    try {
+      for (final metadata in metadatas) {
+        stmt.execute([
+          metadata.pubKey,
+          jsonEncode(metadata.toJson()),
+          metadata.updatedAt,
+          metadata.refreshedTimestamp,
+        ]);
+      }
+      _db.execute('COMMIT');
+    } catch (_) {
+      _db.execute('ROLLBACK');
+      rethrow;
+    } finally {
+      stmt.close();
+    }
+  }
+
+  Metadata _metadataFromRow(Row row) {
     final meta = Metadata.fromJson(
-        jsonDecode(row['content'] as String) as Map<String, dynamic>);
+      jsonDecode(row['content'] as String) as Map<String, dynamic>,
+    );
     meta.pubKey = row['pub_key'] as String;
     meta.updatedAt = row['updated_at'] as int?;
     meta.refreshedTimestamp = row['refreshed_at'] as int?;
@@ -267,7 +311,8 @@ class NostrCacheStore {
     );
     return result.map((row) {
       final meta = Metadata.fromJson(
-          jsonDecode(row['content'] as String) as Map<String, dynamic>);
+        jsonDecode(row['content'] as String) as Map<String, dynamic>,
+      );
       meta.pubKey = row['pub_key'] as String;
       meta.updatedAt = row['updated_at'] as int?;
       meta.refreshedTimestamp = row['refreshed_at'] as int?;
@@ -287,18 +332,16 @@ class NostrCacheStore {
 
   void saveContactList(ContactList cl) {
     final stmt = _db.prepare(
-        'INSERT OR REPLACE INTO contact_lists (pub_key, contacts, created_at) VALUES (?, ?, ?)');
-    stmt.execute([
-      cl.pubKey,
-      jsonEncode(cl.contacts),
-      cl.createdAt,
-    ]);
+      'INSERT OR REPLACE INTO contact_lists (pub_key, contacts, created_at) VALUES (?, ?, ?)',
+    );
+    stmt.execute([cl.pubKey, jsonEncode(cl.contacts), cl.createdAt]);
     stmt.close();
   }
 
   ContactList? loadContactList(String pubKey) {
-    final result =
-        _db.select('SELECT * FROM contact_lists WHERE pub_key = ?', [pubKey]);
+    final result = _db.select('SELECT * FROM contact_lists WHERE pub_key = ?', [
+      pubKey,
+    ]);
     if (result.isEmpty) return null;
     final row = result.first;
     return ContactList(
@@ -313,11 +356,16 @@ class NostrCacheStore {
     _db.execute('DELETE FROM contact_lists WHERE pub_key = ?', [pubKey]);
   }
 
+  void removeAllContactLists() {
+    _db.execute('DELETE FROM contact_lists');
+  }
+
   // ── User Relay Lists ────────────────────────────────────
 
   void saveUserRelayList(UserRelayList list) {
     final stmt = _db.prepare(
-        'INSERT OR REPLACE INTO user_relay_lists (pub_key, relays, created_at, refreshed_at) VALUES (?, ?, ?, ?)');
+      'INSERT OR REPLACE INTO user_relay_lists (pub_key, relays, created_at, refreshed_at) VALUES (?, ?, ?, ?)',
+    );
     final relaysJson = <String, Map<String, dynamic>>{};
     for (final entry in list.relays.entries) {
       relaysJson[entry.key] = {
@@ -335,8 +383,10 @@ class NostrCacheStore {
   }
 
   UserRelayList? loadUserRelayList(String pubKey) {
-    final result = _db
-        .select('SELECT * FROM user_relay_lists WHERE pub_key = ?', [pubKey]);
+    final result = _db.select(
+      'SELECT * FROM user_relay_lists WHERE pub_key = ?',
+      [pubKey],
+    );
     if (result.isEmpty) return null;
     final row = result.first;
     final relaysJson =
@@ -344,8 +394,10 @@ class NostrCacheStore {
     final relays = <String, ReadWriteMarker>{};
     for (final entry in relaysJson.entries) {
       final v = entry.value as Map<String, dynamic>;
-      relays[entry.key] =
-          ReadWriteMarker.from(read: v['read'] as bool, write: v['write'] as bool);
+      relays[entry.key] = ReadWriteMarker.from(
+        read: v['read'] as bool,
+        write: v['write'] as bool,
+      );
     }
     return UserRelayList(
       pubKey: row['pub_key'] as String,

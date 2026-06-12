@@ -5,7 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/di/marmot_module.dart';
+import 'package:zapbook/core/di/nostr_module.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
 import 'package:zapbook/core/services/contact_service.dart';
@@ -34,6 +37,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Bloc.observer = AppBlocObserver();
 
   try {
+    unawaited(MarmotWarmup.start());
+    unawaited(NostrCacheWarmup.start());
+    unawaited(SharedPreferences.getInstance());
     await configureDependencies();
     final ok = await getIt<NostrSession>().login();
     if (ok) {
@@ -41,8 +47,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
       unawaited(getIt<ContactService>().warm());
     }
     final stats = getIt<ReadingStatsService>();
-    await stats.load();
-    unawaited(stats.publishDailyHeartbeat());
+    unawaited(stats.load().then((_) => stats.publishDailyHeartbeat()));
   } on Exception catch (error, stack) {
     Logger.root.warning('Bootstrap setup Error', error, stack);
   }

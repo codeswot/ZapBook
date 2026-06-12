@@ -12,6 +12,7 @@ import 'package:zapbook/features/home/presentation/widgets/home_continue_reading
 import 'package:zapbook/features/home/presentation/widgets/home_stats_row.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_up_next_row.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_shimmer.dart';
+import 'package:zapbook/features/library/presentation/widgets/book_actions_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 class HomePage extends StatelessWidget {
@@ -55,6 +56,10 @@ class _HomeView extends StatelessWidget {
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
   }
 
+  void _onBookLongPress(BuildContext context, HomeDashboardBook book) {
+    BookActionsSheet.showWithId(context, book.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -90,6 +95,10 @@ class _HomeView extends StatelessWidget {
             final books = dashboard.books;
             final stats = dashboard.stats;
             final streakCount = stats.dayStreak;
+            final currentBook = _lastOpened(books);
+            final otherBooks = currentBook == null
+                ? books
+                : books.where((b) => b.id != currentBook.id).toList();
 
             return Column(
               children: [
@@ -147,34 +156,25 @@ class _HomeView extends StatelessWidget {
                       : ListView(
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           children: [
-                            (() {
-                              final currentBook = _lastOpened(books);
-                              if (currentBook != null) {
-                                return HomeContinueReadingCard(
-                                  book: currentBook,
-                                  onTap: () => _onCardTap(context, currentBook),
-                                  onBookOpen: () =>
-                                      _onBookOpen(context, currentBook),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            })(),
+                            if (currentBook != null)
+                              HomeContinueReadingCard(
+                                book: currentBook,
+                                onTap: () => _onCardTap(context, currentBook),
+                                onBookOpen: () =>
+                                    _onBookOpen(context, currentBook),
+                                onLongPress: () =>
+                                    _onBookLongPress(context, currentBook),
+                              ),
                             const SizedBox(height: 20),
                             HomeStatsRow(stats: stats),
-                            const SizedBox(height: 24),
-                            (() {
-                              final currentBook = _lastOpened(books);
-                              final otherBooks = books
-                                  .where((b) => b.id != currentBook?.id)
-                                  .toList();
-                              if (otherBooks.isNotEmpty) {
-                                return HomeUpNextRow(
-                                  books: otherBooks,
-                                  onBookTap: _onCardTap,
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            })(),
+                            if (otherBooks.isNotEmpty) ...[
+                              const SizedBox(height: 24),
+                              HomeUpNextRow(
+                                books: otherBooks,
+                                onBookTap: _onCardTap,
+                                onBookLongPress: _onBookLongPress,
+                              ),
+                            ],
                           ],
                         ),
                 ),

@@ -15,8 +15,12 @@ final class AssetNaming {
     return 'ch_$padded.json';
   }
 
+  static final RegExp _chapterFilePattern = RegExp(r'ch_(\d+)\.json$');
+  static final RegExp _nonAlphanumeric = RegExp(r'[^a-z0-9]+');
+  static final RegExp _edgeDashes = RegExp(r'^-+|-+$');
+
   static int chapterIndexFromFile(String fileName) {
-    final match = RegExp(r'ch_(\d+)\.json$').firstMatch(fileName);
+    final match = _chapterFilePattern.firstMatch(fileName);
     final group = match?.group(1);
     if (group == null) {
       throw ArgumentError.value(fileName, 'fileName', 'Not a chapter file');
@@ -27,8 +31,8 @@ final class AssetNaming {
   static String slugify(String title) {
     final lower = title.toLowerCase().trim();
     final slug = lower
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
+        .replaceAll(_nonAlphanumeric, '-')
+        .replaceAll(_edgeDashes, '');
     return slug.isEmpty ? 'book' : slug;
   }
 }

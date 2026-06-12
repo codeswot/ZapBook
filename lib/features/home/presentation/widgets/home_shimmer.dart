@@ -194,10 +194,7 @@ class _HomeShimmerState extends State<HomeShimmer>
                     color: colors.hairline2,
                     borderRadius: 12.0,
                   ),
-                  child: SizedBox(
-                    width: 96,
-                    height: 132,
-                  ),
+                  child: SizedBox(width: 96, height: 132),
                 ),
               );
             },
@@ -224,27 +221,29 @@ class _ShimmerElement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) {
-        final shift = controller.value * 2 - 1;
-        return ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [colors.mist, colors.paper4, colors.mist],
-            stops: const [0.3, 0.5, 0.7],
-            begin: Alignment(shift - 1, -0.2),
-            end: Alignment(shift + 1, 0.2),
-          ).createShader(bounds),
-          child: child,
-        );
-      },
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: colors.mist,
-          borderRadius: borderRadius,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, child) {
+          final shift = controller.value * 2 - 1;
+          return ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [colors.mist, colors.paper4, colors.mist],
+              stops: const [0.3, 0.5, 0.7],
+              begin: Alignment(shift - 1, -0.2),
+              end: Alignment(shift + 1, 0.2),
+            ).createShader(bounds),
+            child: child,
+          );
+        },
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: colors.mist,
+            borderRadius: borderRadius,
+          ),
         ),
       ),
     );
@@ -252,10 +251,7 @@ class _ShimmerElement extends StatelessWidget {
 }
 
 class _DottedBorderPainter extends CustomPainter {
-  _DottedBorderPainter({
-    required this.color,
-    required this.borderRadius,
-  });
+  _DottedBorderPainter({required this.color, required this.borderRadius});
 
   final Color color;
   final double borderRadius;

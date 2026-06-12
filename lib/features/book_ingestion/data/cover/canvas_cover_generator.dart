@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -177,14 +178,20 @@ final class CanvasCoverGenerator implements CoverGenerator {
     if (data == null) {
       throw StateError('Failed to encode generated cover');
     }
-    final raster = img.Image.fromBytes(
-      width: width,
-      height: height,
-      bytes: data.buffer,
-      numChannels: 4,
-      order: img.ChannelOrder.rgba,
-    );
-    return img.encodeJpg(raster, quality: quality);
+    final rgba = data.buffer.asUint8List();
+    final w = width;
+    final h = height;
+    final q = quality;
+    return Isolate.run(() {
+      final raster = img.Image.fromBytes(
+        width: w,
+        height: h,
+        bytes: rgba.buffer,
+        numChannels: 4,
+        order: img.ChannelOrder.rgba,
+      );
+      return img.encodeJpg(raster, quality: q);
+    });
   }
 
   void _drawAbstractArt(Canvas canvas, Rect bounds, String title) {

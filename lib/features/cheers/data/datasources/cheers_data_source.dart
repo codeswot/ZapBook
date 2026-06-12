@@ -152,13 +152,31 @@ class CheersDataSourceImpl implements CheersDataSource {
   Future<List<CheersActivity>> _fetchActivities() async {
     final myNpub = await _identityLocal.readNpub() ?? '';
     final groups = await _marmot.listGroups();
-    final activities = <CheersActivity>[];
     final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
 
-    for (final group in groups) {
-      if (!group.name.startsWith('zapbook-book-')) continue;
-      final messages = await _marmot.getMessages(group.id);
+    final bookGroups = groups
+        .where((group) => group.name.startsWith('zapbook-book-'))
+        .toList();
+    final perGroup = await Future.wait(
+      bookGroups.map((group) => _groupActivities(group, myNpub, cutoffSecs)),
+    );
+    final activities = perGroup
+        .expand((groupActivities) => groupActivities)
+        .toList();
 
+    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return activities;
+  }
+
+  Future<List<CheersActivity>> _groupActivities(
+    MarmotGroup group,
+    String myNpub,
+    int cutoffSecs,
+  ) async {
+    final activities = <CheersActivity>[];
+    final messages = await _marmot.getMessages(group.id);
+
+    {
       var bookTitle = 'Unknown Book';
       final cheers = <Map<String, dynamic>>[];
       final nudges = <Map<String, dynamic>>[];
@@ -302,7 +320,6 @@ class CheersDataSourceImpl implements CheersDataSource {
       }
     }
 
-    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return activities;
   }
 }

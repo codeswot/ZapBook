@@ -85,18 +85,16 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     final admins = (await _getCircleAdmins(bookId)).toSet();
     final contactNpubs = _contacts.stored.toSet();
 
-    final entries = <MemberEntry>[];
-    for (final npub in memberNpubs) {
-      final contact = await _contacts.resolve(npub);
-      entries.add(
+    final contacts = await Future.wait(memberNpubs.map(_contacts.resolve));
+    final entries = [
+      for (var i = 0; i < memberNpubs.length; i++)
         MemberEntry(
-          npub: npub,
-          contact: contact,
-          isSelf: npub == myNpub,
-          isContact: contactNpubs.contains(npub),
+          npub: memberNpubs[i],
+          contact: contacts[i],
+          isSelf: memberNpubs[i] == myNpub,
+          isContact: contactNpubs.contains(memberNpubs[i]),
         ),
-      );
-    }
+    ];
 
     final milestones = _milestoneService.getMilestones(bookId);
     final progress = _toMemberProgress(
@@ -158,7 +156,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     comment: comment,
   );
 
-  Future<bool> payInvoice(String invoice) => _zapService.payWithFallback(invoice);
+  Future<bool> payInvoice(String invoice) =>
+      _zapService.payWithFallback(invoice);
 
   Future<void> nudgeReader({required String bookId, required String toNpub}) =>
       _nudgeService.nudgeForBook(bookId: bookId, toNpub: toNpub);

@@ -41,10 +41,12 @@ class ContactService {
     final filtered = npubs.where((n) => n != myNpub).toList();
     if (filtered.isEmpty) return const [];
 
-    final hexByNpub = <String, String>{};
-    for (final npub in filtered) {
-      hexByNpub[npub] = await MarmotIdentity.pubkeyHexFromNpub(npub);
-    }
+    final hexes = await Future.wait(
+      filtered.map(MarmotIdentity.pubkeyHexFromNpub),
+    );
+    final hexByNpub = {
+      for (var i = 0; i < filtered.length; i++) filtered[i]: hexes[i],
+    };
     final metas = await _nostr.getMetadatas(hexByNpub.values.toList());
     final metaByHex = {for (final meta in metas) meta.pubKey: meta};
 

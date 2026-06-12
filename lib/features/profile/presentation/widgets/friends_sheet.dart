@@ -47,6 +47,7 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   final _npubController = TextEditingController();
+  bool _wasAdding = false;
 
   @override
   void dispose() {
@@ -60,6 +61,12 @@ class _BodyState extends State<_Body> {
       listener: (context, state) {
         if (state is FriendsError) {
           context.toast.showError(state.message, rootNavigator: true);
+          _wasAdding = false;
+        } else if (state is FriendsBusy && state.adding) {
+          _wasAdding = true;
+        } else if (state is FriendsLoaded && _wasAdding) {
+          _npubController.clear();
+          _wasAdding = false;
         }
       },
       builder: (context, state) {

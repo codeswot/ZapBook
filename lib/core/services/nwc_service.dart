@@ -5,14 +5,17 @@ import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:zapbook/core/services/secure_storage_service.dart';
+
 @lazySingleton
 class NwcService {
-  NwcService(this._prefs, this._ndk) {
+  NwcService(this._prefs, this._ndk, this._secureStorage) {
     _restore();
   }
 
   final SharedPreferences _prefs;
   final Ndk _ndk;
+  final SecureStorageService _secureStorage;
   final _log = logging.Logger('NwcService');
 
   static const _connectionKey = 'nwc_connection_string';
@@ -27,7 +30,8 @@ class NwcService {
   bool get isConnected => _connection != null;
 
   Future<void> _restore() async {
-    _connectionString = _prefs.getString(_connectionKey);
+    await _migrateFromPrefs();
+    _connectionString = await _secureStorage.read(_connectionKey);
     _walletName = _prefs.getString(_walletNameKey);
 
     final saved = _connectionString;
@@ -67,7 +71,7 @@ class NwcService {
     _connectionString = connectionString;
     _walletName = _deriveName(connection);
 
-    await _prefs.setString(_connectionKey, connectionString);
+    await _secureStorage.write(_connectionKey, connectionString);
     await _prefs.setString(_walletNameKey, _walletName!);
 
     _log.info('NWC connected: $_walletName');
@@ -80,8 +84,15 @@ class NwcService {
     _connection = null;
     _connectionString = null;
     _walletName = null;
-    await _prefs.remove(_connectionKey);
+    await _secureStorage.delete(_connectionKey);
     await _prefs.remove(_walletNameKey);
+  }
+
+  Future<void> _migrateFromPrefs() async {
+    final legacy = _prefs.getString(_connectionKey);
+    if (legacy == null) return;
+    await _secureStorage.write(_connectionKey, legacy);
+    await _prefs.remove(_connectionKey);
   }
 
   String _deriveName(NwcConnection connection) {

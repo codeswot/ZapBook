@@ -12,7 +12,17 @@ import 'package:path_provider/path_provider.dart';
 abstract class MarmotModule {
   @preResolve
   @lazySingleton
-  Future<Marmot> marmot() async {
+  Future<Marmot> marmot() => MarmotWarmup.start();
+}
+
+final class MarmotWarmup {
+  const MarmotWarmup._();
+
+  static Future<Marmot>? _warm;
+
+  static Future<Marmot> start() => _warm ??= _open();
+
+  static Future<Marmot> _open() async {
     final dir = await getApplicationSupportDirectory();
     final dbPath = '${dir.path}/marmot.db';
 

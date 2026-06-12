@@ -9,8 +9,12 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
 
 @injectable
 class CircleMembersCubit extends Cubit<CircleMembersState> {
-  CircleMembersCubit(this._getBookMembers, this._removeBookMember, this._contacts, this._identity)
-    : super(const CircleMembersLoading());
+  CircleMembersCubit(
+    this._getBookMembers,
+    this._removeBookMember,
+    this._contacts,
+    this._identity,
+  ) : super(const CircleMembersLoading());
 
   final GetBookMembers _getBookMembers;
   final RemoveBookMember _removeBookMember;
@@ -23,16 +27,16 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     final contactNpubs = _contacts.stored.toSet();
     final myNpub = await _identity.readNpub();
 
-    final entries = <MemberEntry>[];
-    for (final npub in memberNpubs) {
-      final contact = await _contacts.resolve(npub);
-      entries.add(MemberEntry(
-        npub: npub,
-        contact: contact,
-        isSelf: npub == myNpub,
-        isContact: contactNpubs.contains(npub),
-      ));
-    }
+    final contacts = await Future.wait(memberNpubs.map(_contacts.resolve));
+    final entries = [
+      for (var i = 0; i < memberNpubs.length; i++)
+        MemberEntry(
+          npub: memberNpubs[i],
+          contact: contacts[i],
+          isSelf: memberNpubs[i] == myNpub,
+          isContact: contactNpubs.contains(memberNpubs[i]),
+        ),
+    ];
 
     emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
   }
@@ -41,13 +45,21 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     final current = state;
     final currentEntries = _extractEntries(current);
     final currentIsAdmin = _extractIsAdmin(current);
-    emit(CircleMembersBusy(entries: currentEntries, isAdmin: currentIsAdmin, busyNpub: npub));
+    emit(
+      CircleMembersBusy(
+        entries: currentEntries,
+        isAdmin: currentIsAdmin,
+        busyNpub: npub,
+      ),
+    );
 
     try {
       await _removeBookMember(bookId, npub);
       await load(bookId, currentIsAdmin);
     } on Object {
-      emit(CircleMembersLoaded(entries: currentEntries, isAdmin: currentIsAdmin));
+      emit(
+        CircleMembersLoaded(entries: currentEntries, isAdmin: currentIsAdmin),
+      );
     }
   }
 
@@ -55,20 +67,34 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     final current = state;
     final currentEntries = _extractEntries(current);
     final currentIsAdmin = _extractIsAdmin(current);
-    emit(CircleMembersBusy(entries: currentEntries, isAdmin: currentIsAdmin, busyNpub: npub));
+    emit(
+      CircleMembersBusy(
+        entries: currentEntries,
+        isAdmin: currentIsAdmin,
+        busyNpub: npub,
+      ),
+    );
 
     try {
       await _contacts.add(npub);
       final contactNpubs = _contacts.stored.toSet();
-      final updated = currentEntries.map((e) => e.isContact ? e : MemberEntry(
-        npub: e.npub,
-        contact: e.contact,
-        isSelf: e.isSelf,
-        isContact: contactNpubs.contains(e.npub),
-      )).toList();
+      final updated = currentEntries
+          .map(
+            (e) => e.isContact
+                ? e
+                : MemberEntry(
+                    npub: e.npub,
+                    contact: e.contact,
+                    isSelf: e.isSelf,
+                    isContact: contactNpubs.contains(e.npub),
+                  ),
+          )
+          .toList();
       emit(CircleMembersLoaded(entries: updated, isAdmin: currentIsAdmin));
     } on Object {
-      emit(CircleMembersLoaded(entries: currentEntries, isAdmin: currentIsAdmin));
+      emit(
+        CircleMembersLoaded(entries: currentEntries, isAdmin: currentIsAdmin),
+      );
     }
   }
 

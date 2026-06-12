@@ -30,10 +30,7 @@ class BlossomService {
         .where((r) => r.success && r.descriptor != null)
         .toList(growable: false);
     if (ok.isEmpty) {
-      final reason = results
-          .map((r) => r.error)
-          .whereType<String>()
-          .join('; ');
+      final reason = results.map((r) => r.error).whereType<String>().join('; ');
       throw Exception('Blossom upload failed: $reason');
     }
 
@@ -42,8 +39,15 @@ class BlossomService {
     return url;
   }
 
+  static const int maxDownloadBytes = 150 * 1024 * 1024;
+
   Future<Uint8List> download(String url) async {
     final response = await _ndk.files.download(url: url, serverUrls: servers);
+    if (response.data.length > maxDownloadBytes) {
+      throw Exception(
+        'Blossom blob exceeds ${maxDownloadBytes ~/ (1024 * 1024)}MB limit',
+      );
+    }
     return response.data;
   }
 }

@@ -288,9 +288,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i68.NostrCacheStore>(),
       ),
     );
-    gh.lazySingleton<_i507.NwcService>(
-      () => _i507.NwcService(gh<_i460.SharedPreferences>(), gh<_i857.Ndk>()),
-    );
     gh.factory<_i696.IngestionPageCubit>(
       () => _i696.IngestionPageCubit(gh<_i1034.FilePickerService>()),
     );
@@ -308,6 +305,13 @@ extension GetItInjectableX on _i174.GetIt {
         extractors: gh<List<_i751.BookExtractor>>(),
         fileStore: gh<_i854.LibraryFileStore>(),
         writer: gh<_i1.ZbfWriter>(),
+      ),
+    );
+    gh.lazySingleton<_i507.NwcService>(
+      () => _i507.NwcService(
+        gh<_i460.SharedPreferences>(),
+        gh<_i857.Ndk>(),
+        gh<_i123.SecureStorageService>(),
       ),
     );
     gh.lazySingleton<_i873.BlossomService>(

@@ -87,11 +87,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       'bookId': bookId,
       'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
     };
-    await _marmot.sendStructured(
-      npub,
-      groupId,
-      payload,
-    );
+    await _marmot.sendStructured(npub, groupId, payload);
 
     _changeController.add(null);
 
@@ -121,11 +117,12 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
         final eventJson = jsonEncode({
           'id': latestProgress['id'],
           'pubkey': latestProgress['pubkey'] ?? npub,
-          'created_at': latestProgress['created_at'] ??
+          'created_at':
+              latestProgress['created_at'] ??
               (DateTime.now().millisecondsSinceEpoch ~/ 1000),
           'kind': 445,
           'tags': [
-            ['h', targetGroup.nostrGroupId]
+            ['h', targetGroup.nostrGroupId],
           ],
           'content': jsonEncode(latestProgress),
           'sig': latestProgress['sig'],
@@ -163,6 +160,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   }
 
   Future<HomeDashboardStats> _fetchStats() async {
+    await _stats.load();
     return HomeDashboardStats(
       dayStreak: _stats.streak,
       satsEarned: _stats.satsEarned,
@@ -173,76 +171,13 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   Future<List<HomeDashboardBook>> _fetchBooks() async {
     final myNpub = await _identityLocal.readNpub();
     final groups = await _marmot.listGroups();
-    final books = <HomeDashboardBook>[];
-    for (final group in groups) {
-      if (!group.name.startsWith('zapbook-book-')) continue;
-
-      final bookId = group.name.replaceFirst('zapbook-book-', '');
-      final messages = await _marmot.getMessages(group.id);
-
-      Map<String, dynamic>? latestMeta;
-      var latestMetaTs = -1;
-      var latestProgressMs = -1;
-
-      for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
-        final isMine = myNpub != null && msg.senderNpub == myNpub;
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is! Map<String, dynamic>) continue;
-          final type = decoded['type'];
-          if (type == 'zapbook.book.meta') {
-            final ts = msg.timestampSecs.toInt();
-            if (ts >= latestMetaTs) {
-              latestMetaTs = ts;
-              latestMeta = decoded;
-            }
-            continue;
-          }
-          _milestone.ingestMessage(msg);
-          if (isMine && type == 'zapbook.book.progress') {
-            final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-            if (lastReadAtMs != null &&
-                lastReadAtMs.toInt() >= latestProgressMs) {
-              latestProgressMs = lastReadAtMs.toInt();
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (latestMeta == null) continue;
-
-      final metaBookId = latestMeta['bookId'] as String? ?? bookId;
-      final title = latestMeta['title'] as String? ?? 'Untitled';
-      final author = latestMeta['author'] as String? ?? '';
-      final pageCount = (latestMeta['pageCount'] as num?)?.toInt() ?? 0;
-
-      final zbf = await _fileStore.zbfFile(metaBookId);
-      final coverPath = await _fileStore.coverPathIfExists(metaBookId);
-      final mine = myNpub != null
-          ? _milestone.membersOf(metaBookId)[myNpub]
-          : null;
-
-      books.add(
-        HomeDashboardBook(
-          id: metaBookId,
-          title: title,
-          author: author,
-          coverPath: coverPath,
-          pageCount: pageCount,
-          memberCount: group.memberCount,
-          zbfPath: zbf.path,
-          lastOpenedAt: latestProgressMs == -1
-              ? null
-              : DateTime.fromMillisecondsSinceEpoch(latestProgressMs),
-          currentPage: mine?.currentPage ?? 0,
-          totalWords: mine?.totalWordCount ?? 0,
-          currentWordCount: mine?.currentWordCount ?? 0,
-          fraction: mine?.fraction ?? 0,
-        ),
-      );
-    }
+    final bookGroups = groups
+        .where((group) => group.name.startsWith('zapbook-book-'))
+        .toList();
+    final results = await Future.wait(
+      bookGroups.map((group) => _bookFromGroup(group, myNpub)),
+    );
+    final books = results.whereType<HomeDashboardBook>().toList();
 
     books.sort((a, b) {
       if (a.lastOpenedAt != null && b.lastOpenedAt != null) {
@@ -254,5 +189,74 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     });
 
     return books;
+  }
+
+  Future<HomeDashboardBook?> _bookFromGroup(
+    MarmotGroup group,
+    String? myNpub,
+  ) async {
+    final bookId = group.name.replaceFirst('zapbook-book-', '');
+    final messages = await _marmot.getMessages(group.id);
+
+    Map<String, dynamic>? latestMeta;
+    var latestMetaTs = -1;
+    var latestProgressMs = -1;
+
+    for (final msg in messages) {
+      final raw = msg.payloadJson;
+      if (raw == null || raw.isEmpty) continue;
+      final isMine = myNpub != null && msg.senderNpub == myNpub;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map<String, dynamic>) continue;
+        final type = decoded['type'];
+        if (type == 'zapbook.book.meta') {
+          final ts = msg.timestampSecs.toInt();
+          if (ts >= latestMetaTs) {
+            latestMetaTs = ts;
+            latestMeta = decoded;
+          }
+          continue;
+        }
+        _milestone.ingestMessage(msg);
+        if (isMine && type == 'zapbook.book.progress') {
+          final lastReadAtMs = decoded['lastReadAtMs'] as num?;
+          if (lastReadAtMs != null &&
+              lastReadAtMs.toInt() >= latestProgressMs) {
+            latestProgressMs = lastReadAtMs.toInt();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (latestMeta == null) return null;
+
+    final metaBookId = latestMeta['bookId'] as String? ?? bookId;
+    final title = latestMeta['title'] as String? ?? 'Untitled';
+    final author = latestMeta['author'] as String? ?? '';
+    final pageCount = (latestMeta['pageCount'] as num?)?.toInt() ?? 0;
+
+    final zbf = await _fileStore.zbfFile(metaBookId);
+    final coverPath = await _fileStore.coverPathIfExists(metaBookId);
+    final mine = myNpub != null
+        ? _milestone.membersOf(metaBookId)[myNpub]
+        : null;
+
+    return HomeDashboardBook(
+      id: metaBookId,
+      title: title,
+      author: author,
+      coverPath: coverPath,
+      pageCount: pageCount,
+      memberCount: group.memberCount,
+      zbfPath: zbf.path,
+      lastOpenedAt: latestProgressMs == -1
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(latestProgressMs),
+      currentPage: mine?.currentPage ?? 0,
+      totalWords: mine?.totalWordCount ?? 0,
+      currentWordCount: mine?.currentWordCount ?? 0,
+      fraction: mine?.fraction ?? 0,
+    );
   }
 }

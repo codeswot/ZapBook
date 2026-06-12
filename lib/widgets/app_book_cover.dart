@@ -92,7 +92,19 @@ class AppBookCover extends StatelessWidget {
                   ).createShader(rect);
                 },
                 blendMode: BlendMode.dstIn,
-                child: Image(image: image!, fit: BoxFit.cover),
+                child: Image(
+                  image: image!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, error, stack) =>
+                      title != null && title!.isNotEmpty
+                      ? CustomPaint(
+                          painter: _AbstractArtPainter(
+                            title!.hashCode,
+                            semanticColors,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
             )
           else if (title != null && title!.isNotEmpty)
