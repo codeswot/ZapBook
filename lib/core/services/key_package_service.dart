@@ -49,26 +49,36 @@ class KeyPackageService {
     'sig': event.sig,
   });
 
-  Future<void> publishIfNeeded() async {
+  Future<bool> publishIfNeeded() async {
     final npub = await _identity.readNpub();
     final nsec = await _identity.readNsec();
-    if (npub == null || nsec == null) return;
+    if (npub == null || nsec == null) return false;
 
     final dTag = await _identity.readDtag(_dTagKey);
     if (dTag == null) {
-      await _publishInitial(nsec);
-      return;
+      return _publishInitial(nsec);
     }
 
     final lastStr = await _identity.readDtag(_rotatedAtKey);
     if (lastStr != null) {
       final last = DateTime.tryParse(lastStr);
       if (last != null && DateTime.now().difference(last) < _rotateAfter) {
-        return;
+        return true;
       }
     }
 
-    await _rotate(nsec, dTag);
+    return _rotate(nsec, dTag);
+  }
+
+  Future<bool> ensurePublished({int attempts = 3}) async {
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      if (await publishIfNeeded()) return true;
+      if (attempt < attempts) {
+        await Future<void>.delayed(Duration(seconds: attempt));
+      }
+    }
+    _log.warning('Key package publish failed after $attempts attempts');
+    return false;
   }
 
   Future<bool> forceRotate() async {

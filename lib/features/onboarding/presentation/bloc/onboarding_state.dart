@@ -16,6 +16,7 @@ class OnboardingState extends Equatable {
   final String? error;
   final bool isComplete;
   final bool hasExistingProfile;
+  final bool keyPackagePublishFailed;
 
   const OnboardingState({
     required this.step,
@@ -31,6 +32,7 @@ class OnboardingState extends Equatable {
     this.error,
     this.isComplete = false,
     this.hasExistingProfile = false,
+    this.keyPackagePublishFailed = false,
   });
 
   @override
@@ -48,6 +50,7 @@ class OnboardingState extends Equatable {
     error,
     isComplete,
     hasExistingProfile,
+    keyPackagePublishFailed,
   ];
 
   OnboardingState copyWith({
@@ -64,6 +67,7 @@ class OnboardingState extends Equatable {
     String? error,
     bool? isComplete,
     bool? hasExistingProfile,
+    bool? keyPackagePublishFailed,
   }) {
     return OnboardingState(
       step: step ?? this.step,
@@ -79,6 +83,8 @@ class OnboardingState extends Equatable {
       error: error,
       isComplete: isComplete ?? this.isComplete,
       hasExistingProfile: hasExistingProfile ?? this.hasExistingProfile,
+      keyPackagePublishFailed:
+          keyPackagePublishFailed ?? this.keyPackagePublishFailed,
     );
   }
 }
