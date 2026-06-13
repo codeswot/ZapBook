@@ -70,6 +70,46 @@ class _ReaderBodyState extends State<ReaderBody> {
   Timer? _tapTimer;
 
   late final List<BookBlock> _merged = mergeReadingBlocks(widget.blocks);
+  final GlobalKey _anchorKey = GlobalKey();
+  late final int _anchorIndex = _findAnchor();
+
+  @override
+  void initState() {
+    super.initState();
+    if (_anchorIndex >= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToAnchor());
+    }
+  }
+
+  int _findAnchor() {
+    final query = widget.highlightQuery?.toLowerCase();
+    if (query == null || query.isEmpty) return -1;
+    for (var i = 0; i < _merged.length; i++) {
+      if (_blockText(_merged[i]).toLowerCase().contains(query)) return i;
+    }
+    return -1;
+  }
+
+  void _scrollToAnchor() {
+    final context = _anchorKey.currentContext;
+    if (!mounted || context == null) return;
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.18,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  static String _blockText(BookBlock block) => switch (block) {
+    HeadingBlock(:final text) => text,
+    ParagraphBlock(:final text) => text,
+    PullquoteBlock(:final text) => text,
+    CodeBlock(:final text) => text,
+    CaptionBlock(:final text) => text,
+    ImageBlock(:final altText) => altText,
+    _ => '',
+  };
 
   void _onPointerDown(PointerDownEvent event) {
     _pointerDownPosition = event.position;
@@ -187,38 +227,6 @@ class _ReaderBodyState extends State<ReaderBody> {
     _clearPull();
   }
 
-  Widget _column(String? query, double? progress) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final block in _merged)
-          ReaderBlockView(
-            block: block,
-            style: widget.style,
-            asset: widget.asset,
-            highlightQuery: query,
-            highlightProgress: progress,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildBlocks(BuildContext context) {
-    final query = widget.highlightQuery;
-    if (query == null || query.isEmpty) {
-      return _column(null, null);
-    }
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(query),
-      tween: Tween(begin: 1.0, end: 0.0),
-      duration: const Duration(milliseconds: 2600),
-      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
-      onEnd: widget.onHighlightComplete,
-      builder: (context, t, _) =>
-          _column(query, t),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Listener(
@@ -245,7 +253,17 @@ class _ReaderBodyState extends State<ReaderBody> {
                   constraints: const BoxConstraints(
                     maxWidth: ReadingStyle.maxContentWidth,
                   ),
-                  child: SelectionArea(child: _buildBlocks(context)),
+                  child: SelectionArea(
+                    child: _HighlightableBlocks(
+                      blocks: _merged,
+                      style: widget.style,
+                      asset: widget.asset,
+                      highlightQuery: widget.highlightQuery,
+                      onHighlightComplete: widget.onHighlightComplete,
+                      anchorIndex: _anchorIndex,
+                      anchorKey: _anchorKey,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -265,4 +283,92 @@ class _NoGlowScrollBehavior extends ScrollBehavior {
     Widget child,
     ScrollableDetails details,
   ) => child;
+}
+
+class _HighlightableBlocks extends StatelessWidget {
+  const _HighlightableBlocks({
+    required this.blocks,
+    required this.style,
+    required this.asset,
+    required this.highlightQuery,
+    required this.onHighlightComplete,
+    required this.anchorIndex,
+    required this.anchorKey,
+  });
+
+  final List<BookBlock> blocks;
+  final ReadingStyle style;
+  final Uint8List? Function(String assetRef) asset;
+  final String? highlightQuery;
+  final VoidCallback? onHighlightComplete;
+  final int anchorIndex;
+  final Key anchorKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final query = highlightQuery;
+    if (query == null || query.isEmpty) {
+      return _BlockColumn(
+        blocks: blocks,
+        style: style,
+        asset: asset,
+        anchorIndex: anchorIndex,
+        anchorKey: anchorKey,
+      );
+    }
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(query),
+      tween: Tween(begin: 1.0, end: 0.0),
+      duration: const Duration(milliseconds: 2600),
+      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+      onEnd: onHighlightComplete,
+      builder: (context, t, _) => _BlockColumn(
+        blocks: blocks,
+        style: style,
+        asset: asset,
+        highlightQuery: query,
+        highlightProgress: t,
+        anchorIndex: anchorIndex,
+        anchorKey: anchorKey,
+      ),
+    );
+  }
+}
+
+class _BlockColumn extends StatelessWidget {
+  const _BlockColumn({
+    required this.blocks,
+    required this.style,
+    required this.asset,
+    required this.anchorIndex,
+    required this.anchorKey,
+    this.highlightQuery,
+    this.highlightProgress,
+  });
+
+  final List<BookBlock> blocks;
+  final ReadingStyle style;
+  final Uint8List? Function(String assetRef) asset;
+  final int anchorIndex;
+  final Key anchorKey;
+  final String? highlightQuery;
+  final double? highlightProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < blocks.length; i++)
+          ReaderBlockView(
+            key: i == anchorIndex ? anchorKey : null,
+            block: blocks[i],
+            style: style,
+            asset: asset,
+            highlightQuery: highlightQuery,
+            highlightProgress: highlightProgress,
+          ),
+      ],
+    );
+  }
 }

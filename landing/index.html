@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZapBook — Read together. Prove it. Get paid.</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
@@ -11,7 +12,26 @@
   <body>
     <header class="nav-header" id="main-nav">
       <div class="nav-brand">
-        <svg viewBox="0 0 40 40"><rect x="2" y="2" width="36" height="36" rx="11" fill="var(--Bitcoin)"></rect><path d="M22 8.5 13.5 22.5H19l-1.2 9.5L26.5 18H21l1-9.5z" fill="#fff"></path></svg>
+        <svg viewBox="0 0 40 40">
+          <defs>
+            <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#8F5ADB" />
+              <stop offset="100%" stop-color="#F7931A" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="36" height="36" rx="10" fill="#000" />
+          <g fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M20 16 C17.5 14.2 12.5 15.2 10.5 16.2 V25 C12.5 24 17.5 23 20 25" />
+            <path d="M20 16 C22.5 14.2 27.5 15.2 29.5 16.2 V25 C27.5 24 22.5 23 20 25" />
+          </g>
+          <g fill="none" stroke="url(#brand-gradient)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M20 14.5 C17.5 12.5 12.5 13.5 10.5 14.5 V23.5 C12.5 22.5 17.5 21.5 20 23.5" />
+            <path d="M20 14.5 C22.5 12.5 27.5 13.5 29.5 14.5 V23.5 C27.5 22.5 22.5 21.5 20 23.5" />
+            <line x1="20" y1="14.5" x2="20" y2="23.5" />
+          </g>
+          <circle cx="20" cy="19" r="5.2" fill="#fff" />
+          <path d="M21 16.2 L18.2 19.5 H20.5 L19.2 22.2 L22 18.8 H19.7 Z" fill="#000" />
+        </svg>
         <span>Zap<b>Book</b></span>
       </div>
       <nav class="nav-links">

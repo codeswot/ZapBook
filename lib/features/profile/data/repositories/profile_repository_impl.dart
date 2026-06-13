@@ -58,6 +58,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<void> update({
+    String? displayName,
+    String? lud16,
+    String? picture,
+  }) async {
+    if (!_session.isLoggedIn) return;
+    await _remote.publish(
+      displayName: displayName,
+      lud16: lud16,
+      picture: picture,
+    );
+  }
+
+  @override
   Future<void> signOut() async {
     _session.logout();
     await _nwc.disconnect();

@@ -7,6 +7,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
@@ -42,16 +43,15 @@ class BookGroupDatasource {
   final _log = logging.Logger('BookGroupDatasource');
   final Map<String, String> _groupIdByBookId = {};
 
-  static const _groupPrefix = 'zapbook-book-';
   static const _groupDescription = 'ZapBook personal library book';
   static const _relays = NostrService.broadcastRelays;
 
-  String _groupName(String bookId) => '$_groupPrefix$bookId';
+  String _groupName(String bookId) => BookGroupNaming.nameFor(bookId);
 
   Future<List<LibraryBook>> loadLibrary() async {
     final groups = await _marmot.listGroups();
     final bookGroups = groups
-        .where((group) => group.name.startsWith(_groupPrefix))
+        .where((group) => BookGroupNaming.matches(group.name))
         .toList();
     final reconstructed = await Future.wait(
       bookGroups.map((group) => _reconstruct(group.id)),

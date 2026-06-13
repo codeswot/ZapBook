@@ -17,6 +17,7 @@ import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/quiz_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
+import 'package:zapbook/features/book_reader/data/recognition_quiz_builder.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
@@ -29,6 +30,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_search_
 import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
@@ -68,6 +70,17 @@ class _ReaderScreenState extends State<ReaderScreen>
   String? _activeQuery;
   int? _highlightPage;
 
+  void _configureQuiz() {
+    final quiz = getIt<QuizService>();
+    quiz.clear();
+    final builder = getIt<RecognitionQuizBuilder>();
+    final bookId = widget.handle.manifest.id;
+    quiz.setGenerator(
+      (milestoneIdx, text) => builder.build(bookId, milestoneIdx, text),
+    );
+    quiz.aiAvailable = true;
+  }
+
   void _jumpToHit(ZbfViewerCubit cubit, int page, String query) {
     setState(() {
       _activeQuery = query;
@@ -77,13 +90,12 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   String? _queryFor(int index) =>
-      (_highlightPage != null && index == _highlightPage)
-      ? _activeQuery
-      : null;
+      (_highlightPage != null && index == _highlightPage) ? _activeQuery : null;
 
   @override
   void initState() {
     super.initState();
+    _configureQuiz();
     _progress = ReadingProgressCubit.forBook(
       widget.handle,
       bookId: widget.handle.manifest.id,
@@ -347,64 +359,185 @@ class _QuizPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final cubit = context.read<QuizCubit>();
-    final set = state.set;
-    final totalQuestions = set?.questions.length ?? 0;
-    final textColor = colors.ink;
-    final isReveal = state.screen == QuizScreenState.reveal;
-
     return Positioned(
-      bottom: 160,
+      bottom: 150,
       left: 20,
       right: 20,
       child: Material(
-        borderRadius: BorderRadius.circular(16),
+        color: context.colors.transparent,
+        child: state.screen == QuizScreenState.reveal
+            ? _QuizReveal(state: state, cubit: cubit)
+            : _QuizActive(state: state, cubit: cubit),
+      ),
+    );
+  }
+}
+
+class _QuizCard extends StatelessWidget {
+  const _QuizCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
         color: colors.paper3,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: isReveal
-              ? Row(
-                  children: [
-                    Text(
-                      '${((state.score ?? 0) * 100).round()}%',
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () => cubit.dismiss(),
-                      child: Text('OK', style: TextStyle(color: textColor)),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Text(
-                      'Q${state.currentIndex + 1}/$totalQuestions',
-                      style: TextStyle(color: textColor),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () => cubit.skip(),
-                      child: const Text('Skip'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (set != null &&
-                            state.currentIndex < set.questions.length) {
-                          cubit.answer(0);
-                        }
-                      },
-                      child: const Text('Answer'),
-                    ),
-                  ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.hairline2),
+        boxShadow: [
+          BoxShadow(
+            color: colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _QuizActive extends StatelessWidget {
+  const _QuizActive({required this.state, required this.cubit});
+
+  final QuizCubitState state;
+  final QuizCubit cubit;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    final set = state.set;
+    if (set == null || state.currentIndex >= set.questions.length) {
+      return const SizedBox.shrink();
+    }
+    final question = set.questions[state.currentIndex];
+
+    return _QuizCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'COMPREHENSION · ${state.currentIndex + 1}/${set.questions.length}',
+                style: typography.caption.copyWith(
+                  color: colors.bitcoin,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
                 ),
-        ),
+              ),
+              GestureDetector(
+                onTap: cubit.skip,
+                child: Text(
+                  'Skip',
+                  style: typography.bodyS.copyWith(
+                    color: colors.slate,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            question.text,
+            style: typography.bodyL.copyWith(
+              color: colors.ink,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (var i = 0; i < question.options.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: BouncingInteractiveWidget(
+                onTap: () => cubit.answer(i),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.paper,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.hairline2),
+                  ),
+                  child: Text(
+                    question.options[i],
+                    style: typography.bodyS.copyWith(color: colors.ink),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuizReveal extends StatelessWidget {
+  const _QuizReveal({required this.state, required this.cubit});
+
+  final QuizCubitState state;
+  final QuizCubit cubit;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    final pct = ((state.score ?? 0) * 100).round();
+    final total = state.set?.questions.length ?? 0;
+    final correct = ((state.score ?? 0) * total).round();
+
+    return _QuizCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$pct%',
+                  style: typography.h2.copyWith(
+                    color: colors.bitcoin,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$correct of $total recalled',
+                  style: typography.bodyS.copyWith(color: colors.slate),
+                ),
+              ],
+            ),
+          ),
+          BouncingInteractiveWidget(
+            onTap: cubit.dismiss,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: colors.bitcoin,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Done',
+                style: typography.bodyS.copyWith(
+                  color: colors.bitcoinDark,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

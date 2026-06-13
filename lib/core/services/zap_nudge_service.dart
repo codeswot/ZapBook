@@ -5,6 +5,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -17,7 +18,6 @@ class ZapNudgeService {
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
 
-  static const _groupPrefix = 'zapbook-book-';
   static const _relays = NostrService.broadcastRelays;
 
   final _log = logging.Logger('ZapNudgeService');
@@ -31,10 +31,7 @@ class ZapNudgeService {
     await nudge(groupId: groupId, toNpub: toNpub);
   }
 
-  Future<void> nudge({
-    required String groupId,
-    required String toNpub,
-  }) async {
+  Future<void> nudge({required String groupId, required String toNpub}) async {
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
     if (await _hasPendingNudge(groupId, npub, toNpub)) return;
@@ -120,7 +117,7 @@ class ZapNudgeService {
   }
 
   Future<String?> _resolveGroupId(String bookId) async {
-    final name = '$_groupPrefix$bookId';
+    final name = BookGroupNaming.nameFor(bookId);
     final groups = await _marmot.listGroups();
     for (final group in groups) {
       if (group.name == name) return group.id;

@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/domain/heads_up_message.dart';
+import 'package:zapbook/features/heads_up/presentation/models/heads_up_message.dart';
 
 @lazySingleton
 class HeadsUpCubit extends Cubit<List<HeadsUpMessage>> {

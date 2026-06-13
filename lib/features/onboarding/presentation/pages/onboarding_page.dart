@@ -44,7 +44,11 @@ class _OnboardingViewState extends State<_OnboardingView> {
     super.dispose();
   }
 
-  void _onComplete(BuildContext context, OnboardingCubit cubit, {required bool publish}) async {
+  void _onComplete(
+    BuildContext context,
+    OnboardingCubit cubit, {
+    required bool publish,
+  }) async {
     final saved = await cubit.completeOnboarding(publish: publish);
     if (saved && context.mounted) {
       const HomeRoute().go(context);
@@ -83,7 +87,13 @@ class _OnboardingViewState extends State<_OnboardingView> {
                             horizontal: 24,
                             vertical: 16,
                           ),
-                          child: _buildStepContent(state, cubit),
+                          child: _OnboardingStepContent(
+                            state: state,
+                            cubit: cubit,
+                            nsecController: _nsecController,
+                            lnAddressController: _lnAddressController,
+                            displayNameController: _displayNameController,
+                          ),
                         ),
                         AppFadeOverlay.top(
                           color: context.colors.paper,
@@ -102,7 +112,8 @@ class _OnboardingViewState extends State<_OnboardingView> {
                     nsecController: _nsecController,
                     lnAddressController: _lnAddressController,
                     displayNameController: _displayNameController,
-                    onComplete: (publish) => _onComplete(context, cubit, publish: publish),
+                    onComplete: (publish) =>
+                        _onComplete(context, cubit, publish: publish),
                   ),
                 ],
               ),
@@ -125,11 +136,25 @@ class _OnboardingViewState extends State<_OnboardingView> {
         return 3;
     }
   }
+}
 
-  Widget _buildStepContent(
-    OnboardingState state,
-    OnboardingCubit cubit,
-  ) {
+class _OnboardingStepContent extends StatelessWidget {
+  const _OnboardingStepContent({
+    required this.state,
+    required this.cubit,
+    required this.nsecController,
+    required this.lnAddressController,
+    required this.displayNameController,
+  });
+
+  final OnboardingState state;
+  final OnboardingCubit cubit;
+  final TextEditingController nsecController;
+  final TextEditingController lnAddressController;
+  final TextEditingController displayNameController;
+
+  @override
+  Widget build(BuildContext context) {
     switch (state.step) {
       case OnboardingStep.welcome:
         return const ObWelcomeView();
@@ -137,26 +162,26 @@ class _OnboardingViewState extends State<_OnboardingView> {
         return ObIdentityView(
           state: state,
           cubit: cubit,
-          nsecController: _nsecController,
+          nsecController: nsecController,
         );
       case OnboardingStep.wallet:
-        if (_lnAddressController.text.isEmpty &&
+        if (lnAddressController.text.isEmpty &&
             state.lightningAddress.isNotEmpty) {
-          _lnAddressController.text = state.lightningAddress;
+          lnAddressController.text = state.lightningAddress;
         }
         return ObWalletView(
           state: state,
           cubit: cubit,
-          lnAddressController: _lnAddressController,
+          lnAddressController: lnAddressController,
         );
       case OnboardingStep.profile:
-        if (_displayNameController.text != state.displayName) {
-          _displayNameController.text = state.displayName;
+        if (displayNameController.text != state.displayName) {
+          displayNameController.text = state.displayName;
         }
         return ObProfileView(
           state: state,
           cubit: cubit,
-          displayNameController: _displayNameController,
+          displayNameController: displayNameController,
         );
     }
   }

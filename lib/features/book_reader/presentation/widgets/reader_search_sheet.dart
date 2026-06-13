@@ -148,14 +148,41 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
             onChanged: _onChanged,
           ),
           const SizedBox(height: 12),
-          Expanded(child: _results(colors, typography)),
+          Expanded(
+            child: _ResultsList(
+              loading: _loading,
+              query: _query,
+              hits: _hits,
+              onSelect: (hit) {
+                context.pop();
+                widget.onSelect(hit.pageNumber - 1, _query);
+              },
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _results(SemanticColors colors, AppTypography typography) {
-    if (_loading && _hits.isEmpty) {
+class _ResultsList extends StatelessWidget {
+  const _ResultsList({
+    required this.loading,
+    required this.query,
+    required this.hits,
+    required this.onSelect,
+  });
+
+  final bool loading;
+  final String query;
+  final List<BookSearchHit> hits;
+  final ValueChanged<BookSearchHit> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    if (loading && hits.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: AppShimmer(
@@ -187,7 +214,7 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
         ),
       );
     }
-    if (_query.length >= 3 && _hits.isEmpty) {
+    if (query.length >= 3 && hits.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Text(
@@ -199,14 +226,11 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
     }
     return ListView.builder(
       shrinkWrap: true,
-      itemCount: _hits.length,
+      itemCount: hits.length,
       itemBuilder: (context, i) {
-        final hit = _hits[i];
+        final hit = hits[i];
         return InkWell(
-          onTap: () {
-            context.pop();
-            widget.onSelect(hit.pageNumber - 1, _query);
-          },
+          onTap: () => onSelect(hit),
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),

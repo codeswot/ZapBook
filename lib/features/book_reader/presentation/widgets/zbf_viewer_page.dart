@@ -12,18 +12,13 @@ class ZbfViewerPage extends StatelessWidget {
     super.key,
     this.initialPage,
     this.highlightQuery,
-    this._reader,
+    this.reader,
   });
 
   final String zbfPath;
   final int? initialPage;
   final String? highlightQuery;
-
-  final ZbfReader? _reader;
-
-  ZbfReader get _resolvedReader => _reader ?? getIt<ZbfReader>();
-
-  bool get _hasLocalZbf => File(zbfPath).existsSync();
+  final ZbfReader? reader;
 
   String get _bookId => File(
     zbfPath,
@@ -31,16 +26,45 @@ class ZbfViewerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _hasLocalZbf ? _buildLocal() : _buildProgressive();
+    if (File(zbfPath).existsSync()) {
+      return _LocalReader(
+        zbfPath: zbfPath,
+        reader: reader ?? getIt<ZbfReader>(),
+        initialPage: initialPage,
+        highlightQuery: highlightQuery,
+      );
+    }
+    return _ProgressiveReader(
+      bookId: _bookId,
+      initialPage: initialPage,
+      highlightQuery: highlightQuery,
+    );
   }
+}
 
-  Widget _buildLocal() {
+class _LocalReader extends StatelessWidget {
+  const _LocalReader({
+    required this.zbfPath,
+    required this.reader,
+    required this.initialPage,
+    required this.highlightQuery,
+  });
+
+  final String zbfPath;
+  final ZbfReader reader;
+  final int? initialPage;
+  final String? highlightQuery;
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<ZbfBookHandle>(
-      future: _resolvedReader.open(zbfPath),
+      future: reader.open(zbfPath),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return _error('${snapshot.error}');
+        if (snapshot.hasError) {
+          return _ViewerError(message: '${snapshot.error}');
+        }
         final handle = snapshot.data;
-        if (handle == null) return _loading();
+        if (handle == null) return const _ViewerLoading();
         return ReaderScreen(
           handle: handle,
           initialPage: initialPage,
@@ -49,15 +73,34 @@ class ZbfViewerPage extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _buildProgressive() {
+class _ProgressiveReader extends StatelessWidget {
+  const _ProgressiveReader({
+    required this.bookId,
+    required this.initialPage,
+    required this.highlightQuery,
+  });
+
+  final String bookId;
+  final int? initialPage;
+  final String? highlightQuery;
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<ProgressiveBook?>(
-      future: getIt<ProgressiveBookOpener>().open(_bookId),
+      future: getIt<ProgressiveBookOpener>().open(bookId),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return _error('${snapshot.error}');
-        if (snapshot.connectionState != ConnectionState.done) return _loading();
+        if (snapshot.hasError) {
+          return _ViewerError(message: '${snapshot.error}');
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _ViewerLoading();
+        }
         final book = snapshot.data;
-        if (book == null) return _error('Book content not available yet');
+        if (book == null) {
+          return const _ViewerError(message: 'Book content not available yet');
+        }
         return ReaderScreen(
           handle: book.handle,
           segmentLoader: book.loader,
@@ -67,11 +110,23 @@ class ZbfViewerPage extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _loading() =>
+class _ViewerLoading extends StatelessWidget {
+  const _ViewerLoading();
+
+  @override
+  Widget build(BuildContext context) =>
       const Scaffold(body: Center(child: CircularProgressIndicator()));
+}
 
-  Widget _error(String message) => Scaffold(
+class _ViewerError extends StatelessWidget {
+  const _ViewerError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(),
     body: Center(child: Text('Failed to open: $message')),
   );

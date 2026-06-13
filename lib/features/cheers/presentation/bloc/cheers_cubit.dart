@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
@@ -27,6 +28,7 @@ class CheersCubit extends Cubit<CheersState> {
   final ZapNudgeService _nudgeService;
   final NostrService _nostrService;
 
+  final _log = logging.Logger('CheersCubit');
   StreamSubscription? _subscription;
 
   void _subscribe() {
@@ -47,7 +49,9 @@ class CheersCubit extends Cubit<CheersState> {
         amount: amount,
         reactionType: reactionType,
       );
-    } catch (_) {}
+    } on Object catch (error, stack) {
+      _log.warning('Send cheers reaction failed', error, stack);
+    }
   }
 
   Future<ZapResult> externalZap({

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
@@ -155,7 +156,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
 
     final bookGroups = groups
-        .where((group) => group.name.startsWith('zapbook-book-'))
+        .where((group) => BookGroupNaming.matches(group.name))
         .toList();
     final perGroup = await Future.wait(
       bookGroups.map((group) => _groupActivities(group, myNpub, cutoffSecs)),

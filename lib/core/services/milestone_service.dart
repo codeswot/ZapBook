@@ -6,6 +6,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/domain/milestone_payload.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
@@ -24,7 +25,6 @@ class MilestoneService {
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
 
-  static const _groupPrefix = 'zapbook-book-';
   static const _relays = NostrService.broadcastRelays;
 
   final _log = logging.Logger('MilestoneService');
@@ -183,7 +183,7 @@ class MilestoneService {
       _selfNpub ??= await _identity.readNpub();
       final groups = await _marmot.listGroups();
       for (final group in groups) {
-        if (!group.name.startsWith(_groupPrefix)) continue;
+        if (!BookGroupNaming.matches(group.name)) continue;
         final messages = await _marmot.getMessages(group.id);
         for (final message in messages) {
           ingestMessage(message);
@@ -354,7 +354,7 @@ class MilestoneService {
   Future<String?> _resolveGroupId(String bookId) async {
     final cached = _groupIdByBookId[bookId];
     if (cached != null) return cached;
-    final name = '$_groupPrefix$bookId';
+    final name = BookGroupNaming.nameFor(bookId);
     final groups = await _marmot.listGroups();
     for (final group in groups) {
       if (group.name == name) {

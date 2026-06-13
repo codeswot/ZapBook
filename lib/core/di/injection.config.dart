@@ -73,6 +73,8 @@ import 'package:zapbook/features/book_reader/data/quiz_repository.dart'
     as _i246;
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart'
     as _i898;
+import 'package:zapbook/features/book_reader/data/recognition_quiz_builder.dart'
+    as _i974;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
     as _i58;
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart'
@@ -357,6 +359,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
+    gh.lazySingleton<_i974.RecognitionQuizBuilder>(
+      () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
+    );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
     );
@@ -581,12 +586,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i286.ShareBookWith>(),
       ),
     );
-    gh.factory<_i223.UpdateProfile>(
-      () => _i223.UpdateProfile(
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i1073.NostrSession>(),
-      ),
-    );
     gh.factory<_i327.IngestionQueueCubit>(
       () => _i327.IngestionQueueCubit(
         gh<_i696.IngestBook>(),
@@ -615,6 +614,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i915.SignOut>(
       () => _i915.SignOut(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i223.UpdateProfile>(
+      () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
     );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),

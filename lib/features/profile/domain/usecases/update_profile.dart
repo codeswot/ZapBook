@@ -1,22 +1,15 @@
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/core/identity/nostr_session.dart';
-import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:zapbook/features/profile/domain/repositories/profile_repository.dart';
 
 @injectable
 final class UpdateProfile {
-  const UpdateProfile(this._remote, this._session);
+  const UpdateProfile(this._repository);
 
-  final ProfileRemoteDataSource _remote;
-  final NostrSession _session;
+  final ProfileRepository _repository;
 
-  Future<void> call({
-    String? displayName,
-    String? lud16,
-    String? picture,
-  }) async {
-    if (!_session.isLoggedIn) return;
-    await _remote.publish(
+  Future<void> call({String? displayName, String? lud16, String? picture}) {
+    return _repository.update(
       displayName: displayName,
       lud16: lud16,
       picture: picture,

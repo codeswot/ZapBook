@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
@@ -70,7 +71,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     final npub = await _identityLocal.readNpub();
     if (npub == null || npub.isEmpty) return;
 
-    final name = 'zapbook-book-$bookId';
+    final name = BookGroupNaming.nameFor(bookId);
     final groups = await _marmot.listGroups();
     MarmotGroup? targetGroup;
     for (final group in groups) {
@@ -172,7 +173,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     final myNpub = await _identityLocal.readNpub();
     final groups = await _marmot.listGroups();
     final bookGroups = groups
-        .where((group) => group.name.startsWith('zapbook-book-'))
+        .where((group) => BookGroupNaming.matches(group.name))
         .toList();
     final results = await Future.wait(
       bookGroups.map((group) => _bookFromGroup(group, myNpub)),
@@ -195,7 +196,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     MarmotGroup group,
     String? myNpub,
   ) async {
-    final bookId = group.name.replaceFirst('zapbook-book-', '');
+    final bookId = BookGroupNaming.bookIdOf(group.name);
     final messages = await _marmot.getMessages(group.id);
 
     Map<String, dynamic>? latestMeta;

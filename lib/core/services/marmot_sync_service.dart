@@ -6,6 +6,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
@@ -30,7 +31,6 @@ class MarmotSyncService {
 
   static const _giftWrapKind = 1059;
   static const _groupMessageKind = 445;
-  static const _groupPrefix = 'zapbook-book-';
   static const _debounce = Duration(milliseconds: 600);
 
   bool _running = false;
@@ -98,7 +98,7 @@ class MarmotSyncService {
   Future<void> _startGroupSub() async {
     final groups = await _marmot.listGroups();
     final ids = groups
-        .where((group) => group.name.startsWith(_groupPrefix))
+        .where((group) => BookGroupNaming.matches(group.name))
         .map((group) => group.nostrGroupId)
         .toList(growable: false);
     if (ids.isEmpty) return;
