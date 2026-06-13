@@ -19,8 +19,8 @@ dependencies:
   flutter_bloc: ^9.1.1
   fonnx:
     git:
-      url: https://github.com/Telosnex/fonnx.git
-      ref: e2488a3
+      url: https://github.com/codeswot/fonnx.git
+      ref: 0d6e1201fb6189d06afd8c7fc04ca0be29ef6929
   get_it: ^9.2.1
   go_router: ^17.2.3
   google_fonts: ^8.1.0
