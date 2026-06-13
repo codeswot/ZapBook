@@ -10,6 +10,7 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
+import 'package:zapbook/core/data/search/book_vector_index.dart';
 import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
@@ -25,6 +26,7 @@ class MarmotLibraryRepository implements LibraryRepository {
     this._reader,
     this._density,
     this._searchIndex,
+    this._vectorIndex,
   );
 
   final BookGroupDatasource _datasource;
@@ -32,6 +34,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   final ZbfReader _reader;
   final DensityService _density;
   final BookSearchIndex _searchIndex;
+  final BookVectorIndex _vectorIndex;
 
   final _log = logging.Logger('MarmotLibraryRepository');
   final _controller = StreamController<List<LibraryBook>>.broadcast();
@@ -94,6 +97,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   Future<void> deleteBook(String id) async {
     await _datasource.deleteBook(id);
     unawaited(_searchIndex.remove(id));
+    unawaited(_vectorIndex.remove(id));
     _books = _books.where((book) => book.id != id).toList(growable: false);
     _emit();
   }
@@ -301,6 +305,7 @@ class MarmotLibraryRepository implements LibraryRepository {
     final zbf = await _fileStore.zbfFile(bookId);
     if (!zbf.existsSync()) return;
     await _searchIndex.ensureIndexed(bookId, zbf.path);
+    await _vectorIndex.ensureEmbedded(bookId, zbf.path);
   }
 
   void _patchCover(String id, String coverPath) {

@@ -9,6 +9,7 @@ import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
+import 'package:zapbook/core/data/search/book_vector_index.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart';
 
 import 'package:zapbook/core/domain/wizard_data.dart';
@@ -19,12 +20,14 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     required this._extractors,
     required this._fileStore,
     required this._searchIndex,
+    required this._vectorIndex,
     this._writer = const ZbfWriter(),
   });
 
   final List<BookExtractor> _extractors;
   final LibraryFileStore _fileStore;
   final BookSearchIndex _searchIndex;
+  final BookVectorIndex _vectorIndex;
   final ZbfWriter _writer;
 
   @override
@@ -64,6 +67,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       final bytes = _writer.encode(book);
       final path = await _fileStore.writeZbf(book.manifest.id, bytes);
       unawaited(_searchIndex.ensureIndexed(book.manifest.id, path));
+      unawaited(_vectorIndex.ensureEmbedded(book.manifest.id, path));
       yield IngestionProgress.written(result: book, zbfPath: path);
     } on Exception catch (error) {
       yield IngestionProgress.failed(error.toString());

@@ -2,3 +2,4 @@
 -dontwarn com.google.mediapipe.proto.CalculatorProfileProto$CalculatorProfile
 -dontwarn com.google.mediapipe.proto.GraphTemplateProto$CalculatorGraphTemplate
 -dontwarn com.google.mediapipe.**
+-keep class ai.onnxruntime.** { *; }

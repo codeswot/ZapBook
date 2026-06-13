@@ -11,10 +11,7 @@ class HeadsUpMessage extends Equatable {
   final String id;
   final Widget child;
 
-  const HeadsUpMessage({
-    required this.id,
-    required this.child,
-  });
+  const HeadsUpMessage({required this.id, required this.child});
 
   @override
   List<Object?> get props => [id, child];
@@ -41,11 +38,10 @@ class HeadsUpMessage extends Equatable {
             leading: icon,
             title: Text(
               message,
-              style: context.typography.bodyS.copyWith(
-                color: textColor,
-              ),
+              style: context.typography.bodyS.copyWith(color: textColor),
             ),
-            trailing: trailing ??
+            trailing:
+                trailing ??
                 (dismissible
                     ? BouncingInteractiveWidget(
                         onTap: onDismiss,
