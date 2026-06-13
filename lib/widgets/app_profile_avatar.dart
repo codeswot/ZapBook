@@ -48,13 +48,15 @@ class _AvatarImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     if (url.startsWith('data:image')) {
-      return _DataUriImage(url: url);
+      return _DataUriImage(url: url, cacheWidth: cacheSize);
     }
     if (_isLocalFile) {
       return Image.file(
         File(url),
         fit: BoxFit.cover,
+        cacheWidth: cacheSize,
         errorBuilder: (_, err, stack) => _AvatarPlaceholder(size: size),
       );
     }
@@ -65,7 +67,6 @@ class _AvatarImage extends StatelessWidget {
         placeholderBuilder: (_) => _AvatarPlaceholder(size: size),
       );
     }
-    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
@@ -79,8 +80,9 @@ class _AvatarImage extends StatelessWidget {
 
 class _DataUriImage extends StatelessWidget {
   final String url;
+  final int cacheWidth;
 
-  const _DataUriImage({required this.url});
+  const _DataUriImage({required this.url, required this.cacheWidth});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +90,11 @@ class _DataUriImage extends StatelessWidget {
     if (comma == -1) return const SizedBox.shrink();
     final base64 = url.substring(comma + 1);
     try {
-      return Image.memory(base64Decode(base64), fit: BoxFit.cover);
+      return Image.memory(
+        base64Decode(base64),
+        fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
+      );
     } on Exception {
       return const SizedBox.shrink();
     }

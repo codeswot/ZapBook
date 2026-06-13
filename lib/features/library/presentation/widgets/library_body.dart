@@ -43,12 +43,16 @@ class LibraryBody extends StatelessWidget {
               return const LibraryShimmer();
             }
 
-            final filteredBooks = books.where((book) {
-              final query = searchQuery.trim().toLowerCase();
-              if (query.isEmpty) return true;
-              return book.title.toLowerCase().contains(query) ||
-                  book.author.toLowerCase().contains(query);
-            }).toList();
+            final query = searchQuery.trim().toLowerCase();
+            final filteredBooks = query.isEmpty
+                ? books
+                : books
+                      .where(
+                        (book) =>
+                            book.title.toLowerCase().contains(query) ||
+                            book.author.toLowerCase().contains(query),
+                      )
+                      .toList();
 
             final textHits = context.watch<BookTextSearchCubit>().state;
             final hasTextHits =

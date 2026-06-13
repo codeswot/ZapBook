@@ -67,8 +67,6 @@ class NostrCacheStore {
     return NostrCacheStore._(db);
   }
 
-  // ── Events ──────────────────────────────────────────────
-
   void saveEvent(Nip01Event event) {
     final stmt = _db.prepare(
       'INSERT OR REPLACE INTO events (id, pub_key, created_at, kind, content, sig, tags, sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -237,8 +235,6 @@ class NostrCacheStore {
     );
   }
 
-  // ── Metadata ────────────────────────────────────────────
-
   void saveMetadata(Metadata metadata) {
     final stmt = _db.prepare(
       'INSERT OR REPLACE INTO metadatas (pub_key, content, updated_at, refreshed_at) VALUES (?, ?, ?, ?)',
@@ -328,8 +324,6 @@ class NostrCacheStore {
     _db.execute('DELETE FROM metadatas');
   }
 
-  // ── Contact Lists ───────────────────────────────────────
-
   void saveContactList(ContactList cl) {
     final stmt = _db.prepare(
       'INSERT OR REPLACE INTO contact_lists (pub_key, contacts, created_at) VALUES (?, ?, ?)',
@@ -359,8 +353,6 @@ class NostrCacheStore {
   void removeAllContactLists() {
     _db.execute('DELETE FROM contact_lists');
   }
-
-  // ── User Relay Lists ────────────────────────────────────
 
   void saveUserRelayList(UserRelayList list) {
     final stmt = _db.prepare(
@@ -410,8 +402,6 @@ class NostrCacheStore {
   void removeUserRelayList(String pubKey) {
     _db.execute('DELETE FROM user_relay_lists WHERE pub_key = ?', [pubKey]);
   }
-
-  // ── Maintenance ─────────────────────────────────────────
 
   void clearAll() {
     _db.execute('DELETE FROM events');

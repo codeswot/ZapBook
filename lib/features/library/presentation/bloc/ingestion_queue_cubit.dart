@@ -38,8 +38,6 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
   final Map<String, StreamSubscription<IngestionProgress>> _running = {};
   final Map<String, String> _hashByJob = {};
 
-  /// Hashes [file] and looks up an already-imported book with the same bytes.
-  /// Returns the hash plus the existing book (null when not a duplicate).
   Future<({String hash, LibraryBook? existing})> findDuplicate(
     File file,
   ) async {

@@ -27,6 +27,7 @@ class AppBookCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final semanticColors = context.colors;
     final typography = context.typography;
+    final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context)).round();
 
     Color hueColor;
     switch (hue) {
@@ -93,7 +94,7 @@ class AppBookCover extends StatelessWidget {
                 },
                 blendMode: BlendMode.dstIn,
                 child: Image(
-                  image: image!,
+                  image: ResizeImage(image!, width: cacheWidth),
                   fit: BoxFit.cover,
                   errorBuilder: (_, error, stack) =>
                       title != null && title!.isNotEmpty

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
@@ -16,6 +17,8 @@ abstract interface class HomeDashboardDataSource {
   Stream<HomeDashboard> watchDashboard();
   Future<void> touchBookOpened(String bookId);
 }
+
+final _log = logging.Logger('HomeDashboardDataSource');
 
 @LazySingleton(as: HomeDashboardDataSource)
 class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
@@ -49,7 +52,9 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
         if (!controller.isClosed) {
           controller.add(data);
         }
-      } catch (_) {}
+      } catch (error, stack) {
+        _log.warning('dashboard reload failed', error, stack);
+      }
     }
 
     reload();
@@ -151,7 +156,9 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
           specificRelays: NostrService.broadcastRelays,
         );
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      _log.warning('progress broadcast failed', error, stack);
+    }
   }
 
   Future<HomeDashboard> _fetchDashboard() async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/data/search/book_search_index.dart';
@@ -10,6 +11,8 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_input.dart';
 import 'package:zapbook/widgets/app_shimmer.dart';
+
+final _log = Logger('ReaderSearchSheet');
 
 class ReaderSearchSheet extends StatefulWidget {
   const ReaderSearchSheet({
@@ -90,8 +93,8 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
           );
         }
       }
-    } on Object {
-      //
+    } on Object catch (error, stack) {
+      _log.warning('semantic search failed', error, stack);
     }
     blended.sort((a, b) => a.pageNumber.compareTo(b.pageNumber));
     if (mounted) {

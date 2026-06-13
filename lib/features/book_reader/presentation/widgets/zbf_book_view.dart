@@ -326,6 +326,10 @@ class _ImageView extends StatelessWidget {
               data,
               fit: BoxFit.fitWidth,
               gaplessPlayback: true,
+              cacheWidth:
+                  (MediaQuery.sizeOf(context).width *
+                          MediaQuery.devicePixelRatioOf(context))
+                      .round(),
             ),
           )
         else

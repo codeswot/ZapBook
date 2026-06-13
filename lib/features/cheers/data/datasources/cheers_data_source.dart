@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
@@ -14,6 +15,10 @@ abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();
   Future<void> sendZap(String activityId, int amount, String reactionType);
 }
+
+final _log = logging.Logger('CheersDataSource');
+
+const _cheerType = 'zapbook.cheer';
 
 @LazySingleton(as: CheersDataSource)
 class CheersDataSourceImpl implements CheersDataSource {
@@ -41,7 +46,9 @@ class CheersDataSourceImpl implements CheersDataSource {
         if (!controller.isClosed) {
           controller.add(data);
         }
-      } catch (_) {}
+      } catch (error, stack) {
+        _log.warning('activities reload failed', error, stack);
+      }
     }
 
     reload();
@@ -73,7 +80,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     final messageId = parts[1];
 
     final payload = {
-      'type': 'zapbook.cheer',
+      'type': _cheerType,
       'activityId': messageId,
       'amount': amount,
       'reactionType': reactionType,
@@ -92,7 +99,7 @@ class CheersDataSourceImpl implements CheersDataSource {
         try {
           final decoded = jsonDecode(raw);
           if (decoded is Map<String, dynamic> &&
-              decoded['type'] == 'zapbook.cheer' &&
+              decoded['type'] == _cheerType &&
               decoded['activityId'] == messageId &&
               decoded['reactionType'] == reactionType) {
             latestCheer = decoded;
@@ -147,7 +154,9 @@ class CheersDataSourceImpl implements CheersDataSource {
           );
         }
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      _log.warning('cheer broadcast failed', error, stack);
+    }
   }
 
   Future<List<CheersActivity>> _fetchActivities() async {
@@ -197,7 +206,7 @@ class CheersDataSourceImpl implements CheersDataSource {
               _milestone.ingestMessage(msg);
             case 'zapbook.book.meta':
               bookTitle = decoded['title'] as String? ?? bookTitle;
-            case 'zapbook.cheer':
+            case _cheerType:
               cheers.add({
                 'activityId': decoded['activityId'],
                 'reactionType': decoded['reactionType'],

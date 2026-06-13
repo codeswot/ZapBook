@@ -16,8 +16,6 @@ class DriftCacheManager implements CacheManager {
 
   final NostrCacheStore _store;
 
-  // ── In-memory hot cache ─────────────────────────────────
-
   final _userRelayLists = _BoundedMap<String, UserRelayList>(500);
   final _relaySets = _BoundedMap<String, RelaySet>(500);
   final _contactLists = _BoundedMap<String, ContactList>(500);
@@ -29,8 +27,6 @@ class DriftCacheManager implements CacheManager {
   );
 
   bool _closed = false;
-
-  // ── Events ──────────────────────────────────────────────
 
   @override
   Future<void> saveEvent(Nip01Event event) async {
@@ -140,8 +136,6 @@ class DriftCacheManager implements CacheManager {
     _store.removeAllEvents();
   }
 
-  // ── Metadata ────────────────────────────────────────────
-
   @override
   Future<void> saveMetadata(Metadata metadata) async {
     _metadatas[metadata.pubKey] = metadata;
@@ -216,8 +210,6 @@ class DriftCacheManager implements CacheManager {
     _store.removeAllMetadatas();
   }
 
-  // ── Contact Lists ───────────────────────────────────────
-
   @override
   Future<void> saveContactList(ContactList contactList) async {
     _contactLists[contactList.pubKey] = contactList;
@@ -253,8 +245,6 @@ class DriftCacheManager implements CacheManager {
     _store.removeAllContactLists();
   }
 
-  // ── User Relay Lists ────────────────────────────────────
-
   @override
   Future<void> saveUserRelayList(UserRelayList userRelayList) async {
     _userRelayLists[userRelayList.pubKey] = userRelayList;
@@ -286,13 +276,11 @@ class DriftCacheManager implements CacheManager {
 
   @override
   Future<void> removeAllUserRelayLists() async {
-    _userRelayLists.clear();
     for (final key in _userRelayLists.keys.toList()) {
       _store.removeUserRelayList(key);
     }
+    _userRelayLists.clear();
   }
-
-  // ── Relay Sets ──────────────────────────────────────────
 
   @override
   Future<RelaySet?> loadRelaySet(String name, String pubKey) async {
@@ -314,8 +302,6 @@ class DriftCacheManager implements CacheManager {
   Future<void> removeAllRelaySets() async {
     _relaySets.clear();
   }
-
-  // ── NIP-05 ──────────────────────────────────────────────
 
   @override
   Future<void> saveNip05(Nip05 nip05) async {
@@ -349,8 +335,6 @@ class DriftCacheManager implements CacheManager {
   Future<void> removeAllNip05s() async {
     _nip05s.clear();
   }
-
-  // ── Filter Fetched Ranges ───────────────────────────────
 
   @override
   Future<void> saveFilterFetchedRangeRecord(
@@ -392,8 +376,6 @@ class DriftCacheManager implements CacheManager {
   @override
   Future<void> removeAllFilterFetchedRangeRecords() async {}
 
-  // ── Deprecated ──────────────────────────────────────────
-
   @override
   Future<Iterable<Nip01Event>> searchEvents({
     List<String>? ids,
@@ -405,8 +387,6 @@ class DriftCacheManager implements CacheManager {
     String? search,
     int limit = 100,
   }) async => [];
-
-  // ── Maintenance ─────────────────────────────────────────
 
   @override
   Future<void> clearAll() async {

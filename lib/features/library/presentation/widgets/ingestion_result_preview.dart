@@ -44,6 +44,8 @@ class IngestionResultPreview extends StatelessWidget {
                       height: 240,
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
+                      cacheWidth: (160 * MediaQuery.devicePixelRatioOf(context))
+                          .round(),
                     ),
                   ),
                 ),
