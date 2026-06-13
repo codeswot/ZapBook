@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
+import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_wizard_sheet.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_body.dart';
@@ -18,7 +20,10 @@ class LibraryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _LibraryView();
+    return BlocProvider<BookTextSearchCubit>(
+      create: (_) => getIt<BookTextSearchCubit>(),
+      child: const _LibraryView(),
+    );
   }
 }
 
@@ -41,6 +46,7 @@ class _LibraryViewState extends State<_LibraryView> {
   }
 
   void _onSearchChanged(String query) {
+    context.read<BookTextSearchCubit>().query(query);
     setState(() {
       _searchQuery = query;
     });
@@ -52,6 +58,7 @@ class _LibraryViewState extends State<_LibraryView> {
       if (!_isSearching) {
         _searchQuery = '';
         _searchController.clear();
+        context.read<BookTextSearchCubit>().clear();
       }
     });
   }
@@ -111,9 +118,7 @@ class _LibraryViewState extends State<_LibraryView> {
                 onSearchChanged: _onSearchChanged,
                 onToggleSearch: _toggleSearch,
               ),
-              Expanded(
-                child: LibraryBody(searchQuery: _searchQuery),
-              ),
+              Expanded(child: LibraryBody(searchQuery: _searchQuery)),
             ],
           ),
         ),

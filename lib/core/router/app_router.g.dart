@@ -158,15 +158,20 @@ RouteBase get $zbfViewerRoute =>
     GoRouteData.$route(path: '/viewer', factory: $ZbfViewerRoute._fromState);
 
 mixin $ZbfViewerRoute on GoRouteData {
-  static ZbfViewerRoute _fromState(GoRouterState state) =>
-      ZbfViewerRoute(zbfPath: state.uri.queryParameters['zbf-path']!);
+  static ZbfViewerRoute _fromState(GoRouterState state) => ZbfViewerRoute(
+    zbfPath: state.uri.queryParameters['zbf-path']!,
+    page: _$convertMapValue('page', state.uri.queryParameters, int.tryParse),
+  );
 
   ZbfViewerRoute get _self => this as ZbfViewerRoute;
 
   @override
   String get location => GoRouteData.$location(
     '/viewer',
-    queryParams: {'zbf-path': _self.zbfPath},
+    queryParams: {
+      'zbf-path': _self.zbfPath,
+      if (_self.page != null) 'page': _self.page!.toString(),
+    },
   );
 
   @override
@@ -181,6 +186,15 @@ mixin $ZbfViewerRoute on GoRouteData {
 
   @override
   void replace(BuildContext context) => context.replace(location);
+}
+
+T? _$convertMapValue<T>(
+  String key,
+  Map<String, String> map,
+  T? Function(String) converter,
+) {
+  final value = map[key];
+  return value == null ? null : converter(value);
 }
 
 RouteBase get $circleDetailRoute =>

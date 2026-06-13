@@ -9,6 +9,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/data/library_file_store.dart';
+import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
@@ -23,12 +24,14 @@ class MarmotLibraryRepository implements LibraryRepository {
     this._fileStore,
     this._reader,
     this._density,
+    this._searchIndex,
   );
 
   final BookGroupDatasource _datasource;
   final LibraryFileStore _fileStore;
   final ZbfReader _reader;
   final DensityService _density;
+  final BookSearchIndex _searchIndex;
 
   final _log = logging.Logger('MarmotLibraryRepository');
   final _controller = StreamController<List<LibraryBook>>.broadcast();
@@ -90,6 +93,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   @override
   Future<void> deleteBook(String id) async {
     await _datasource.deleteBook(id);
+    unawaited(_searchIndex.remove(id));
     _books = _books.where((book) => book.id != id).toList(growable: false);
     _emit();
   }
@@ -279,14 +283,24 @@ class MarmotLibraryRepository implements LibraryRepository {
         final coverPath = await _datasource.hydrateCover(book.id);
         if (coverPath != null) _patchCover(book.id, coverPath);
       }
-      if (await _fileStore.hasZbf(book.id)) return;
+      if (await _fileStore.hasZbf(book.id)) {
+        unawaited(_indexForSearch(book.id));
+        return;
+      }
       final ok = await _datasource.downloadBookContent(book.id);
       if (!ok) return;
+      unawaited(_indexForSearch(book.id));
       final coverPath = await _fileStore.coverPathIfExists(book.id);
       if (coverPath != null) _patchCover(book.id, coverPath);
     } on Object catch (error, stack) {
       _log.warning('Content hydration failed for ${book.id}', error, stack);
     }
+  }
+
+  Future<void> _indexForSearch(String bookId) async {
+    final zbf = await _fileStore.zbfFile(bookId);
+    if (!zbf.existsSync()) return;
+    await _searchIndex.ensureIndexed(bookId, zbf.path);
   }
 
   void _patchCover(String id, String coverPath) {

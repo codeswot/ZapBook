@@ -35,6 +35,7 @@ class ReaderScreen extends StatefulWidget {
     this.rasterizer,
     this.segmentLoader,
     this.onExit,
+    this.initialPage,
     super.key,
   });
 
@@ -42,6 +43,7 @@ class ReaderScreen extends StatefulWidget {
   final PdfPageRasterizer? rasterizer;
   final BookSegmentLoader? segmentLoader;
   final VoidCallback? onExit;
+  final int? initialPage;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -76,6 +78,12 @@ class _ReaderScreenState extends State<ReaderScreen>
     _progressStream = _milestone.watchProgress(widget.handle.manifest.id);
     _progress.restore().then((savedPage) {
       if (savedPage != null) _savedPage = savedPage;
+      final override = widget.initialPage;
+      if (override != null &&
+          override >= 0 &&
+          override < widget.handle.manifest.pageCount) {
+        _savedPage = override;
+      }
       if (mounted) {
         _progress.start(initialPage: _savedPage);
         setState(() => _ready = true);
@@ -147,9 +155,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           ),
         ),
         BlocProvider.value(value: getIt<ReaderSettingsCubit>()),
-        BlocProvider(
-          create: (_) => QuizCubit(getIt<QuizService>())..start(),
-        ),
+        BlocProvider(create: (_) => QuizCubit(getIt<QuizService>())..start()),
       ],
       child: Scaffold(
         backgroundColor: colors.paper,
@@ -209,8 +215,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                               )
                             : NotificationListener<ScrollUpdateNotification>(
                                 onNotification: (n) {
-                                  _lastScrollDelta =
-                                      n.scrollDelta?.abs() ?? 0;
+                                  _lastScrollDelta = n.scrollDelta?.abs() ?? 0;
                                   return false;
                                 },
                                 child: ReaderBody(
@@ -230,16 +235,16 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     );
                                     _lastScrollDelta = 0;
                                   },
-                                onTurnForward: () {
-                                  _turningForward = true;
-                                  cubit.nextPage();
-                                },
-                                onTurnBackward: () {
-                                  _turningForward = false;
-                                  cubit.previousPage();
-                                },
-                                onPullChanged: _onPullChanged,
-                              ),
+                                  onTurnForward: () {
+                                    _turningForward = true;
+                                    cubit.nextPage();
+                                  },
+                                  onTurnBackward: () {
+                                    _turningForward = false;
+                                    cubit.previousPage();
+                                  },
+                                  onPullChanged: _onPullChanged,
+                                ),
                               ),
                       ),
                     ),

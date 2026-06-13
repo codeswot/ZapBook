@@ -7,9 +7,15 @@ import 'package:zapbook/features/library/data/marmot/progressive_book_opener.dar
 import 'package:zapbook/core/di/injection.dart';
 
 class ZbfViewerPage extends StatelessWidget {
-  const ZbfViewerPage({required this.zbfPath, super.key, this._reader});
+  const ZbfViewerPage({
+    required this.zbfPath,
+    super.key,
+    this.initialPage,
+    this._reader,
+  });
 
   final String zbfPath;
+  final int? initialPage;
 
   final ZbfReader? _reader;
 
@@ -17,12 +23,9 @@ class ZbfViewerPage extends StatelessWidget {
 
   bool get _hasLocalZbf => File(zbfPath).existsSync();
 
-  String get _bookId => File(zbfPath)
-      .parent
-      .uri
-      .pathSegments
-      .where((segment) => segment.isNotEmpty)
-      .last;
+  String get _bookId => File(
+    zbfPath,
+  ).parent.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +39,7 @@ class ZbfViewerPage extends StatelessWidget {
         if (snapshot.hasError) return _error('${snapshot.error}');
         final handle = snapshot.data;
         if (handle == null) return _loading();
-        return ReaderScreen(handle: handle);
+        return ReaderScreen(handle: handle, initialPage: initialPage);
       },
     );
   }
@@ -49,7 +52,11 @@ class ZbfViewerPage extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) return _loading();
         final book = snapshot.data;
         if (book == null) return _error('Book content not available yet');
-        return ReaderScreen(handle: book.handle, segmentLoader: book.loader);
+        return ReaderScreen(
+          handle: book.handle,
+          segmentLoader: book.loader,
+          initialPage: initialPage,
+        );
       },
     );
   }

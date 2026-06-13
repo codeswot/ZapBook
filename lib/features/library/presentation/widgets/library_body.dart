@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
+import 'package:zapbook/features/library/presentation/widgets/book_text_search_results.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
     hide LibraryEmpty;
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
@@ -14,10 +16,7 @@ import 'package:zapbook/features/library/presentation/widgets/library_shimmer.da
 import 'package:zapbook/theme/app_theme.dart';
 
 class LibraryBody extends StatelessWidget {
-  const LibraryBody({
-    super.key,
-    required this.searchQuery,
-  });
+  const LibraryBody({super.key, required this.searchQuery});
 
   final String searchQuery;
 
@@ -27,7 +26,9 @@ class LibraryBody extends StatelessWidget {
       builder: (context, queue) {
         return BlocConsumer<LibraryCubit, LibraryState>(
           listener: (context, library) {
-            if (library is LibraryLoaded && library.showCirclePrompt && library.books.isNotEmpty) {
+            if (library is LibraryLoaded &&
+                library.showCirclePrompt &&
+                library.books.isNotEmpty) {
               CirclePromptSheet.show(context, library.books.first);
               context.read<LibraryCubit>().dismissCirclePrompt();
             }
@@ -50,10 +51,20 @@ class LibraryBody extends StatelessWidget {
                   book.author.toLowerCase().contains(query);
             }).toList();
 
-            if (filteredBooks.isEmpty && searchQuery.isNotEmpty) {
+            final textHits = context.watch<BookTextSearchCubit>().state;
+            final hasTextHits =
+                searchQuery.isNotEmpty &&
+                textHits.any((hit) => books.any((b) => b.id == hit.bookId));
+
+            if (filteredBooks.isEmpty &&
+                searchQuery.isNotEmpty &&
+                !hasTextHits) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -84,11 +95,23 @@ class LibraryBody extends StatelessWidget {
               );
             }
 
-            if (filteredBooks.isEmpty && jobs.isEmpty) {
+            if (filteredBooks.isEmpty && jobs.isEmpty && !hasTextHits) {
               return const SingleChildScrollView(child: LibraryEmpty());
             }
 
-            return Shelf(jobs: jobs, books: filteredBooks);
+            if (!hasTextHits) {
+              return Shelf(jobs: jobs, books: filteredBooks);
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                BookTextSearchResults(hits: textHits, books: books),
+                Expanded(
+                  child: Shelf(jobs: jobs, books: filteredBooks),
+                ),
+              ],
+            );
           },
         );
       },

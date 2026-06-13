@@ -22,6 +22,7 @@ import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
     as _i342;
 import 'package:zapbook/core/data/documents_directory.dart' as _i240;
 import 'package:zapbook/core/data/library_file_store.dart' as _i854;
+import 'package:zapbook/core/data/search/book_search_index.dart' as _i525;
 import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/nostr_module.dart' as _i96;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
@@ -144,6 +145,8 @@ import 'package:zapbook/features/library/domain/usecases/watch_library_books.dar
     as _i1024;
 import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart'
     as _i404;
+import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart'
+    as _i385;
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart'
     as _i458;
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart'
@@ -209,6 +212,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
     gh.lazySingleton<_i854.LibraryFileStore>(() => _i854.LibraryFileStore());
+    gh.lazySingleton<_i525.BookSearchIndex>(() => _i525.BookSearchIndex());
     await gh.lazySingletonAsync<_i970.Marmot>(
       () => marmotModule.marmot(),
       preResolve: true,
@@ -253,6 +257,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i240.DocumentsDirectory>(
       () => const _i240.PathProviderDocumentsDirectory(),
+    );
+    gh.factory<_i385.BookTextSearchCubit>(
+      () => _i385.BookTextSearchCubit(gh<_i525.BookSearchIndex>()),
     );
     gh.lazySingleton<_i283.PdfPageRasterizer>(
       () => const _i217.PrintingPdfRasterizer(),
@@ -299,13 +306,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<List<_i751.BookExtractor>>(
       () => ingestionModule.bookExtractors(gh<_i201.CoverGenerator>()),
-    );
-    gh.lazySingleton<_i379.BookIngestionRepository>(
-      () => _i785.BookIngestionRepositoryImpl(
-        extractors: gh<List<_i751.BookExtractor>>(),
-        fileStore: gh<_i854.LibraryFileStore>(),
-        writer: gh<_i1.ZbfWriter>(),
-      ),
     );
     gh.lazySingleton<_i507.NwcService>(
       () => _i507.NwcService(
@@ -354,11 +354,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
-    gh.factory<_i696.IngestBook>(
-      () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
-    );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
+    );
+    gh.lazySingleton<_i379.BookIngestionRepository>(
+      () => _i785.BookIngestionRepositoryImpl(
+        extractors: gh<List<_i751.BookExtractor>>(),
+        fileStore: gh<_i854.LibraryFileStore>(),
+        searchIndex: gh<_i525.BookSearchIndex>(),
+        writer: gh<_i1.ZbfWriter>(),
+      ),
     );
     gh.lazySingleton<_i64.CheersDataSource>(
       () => _i64.CheersDataSourceImpl(
@@ -406,12 +411,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
+    gh.factory<_i696.IngestBook>(
+      () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.MarmotLibraryRepository(
         gh<_i398.BookGroupDatasource>(),
         gh<_i854.LibraryFileStore>(),
         gh<_i1.ZbfReader>(),
         gh<_i740.DensityService>(),
+        gh<_i525.BookSearchIndex>(),
       ),
     );
     gh.lazySingleton<_i314.CheersRepository>(

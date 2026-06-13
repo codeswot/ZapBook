@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:injectable/injectable.dart';
@@ -7,6 +8,7 @@ import 'package:zapbook/core/domain/ingestion_progress.dart';
 import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
+import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart';
 
 import 'package:zapbook/core/domain/wizard_data.dart';
@@ -16,11 +18,13 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
   BookIngestionRepositoryImpl({
     required this._extractors,
     required this._fileStore,
+    required this._searchIndex,
     this._writer = const ZbfWriter(),
   });
 
   final List<BookExtractor> _extractors;
   final LibraryFileStore _fileStore;
+  final BookSearchIndex _searchIndex;
   final ZbfWriter _writer;
 
   @override
@@ -59,6 +63,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       yield IngestionProgress.writing('Writing ${book.manifest.title}');
       final bytes = _writer.encode(book);
       final path = await _fileStore.writeZbf(book.manifest.id, bytes);
+      unawaited(_searchIndex.ensureIndexed(book.manifest.id, path));
       yield IngestionProgress.written(result: book, zbfPath: path);
     } on Exception catch (error) {
       yield IngestionProgress.failed(error.toString());
