@@ -42,20 +42,25 @@ class EmbeddingService {
     if (pieces.isEmpty) {
       return Float32List(dimensions);
     }
-    final model = await _load();
-    if (pieces.length == 1) {
-      final vector = await model.getEmbeddingAsVector(pieces.first);
-      return Float32List.fromList(vector.toList());
-    }
-    final sum = Float32List(dimensions);
-    for (final tokens in pieces) {
-      final vector = await model.getEmbeddingAsVector(tokens);
-      final values = vector.toList();
-      for (var i = 0; i < dimensions; i++) {
-        sum[i] += values[i];
+    final dir = await getApplicationSupportDirectory();
+    final modelPath = '${dir.path}/models/$_modelFileName';
+    await _load();
+    return Isolate.run(() async {
+      final model = MiniLmL6V2.load(modelPath);
+      if (pieces.length == 1) {
+        final vector = await model.getEmbeddingAsVector(pieces.first);
+        return Float32List.fromList(vector.toList());
       }
-    }
-    return normalized(sum);
+      final sum = Float32List(dimensions);
+      for (final tokens in pieces) {
+        final vector = await model.getEmbeddingAsVector(tokens);
+        final values = vector.toList();
+        for (var i = 0; i < dimensions; i++) {
+          sum[i] += values[i];
+        }
+      }
+      return normalized(sum);
+    });
   }
 
   static Float32List normalized(Float32List input) {
