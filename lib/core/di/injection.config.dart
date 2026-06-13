@@ -566,15 +566,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i1053.ClipboardService>(),
-        gh<_i11.NostrService>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
-      ),
-    );
     gh.factory<_i668.CirclesCubit>(
       () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
     );
@@ -607,6 +598,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1073.NostrSession>(),
         gh<_i507.NwcService>(),
         gh<_i182.ReadingStatsService>(),
+      ),
+    );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i1053.ClipboardService>(),
+        gh<_i11.NostrService>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+        gh<_i397.KeyPackageService>(),
       ),
     );
     gh.factory<_i385.LoadProfile>(

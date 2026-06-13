@@ -4,6 +4,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_header.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_footer.dart';
@@ -62,6 +63,16 @@ class _OnboardingViewState extends State<_OnboardingView> {
     return BlocListener<OnboardingCubit, OnboardingState>(
       listener: (context, state) {
         if (state.isComplete) {
+          if (state.keyPackagePublishFailed) {
+            AppToast.show(
+              context,
+              message:
+                  "Couldn't finish setting you up for reading circles. "
+                  "Reopen the app to retry.",
+              type: AppToastType.warning,
+              rootNavigator: true,
+            );
+          }
           const HomeRoute().go(context);
         }
       },
