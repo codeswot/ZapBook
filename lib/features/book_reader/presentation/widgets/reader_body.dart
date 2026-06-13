@@ -71,14 +71,30 @@ class _ReaderBodyState extends State<ReaderBody> {
 
   late final List<BookBlock> _merged = mergeReadingBlocks(widget.blocks);
   final GlobalKey _anchorKey = GlobalKey();
-  late final int _anchorIndex = _findAnchor();
+  int _anchorIndex = -1;
 
   @override
   void initState() {
     super.initState();
-    if (_anchorIndex >= 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToAnchor());
+    _anchorIndex = _findAnchor();
+    if (_anchorIndex >= 0) _scheduleScroll();
+  }
+
+  @override
+  void didUpdateWidget(ReaderBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.highlightQuery == oldWidget.highlightQuery) return;
+    final next = _findAnchor();
+    if (next != _anchorIndex) {
+      setState(() => _anchorIndex = next);
     }
+    if (next >= 0) _scheduleScroll();
+  }
+
+  void _scheduleScroll() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 320), _scrollToAnchor);
+    });
   }
 
   int _findAnchor() {
@@ -90,13 +106,21 @@ class _ReaderBodyState extends State<ReaderBody> {
     return -1;
   }
 
-  void _scrollToAnchor() {
+  void _scrollToAnchor([int attempt = 0]) {
+    if (!mounted) return;
     final context = _anchorKey.currentContext;
-    if (!mounted || context == null) return;
+    if (context == null) {
+      if (attempt < 5) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _scrollToAnchor(attempt + 1),
+        );
+      }
+      return;
+    }
     Scrollable.ensureVisible(
       context,
-      alignment: 0.18,
-      duration: const Duration(milliseconds: 420),
+      alignment: 0.12,
+      duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
     );
   }
@@ -316,20 +340,22 @@ class _HighlightableBlocks extends StatelessWidget {
         anchorKey: anchorKey,
       );
     }
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(query),
-      tween: Tween(begin: 1.0, end: 0.0),
-      duration: const Duration(milliseconds: 2600),
-      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
-      onEnd: onHighlightComplete,
-      builder: (context, t, _) => _BlockColumn(
-        blocks: blocks,
-        style: style,
-        asset: asset,
-        highlightQuery: query,
-        highlightProgress: t,
-        anchorIndex: anchorIndex,
-        anchorKey: anchorKey,
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey(query),
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 2800),
+        curve: Curves.linear,
+        onEnd: onHighlightComplete,
+        builder: (context, t, _) => _BlockColumn(
+          blocks: blocks,
+          style: style,
+          asset: asset,
+          highlightQuery: query,
+          highlightProgress: t,
+          anchorIndex: anchorIndex,
+          anchorKey: anchorKey,
+        ),
       ),
     );
   }

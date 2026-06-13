@@ -137,29 +137,44 @@ class _RichText extends StatelessWidget {
     );
   }
 
-  List<InlineSpan> _spansFor(BuildContext context, String input, TextStyle base) {
+  static double _envelope(double p) {
+    if (p < 0.12) return p / 0.12;
+    if (p > 0.75) return ((1.0 - p) / 0.25).clamp(0.0, 1.0);
+    return 1.0;
+  }
+
+  List<InlineSpan> _spansFor(
+    BuildContext context,
+    String input,
+    TextStyle base,
+  ) {
     final query = highlightQuery;
     if (query == null || query.isEmpty) {
       return [TextSpan(text: input, style: base)];
     }
 
     final colors = context.colors;
-    final t = highlightProgress ?? 0.0;
-    final shift = (1.0 - t) * 2.0;
+    final p = highlightProgress ?? 0.0;
+    final envelope = _envelope(p);
+    final center = 0.16 + ((p * 3.0) % 1.0) * 0.68;
 
     final paint = Paint()
       ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
         colors: [
-          colors.nostr.withValues(alpha: 0.8 * t),
-          colors.bitcoin2.withValues(alpha: 0.8 * t),
+          colors.nostr.withValues(alpha: 0.35 * envelope),
+          colors.bitcoin2.withValues(alpha: 0.68 * envelope),
+          colors.paper.withValues(alpha: 0.85 * envelope),
+          colors.bitcoin2.withValues(alpha: 0.68 * envelope),
+          colors.nostr.withValues(alpha: 0.35 * envelope),
         ],
-        begin: Alignment(-1.0 + shift, -1.0),
-        end: Alignment(1.0 + shift, 1.0),
-      ).createShader(const Rect.fromLTWH(0, 0, 150, 30));
+        stops: [0.0, center - 0.15, center, center + 0.15, 1.0],
+      ).createShader(const Rect.fromLTWH(0, 0, 280, 40));
 
     final highlighted = base.copyWith(
       background: paint,
-      color: Color.lerp(base.color ?? colors.ink, colors.paper, t) ?? base.color,
+      fontWeight: FontWeight.w600,
     );
 
     final spans = <InlineSpan>[];
@@ -178,10 +193,12 @@ class _RichText extends StatelessWidget {
         spans.add(TextSpan(text: input.substring(start, index), style: base));
       }
 
-      spans.add(TextSpan(
-        text: input.substring(index, index + query.length),
-        style: highlighted,
-      ));
+      spans.add(
+        TextSpan(
+          text: input.substring(index, index + query.length),
+          style: highlighted,
+        ),
+      );
 
       start = index + query.length;
     }
