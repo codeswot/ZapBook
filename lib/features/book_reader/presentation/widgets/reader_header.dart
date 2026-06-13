@@ -7,6 +7,7 @@ class ReaderHeader extends StatelessWidget {
     required this.chapterTitle,
     required this.onBack,
     required this.onOpenContents,
+    this.onSearch,
     super.key,
   });
 
@@ -14,6 +15,7 @@ class ReaderHeader extends StatelessWidget {
   final String chapterTitle;
   final VoidCallback onBack;
   final VoidCallback onOpenContents;
+  final VoidCallback? onSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,13 @@ class ReaderHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onSearch != null)
+                IconButton(
+                  onPressed: onSearch,
+                  icon: const Icon(Icons.search_rounded),
+                  tooltip: 'Search book',
+                  color: colors.ink,
+                ),
               IconButton(
                 onPressed: onOpenContents,
                 icon: const Icon(Icons.list_rounded),

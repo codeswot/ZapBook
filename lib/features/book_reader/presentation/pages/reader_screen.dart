@@ -25,6 +25,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_footer.
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_header.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_pull_indicator.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_sheet.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reader_search_sheet.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
@@ -36,6 +37,7 @@ class ReaderScreen extends StatefulWidget {
     this.segmentLoader,
     this.onExit,
     this.initialPage,
+    this.highlightQuery,
     super.key,
   });
 
@@ -44,6 +46,7 @@ class ReaderScreen extends StatefulWidget {
   final BookSegmentLoader? segmentLoader;
   final VoidCallback? onExit;
   final int? initialPage;
+  final String? highlightQuery;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -61,6 +64,22 @@ class _ReaderScreenState extends State<ReaderScreen>
   double _lastScrollDelta = 0;
   int _savedPage = 0;
   bool _ready = false;
+
+  String? _activeQuery;
+  int? _highlightPage;
+
+  void _jumpToHit(ZbfViewerCubit cubit, int page, String query) {
+    setState(() {
+      _activeQuery = query;
+      _highlightPage = page;
+    });
+    cubit.goToPage(page);
+  }
+
+  String? _queryFor(int index) =>
+      (_highlightPage != null && index == _highlightPage)
+      ? _activeQuery
+      : null;
 
   @override
   void initState() {
@@ -83,6 +102,11 @@ class _ReaderScreenState extends State<ReaderScreen>
           override >= 0 &&
           override < widget.handle.manifest.pageCount) {
         _savedPage = override;
+        final query = widget.highlightQuery;
+        if (query != null && query.isNotEmpty) {
+          _activeQuery = query;
+          _highlightPage = override;
+        }
       }
       if (mounted) {
         _progress.start(initialPage: _savedPage);
@@ -244,6 +268,12 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     cubit.previousPage();
                                   },
                                   onPullChanged: _onPullChanged,
+                                  highlightQuery: _queryFor(index),
+                                  onHighlightComplete: () {
+                                    if (mounted) {
+                                      setState(() => _highlightPage = null);
+                                    }
+                                  },
                                 ),
                               ),
                       ),
@@ -258,6 +288,12 @@ class _ReaderScreenState extends State<ReaderScreen>
                       title: widget.handle.manifest.title,
                       chapterTitle: page.chapterTitle,
                       onBack: widget.onExit ?? () => context.pop(),
+                      onSearch: () => ReaderSearchSheet.show(
+                        context,
+                        bookId: widget.handle.manifest.id,
+                        onSelect: (hitPage, query) =>
+                            _jumpToHit(cubit, hitPage, query),
+                      ),
                       onOpenContents: () => ReaderTocSheet.show(
                         context,
                         manifest: widget.handle.manifest,

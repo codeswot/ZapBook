@@ -38,6 +38,7 @@ class LibraryHeader extends StatelessWidget {
                 Expanded(
                   child: AppInput(
                     controller: searchController,
+                    autofocus: true,
                     icon: LucideIcons.search,
                     hintText: 'Search books...',
                     onChanged: onSearchChanged,

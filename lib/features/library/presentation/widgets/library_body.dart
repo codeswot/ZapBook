@@ -5,7 +5,6 @@ import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubi
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
-import 'package:zapbook/features/library/presentation/widgets/book_text_search_results.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
     hide LibraryEmpty;
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
@@ -99,18 +98,12 @@ class LibraryBody extends StatelessWidget {
               return const SingleChildScrollView(child: LibraryEmpty());
             }
 
-            if (!hasTextHits) {
-              return Shelf(jobs: jobs, books: filteredBooks);
-            }
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                BookTextSearchResults(hits: textHits, books: books),
-                Expanded(
-                  child: Shelf(jobs: jobs, books: filteredBooks),
-                ),
-              ],
+            return Shelf(
+              jobs: jobs,
+              books: filteredBooks,
+              allBooks: books,
+              searchHits: hasTextHits ? textHits : null,
+              searchQuery: searchQuery,
             );
           },
         );

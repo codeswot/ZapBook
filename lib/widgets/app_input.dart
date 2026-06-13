@@ -13,6 +13,8 @@ class AppInput extends StatefulWidget {
   final String? hintText;
   final TextInputType? keyboardType;
 
+  final bool autofocus;
+
   const AppInput({
     super.key,
     this.icon,
@@ -23,6 +25,7 @@ class AppInput extends StatefulWidget {
     this.onChanged,
     this.hintText,
     this.keyboardType,
+    this.autofocus = false,
   });
 
   @override
@@ -117,6 +120,7 @@ class _AppInputState extends State<AppInput> {
               Expanded(
                 child: TextFormField(
                   controller: _controller,
+                  autofocus: widget.autofocus,
                   onTapOutside: (event) => FocusScope.of(context).unfocus(),
                   keyboardType: widget.keyboardType,
                   onChanged: widget.onChanged,

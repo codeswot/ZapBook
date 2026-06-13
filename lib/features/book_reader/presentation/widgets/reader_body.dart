@@ -35,6 +35,8 @@ class ReaderBody extends StatefulWidget {
     required this.onTap,
     required this.onUserScrollDirection,
     required this.onPullChanged,
+    this.highlightQuery,
+    this.onHighlightComplete,
     super.key,
   });
 
@@ -49,6 +51,8 @@ class ReaderBody extends StatefulWidget {
 
   final ValueChanged<ScrollDirection> onUserScrollDirection;
   final ValueChanged<ReaderPullState?> onPullChanged;
+  final String? highlightQuery;
+  final VoidCallback? onHighlightComplete;
 
   @override
   State<ReaderBody> createState() => _ReaderBodyState();
@@ -183,6 +187,38 @@ class _ReaderBodyState extends State<ReaderBody> {
     _clearPull();
   }
 
+  Widget _column(String? query, double? progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final block in _merged)
+          ReaderBlockView(
+            block: block,
+            style: widget.style,
+            asset: widget.asset,
+            highlightQuery: query,
+            highlightProgress: progress,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBlocks(BuildContext context) {
+    final query = widget.highlightQuery;
+    if (query == null || query.isEmpty) {
+      return _column(null, null);
+    }
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(query),
+      tween: Tween(begin: 1.0, end: 0.0),
+      duration: const Duration(milliseconds: 2600),
+      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+      onEnd: widget.onHighlightComplete,
+      builder: (context, t, _) =>
+          _column(query, t),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Listener(
@@ -209,19 +245,7 @@ class _ReaderBodyState extends State<ReaderBody> {
                   constraints: const BoxConstraints(
                     maxWidth: ReadingStyle.maxContentWidth,
                   ),
-                  child: SelectionArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final block in _merged)
-                          ReaderBlockView(
-                            block: block,
-                            style: widget.style,
-                            asset: widget.asset,
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: SelectionArea(child: _buildBlocks(context)),
                 ),
               ),
             ],

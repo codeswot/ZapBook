@@ -11,10 +11,12 @@ class BookTextSearchResults extends StatelessWidget {
     super.key,
     required this.hits,
     required this.books,
+    required this.query,
   });
 
   final List<BookSearchHit> hits;
   final List<LibraryBook> books;
+  final String query;
 
   @override
   Widget build(BuildContext context) {
@@ -39,17 +41,22 @@ class BookTextSearchResults extends StatelessWidget {
           ),
         ),
         for (final hit in visible)
-          _SearchHitTile(hit: hit, book: byId[hit.bookId]!),
+          _SearchHitTile(hit: hit, book: byId[hit.bookId]!, query: query),
       ],
     );
   }
 }
 
 class _SearchHitTile extends StatelessWidget {
-  const _SearchHitTile({required this.hit, required this.book});
+  const _SearchHitTile({
+    required this.hit,
+    required this.book,
+    required this.query,
+  });
 
   final BookSearchHit hit;
   final LibraryBook book;
+  final String query;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +67,7 @@ class _SearchHitTile extends StatelessWidget {
       onTap: () => ZbfViewerRoute(
         zbfPath: book.zbfPath,
         page: hit.pageNumber - 1,
+        query: query,
       ).push(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),

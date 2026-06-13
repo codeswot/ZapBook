@@ -11,11 +11,13 @@ class ZbfViewerPage extends StatelessWidget {
     required this.zbfPath,
     super.key,
     this.initialPage,
+    this.highlightQuery,
     this._reader,
   });
 
   final String zbfPath;
   final int? initialPage;
+  final String? highlightQuery;
 
   final ZbfReader? _reader;
 
@@ -39,7 +41,11 @@ class ZbfViewerPage extends StatelessWidget {
         if (snapshot.hasError) return _error('${snapshot.error}');
         final handle = snapshot.data;
         if (handle == null) return _loading();
-        return ReaderScreen(handle: handle, initialPage: initialPage);
+        return ReaderScreen(
+          handle: handle,
+          initialPage: initialPage,
+          highlightQuery: highlightQuery,
+        );
       },
     );
   }
@@ -56,6 +62,7 @@ class ZbfViewerPage extends StatelessWidget {
           handle: book.handle,
           segmentLoader: book.loader,
           initialPage: initialPage,
+          highlightQuery: highlightQuery,
         );
       },
     );

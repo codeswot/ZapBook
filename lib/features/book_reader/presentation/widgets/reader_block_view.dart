@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
 class ReaderBlockView extends StatelessWidget {
@@ -10,12 +11,16 @@ class ReaderBlockView extends StatelessWidget {
     required this.block,
     required this.style,
     required this.asset,
+    this.highlightQuery,
+    this.highlightProgress,
     super.key,
   });
 
   final BookBlock block;
   final ReadingStyle style;
   final Uint8List? Function(String assetRef) asset;
+  final String? highlightQuery;
+  final double? highlightProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +33,19 @@ class ReaderBlockView extends StatelessWidget {
           style: style.heading.copyWith(
             fontSize: 30 - (level.clamp(1, 4) * 3).toDouble(),
           ),
+          highlightQuery: highlightQuery,
+          highlightProgress: highlightProgress,
         ),
       ),
       ParagraphBlock(:final text, :final runs) => Padding(
         padding: EdgeInsets.only(bottom: style.paragraphSpacing),
-        child: _RichText(text: text, runs: runs, style: style.paragraph),
+        child: _RichText(
+          text: text,
+          runs: runs,
+          style: style.paragraph,
+          highlightQuery: highlightQuery,
+          highlightProgress: highlightProgress,
+        ),
       ),
       PullquoteBlock(:final text, :final runs) => Padding(
         padding: EdgeInsets.only(bottom: style.paragraphSpacing),
@@ -46,7 +59,13 @@ class ReaderBlockView extends StatelessWidget {
               ),
             ),
           ),
-          child: _RichText(text: text, runs: runs, style: style.pullquote),
+          child: _RichText(
+            text: text,
+            runs: runs,
+            style: style.pullquote,
+            highlightQuery: highlightQuery,
+            highlightProgress: highlightProgress,
+          ),
         ),
       ),
       CodeBlock(:final text) => Padding(
@@ -80,27 +99,94 @@ class _RichText extends StatelessWidget {
     required this.text,
     required this.runs,
     required this.style,
+    this.highlightQuery,
+    this.highlightProgress,
   });
 
   final String text;
   final List<TextRun>? runs;
   final TextStyle style;
+  final String? highlightQuery;
+  final double? highlightProgress;
+
+  bool get _highlighting =>
+      highlightProgress != null &&
+      highlightQuery != null &&
+      highlightQuery!.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final localRuns = runs;
     if (localRuns == null || localRuns.isEmpty) {
-      return Text(text, style: style);
+      if (!_highlighting) return Text(text, style: style);
+      return Text.rich(
+        TextSpan(style: style, children: _spansFor(context, text, style)),
+      );
     }
     return Text.rich(
       TextSpan(
         style: style,
         children: [
           for (final run in localRuns)
-            TextSpan(text: run.text, style: _styleFor(run)),
+            if (_highlighting)
+              ..._spansFor(context, run.text, _styleFor(run))
+            else
+              TextSpan(text: run.text, style: _styleFor(run)),
         ],
       ),
     );
+  }
+
+  List<InlineSpan> _spansFor(BuildContext context, String input, TextStyle base) {
+    final query = highlightQuery;
+    if (query == null || query.isEmpty) {
+      return [TextSpan(text: input, style: base)];
+    }
+
+    final colors = context.colors;
+    final t = highlightProgress ?? 0.0;
+    final shift = (1.0 - t) * 2.0;
+
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          colors.nostr.withValues(alpha: 0.8 * t),
+          colors.bitcoin2.withValues(alpha: 0.8 * t),
+        ],
+        begin: Alignment(-1.0 + shift, -1.0),
+        end: Alignment(1.0 + shift, 1.0),
+      ).createShader(const Rect.fromLTWH(0, 0, 150, 30));
+
+    final highlighted = base.copyWith(
+      background: paint,
+      color: Color.lerp(base.color ?? colors.ink, colors.paper, t) ?? base.color,
+    );
+
+    final spans = <InlineSpan>[];
+    final lowerInput = input.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    int start = 0;
+    while (true) {
+      final index = lowerInput.indexOf(lowerQuery, start);
+      if (index == -1) {
+        spans.add(TextSpan(text: input.substring(start), style: base));
+        break;
+      }
+
+      if (index > start) {
+        spans.add(TextSpan(text: input.substring(start, index), style: base));
+      }
+
+      spans.add(TextSpan(
+        text: input.substring(index, index + query.length),
+        style: highlighted,
+      ));
+
+      start = index + query.length;
+    }
+
+    return spans;
   }
 
   TextStyle _styleFor(TextRun run) {
