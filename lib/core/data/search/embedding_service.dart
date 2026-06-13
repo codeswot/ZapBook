@@ -33,19 +33,23 @@ class EmbeddingService {
     return MiniLmL6V2.load(file.path);
   }
 
-  Future<Float32List> embed(String text) async {
-    final model = await _load();
-    final pieces = MiniLmL6V2.tokenizer.tokenize(text);
+  static List<List<int>> tokenize(String text) =>
+      MiniLmL6V2.tokenizer.tokenize(text).map((piece) => piece.tokens).toList();
+
+  Future<Float32List> embed(String text) => embedTokens(tokenize(text));
+
+  Future<Float32List> embedTokens(List<List<int>> pieces) async {
     if (pieces.isEmpty) {
       return Float32List(dimensions);
     }
+    final model = await _load();
     if (pieces.length == 1) {
-      final vector = await model.getEmbeddingAsVector(pieces.first.tokens);
+      final vector = await model.getEmbeddingAsVector(pieces.first);
       return Float32List.fromList(vector.toList());
     }
     final sum = Float32List(dimensions);
-    for (final piece in pieces) {
-      final vector = await model.getEmbeddingAsVector(piece.tokens);
+    for (final tokens in pieces) {
+      final vector = await model.getEmbeddingAsVector(tokens);
       final values = vector.toList();
       for (var i = 0; i < dimensions; i++) {
         sum[i] += values[i];

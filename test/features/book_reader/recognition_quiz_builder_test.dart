@@ -10,11 +10,12 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class FakeEmbeddingService extends EmbeddingService {
   @override
-  Future<Float32List> embed(String text) async {
+  Future<Float32List> embedTokens(List<List<int>> pieces) async {
     final vector = Float32List(EmbeddingService.dimensions);
-    for (final word in text.toLowerCase().split(RegExp(r'\W+'))) {
-      if (word.isEmpty) continue;
-      vector[word.hashCode % EmbeddingService.dimensions] += 1;
+    for (final tokens in pieces) {
+      for (final token in tokens) {
+        vector[token % EmbeddingService.dimensions] += 1;
+      }
     }
     return EmbeddingService.normalized(vector);
   }

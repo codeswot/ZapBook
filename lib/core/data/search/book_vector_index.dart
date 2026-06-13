@@ -84,12 +84,13 @@ class BookVectorIndex {
     ]);
     if (done.isNotEmpty) return;
 
-    final chunks = await Isolate.run(() => _chunkBook(zbfPath));
-    if (chunks.isEmpty) return;
+    final inputs = await Isolate.run(() => _chunkAndTokenize(zbfPath));
+    if (inputs.isEmpty) return;
 
     final vectors = <Float32List>[];
-    for (final chunk in chunks) {
-      vectors.add(await _embeddings.embed(chunk.text));
+    for (final input in inputs) {
+      vectors.add(await _embeddings.embedTokens(input.tokens));
+      await Future<void>.delayed(Duration.zero);
     }
 
     db.execute('BEGIN');
@@ -99,13 +100,14 @@ class BookVectorIndex {
         'INSERT INTO chunks (book_id, page_number, seq, text, embedding) '
         'VALUES (?, ?, ?, ?, ?)',
       );
-      for (var i = 0; i < chunks.length; i++) {
+      for (var i = 0; i < inputs.length; i++) {
+        final chunk = inputs[i].chunk;
         final embedding = vectors[i];
         insert.execute([
           bookId,
-          chunks[i].pageNumber,
-          chunks[i].seq,
-          chunks[i].text,
+          chunk.pageNumber,
+          chunk.seq,
+          chunk.text,
           embedding.buffer.asUint8List(
             embedding.offsetInBytes,
             embedding.lengthInBytes,
@@ -116,26 +118,28 @@ class BookVectorIndex {
       db.execute(
         'INSERT OR REPLACE INTO embedded_books (book_id, chunk_count, embedded_at) '
         'VALUES (?, ?, ?)',
-        [bookId, chunks.length, DateTime.now().millisecondsSinceEpoch],
+        [bookId, inputs.length, DateTime.now().millisecondsSinceEpoch],
       );
       db.execute('COMMIT');
     } catch (_) {
       db.execute('ROLLBACK');
       rethrow;
     }
-    _log.info('Embedded $bookId (${chunks.length} chunks)');
+    _log.info('Embedded $bookId (${inputs.length} chunks)');
   }
 
-  static Future<List<BookChunk>> _chunkBook(String zbfPath) async {
+  static Future<List<_EmbedInput>> _chunkAndTokenize(String zbfPath) async {
     final handle = await const ZbfReader().open(zbfPath);
     const chunker = BookChunker();
-    final chunks = <BookChunk>[];
+    final inputs = <_EmbedInput>[];
     for (var i = 0; i < handle.manifest.pageCount; i++) {
       final page = handle.pageAt(i);
       if (page.layoutType == BookLayoutType.processing) continue;
-      chunks.addAll(chunker.chunkPage(page, startSeq: chunks.length));
+      for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
+        inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
+      }
     }
-    return chunks;
+    return inputs;
   }
 
   Future<List<SemanticHit>> search(
@@ -146,38 +150,63 @@ class BookVectorIndex {
   }) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return const [];
-    final db = await _open();
+    await _open();
+    final dbPath = await _path();
     final queryVector = await _embeddings.embed(trimmed);
+    return Isolate.run(
+      () => _scoreChunks(
+        dbPath: dbPath,
+        queryVector: queryVector,
+        bookId: bookId,
+        limit: limit,
+        minScore: minScore,
+      ),
+    );
+  }
 
-    final rows = bookId == null
-        ? db.select('SELECT book_id, page_number, text, embedding FROM chunks')
-        : db.select(
-            'SELECT book_id, page_number, text, embedding FROM chunks '
-            'WHERE book_id = ?',
-            [bookId],
-          );
+  static List<SemanticHit> _scoreChunks({
+    required String dbPath,
+    required Float32List queryVector,
+    required String? bookId,
+    required int limit,
+    required double minScore,
+  }) {
+    final db = sqlite3.open(dbPath);
+    try {
+      final rows = bookId == null
+          ? db.select(
+              'SELECT book_id, page_number, text, embedding FROM chunks',
+            )
+          : db.select(
+              'SELECT book_id, page_number, text, embedding FROM chunks '
+              'WHERE book_id = ?',
+              [bookId],
+            );
 
-    final scored = <SemanticHit>[];
-    for (final row in rows) {
-      final blob = row['embedding'] as Uint8List;
-      final vector = Float32List.view(
-        blob.buffer,
-        blob.offsetInBytes,
-        EmbeddingService.dimensions,
-      );
-      final score = EmbeddingService.cosine(queryVector, vector);
-      if (score < minScore) continue;
-      scored.add(
-        SemanticHit(
-          bookId: row['book_id'] as String,
-          pageNumber: (row['page_number'] as num).toInt(),
-          text: row['text'] as String,
-          score: score,
-        ),
-      );
+      final scored = <SemanticHit>[];
+      for (final row in rows) {
+        final blob = row['embedding'] as Uint8List;
+        final vector = Float32List.view(
+          blob.buffer,
+          blob.offsetInBytes,
+          EmbeddingService.dimensions,
+        );
+        final score = EmbeddingService.cosine(queryVector, vector);
+        if (score < minScore) continue;
+        scored.add(
+          SemanticHit(
+            bookId: row['book_id'] as String,
+            pageNumber: (row['page_number'] as num).toInt(),
+            text: row['text'] as String,
+            score: score,
+          ),
+        );
+      }
+      scored.sort((a, b) => b.score.compareTo(a.score));
+      return scored.length > limit ? scored.sublist(0, limit) : scored;
+    } finally {
+      db.close();
     }
-    scored.sort((a, b) => b.score.compareTo(a.score));
-    return scored.length > limit ? scored.sublist(0, limit) : scored;
   }
 
   Future<bool> isEmbedded(String bookId) async {
@@ -192,4 +221,11 @@ class BookVectorIndex {
     db.execute('DELETE FROM chunks WHERE book_id = ?', [bookId]);
     db.execute('DELETE FROM embedded_books WHERE book_id = ?', [bookId]);
   }
+}
+
+class _EmbedInput {
+  const _EmbedInput(this.chunk, this.tokens);
+
+  final BookChunk chunk;
+  final List<List<int>> tokens;
 }

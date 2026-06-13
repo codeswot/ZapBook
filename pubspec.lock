@@ -508,9 +508,9 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: e2488a3
-      resolved-ref: e2488a39325be5d04bdc0b844272b84a853f2337
-      url: "https://github.com/Telosnex/fonnx.git"
+      ref: "0d6e1201fb6189d06afd8c7fc04ca0be29ef6929"
+      resolved-ref: "0d6e1201fb6189d06afd8c7fc04ca0be29ef6929"
+      url: "https://github.com/codeswot/fonnx.git"
     source: git
     version: "0.0.1"
   freezed_annotation:
