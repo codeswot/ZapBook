@@ -94,16 +94,13 @@ class _ProfileHeaderContent extends StatelessWidget {
             context,
             profile: profile,
             pickImage: () => context.read<ProfileCubit>().pickImage(),
-            onSave: ({
-              required displayName,
-              required lud16,
-              required picture,
-            }) =>
-                context.read<ProfileCubit>().updateProfile(
-                  displayName: displayName,
-                  lud16: lud16,
-                  picture: picture,
-                ),
+            onSave:
+                ({required displayName, required lud16, required picture}) =>
+                    context.read<ProfileCubit>().updateProfile(
+                      displayName: displayName,
+                      lud16: lud16,
+                      picture: picture,
+                    ),
           ),
           icon: LucideIcons.edit2,
           size: 20,

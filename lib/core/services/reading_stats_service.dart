@@ -32,7 +32,7 @@ class ReadingStatsService {
   Future<void> syncBookStats() => _milestoneService.syncAll();
 
   int get streak {
-    final dates = { ..._milestoneService.allMilestoneDates, ..._milestoneDates };
+    final dates = {..._milestoneService.allMilestoneDates, ..._milestoneDates};
     if (dates.isEmpty) return 0;
     final sorted = dates.toList()..sort();
     final today = _today();
@@ -57,10 +57,7 @@ class ReadingStatsService {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return;
 
-    final events = _cache.loadEvents(
-      pubKeys: [pubkey],
-      kinds: [_statsKind],
-    );
+    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_statsKind]);
 
     Map<String, dynamic>? json;
     for (final e in events) {
@@ -197,8 +194,7 @@ class ReadingStatsService {
     _writeCache();
   }
 
-  String _today() =>
-      DateTime.now().toUtc().toIso8601String().substring(0, 10);
+  String _today() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
   String _dayOffset(int offset) {
     final d = DateTime.now().toUtc().add(Duration(days: offset));
@@ -206,8 +202,9 @@ class ReadingStatsService {
   }
 
   String _dayBefore(String date) {
-    final d =
-        DateTime.parse('${date}T00:00:00Z').subtract(const Duration(days: 1));
+    final d = DateTime.parse(
+      '${date}T00:00:00Z',
+    ).subtract(const Duration(days: 1));
     return d.toIso8601String().substring(0, 10);
   }
 }

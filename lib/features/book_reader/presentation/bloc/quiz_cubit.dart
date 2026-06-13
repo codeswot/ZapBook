@@ -32,10 +32,7 @@ class QuizCubit extends Cubit<QuizCubitState> {
   void start() {
     _sub = _quizService.onSurface.listen((set) {
       if (state.screen == QuizScreenState.idle) {
-        emit(QuizCubitState(
-          screen: QuizScreenState.active,
-          set: set,
-        ));
+        emit(QuizCubitState(screen: QuizScreenState.active, set: set));
       }
     });
   }
@@ -47,24 +44,31 @@ class QuizCubit extends Cubit<QuizCubitState> {
     if (set == null) return;
 
     if (nextIndex >= set.questions.length) {
-      final correct = answers.asMap().entries.where((e) =>
-          e.value == set.questions[e.key].correctIndex).length;
+      final correct = answers
+          .asMap()
+          .entries
+          .where((e) => e.value == set.questions[e.key].correctIndex)
+          .length;
       final score = correct / set.questions.length;
       _quizService.submitQuiz(set.milestoneIdx, answers, set);
-      emit(QuizCubitState(
-        screen: QuizScreenState.reveal,
-        set: set,
-        currentIndex: nextIndex,
-        answers: answers,
-        score: score,
-      ));
+      emit(
+        QuizCubitState(
+          screen: QuizScreenState.reveal,
+          set: set,
+          currentIndex: nextIndex,
+          answers: answers,
+          score: score,
+        ),
+      );
     } else {
-      emit(QuizCubitState(
-        screen: QuizScreenState.active,
-        set: set,
-        currentIndex: nextIndex,
-        answers: answers,
-      ));
+      emit(
+        QuizCubitState(
+          screen: QuizScreenState.active,
+          set: set,
+          currentIndex: nextIndex,
+          answers: answers,
+        ),
+      );
     }
   }
 

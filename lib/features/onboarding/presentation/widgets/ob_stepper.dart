@@ -6,11 +6,7 @@ class ObStepper extends StatelessWidget {
   final int step;
   final int total;
 
-  const ObStepper({
-    super.key,
-    required this.step,
-    required this.total,
-  });
+  const ObStepper({super.key, required this.step, required this.total});
 
   @override
   Widget build(BuildContext context) {

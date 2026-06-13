@@ -16,9 +16,7 @@ class OnboardingLocalDataSource {
 
   Future<void> clear() => _prefs.remove(_completeKey);
 
-  bool circlePromptShown() =>
-      _prefs.getBool(_circlePromptKey) ?? false;
+  bool circlePromptShown() => _prefs.getBool(_circlePromptKey) ?? false;
 
-  Future<void> setCirclePromptShown() =>
-      _prefs.setBool(_circlePromptKey, true);
+  Future<void> setCirclePromptShown() => _prefs.setBool(_circlePromptKey, true);
 }

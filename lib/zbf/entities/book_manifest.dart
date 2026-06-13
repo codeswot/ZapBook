@@ -77,8 +77,9 @@ final class BookManifest extends Equatable {
               )
               .toList() ??
           const [],
-      pageWords:
-          (json['pageWords'] as List?)?.map((e) => (e as num).toInt()).toList(),
+      pageWords: (json['pageWords'] as List?)
+          ?.map((e) => (e as num).toInt())
+          .toList(),
       skippablePages: (json['skippablePages'] as List?)
           ?.map((e) => (e as num).toInt())
           .toSet()

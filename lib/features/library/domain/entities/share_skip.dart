@@ -1,6 +1,4 @@
-enum ShareSkipReason {
-  noKeyPackage,
-}
+enum ShareSkipReason { noKeyPackage }
 
 class ShareSkip {
   const ShareSkip({required this.npub, required this.reason});

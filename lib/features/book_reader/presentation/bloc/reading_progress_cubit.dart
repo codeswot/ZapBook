@@ -96,8 +96,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
        _now = clock ?? _systemClock,
        super(ReadingState.initial(deps)) {
     _quizSub = quizService?.onCompleted.listen((result) {
-      if (result.score == 1.0) {
-      }
+      if (result.score == 1.0) {}
     });
   }
 

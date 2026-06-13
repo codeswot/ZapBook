@@ -13,7 +13,11 @@ import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class CircleMembersSheet extends StatelessWidget {
-  const CircleMembersSheet({super.key, required this.book, required this.isAdmin});
+  const CircleMembersSheet({
+    super.key,
+    required this.book,
+    required this.isAdmin,
+  });
 
   final LibraryBook book;
   final bool isAdmin;
@@ -30,7 +34,11 @@ class CircleMembersSheet extends StatelessWidget {
     );
   }
 
-  static Future<void> show(BuildContext context, {required LibraryBook book, required bool isAdmin}) {
+  static Future<void> show(
+    BuildContext context, {
+    required LibraryBook book,
+    required bool isAdmin,
+  }) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -55,13 +63,13 @@ class _Body extends StatelessWidget {
         final entries = state is CircleMembersLoaded
             ? state.entries
             : state is CircleMembersBusy
-                ? state.entries
-                : <MemberEntry>[];
+            ? state.entries
+            : <MemberEntry>[];
         final isAdmin = state is CircleMembersLoaded
             ? state.isAdmin
             : state is CircleMembersBusy
-                ? state.isAdmin
-                : false;
+            ? state.isAdmin
+            : false;
         final busyNpub = state is CircleMembersBusy ? state.busyNpub : null;
 
         return AppSheet(
@@ -74,38 +82,73 @@ class _Body extends StatelessWidget {
               if (state is CircleMembersLoading)
                 const AppLoadingList()
               else if (entries.isEmpty)
-                Text('No members yet.', style: typography.body.copyWith(color: colors.slate))
+                Text(
+                  'No members yet.',
+                  style: typography.body.copyWith(color: colors.slate),
+                )
               else
                 for (final entry in entries) ...[
                   Row(
                     children: [
-                      AppProfileAvatar(url: entry.contact.picture ?? '', size: 36),
+                      AppProfileAvatar(
+                        url: entry.contact.picture ?? '',
+                        size: 36,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(entry.contact.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: typography.bodyL.copyWith(color: colors.ink)),
-                            Text(entry.contact.shortNpub, style: typography.bodyS.copyWith(color: colors.slate)),
+                            Text(
+                              entry.contact.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: typography.bodyL.copyWith(
+                                color: colors.ink,
+                              ),
+                            ),
+                            Text(
+                              entry.contact.shortNpub,
+                              style: typography.bodyS.copyWith(
+                                color: colors.slate,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       if (busyNpub == entry.npub)
-                        const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       else if (entry.isSelf)
-                        Text('(You)', style: typography.bodyS.copyWith(color: colors.slate2))
+                        Text(
+                          '(You)',
+                          style: typography.bodyS.copyWith(
+                            color: colors.slate2,
+                          ),
+                        )
                       else ...[
                         if (isAdmin)
                           BouncingInteractiveWidget(
                             onTap: () => cubit.remove(book.id, entry.npub),
-                            child: Icon(LucideIcons.userMinus, size: 20, color: colors.tomato),
+                            child: Icon(
+                              LucideIcons.userMinus,
+                              size: 20,
+                              color: colors.tomato,
+                            ),
                           ),
                         if (!entry.isContact) ...[
                           const SizedBox(width: 10),
                           BouncingInteractiveWidget(
                             onTap: () => cubit.addContact(entry.npub),
-                            child: Icon(LucideIcons.userPlus, size: 20, color: colors.bitcoin),
+                            child: Icon(
+                              LucideIcons.userPlus,
+                              size: 20,
+                              color: colors.bitcoin,
+                            ),
                           ),
                         ],
                       ],

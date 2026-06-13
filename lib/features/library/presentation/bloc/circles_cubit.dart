@@ -11,9 +11,8 @@ import 'package:zapbook/features/library/presentation/bloc/circles_state.dart';
 class CirclesCubit extends Cubit<CirclesState> {
   CirclesCubit(this._watchCircles) : super(const CirclesLoading()) {
     _subscription = _watchCircles().listen(
-      (circles) => emit(
-        circles.isEmpty ? const CirclesEmpty() : CirclesLoaded(circles),
-      ),
+      (circles) =>
+          emit(circles.isEmpty ? const CirclesEmpty() : CirclesLoaded(circles)),
       onError: (Object error) => emit(CirclesError('$error')),
     );
   }

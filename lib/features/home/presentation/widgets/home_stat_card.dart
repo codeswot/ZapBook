@@ -41,10 +41,7 @@ class HomeStatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: typography.caption.copyWith(color: colors.slate),
-          ),
+          Text(label, style: typography.caption.copyWith(color: colors.slate)),
         ],
       ),
     );

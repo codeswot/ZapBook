@@ -17,10 +17,10 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
     int initialPage = 0,
-  })  : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
-        _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
-        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
-        super(ZbfViewerState(currentPage: initialPage)) {
+  }) : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
+       _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
+       _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
+       super(ZbfViewerState(currentPage: initialPage)) {
     _ensureSegment(initialPage);
     _prefetch(initialPage);
   }

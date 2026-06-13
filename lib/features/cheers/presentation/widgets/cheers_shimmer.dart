@@ -149,10 +149,7 @@ class _ShimmerElement extends StatelessWidget {
 }
 
 class _DottedBorderPainter extends CustomPainter {
-  _DottedBorderPainter({
-    required this.color,
-    required this.borderRadius,
-  });
+  _DottedBorderPainter({required this.color, required this.borderRadius});
 
   final Color color;
   final double borderRadius;

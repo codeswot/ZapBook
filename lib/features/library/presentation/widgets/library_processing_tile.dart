@@ -60,7 +60,6 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
       ),
     );
   }
-
 }
 
 class _RunningContent extends StatelessWidget {
@@ -88,8 +87,10 @@ class _RunningContent extends StatelessWidget {
           job.fileName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: context.typography.caption
-              .copyWith(color: colors.ink, fontWeight: FontWeight.w600),
+          style: context.typography.caption.copyWith(
+            color: colors.ink,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -98,7 +99,10 @@ class _RunningContent extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _Progress(
-            value: job.progress, color: colors.bitcoin, track: colors.paper4),
+          value: job.progress,
+          color: colors.bitcoin,
+          track: colors.paper4,
+        ),
       ],
     );
   }
@@ -121,8 +125,10 @@ class _FailedContent extends StatelessWidget {
           job.fileName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: context.typography.caption
-              .copyWith(color: colors.ink, fontWeight: FontWeight.w600),
+          style: context.typography.caption.copyWith(
+            color: colors.ink,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -135,8 +141,11 @@ class _FailedContent extends StatelessWidget {
 }
 
 class _Progress extends StatelessWidget {
-  const _Progress(
-      {required this.value, required this.color, required this.track});
+  const _Progress({
+    required this.value,
+    required this.color,
+    required this.track,
+  });
 
   final double value;
   final Color color;
@@ -157,11 +166,11 @@ class _Progress extends StatelessWidget {
 }
 
 String _stageLabel(IngestionStage stage) => switch (stage) {
-      IngestionStage.fileSelected => 'Reading file',
-      IngestionStage.extracting => 'Extracting',
-      IngestionStage.assembling => 'Assembling',
-      IngestionStage.writing => 'Saving',
-      IngestionStage.needsAiProcessing => 'Saved',
-      IngestionStage.complete => 'Done',
-      IngestionStage.error => 'Error',
-    };
+  IngestionStage.fileSelected => 'Reading file',
+  IngestionStage.extracting => 'Extracting',
+  IngestionStage.assembling => 'Assembling',
+  IngestionStage.writing => 'Saving',
+  IngestionStage.needsAiProcessing => 'Saved',
+  IngestionStage.complete => 'Done',
+  IngestionStage.error => 'Error',
+};

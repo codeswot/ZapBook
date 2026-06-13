@@ -52,9 +52,7 @@ void main() {
 
     test('illustration and processing pages are not skippable', () {
       expect(
-        isDensitySkippable(
-          page(const [], layout: BookLayoutType.illustration),
-        ),
+        isDensitySkippable(page(const [], layout: BookLayoutType.illustration)),
         isFalse,
       );
       expect(

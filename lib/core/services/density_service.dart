@@ -41,10 +41,10 @@ class DensityService {
   }
 
   BookDensity _fromManifest(BookManifest m) => BookDensity(
-        pageWords: m.pageWords ?? [],
-        skippablePages: m.skippablePages?.toSet() ?? const {},
-        genre: genreFromLabel(m.genre),
-      );
+    pageWords: m.pageWords ?? [],
+    skippablePages: m.skippablePages?.toSet() ?? const {},
+    genre: genreFromLabel(m.genre),
+  );
 
   BookDensity? load(String bookId) {
     final dir = _dirPath;
@@ -60,15 +60,16 @@ class DensityService {
   }
 
   Map<String, dynamic> _toJson(BookDensity d) => {
-        'page_words': d.pageWords,
-        'skippable_pages': d.skippablePages.toList(),
-        'genre': d.genre.index,
-      };
+    'page_words': d.pageWords,
+    'skippable_pages': d.skippablePages.toList(),
+    'genre': d.genre.index,
+  };
 
   BookDensity _fromJson(Map<String, dynamic> json) => BookDensity(
-        pageWords: (json['page_words'] as List).cast<int>(),
-        skippablePages:
-            (json['skippable_pages'] as List).map((e) => e as int).toSet(),
-        genre: Genre.values[json['genre'] as int],
-      );
+    pageWords: (json['page_words'] as List).cast<int>(),
+    skippablePages: (json['skippable_pages'] as List)
+        .map((e) => e as int)
+        .toSet(),
+    genre: Genre.values[json['genre'] as int],
+  );
 }

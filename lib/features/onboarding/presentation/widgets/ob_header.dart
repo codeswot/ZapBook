@@ -8,11 +8,7 @@ class ObHeader extends StatelessWidget {
   final int currentStep;
   final VoidCallback onBack;
 
-  const ObHeader({
-    super.key,
-    required this.currentStep,
-    required this.onBack,
-  });
+  const ObHeader({super.key, required this.currentStep, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +34,7 @@ class ObHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          Expanded(
-            child: ObStepper(
-              step: currentStep - 1,
-              total: 3,
-            ),
-          ),
+          Expanded(child: ObStepper(step: currentStep - 1, total: 3)),
         ],
       ),
     );

@@ -42,8 +42,11 @@ class AppZapButton extends StatelessWidget {
               const SizedBox(width: 6),
               Row(
                 children: [
-                  Icon(LucideIcons.zap,
-                      size: 12, color: context.colors.bitcoin),
+                  Icon(
+                    LucideIcons.zap,
+                    size: 12,
+                    color: context.colors.bitcoin,
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     '${gesture.sats}',

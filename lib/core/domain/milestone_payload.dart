@@ -24,15 +24,15 @@ class MilestonePayload {
   static const messageType = 'zapbook.book.milestone';
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'book_id': bookId,
-        'milestone_idx': milestoneIdx,
-        'current_word_count': currentWordCount,
-        'total_word_count': totalWordCount,
-        'progress_pct': progressPct,
-        'current_page': currentPage,
-        'session_reading_seconds': sessionReadingSeconds,
-        'quiz_outlook': quizOutlook,
-        'reached_at': reachedAt,
-      };
+    'type': messageType,
+    'book_id': bookId,
+    'milestone_idx': milestoneIdx,
+    'current_word_count': currentWordCount,
+    'total_word_count': totalWordCount,
+    'progress_pct': progressPct,
+    'current_page': currentPage,
+    'session_reading_seconds': sessionReadingSeconds,
+    'quiz_outlook': quizOutlook,
+    'reached_at': reachedAt,
+  };
 }

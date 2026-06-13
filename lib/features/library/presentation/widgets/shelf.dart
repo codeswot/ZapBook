@@ -47,7 +47,9 @@ class Shelf extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        if (searchHits != null && searchQuery != null && searchQuery!.isNotEmpty) ...[
+        if (searchHits != null &&
+            searchQuery != null &&
+            searchQuery!.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: BookTextSearchResults(
               hits: searchHits!,

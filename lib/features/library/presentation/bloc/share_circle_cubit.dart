@@ -10,8 +10,12 @@ import 'package:zapbook/features/library/presentation/bloc/share_circle_state.da
 
 @injectable
 class ShareCircleCubit extends Cubit<ShareCircleState> {
-  ShareCircleCubit(this._contacts, this._identity, this._getBookMembers, this._shareBookWith)
-    : super(const ShareCircleLoading());
+  ShareCircleCubit(
+    this._contacts,
+    this._identity,
+    this._getBookMembers,
+    this._shareBookWith,
+  ) : super(const ShareCircleLoading());
 
   final ContactService _contacts;
   final IdentityLocalDataSource _identity;
@@ -27,11 +31,13 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     final members = await _getBookMembers(bookId);
     final existing = members.toSet();
 
-    emit(ShareCircleLoaded(
-      friends: friends.where((c) => c.npub != myNpub).toList(),
-      selectedNpubs: const [],
-      existingMembers: existing,
-    ));
+    emit(
+      ShareCircleLoaded(
+        friends: friends.where((c) => c.npub != myNpub).toList(),
+        selectedNpubs: const [],
+        existingMembers: existing,
+      ),
+    );
   }
 
   void toggleNpub(String npub) {
@@ -50,28 +56,75 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     final myNpub = await _identity.readNpub();
     if (npub == myNpub) return;
 
-    emit(ShareCircleBusy(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, adding: true));
+    emit(
+      ShareCircleBusy(
+        friends: s.friends,
+        selectedNpubs: s.selectedNpubs,
+        existingMembers: s.existingMembers,
+        adding: true,
+      ),
+    );
 
     try {
       final contact = await _contacts.add(npub);
-      final friends = s.friends.any((c) => c.npub == npub) ? s.friends : [contact, ...s.friends];
+      final friends = s.friends.any((c) => c.npub == npub)
+          ? s.friends
+          : [contact, ...s.friends];
       final selected = List<String>.from(s.selectedNpubs)..add(npub);
-      emit(ShareCircleLoaded(friends: friends, selectedNpubs: selected, existingMembers: s.existingMembers));
+      emit(
+        ShareCircleLoaded(
+          friends: friends,
+          selectedNpubs: selected,
+          existingMembers: s.existingMembers,
+        ),
+      );
     } on Object {
-      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers));
+      emit(
+        ShareCircleLoaded(
+          friends: s.friends,
+          selectedNpubs: s.selectedNpubs,
+          existingMembers: s.existingMembers,
+        ),
+      );
     }
   }
 
   Future<List<ShareSkip>> share(String bookId) async {
     final s = _currentLoaded;
-    emit(ShareCircleBusy(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, sharing: true));
+    emit(
+      ShareCircleBusy(
+        friends: s.friends,
+        selectedNpubs: s.selectedNpubs,
+        existingMembers: s.existingMembers,
+        sharing: true,
+      ),
+    );
     try {
-      final skipped = await _shareBookWith(bookId, List<String>.from(s.selectedNpubs));
-      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, shareResult: skipped));
+      final skipped = await _shareBookWith(
+        bookId,
+        List<String>.from(s.selectedNpubs),
+      );
+      emit(
+        ShareCircleLoaded(
+          friends: s.friends,
+          selectedNpubs: s.selectedNpubs,
+          existingMembers: s.existingMembers,
+          shareResult: skipped,
+        ),
+      );
       return skipped;
     } on Object {
-      final allSkipped = s.selectedNpubs.map((n) => ShareSkip(npub: n, reason: ShareSkipReason.noKeyPackage)).toList();
-      emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers, shareResult: allSkipped));
+      final allSkipped = s.selectedNpubs
+          .map((n) => ShareSkip(npub: n, reason: ShareSkipReason.noKeyPackage))
+          .toList();
+      emit(
+        ShareCircleLoaded(
+          friends: s.friends,
+          selectedNpubs: s.selectedNpubs,
+          existingMembers: s.existingMembers,
+          shareResult: allSkipped,
+        ),
+      );
       return allSkipped;
     }
   }
@@ -79,11 +132,27 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   ShareCircleLoaded get _currentLoaded {
     final s = state;
     if (s is ShareCircleLoaded) return s;
-    if (s is ShareCircleBusy) return ShareCircleLoaded(friends: s.friends, selectedNpubs: s.selectedNpubs, existingMembers: s.existingMembers);
-    return const ShareCircleLoaded(friends: [], selectedNpubs: [], existingMembers: {});
+    if (s is ShareCircleBusy) {
+      return ShareCircleLoaded(
+        friends: s.friends,
+        selectedNpubs: s.selectedNpubs,
+        existingMembers: s.existingMembers,
+      );
+    }
+    return const ShareCircleLoaded(
+      friends: [],
+      selectedNpubs: [],
+      existingMembers: {},
+    );
   }
 
   void _emitFrom(ShareCircleLoaded s, {List<String>? selectedNpubs}) {
-    emit(ShareCircleLoaded(friends: s.friends, selectedNpubs: selectedNpubs ?? s.selectedNpubs, existingMembers: s.existingMembers));
+    emit(
+      ShareCircleLoaded(
+        friends: s.friends,
+        selectedNpubs: selectedNpubs ?? s.selectedNpubs,
+        existingMembers: s.existingMembers,
+      ),
+    );
   }
 }

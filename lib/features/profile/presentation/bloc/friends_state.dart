@@ -17,7 +17,11 @@ class FriendsBusy extends FriendsState {
   final List<Contact> friends;
   final String busyNpub;
   final bool adding;
-  const FriendsBusy({required this.friends, required this.busyNpub, this.adding = false});
+  const FriendsBusy({
+    required this.friends,
+    required this.busyNpub,
+    this.adding = false,
+  });
 }
 
 class FriendsError extends FriendsState {
@@ -29,8 +33,8 @@ class FriendsError extends FriendsState {
     final friends = state is FriendsLoaded
         ? state.friends
         : state is FriendsBusy
-            ? state.friends
-            : <Contact>[];
+        ? state.friends
+        : <Contact>[];
     return FriendsError(friends: friends, message: message);
   }
 }

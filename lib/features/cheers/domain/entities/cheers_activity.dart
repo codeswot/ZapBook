@@ -37,20 +37,20 @@ final class CheersActivity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        actorNpub,
-        actorName,
-        actorAvatar,
-        bookTitle,
-        activityDescription,
-        timestamp,
-        type,
-        isUnread,
-        nudgeId,
-        thumbsUpCount,
-        clapCount,
-        fireCount,
-        rocketCount,
-        trophyCount,
-      ];
+    id,
+    actorNpub,
+    actorName,
+    actorAvatar,
+    bookTitle,
+    activityDescription,
+    timestamp,
+    type,
+    isUnread,
+    nudgeId,
+    thumbsUpCount,
+    clapCount,
+    fireCount,
+    rocketCount,
+    trophyCount,
+  ];
 }

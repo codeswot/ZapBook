@@ -10,7 +10,12 @@ class ShareCircleLoading extends ShareCircleState {
 }
 
 class ShareCircleLoaded extends ShareCircleState {
-  const ShareCircleLoaded({required this.friends, required this.selectedNpubs, required this.existingMembers, this.shareResult});
+  const ShareCircleLoaded({
+    required this.friends,
+    required this.selectedNpubs,
+    required this.existingMembers,
+    this.shareResult,
+  });
 
   final List<Contact> friends;
   final List<String> selectedNpubs;
@@ -21,7 +26,13 @@ class ShareCircleLoaded extends ShareCircleState {
 }
 
 class ShareCircleBusy extends ShareCircleState {
-  const ShareCircleBusy({required this.friends, required this.selectedNpubs, required this.existingMembers, this.adding = false, this.sharing = false});
+  const ShareCircleBusy({
+    required this.friends,
+    required this.selectedNpubs,
+    required this.existingMembers,
+    this.adding = false,
+    this.sharing = false,
+  });
 
   final List<Contact> friends;
   final List<String> selectedNpubs;

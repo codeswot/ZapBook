@@ -15,7 +15,11 @@ class CircleMembersLoaded extends CircleMembersState {
 }
 
 class CircleMembersBusy extends CircleMembersState {
-  const CircleMembersBusy({required this.entries, required this.isAdmin, required this.busyNpub});
+  const CircleMembersBusy({
+    required this.entries,
+    required this.isAdmin,
+    required this.busyNpub,
+  });
   final List<MemberEntry> entries;
   final bool isAdmin;
   final String busyNpub;
@@ -27,5 +31,10 @@ class MemberEntry {
   final bool isSelf;
   final bool isContact;
 
-  const MemberEntry({required this.npub, required this.contact, required this.isSelf, required this.isContact});
+  const MemberEntry({
+    required this.npub,
+    required this.contact,
+    required this.isSelf,
+    required this.isContact,
+  });
 }

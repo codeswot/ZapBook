@@ -146,19 +146,11 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
   final int? page;
   final String? query;
 
-  const ZbfViewerRoute({
-    required this.zbfPath,
-    this.page,
-    this.query,
-  });
+  const ZbfViewerRoute({required this.zbfPath, this.page, this.query});
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      ZbfViewerPage(
-        zbfPath: zbfPath,
-        initialPage: page,
-        highlightQuery: query,
-      );
+      ZbfViewerPage(zbfPath: zbfPath, initialPage: page, highlightQuery: query);
 }
 
 @TypedGoRoute<CircleDetailRoute>(path: '/circle')

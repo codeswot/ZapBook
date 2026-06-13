@@ -108,9 +108,12 @@ class CheersLongPressSheet extends StatelessWidget {
             label: 'Copy',
             tone: colors.ink,
             onTap: () {
-              Clipboard.setData(ClipboardData(
-                text: '${activity.actorName}: ${activity.activityDescription}',
-              ));
+              Clipboard.setData(
+                ClipboardData(
+                  text:
+                      '${activity.actorName}: ${activity.activityDescription}',
+                ),
+              );
               context.pop();
             },
           ),
@@ -121,11 +124,11 @@ class CheersLongPressSheet extends StatelessWidget {
             tone: colors.ink,
             onTap: () {
               SharePlus.instance.share(
-              ShareParams(
-                text:
-                    '${activity.actorName}: ${activity.activityDescription} — ${activity.bookTitle}',
-              ),
-            );
+                ShareParams(
+                  text:
+                      '${activity.actorName}: ${activity.activityDescription} — ${activity.bookTitle}',
+                ),
+              );
               context.pop();
             },
           ),

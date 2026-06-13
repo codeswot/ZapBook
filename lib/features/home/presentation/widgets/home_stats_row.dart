@@ -17,7 +17,9 @@ class HomeStatsRow extends StatelessWidget {
     final sats = stats.satsEarned;
     final books = stats.booksRead;
 
-    final formattedSats = sats >= 1000 ? '${(sats / 1000).toStringAsFixed(0)}k' : '$sats';
+    final formattedSats = sats >= 1000
+        ? '${(sats / 1000).toStringAsFixed(0)}k'
+        : '$sats';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),

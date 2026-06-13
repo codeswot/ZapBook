@@ -10,6 +10,6 @@ final class WatchCircles {
   final LibraryRepository _repository;
 
   Stream<List<LibraryBook>> call() => _repository.watchBooks().map(
-        (books) => books.where((book) => book.isShared).toList(growable: false),
-      );
+    (books) => books.where((book) => book.isShared).toList(growable: false),
+  );
 }

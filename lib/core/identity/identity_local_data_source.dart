@@ -21,7 +21,8 @@ class IdentityLocalDataSource {
 
   Future<String?> readDtag(String key) => _storage.read(key);
 
-  Future<void> writeDtag(String key, String value) => _storage.write(key, value);
+  Future<void> writeDtag(String key, String value) =>
+      _storage.write(key, value);
 
   Future<void> clear() async {
     await _storage.delete(_nsecKey);

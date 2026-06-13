@@ -39,7 +39,13 @@ class QuizSet extends Equatable {
   final int wordEnd;
 
   @override
-  List<Object?> get props => [milestoneIdx, questions, textContent, wordStart, wordEnd];
+  List<Object?> get props => [
+    milestoneIdx,
+    questions,
+    textContent,
+    wordStart,
+    wordEnd,
+  ];
 }
 
 class QuizStashEntry extends Equatable {
@@ -56,7 +62,12 @@ class QuizStashEntry extends Equatable {
   final String textContent;
 
   @override
-  List<Object?> get props => [milestoneIdx, wordsRead, quizOutlook, textContent];
+  List<Object?> get props => [
+    milestoneIdx,
+    wordsRead,
+    quizOutlook,
+    textContent,
+  ];
 }
 
 class QuizResult extends Equatable {

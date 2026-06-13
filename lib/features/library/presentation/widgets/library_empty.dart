@@ -23,12 +23,14 @@ class LibraryEmpty extends StatelessWidget {
               width: 64,
               height: 92,
               decoration: BoxDecoration(
-                color: context.colors.paper3
-                    .withValues(alpha: active ? 1.0 : 0.5),
+                color: context.colors.paper3.withValues(
+                  alpha: active ? 1.0 : 0.5,
+                ),
                 borderRadius: AppRadii.br12,
                 border: Border.all(
-                  color: context.colors.hairline2
-                      .withValues(alpha: active ? 1.0 : 0.5),
+                  color: context.colors.hairline2.withValues(
+                    alpha: active ? 1.0 : 0.5,
+                  ),
                   width: 1.5,
                 ),
               ),

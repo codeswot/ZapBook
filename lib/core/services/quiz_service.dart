@@ -4,10 +4,8 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/domain/quiz_models.dart';
 
-typedef QuizGenerator = Future<QuizSet?> Function(
-  int milestoneIdx,
-  String textContent,
-);
+typedef QuizGenerator =
+    Future<QuizSet?> Function(int milestoneIdx, String textContent);
 
 @lazySingleton
 class QuizService {
@@ -65,12 +63,14 @@ class QuizService {
     String textContent,
   ) {
     final outlook = outlookForMilestone(pointsBanked);
-    _stash.add(QuizStashEntry(
-      milestoneIdx: milestoneIdx,
-      wordsRead: wordsRead,
-      quizOutlook: outlook,
-      textContent: textContent,
-    ));
+    _stash.add(
+      QuizStashEntry(
+        milestoneIdx: milestoneIdx,
+        wordsRead: wordsRead,
+        quizOutlook: outlook,
+        textContent: textContent,
+      ),
+    );
     if (_stash.length >= stashMax) {
       _surfaceNext();
     }
@@ -89,7 +89,9 @@ class QuizService {
     final entry = _stash.removeAt(0);
     if (entry.quizOutlook == QuizOutlook.unavailable) return;
 
-    var set = _pool.where((s) => s.milestoneIdx == entry.milestoneIdx).firstOrNull;
+    var set = _pool
+        .where((s) => s.milestoneIdx == entry.milestoneIdx)
+        .firstOrNull;
     if (set == null) {
       set = await _generator?.call(entry.milestoneIdx, entry.textContent);
       if (set != null) {
@@ -114,8 +116,7 @@ class QuizService {
     for (var i = 0; i < answers.length && i < set.questions.length; i++) {
       if (answers[i] == set.questions[i].correctIndex) correct++;
     }
-    final score =
-        set.questions.isEmpty ? 0.0 : correct / set.questions.length;
+    final score = set.questions.isEmpty ? 0.0 : correct / set.questions.length;
     final result = QuizResult(
       milestoneIdx: milestoneIdx,
       status: QuizStatus.completed,

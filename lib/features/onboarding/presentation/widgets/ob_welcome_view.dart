@@ -94,10 +94,7 @@ class _WelcomeBadge extends StatelessWidget {
             border: Border.all(color: context.colors.hairline),
           ),
           alignment: Alignment.center,
-          child: Text(
-            emoji,
-            style: const TextStyle(fontSize: 22),
-          ),
+          child: Text(emoji, style: const TextStyle(fontSize: 22)),
         ),
         const SizedBox(height: 9),
         Text(

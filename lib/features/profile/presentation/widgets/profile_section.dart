@@ -14,9 +14,7 @@ class ProfileSection extends StatelessWidget {
     final children = <Widget>[];
     for (var i = 0; i < tiles.length; i++) {
       if (i > 0) {
-        children.add(
-          Divider(height: 1, thickness: 1, color: colors.hairline),
-        );
+        children.add(Divider(height: 1, thickness: 1, color: colors.hairline));
       }
       children.add(tiles[i]);
     }

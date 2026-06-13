@@ -46,7 +46,11 @@ class DonateGiftForm extends StatelessWidget {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     hintText: 'Amount (sats)',
-                    prefixIcon: Icon(LucideIcons.zap, size: 16, color: colors.bitcoin),
+                    prefixIcon: Icon(
+                      LucideIcons.zap,
+                      size: 16,
+                      color: colors.bitcoin,
+                    ),
                     filled: true,
                     fillColor: colors.paper2,
                     border: OutlineInputBorder(
@@ -61,9 +65,15 @@ class DonateGiftForm extends StatelessWidget {
                       borderRadius: AppRadii.br10,
                       borderSide: BorderSide(color: colors.bitcoin),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
-                  style: typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.ink),
+                  style: typography.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colors.ink,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -88,7 +98,10 @@ class DonateGiftForm extends StatelessWidget {
                       borderRadius: AppRadii.br10,
                       borderSide: BorderSide(color: colors.bitcoin),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                   style: typography.body.copyWith(color: colors.ink),
                 ),

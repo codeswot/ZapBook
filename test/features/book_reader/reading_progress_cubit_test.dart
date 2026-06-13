@@ -105,10 +105,7 @@ void main() {
       needsAiProcessing: false,
       pageWords: const [1000, 1000],
     );
-    final pdfHandle = ZbfBookHandle(
-      archive: Archive(),
-      manifest: pdfManifest,
-    );
+    final pdfHandle = ZbfBookHandle(archive: Archive(), manifest: pdfManifest);
     now = 0;
     final pdfCubit = ReadingProgressCubit.forBook(
       pdfHandle,

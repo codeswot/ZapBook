@@ -79,7 +79,7 @@ class ObFooter extends StatelessWidget {
                       cubit.state.error ?? "Invalid secret key",
                     );
                   }
-                    return;
+                  return;
                 }
               }
               cubit.nextStep();

@@ -17,12 +17,11 @@ final class UpdateBookMetadata {
     String? author,
     String? genre,
     Uint8List? coverImage,
-  }) =>
-      _repository.updateBookMetadata(
-        id,
-        title: title,
-        author: author,
-        genre: genre,
-        coverImage: coverImage,
-      );
+  }) => _repository.updateBookMetadata(
+    id,
+    title: title,
+    author: author,
+    genre: genre,
+    coverImage: coverImage,
+  );
 }

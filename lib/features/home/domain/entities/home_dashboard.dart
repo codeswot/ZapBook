@@ -35,19 +35,19 @@ final class HomeDashboardBook extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        author,
-        coverPath,
-        pageCount,
-        memberCount,
-        zbfPath,
-        lastOpenedAt,
-        currentPage,
-        totalWords,
-        currentWordCount,
-        fraction,
-      ];
+    id,
+    title,
+    author,
+    coverPath,
+    pageCount,
+    memberCount,
+    zbfPath,
+    lastOpenedAt,
+    currentPage,
+    totalWords,
+    currentWordCount,
+    fraction,
+  ];
 }
 
 final class HomeDashboardStats extends Equatable {
@@ -66,10 +66,7 @@ final class HomeDashboardStats extends Equatable {
 }
 
 final class HomeDashboard extends Equatable {
-  const HomeDashboard({
-    required this.stats,
-    required this.books,
-  });
+  const HomeDashboard({required this.stats, required this.books});
 
   final HomeDashboardStats stats;
   final List<HomeDashboardBook> books;

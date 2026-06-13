@@ -11,6 +11,5 @@ final class SendCheersZap {
     required String activityId,
     required int amount,
     required String reactionType,
-  }) =>
-      _repository.sendZap(activityId, amount, reactionType);
+  }) => _repository.sendZap(activityId, amount, reactionType);
 }

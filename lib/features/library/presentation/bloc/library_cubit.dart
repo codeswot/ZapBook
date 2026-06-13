@@ -82,21 +82,18 @@ class LibraryCubit extends Cubit<LibraryState> {
       _shareBook(bookId, memberNpub.trim());
 
   Future<void> _init() async {
-    _booksSubscription = _watchLibraryBooks().listen(
-      (books) {
-        if (books.isEmpty) {
-          emit(const LibraryEmpty());
-        } else {
-          final show = !_circlePromptShown && books.length == 1;
-          if (show) {
-            _circlePromptShown = true;
-            _onboarding.setCirclePromptShown();
-          }
-          emit(LibraryLoaded(books, showCirclePrompt: show));
+    _booksSubscription = _watchLibraryBooks().listen((books) {
+      if (books.isEmpty) {
+        emit(const LibraryEmpty());
+      } else {
+        final show = !_circlePromptShown && books.length == 1;
+        if (show) {
+          _circlePromptShown = true;
+          _onboarding.setCirclePromptShown();
         }
-      },
-      onError: (Object error) => emit(LibraryError('$error')),
-    );
+        emit(LibraryLoaded(books, showCirclePrompt: show));
+      }
+    }, onError: (Object error) => emit(LibraryError('$error')));
     _welcomeSubscription = _welcomeInbox.onJoined.listen((_) {
       _libraryRepository.refresh();
     });

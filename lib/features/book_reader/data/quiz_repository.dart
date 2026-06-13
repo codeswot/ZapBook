@@ -19,9 +19,13 @@ class QuizRepository {
   static const _kind = 30078;
 
   Future<void> saveQuizBank(String bookId, List<QuizSet> quizzes) async {
-    _log.info('saveQuizBank: saving ${quizzes.length} quizzes for book $bookId');
+    _log.info(
+      'saveQuizBank: saving ${quizzes.length} quizzes for book $bookId',
+    );
     for (final q in quizzes) {
-      _log.info('  Milestone ${q.milestoneIdx}: ${q.questions.length} questions');
+      _log.info(
+        '  Milestone ${q.milestoneIdx}: ${q.questions.length} questions',
+      );
     }
 
     final pubkey = _ndk.accounts.getPublicKey();
@@ -57,10 +61,7 @@ class QuizRepository {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return const [];
 
-    final events = _cache.loadEvents(
-      pubKeys: [pubkey],
-      kinds: [_kind],
-    );
+    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_kind]);
 
     final match = events.where((e) {
       final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
@@ -83,8 +84,12 @@ class QuizRepository {
       if (plaintext == null) return const [];
 
       final list = jsonDecode(plaintext) as List<dynamic>;
-      final result = list.map((e) => _quizFromJson(e as Map<String, dynamic>)).toList();
-      _log.info('loadQuizBank: loaded ${result.length} quizzes for book $bookId');
+      final result = list
+          .map((e) => _quizFromJson(e as Map<String, dynamic>))
+          .toList();
+      _log.info(
+        'loadQuizBank: loaded ${result.length} quizzes for book $bookId',
+      );
       return result;
     } catch (e) {
       _log.warning('loadQuizBank failed: $e');
@@ -93,16 +98,20 @@ class QuizRepository {
   }
 
   Map<String, dynamic> _quizToJson(QuizSet quiz) => {
-        'milestone_idx': quiz.milestoneIdx,
-        'text_content': quiz.textContent,
-        'word_start': quiz.wordStart,
-        'word_end': quiz.wordEnd,
-        'questions': quiz.questions.map((q) => {
-              'text': q.text,
-              'options': q.options,
-              'correct_index': q.correctIndex,
-            }).toList(),
-      };
+    'milestone_idx': quiz.milestoneIdx,
+    'text_content': quiz.textContent,
+    'word_start': quiz.wordStart,
+    'word_end': quiz.wordEnd,
+    'questions': quiz.questions
+        .map(
+          (q) => {
+            'text': q.text,
+            'options': q.options,
+            'correct_index': q.correctIndex,
+          },
+        )
+        .toList(),
+  };
 
   QuizSet _quizFromJson(Map<String, dynamic> json) {
     final qs = json['questions'] as List<dynamic>;
@@ -110,7 +119,9 @@ class QuizRepository {
       final map = q as Map<String, dynamic>;
       return QuizQuestion(
         text: map['text'] as String,
-        options: (map['options'] as List<dynamic>).map((e) => e as String).toList(),
+        options: (map['options'] as List<dynamic>)
+            .map((e) => e as String)
+            .toList(),
         correctIndex: map['correct_index'] as int,
       );
     }).toList();

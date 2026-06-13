@@ -9,14 +9,20 @@ import 'package:zapbook/features/library/presentation/bloc/book_edit_state.dart'
 
 @injectable
 class BookEditCubit extends Cubit<BookEditState> {
-  BookEditCubit(GenreDataSource genres, this._filePicker, this._updateBookMetadata, @factoryParam LibraryBook book)
-    : super(BookEditState(
-        book: book,
-        title: book.title,
-        author: book.author,
-        genre: book.genre,
-        genres: genres.getGenres(),
-      ));
+  BookEditCubit(
+    GenreDataSource genres,
+    this._filePicker,
+    this._updateBookMetadata,
+    @factoryParam LibraryBook book,
+  ) : super(
+        BookEditState(
+          book: book,
+          title: book.title,
+          author: book.author,
+          genre: book.genre,
+          genres: genres.getGenres(),
+        ),
+      );
 
   final FilePickerService _filePicker;
   final UpdateBookMetadata _updateBookMetadata;

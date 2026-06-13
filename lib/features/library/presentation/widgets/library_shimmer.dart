@@ -117,45 +117,42 @@ class _LibraryShimmerState extends State<LibraryShimmer>
               crossAxisSpacing: 14,
               childAspectRatio: 0.727,
             ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    return CustomPaint(
-                      painter: _DottedBorderPainter(
-                        color: colors.hairline2,
-                        borderRadius: 12.0,
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  return CustomPaint(
+                    painter: _DottedBorderPainter(
+                      color: colors.hairline2,
+                      borderRadius: 12.0,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const Spacer(),
+                          _ShimmerElement(
+                            controller: _controller,
+                            width: width - 16,
+                            height: 12,
+                            borderRadius: AppRadii.br10,
+                          ),
+                          const SizedBox(height: 6),
+                          _ShimmerElement(
+                            controller: _controller,
+                            width: (width - 16) * 0.7,
+                            height: 9,
+                            borderRadius: AppRadii.br10,
+                          ),
+                        ],
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            const Spacer(),
-                            _ShimmerElement(
-                              controller: _controller,
-                              width: width - 16,
-                              height: 12,
-                              borderRadius: AppRadii.br10,
-                            ),
-                            const SizedBox(height: 6),
-                            _ShimmerElement(
-                              controller: _controller,
-                              width: (width - 16) * 0.7,
-                              height: 9,
-                              borderRadius: AppRadii.br10,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              childCount: 6,
-            ),
+                    ),
+                  );
+                },
+              );
+            }, childCount: 6),
           ),
         ),
       ],
@@ -207,10 +204,7 @@ class _ShimmerElement extends StatelessWidget {
 }
 
 class _DottedBorderPainter extends CustomPainter {
-  _DottedBorderPainter({
-    required this.color,
-    required this.borderRadius,
-  });
+  _DottedBorderPainter({required this.color, required this.borderRadius});
 
   final Color color;
   final double borderRadius;

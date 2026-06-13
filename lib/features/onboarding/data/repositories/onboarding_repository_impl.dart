@@ -11,7 +11,8 @@ final class OnboardingRepositoryImpl implements OnboardingRepository {
   final OnboardingLocalDataSource _local;
 
   @override
-  OnboardingStatus status() => OnboardingStatus(isComplete: _local.isComplete());
+  OnboardingStatus status() =>
+      OnboardingStatus(isComplete: _local.isComplete());
 
   @override
   Future<void> complete() => _local.setComplete();

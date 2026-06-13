@@ -77,95 +77,94 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('Book Details', style: typography.h3),
-                    const SizedBox(height: 24),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppBookCover(
-                          width: 100,
-                          height: 150,
-                          title: state.title,
-                          image: state.coverImage != null
-                              ? MemoryImage(state.coverImage!)
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              AppInput(
-                                controller: _titleController,
-                                label: 'Title',
-                                onChanged: cubit.updateTitle,
-                              ),
-                              const SizedBox(height: 16),
-                              AppInput(
-                                controller: _authorController,
-                                label: 'Author (Optional)',
-                                onChanged: cubit.updateAuthor,
-                              ),
-                              const SizedBox(height: 16),
-                              AppButton(
-                                label: 'Pick Cover',
-                                icon: Icons.image_outlined,
-                                variant: AppButtonVariant.tonal,
-                                fullWidth: true,
-                                onTap: cubit.pickCoverImage,
-                              ),
-                              if (state.coverImage != null) ...[
-                                const SizedBox(height: 8),
-                                AppButton(
-                                  label: 'Remove Cover',
-                                  icon: Icons.delete_outline,
-                                  variant: AppButtonVariant.ghost,
-                                  fullWidth: true,
-                                  onTap: cubit.removeCoverImage,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Genre',
-                      style: typography.bodyL.copyWith(
-                        fontWeight: FontWeight.w600,
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppBookCover(
+                        width: 100,
+                        height: 150,
+                        title: state.title,
+                        image: state.coverImage != null
+                            ? MemoryImage(state.coverImage!)
+                            : null,
                       ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            AppInput(
+                              controller: _titleController,
+                              label: 'Title',
+                              onChanged: cubit.updateTitle,
+                            ),
+                            const SizedBox(height: 16),
+                            AppInput(
+                              controller: _authorController,
+                              label: 'Author (Optional)',
+                              onChanged: cubit.updateAuthor,
+                            ),
+                            const SizedBox(height: 16),
+                            AppButton(
+                              label: 'Pick Cover',
+                              icon: Icons.image_outlined,
+                              variant: AppButtonVariant.tonal,
+                              fullWidth: true,
+                              onTap: cubit.pickCoverImage,
+                            ),
+                            if (state.coverImage != null) ...[
+                              const SizedBox(height: 8),
+                              AppButton(
+                                label: 'Remove Cover',
+                                icon: Icons.delete_outline,
+                                variant: AppButtonVariant.ghost,
+                                fullWidth: true,
+                                onTap: cubit.removeCoverImage,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Genre',
+                    style: typography.bodyL.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: state.availableGenres.map((genre) {
-                        final isSelected = state.genre == genre;
-                        return AppChip(
-                          label: genre,
-                          selected: isSelected,
-                          tone: isSelected ? AppChipTone.zap : null,
-                          onTap: () =>
-                              cubit.updateGenre(isSelected ? '' : genre),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 32),
-                    AppButton(
-                      label: 'Continue',
-                      fullWidth: true,
-                      onTap: () {
-                        cubit.submit();
-                        if (context.mounted) {
-                          context.pop();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: state.availableGenres.map((genre) {
+                      final isSelected = state.genre == genre;
+                      return AppChip(
+                        label: genre,
+                        selected: isSelected,
+                        tone: isSelected ? AppChipTone.zap : null,
+                        onTap: () => cubit.updateGenre(isSelected ? '' : genre),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 32),
+                  AppButton(
+                    label: 'Continue',
+                    fullWidth: true,
+                    onTap: () {
+                      cubit.submit();
+                      if (context.mounted) {
+                        context.pop();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
+      ),
     );
   }
 }

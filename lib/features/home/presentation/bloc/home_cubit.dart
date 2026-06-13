@@ -7,10 +7,8 @@ import 'package:zapbook/features/home/presentation/bloc/home_state.dart';
 
 @injectable
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit(
-    this._watchHomeDashboard,
-    this._touchDashboardBookOpened,
-  ) : super(const HomeLoading()) {
+  HomeCubit(this._watchHomeDashboard, this._touchDashboardBookOpened)
+    : super(const HomeLoading()) {
     _subscribe();
   }
 

@@ -11,10 +11,9 @@ class Contact {
   final String? picture;
   final String? lud16;
 
-  String get label =>
-      (displayName != null && displayName!.trim().isNotEmpty)
-          ? displayName!.trim()
-          : shortNpub;
+  String get label => (displayName != null && displayName!.trim().isNotEmpty)
+      ? displayName!.trim()
+      : shortNpub;
 
   String get shortNpub => npub.length <= 16
       ? npub

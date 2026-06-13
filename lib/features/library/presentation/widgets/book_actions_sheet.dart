@@ -155,7 +155,9 @@ class BookActionsSheet extends StatelessWidget {
                         isAdmin ? 'You own this book' : 'Shared by $ownerLabel',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: typography.caption.copyWith(color: colors.slate2),
+                        style: typography.caption.copyWith(
+                          color: colors.slate2,
+                        ),
                       ),
                     ],
                   ],
@@ -250,4 +252,3 @@ class _ActionRow extends StatelessWidget {
     );
   }
 }
-

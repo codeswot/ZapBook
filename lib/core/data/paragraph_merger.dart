@@ -131,7 +131,11 @@ const Set<String> _terminators = {
   '»',
 };
 
-ParagraphBlock _join(ParagraphBlock a, ParagraphBlock b, {bool noSpace = false}) {
+ParagraphBlock _join(
+  ParagraphBlock a,
+  ParagraphBlock b, {
+  bool noSpace = false,
+}) {
   final aText = a.text.trimRight();
   final hyphenated = aText.endsWith('-');
   final left = hyphenated ? aText.substring(0, aText.length - 1) : aText;

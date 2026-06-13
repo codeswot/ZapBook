@@ -14,10 +14,6 @@ class CheersRepositoryImpl implements CheersRepository {
       _dataSource.watchActivities();
 
   @override
-  Future<void> sendZap(
-    String activityId,
-    int amount,
-    String reactionType,
-  ) =>
+  Future<void> sendZap(String activityId, int amount, String reactionType) =>
       _dataSource.sendZap(activityId, amount, reactionType);
 }

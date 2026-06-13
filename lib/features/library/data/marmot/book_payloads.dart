@@ -37,28 +37,24 @@ class BookMetaPayload {
   final List<int>? skippablePages;
 
   Map<String, dynamic> toJson() => {
-        'type': BookMessageType.meta,
-        'bookId': bookId,
-        'title': title,
-        'author': author,
-        'genre': genre,
-        'contentHash': contentHash,
-        'sourceFormat': sourceFormat,
-        'pageCount': pageCount,
-        'chapterCount': chapterCount,
-        'zbfVersion': zbfVersion,
-        'needsAiProcessing': needsAiProcessing,
-        'createdAtMs': createdAtMs,
-        'addedAtMs': addedAtMs,
-        if (pageWords != null) 'pageWords': pageWords,
-        if (skippablePages != null) 'skippablePages': skippablePages,
-      };
+    'type': BookMessageType.meta,
+    'bookId': bookId,
+    'title': title,
+    'author': author,
+    'genre': genre,
+    'contentHash': contentHash,
+    'sourceFormat': sourceFormat,
+    'pageCount': pageCount,
+    'chapterCount': chapterCount,
+    'zbfVersion': zbfVersion,
+    'needsAiProcessing': needsAiProcessing,
+    'createdAtMs': createdAtMs,
+    'addedAtMs': addedAtMs,
+    if (pageWords != null) 'pageWords': pageWords,
+    if (skippablePages != null) 'skippablePages': skippablePages,
+  };
 
-  BookMetaPayload copyWith({
-    String? title,
-    String? author,
-    String? genre,
-  }) {
+  BookMetaPayload copyWith({String? title, String? author, String? genre}) {
     return BookMetaPayload(
       bookId: bookId,
       title: title ?? this.title,
@@ -77,7 +73,8 @@ class BookMetaPayload {
     );
   }
 
-  factory BookMetaPayload.fromJson(Map<String, dynamic> json) => BookMetaPayload(
+  factory BookMetaPayload.fromJson(Map<String, dynamic> json) =>
+      BookMetaPayload(
         bookId: json['bookId'] as String,
         title: json['title'] as String? ?? 'Untitled',
         author: json['author'] as String? ?? '',
@@ -115,13 +112,13 @@ class BookProgressPayload {
   final int? totalWordCount;
 
   Map<String, dynamic> toJson() => {
-        'type': BookMessageType.progress,
-        'bookId': bookId,
-        'lastReadAtMs': lastReadAtMs,
-        if (currentPage != null) 'currentPage': currentPage,
-        if (currentWordCount != null) 'currentWordCount': currentWordCount,
-        if (totalWordCount != null) 'totalWordCount': totalWordCount,
-      };
+    'type': BookMessageType.progress,
+    'bookId': bookId,
+    'lastReadAtMs': lastReadAtMs,
+    if (currentPage != null) 'currentPage': currentPage,
+    if (currentWordCount != null) 'currentWordCount': currentWordCount,
+    if (totalWordCount != null) 'totalWordCount': totalWordCount,
+  };
 
   factory BookProgressPayload.fromJson(Map<String, dynamic> json) =>
       BookProgressPayload(

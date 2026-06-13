@@ -82,11 +82,7 @@ class ProfileTile extends StatelessWidget {
             if (trailing != null) ...[const SizedBox(width: 10), trailing!],
             if (showChevron) ...[
               const SizedBox(width: 8),
-              Icon(
-                LucideIcons.chevronRight,
-                size: 18,
-                color: colors.slate2,
-              ),
+              Icon(LucideIcons.chevronRight, size: 18, color: colors.slate2),
             ],
           ],
         ),

@@ -44,7 +44,13 @@ extension StringFormatting on String {
     final len = length;
     for (var i = 0; i < len; i++) {
       final char = codeUnitAt(i);
-      final isWhitespace = char == 32 || char == 10 || char == 13 || char == 9 || char == 11 || char == 12;
+      final isWhitespace =
+          char == 32 ||
+          char == 10 ||
+          char == 13 ||
+          char == 9 ||
+          char == 11 ||
+          char == 12;
       if (isWhitespace) {
         inWord = false;
       } else if (!inWord) {

@@ -41,10 +41,7 @@ class _ProfileView extends StatelessWidget {
                     message: message,
                   ),
                   ProfileLoaded(:final profile, :final nwcWalletName) =>
-                    ProfileBody(
-                      profile: profile,
-                      nwcWalletName: nwcWalletName,
-                    ),
+                    ProfileBody(profile: profile, nwcWalletName: nwcWalletName),
                 },
               ),
             ),

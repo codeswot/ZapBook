@@ -11,7 +11,11 @@ import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
 
 class ShareResultSheet extends StatelessWidget {
-  const ShareResultSheet({super.key, required this.skips, required this.friends});
+  const ShareResultSheet({
+    super.key,
+    required this.skips,
+    required this.friends,
+  });
 
   final List<ShareSkip> skips;
   final List<Contact> friends;
@@ -25,7 +29,11 @@ class ShareResultSheet extends StatelessWidget {
         : '${npub.substring(0, 12)}…${npub.substring(npub.length - 4)}';
   }
 
-  static Future<void> show(BuildContext context, List<ShareSkip> skips, List<Contact> friends) {
+  static Future<void> show(
+    BuildContext context,
+    List<ShareSkip> skips,
+    List<Contact> friends,
+  ) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -65,18 +73,20 @@ class ShareResultSheet extends StatelessWidget {
             style: typography.body.copyWith(color: colors.slate),
           ),
           const SizedBox(height: 16),
-          ...skips.map((skip) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: AppRow(
-              leading: AppProfileAvatar(
-                url: _pictureFor(skip.npub) ?? '',
-                size: 40,
+          ...skips.map(
+            (skip) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: AppRow(
+                leading: AppProfileAvatar(
+                  url: _pictureFor(skip.npub) ?? '',
+                  size: 40,
+                ),
+                title: _labelFor(skip.npub),
+                subtitle: skip.description(),
+                trailing: Icon(LucideIcons.x, size: 20, color: colors.tomato),
               ),
-              title: _labelFor(skip.npub),
-              subtitle: skip.description(),
-              trailing: Icon(LucideIcons.x, size: 20, color: colors.tomato),
             ),
-          )),
+          ),
           const SizedBox(height: 20),
           AppButton(
             label: 'Done',

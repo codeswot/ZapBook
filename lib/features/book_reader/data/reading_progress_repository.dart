@@ -50,10 +50,7 @@ class ReadingProgressRepository {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return null;
 
-    final events = _cache.loadEvents(
-      pubKeys: [pubkey],
-      kinds: [_kind],
-    );
+    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_kind]);
 
     final match = events.where((e) {
       final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
@@ -75,24 +72,24 @@ class ReadingProgressRepository {
   }
 
   Map<String, dynamic> _stateToJson(ReadingState state) => {
-        'wpm': state.wpm,
-        'completed_pages': state.completedPages.toList(),
-        'visited_pages': state.visitedPages.toList(),
-        'partials': {
-          for (final entry in state.partials.entries)
-            entry.key.toString(): {
-              'engaged_ms': entry.value.engagedMs,
-              'scroll_samples': entry.value.scrollSamples,
-              'skim_samples': entry.value.skimSamples,
-            },
+    'wpm': state.wpm,
+    'completed_pages': state.completedPages.toList(),
+    'visited_pages': state.visitedPages.toList(),
+    'partials': {
+      for (final entry in state.partials.entries)
+        entry.key.toString(): {
+          'engaged_ms': entry.value.engagedMs,
+          'scroll_samples': entry.value.scrollSamples,
+          'skim_samples': entry.value.skimSamples,
         },
-        'words_read': state.wordsRead,
-        'points_banked': state.pointsBanked,
-        'milestones_reached': state.milestonesReached,
-        'session_engaged_ms': state.sessionEngagedMs,
-        'current_page': state.currentPage,
-        'book_completed': state.bookCompleted,
-      };
+    },
+    'words_read': state.wordsRead,
+    'points_banked': state.pointsBanked,
+    'milestones_reached': state.milestonesReached,
+    'session_engaged_ms': state.sessionEngagedMs,
+    'current_page': state.currentPage,
+    'book_completed': state.bookCompleted,
+  };
 
   ReadingState _stateFromJson(Map<String, dynamic> json) {
     final partialsJson = json['partials'] as Map<String, dynamic>? ?? {};
@@ -108,11 +105,13 @@ class ReadingProgressRepository {
 
     return ReadingState(
       wpm: (json['wpm'] as num?)?.toDouble() ?? 240,
-      completedPages: (json['completed_pages'] as List<dynamic>?)
+      completedPages:
+          (json['completed_pages'] as List<dynamic>?)
               ?.map((e) => e as int)
               .toSet() ??
           {},
-      visitedPages: (json['visited_pages'] as List<dynamic>?)
+      visitedPages:
+          (json['visited_pages'] as List<dynamic>?)
               ?.map((e) => e as int)
               .toSet() ??
           {},

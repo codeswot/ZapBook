@@ -10,7 +10,8 @@ import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart
 import 'package:zapbook/features/book_ingestion/data/support/text_runs.dart';
 import 'package:zapbook/features/book_ingestion/data/extractors/isolate_book_extractor.dart';
 
-final class PdfExtractor extends IsolateBookExtractor implements PdfChunkExtractor {
+final class PdfExtractor extends IsolateBookExtractor
+    implements PdfChunkExtractor {
   PdfExtractor({super.coverGenerator, super.assembler});
 
   @override
@@ -24,8 +25,21 @@ final class PdfExtractor extends IsolateBookExtractor implements PdfChunkExtract
       Isolate.run(() => _parsePdf(bytes, title));
 
   @override
-  Future<List<BookPage>> extractRange(Uint8List bytes, int startPageIndex, int endPageIndex, String chapterTitle, int chapterIndex) =>
-      Isolate.run(() => _extractRange(bytes, startPageIndex, endPageIndex, chapterTitle, chapterIndex));
+  Future<List<BookPage>> extractRange(
+    Uint8List bytes,
+    int startPageIndex,
+    int endPageIndex,
+    String chapterTitle,
+    int chapterIndex,
+  ) => Isolate.run(
+    () => _extractRange(
+      bytes,
+      startPageIndex,
+      endPageIndex,
+      chapterTitle,
+      chapterIndex,
+    ),
+  );
 }
 
 const double _headingScale = 1.25;
@@ -65,10 +79,9 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
     final pageWords = <int>[];
     final skippable = <int>[];
     for (var i = 0; i < pageCount; i++) {
-      final lines = lineCache[i] ?? extractor.extractTextLines(
-        startPageIndex: i,
-        endPageIndex: i,
-      );
+      final lines =
+          lineCache[i] ??
+          extractor.extractTextLines(startPageIndex: i, endPageIndex: i);
       var wordCount = 0;
       for (final line in lines) {
         wordCount += line.text.wordCount;
@@ -92,7 +105,13 @@ ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
   }
 }
 
-List<BookPage> _extractRange(Uint8List bytes, int startPageIndex, int endPageIndex, String chapterTitle, int chapterIndex) {
+List<BookPage> _extractRange(
+  Uint8List bytes,
+  int startPageIndex,
+  int endPageIndex,
+  String chapterTitle,
+  int chapterIndex,
+) {
   final document = PdfDocument(inputBytes: bytes);
   try {
     final extractor = PdfTextExtractor(document);
@@ -118,11 +137,14 @@ List<BookPage> _extractRange(Uint8List bytes, int startPageIndex, int endPageInd
   }
 }
 
-_PdfPageDraft _buildPage(PdfTextExtractor extractor, int index, {List<TextLine>? cachedLines}) {
-  final lines = cachedLines ?? extractor.extractTextLines(
-    startPageIndex: index,
-    endPageIndex: index,
-  );
+_PdfPageDraft _buildPage(
+  PdfTextExtractor extractor,
+  int index, {
+  List<TextLine>? cachedLines,
+}) {
+  final lines =
+      cachedLines ??
+      extractor.extractTextLines(startPageIndex: index, endPageIndex: index);
   final bodySize = _dominantFontSize(lines);
   final blocks = <BookBlock>[];
   final codeLines = <String>[];

@@ -12,10 +12,7 @@ final class CompleteOnboarding {
   final OnboardingRepository _onboarding;
   final NostrSession _session;
 
-  Future<void> call({
-    required String npub,
-    required String nsec,
-  }) async {
+  Future<void> call({required String npub, required String nsec}) async {
     await _identity.persist(npub: npub, nsec: nsec);
     await _session.login();
     await _onboarding.complete();

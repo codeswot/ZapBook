@@ -42,7 +42,9 @@ class LibraryFileStore {
       File('${(await bookDir(bookId)).path}/original.$extension');
 
   Future<File> segmentCacheFile(String bookId, int index) async {
-    final dir = await _ensure('${(await _cacheBookDir(bookId)).path}/$_segmentDir');
+    final dir = await _ensure(
+      '${(await _cacheBookDir(bookId)).path}/$_segmentDir',
+    );
     return File('${dir.path}/${index.toString().padLeft(4, '0')}.zbfpart');
   }
 

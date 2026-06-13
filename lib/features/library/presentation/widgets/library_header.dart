@@ -105,7 +105,8 @@ class LibraryHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     AppIconButton(
-                      onTap: () => context.read<IngestionPageCubit>().pickBook(),
+                      onTap: () =>
+                          context.read<IngestionPageCubit>().pickBook(),
                       icon: LucideIcons.plus,
                       size: 22,
                       color: colors.bitcoinDark,

@@ -88,7 +88,9 @@ String extractMilestoneText(
     final text = _pageText(page);
     if (text.isEmpty) continue;
     pages.add(_PageText(i, text, cumulative));
-    final pWords = density.pageWords.length > i ? density.pageWords[i] : countWords(text);
+    final pWords = density.pageWords.length > i
+        ? density.pageWords[i]
+        : countWords(text);
     cumulative += pWords;
     if (cumulative >= endWord) break;
   }
@@ -96,7 +98,9 @@ String extractMilestoneText(
   final buf = StringBuffer();
   var started = false;
   for (final p in pages) {
-    final pWords = density.pageWords.length > p.pageIndex ? density.pageWords[p.pageIndex] : countWords(p.text);
+    final pWords = density.pageWords.length > p.pageIndex
+        ? density.pageWords[p.pageIndex]
+        : countWords(p.text);
     final pageEnd = p.startWord + pWords;
     if (pageEnd <= startWord) continue;
     if (p.startWord >= endWord) break;
