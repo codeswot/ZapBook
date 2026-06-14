@@ -4,12 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-        "name": "Flutter",
-        "type": "dart",
-        "request": "launch",
-        "program": "lib/main.dart"
-    },
+    
         {
             "name": "zapbook",
             "request": "launch",
@@ -28,24 +23,12 @@
             "flutterMode": "release"
         },
         {
-            "name": "widgetbook",
-            "cwd": "widgetbook",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "widgetbook (profile mode)",
-            "cwd": "widgetbook",
+            "name": "zapbook android dev mode",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "env": {
+                "APP_ID_SUFFIX": ".dev"
+            }
         },
-        {
-            "name": "widgetbook (release mode)",
-            "cwd": "widgetbook",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        }
     ]
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
@@ -11,7 +12,7 @@ import 'package:zapbook/core/services/nostr_service.dart';
 @lazySingleton
 class ReadingStatsService {
   ReadingStatsService(this._ndk, this._cache, this._milestoneService);
-
+  final _log = logging.Logger('ReadingStatsService');
   final Ndk _ndk;
   final NostrCacheStore _cache;
   final MilestoneService _milestoneService;
@@ -84,14 +85,43 @@ class ReadingStatsService {
         }
       }
     }
-    if (json == null) return;
 
-    _satsEarned = (json['sats_earned'] as num?)?.toInt() ?? 0;
-    _lastPublishDate = json['last_publish_date'] as String?;
-    _milestoneDates
-      ..clear()
-      ..addAll((json['milestone_dates'] as List?)?.cast<String>() ?? []);
+    if (json != null) {
+      _lastPublishDate = json['last_publish_date'] as String?;
+      _milestoneDates
+        ..clear()
+        ..addAll((json['milestone_dates'] as List?)?.cast<String>() ?? []);
+    }
+
     _loaded = true;
+
+    unawaited(_loadZaps(pubkey));
+  }
+
+  final _processedZapIds = <String>{};
+
+  Future<void> _loadZaps(String pubkey) async {
+    try {
+      final sub = _ndk.requests.subscription(
+        filter: Filter(kinds: const [ZapReceipt.kKind], pTags: [pubkey]),
+      );
+
+      sub.stream.listen((event) {
+        if (_processedZapIds.contains(event.id)) return;
+        _processedZapIds.add(event.id);
+
+        try {
+          final receipt = ZapReceipt.fromEvent(event);
+          if (receipt.amountSats != null) {
+            _satsEarned += receipt.amountSats!;
+          }
+        } catch (error, trace) {
+          _log.info('_loadZaps stream $error', trace);
+        }
+      });
+    } catch (error, trace) {
+      _log.info('_loadZaps $error', trace);
+    }
   }
 
   void _writeCache() {

@@ -5,13 +5,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/lnurl_service.dart';
+import 'package:zapbook/core/services/nwc_service.dart';
+
+import 'package:logging/logging.dart' as logging;
 
 @lazySingleton
 class ZapService {
-  ZapService(this._lnurl, this._ndk);
+  ZapService(this._lnurl, this._ndk, this._nwc);
 
   final LnurlService _lnurl;
   final Ndk _ndk;
+  final NwcService _nwc;
+  final _log = logging.Logger('ZapService');
 
   Future<ZapResult> donate({required int amountSats, String? comment}) => send(
     recipientLud16: ZapbookConfig.lnAddress,
@@ -60,6 +65,17 @@ class ZapService {
   }
 
   Future<bool> payWithFallback(String invoice) async {
+    if (_nwc.isConnected) {
+      try {
+        final response = await _nwc.payInvoice(invoice);
+        if (response.preimage != null && response.preimage!.isNotEmpty) {
+          return true;
+        }
+      } catch (error, stack) {
+        _log.warning('NWC payment failed, falling back to external wallet', error, stack);
+      }
+    }
+
     final uri = Uri.tryParse('lightning:$invoice');
     if (uri == null) return false;
     return launchUrl(uri, mode: LaunchMode.externalApplication);

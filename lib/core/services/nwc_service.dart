@@ -51,17 +51,32 @@ class NwcService {
     String? error;
     final connection = await _ndk.nwc.connect(
       connectionString,
+      ignoreCapabilitiesCheck: true,
+      timeout: const Duration(seconds: 3),
       onError: (message) => error = message,
     );
 
-    if (error != null || connection.subscription == null) {
+    if (connection.subscription == null ||
+        (error != null && error != 'wallet info not found')) {
       await _ndk.nwc.disconnect(connection);
       throw Exception(
-        'Wallet connection failed: ${error ?? 'wallet info not found'}',
+        'Wallet connection failed: ${error ?? 'subscription null'}',
       );
     }
 
     return connection;
+  }
+
+  Future<PayInvoiceResponse> payInvoice(String invoice) async {
+    final connection = _connection;
+    if (connection == null) {
+      throw Exception('NWC not connected');
+    }
+    return _ndk.nwc.payInvoice(
+      connection,
+      invoice: invoice,
+      timeout: const Duration(seconds: 10),
+    );
   }
 
   Future<void> connect(String connectionString) async {

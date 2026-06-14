@@ -15,6 +15,9 @@ gen:
 watch:
     dart run build_runner watch
 
+run-dev:
+    APP_ID_SUFFIX=.dev flutter run
+
 format:
     dart format lib test
 
