@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
@@ -46,6 +47,7 @@ class Shelf extends StatelessWidget {
     final tileCount = jobs.length + books.length;
 
     return CustomScrollView(
+      scrollCacheExtent: const ScrollCacheExtent.pixels(600),
       slivers: [
         if (searchHits != null &&
             searchQuery != null &&

@@ -66,7 +66,7 @@ precommit: format analyze coverage
     @echo "precommit passed"
 
 build-apk:
-    flutter build apk --release
+    flutter build apk --obfuscate --split-debug-info=build/app/outputs/symbols --split-per-abi --release
 
 clean:
     flutter clean

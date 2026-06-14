@@ -10,6 +10,7 @@ import 'package:zapbook/widgets/app_fade_overlay.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/performance/performance_service.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 import 'package:zapbook/core/services/density_service.dart';
@@ -215,7 +216,9 @@ class _ReaderScreenState extends State<ReaderScreen>
                 children: [
                   Positioned.fill(
                     child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 280),
+                      duration: getIt<PerformanceService>().reduceEffects
+                          ? Duration.zero
+                          : const Duration(milliseconds: 280),
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
                       transitionBuilder: (child, animation) {

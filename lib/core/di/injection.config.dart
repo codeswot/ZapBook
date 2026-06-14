@@ -39,6 +39,7 @@ import 'package:zapbook/core/identity/local_key_signer_source.dart' as _i429;
 import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
+import 'package:zapbook/core/performance/performance_service.dart' as _i399;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
@@ -274,6 +275,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
+    );
+    gh.singleton<_i399.PerformanceService>(
+      () => _i399.PerformanceService(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i342.OnboardingLocalDataSource>(
       () => _i342.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/performance/performance_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 
@@ -28,6 +30,7 @@ class AppBookCover extends StatelessWidget {
     final semanticColors = context.colors;
     final typography = context.typography;
     final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context)).round();
+    final reduceEffects = getIt<PerformanceService>().reduceEffects;
 
     Color hueColor;
     switch (hue) {
@@ -69,134 +72,116 @@ class AppBookCover extends StatelessWidget {
     final textShadowBlur = 6.0;
     final textShadowOffsetY = 1.0;
 
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: semanticColors.mist,
-        borderRadius: AppRadii.br12,
-        border: Border.all(color: semanticColors.hairline2),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (image != null)
-            Positioned.fill(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return RadialGradient(
-                    center: Alignment.topRight,
-                    radius: gradientRadius,
-                    colors: [semanticColors.white, semanticColors.transparent],
-                    stops: [solidStop, transparentStop],
-                  ).createShader(rect);
-                },
-                blendMode: BlendMode.dstIn,
-                child: Image(
-                  image: ResizeImage(image!, width: cacheWidth),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, error, stack) =>
-                      title != null && title!.isNotEmpty
-                      ? CustomPaint(
-                          painter: _AbstractArtPainter(
-                            title!.hashCode,
-                            semanticColors,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+    Widget maskWithFade(Widget child) {
+      if (reduceEffects) return child;
+      return ShaderMask(
+        shaderCallback: (rect) {
+          return RadialGradient(
+            center: Alignment.topRight,
+            radius: gradientRadius,
+            colors: [semanticColors.white, semanticColors.transparent],
+            stops: [solidStop, transparentStop],
+          ).createShader(rect);
+        },
+        blendMode: BlendMode.dstIn,
+        child: child,
+      );
+    }
+
+    return RepaintBoundary(
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: semanticColors.mist,
+          borderRadius: AppRadii.br12,
+          border: Border.all(color: semanticColors.hairline2),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (image != null)
+              Positioned.fill(
+                child: maskWithFade(
+                  Image(
+                    image: ResizeImage(image!, width: cacheWidth),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, error, stack) =>
+                        title != null && title!.isNotEmpty
+                        ? CustomPaint(
+                            painter: _AbstractArtPainter(
+                              title!.hashCode,
+                              semanticColors,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              )
+            else if (title != null && title!.isNotEmpty)
+              Positioned.fill(
+                child: maskWithFade(
+                  CustomPaint(
+                    painter: _AbstractArtPainter(
+                      title!.hashCode,
+                      semanticColors,
+                    ),
+                  ),
                 ),
               ),
-            )
-          else if (title != null && title!.isNotEmpty)
-            Positioned.fill(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return RadialGradient(
-                    center: Alignment.topRight,
-                    radius: gradientRadius,
-                    colors: [semanticColors.white, semanticColors.transparent],
-                    stops: [solidStop, transparentStop],
-                  ).createShader(rect);
-                },
-                blendMode: BlendMode.dstIn,
-                child: CustomPaint(
-                  painter: _AbstractArtPainter(title!.hashCode, semanticColors),
-                ),
-              ),
-            ),
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: spineWidth,
-            child: Container(color: hueColor),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    semanticColors.black.withValues(alpha: shadowAlphaStart),
-                    semanticColors.transparent,
-                    semanticColors.transparent,
-                    semanticColors.black.withValues(alpha: shadowAlphaEnd),
-                  ],
-                  stops: [
-                    shadowStopStart,
-                    shadowStopMidLeft,
-                    shadowStopMidRight,
-                    shadowStopEnd,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (title != null)
             Positioned(
               left: 0,
-              right: 0,
+              top: 0,
               bottom: 0,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: spineWidth + basePadding,
-                  right: basePadding,
-                  bottom: basePadding,
+              width: spineWidth,
+              child: Container(color: hueColor),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      semanticColors.black.withValues(alpha: shadowAlphaStart),
+                      semanticColors.transparent,
+                      semanticColors.transparent,
+                      semanticColors.black.withValues(alpha: shadowAlphaEnd),
+                    ],
+                    stops: [
+                      shadowStopStart,
+                      shadowStopMidLeft,
+                      shadowStopMidRight,
+                      shadowStopEnd,
+                    ],
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title!,
-                      style: typography.displayM.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: titleSize,
-                        height: textLineHeight,
-                        letterSpacing: textLetterSpacing,
-                        color: semanticColors.ink,
-                        shadows: [
-                          Shadow(
-                            color: semanticColors.black.withValues(
-                              alpha: textShadowAlpha,
-                            ),
-                            offset: Offset(0, textShadowOffsetY),
-                            blurRadius: textShadowBlur,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (author != null) ...[
-                      SizedBox(height: textSpacing),
+              ),
+            ),
+            if (title != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: spineWidth + basePadding,
+                    right: basePadding,
+                    bottom: basePadding,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        author!,
-                        style: typography.body.copyWith(
-                          fontWeight: FontWeight.w500,
-                          fontSize: authorSize,
-                          height: authorLineHeight,
-                          color: semanticColors.slate,
+                        title!,
+                        style: typography.displayM.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: titleSize,
+                          height: textLineHeight,
+                          letterSpacing: textLetterSpacing,
+                          color: semanticColors.ink,
                           shadows: [
                             Shadow(
                               color: semanticColors.black.withValues(
@@ -208,12 +193,33 @@ class AppBookCover extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (author != null) ...[
+                        SizedBox(height: textSpacing),
+                        Text(
+                          author!,
+                          style: typography.body.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: authorSize,
+                            height: authorLineHeight,
+                            color: semanticColors.slate,
+                            shadows: [
+                              Shadow(
+                                color: semanticColors.black.withValues(
+                                  alpha: textShadowAlpha,
+                                ),
+                                offset: Offset(0, textShadowOffsetY),
+                                blurRadius: textShadowBlur,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

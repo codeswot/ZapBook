@@ -30,10 +30,23 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w100.ttf"
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w200.ttf"
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w300.ttf"
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w400.ttf"
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w500.ttf"
+            excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w600.ttf"
         }
     }
 }

@@ -46,7 +46,9 @@ class EmbeddingService {
     final dir = await getApplicationSupportDirectory();
     final modelPath = '${dir.path}/models/$_modelFileName';
     await _load();
+    final token = RootIsolateToken.instance!;
     return Isolate.run(() async {
+      BackgroundIsolateBinaryMessenger.ensureInitialized(token);
       final model = MiniLmL6V2.load(modelPath);
       if (pieces.length == 1) {
         final vector = await model.getEmbeddingAsVector(pieces.first);
