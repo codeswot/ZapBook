@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,8 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
        super(ZbfViewerState(currentPage: initialPage)) {
     _ensureSegment(initialPage);
     _prefetch(initialPage);
+    _ensureInitialChunk(initialPage);
+    _armPrepWatchdog(initialPage);
   }
 
   final ZbfBookHandle handle;
@@ -31,11 +34,15 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   final PdfChunkExtractor _chunkExtractor;
   final _logger = Logger('ZbfViewerCubit');
 
+  static const _prepTimeout = Duration(seconds: 8);
+  static const _loadTimeout = Duration(seconds: 20);
+
   final List<int> _prefetchQueue = [];
   bool _isProcessingQueue = false;
   final Set<int> _scheduledChunks = {0};
   final Set<int> _loadedSegments = {};
   final Set<int> _skippablePageSet;
+  Timer? _prepTimer;
 
   bool _isSkippable(int index) {
     return _skippablePageSet.contains(index);
@@ -69,7 +76,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     _ensureSegment(index);
     _ensureSegment(index + ZbfSegmenter.pagesPerSegment);
 
-    final currentChunk = index < 10 ? 0 : 1 + ((index - 10) ~/ 20);
+    final currentChunk = _chunkForPage(index);
     final page = handle.pageAt(index);
     if (page.layoutType == BookLayoutType.processing) {
       _ensureChunkIngested(currentChunk);
@@ -84,6 +91,58 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     _prefetch(index);
+    _armPrepWatchdog(index);
+  }
+
+  int _chunkForPage(int index) => index < 10 ? 0 : 1 + ((index - 10) ~/ 20);
+
+  void _ensureInitialChunk(int index) {
+    if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
+    final chunk = _chunkForPage(index);
+    _scheduledChunks.remove(chunk);
+    _ensureChunkIngested(chunk);
+  }
+
+  void _armPrepWatchdog(int index) {
+    _prepTimer?.cancel();
+    if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
+    if (state.failedPages.contains(index)) return;
+    _prepTimer = Timer(_prepTimeout, () {
+      if (isClosed) return;
+      if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
+      _logger.warning(
+        'Page $index still preparing after ${_prepTimeout.inSeconds}s; '
+        'showing fallback',
+      );
+      emit(state.copyWith(failedPages: {...state.failedPages, index}));
+    });
+  }
+
+  void _reconcilePrep() {
+    if (state.failedPages.isEmpty) return;
+    final remaining = state.failedPages
+        .where((i) => handle.pageAt(i).layoutType == BookLayoutType.processing)
+        .toSet();
+    if (remaining.length != state.failedPages.length) {
+      emit(state.copyWith(failedPages: remaining));
+    }
+  }
+
+  void retryPage(int index) {
+    if (isClosed) return;
+    if (index < 0 || index >= handle.manifest.pageCount) return;
+    if (state.failedPages.contains(index)) {
+      emit(state.copyWith(failedPages: state.failedPages.difference({index})));
+    }
+    final segmentIndex = index ~/ ZbfSegmenter.pagesPerSegment;
+    _loadedSegments.remove(segmentIndex);
+    _ensureSegment(index);
+    if (handle.pageAt(index).layoutType == BookLayoutType.processing) {
+      final chunk = _chunkForPage(index);
+      _scheduledChunks.remove(chunk);
+      _ensureChunkIngested(chunk);
+    }
+    _armPrepWatchdog(index);
   }
 
   Future<void> _ensureSegment(int pageIndex) async {
@@ -95,7 +154,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (!_loadedSegments.add(segmentIndex)) return;
 
     try {
-      final data = await loader(pageIndex);
+      final data = await loader(pageIndex).timeout(_loadTimeout);
       if (data == null) {
         _loadedSegments.remove(segmentIndex);
         return;
@@ -105,6 +164,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       }
       data.assets.forEach(handle.updateAsset);
       if (isClosed) return;
+      _reconcilePrep();
       emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
     } catch (error, stack) {
       _loadedSegments.remove(segmentIndex);
@@ -114,7 +174,6 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   Future<void> _ensureChunkIngested(int chunkIndex) async {
     if (_scheduledChunks.contains(chunkIndex)) return;
-    _scheduledChunks.add(chunkIndex);
 
     final pdf = handle.sourceDocument();
     if (pdf == null) return;
@@ -123,20 +182,25 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (start >= handle.manifest.pageCount) return;
     final end = chunkIndex == 0 ? 9 : start + 19;
 
+    _scheduledChunks.add(chunkIndex);
+
     try {
-      final pages = await _chunkExtractor.extractRange(
-        pdf,
-        start,
-        end,
-        'Chapter ${chunkIndex + 1}',
-        chunkIndex,
-      );
+      final pages = await _chunkExtractor
+          .extractRange(
+            pdf,
+            start,
+            end,
+            'Chapter ${chunkIndex + 1}',
+            chunkIndex,
+          )
+          .timeout(_loadTimeout);
 
       for (var i = 0; i < pages.length; i++) {
         handle.updatePage(start + i, pages[i]);
       }
 
       if (isClosed) return;
+      _reconcilePrep();
       emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
 
       _prefetch(state.currentPage);
@@ -158,6 +222,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
         }
       }
       if (isClosed) return;
+      _reconcilePrep();
       emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
     }
   }
@@ -245,6 +310,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   @override
   Future<void> close() {
+    _prepTimer?.cancel();
     _prefetchQueue.clear();
     return super.close();
   }
