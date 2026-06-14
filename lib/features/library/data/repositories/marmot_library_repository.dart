@@ -8,6 +8,7 @@ import 'package:archive/archive.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
+import 'package:zapbook/core/data/cache/page_cache_store.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/core/data/search/book_vector_index.dart';
@@ -27,6 +28,7 @@ class MarmotLibraryRepository implements LibraryRepository {
     this._density,
     this._searchIndex,
     this._vectorIndex,
+    this._pageCache,
   );
 
   final BookGroupDatasource _datasource;
@@ -35,6 +37,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   final DensityService _density;
   final BookSearchIndex _searchIndex;
   final BookVectorIndex _vectorIndex;
+  final PageCacheStore _pageCache;
 
   final _log = logging.Logger('MarmotLibraryRepository');
   final _controller = StreamController<List<LibraryBook>>.broadcast();
@@ -98,6 +101,7 @@ class MarmotLibraryRepository implements LibraryRepository {
     await _datasource.deleteBook(id);
     unawaited(_searchIndex.remove(id));
     unawaited(_vectorIndex.remove(id));
+    unawaited(_pageCache.remove(id));
     _books = _books.where((book) => book.id != id).toList(growable: false);
     _emit();
   }
