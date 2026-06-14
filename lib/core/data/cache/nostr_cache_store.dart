@@ -5,16 +5,18 @@ import 'package:ndk/domain_layer/entities/metadata.dart';
 import 'package:ndk/domain_layer/entities/nip_01_event.dart';
 import 'package:ndk/domain_layer/entities/read_write_marker.dart';
 import 'package:ndk/domain_layer/entities/user_relay_list.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
+
+import 'package:zapbook/core/identity/account_paths.dart';
 
 class NostrCacheStore {
   NostrCacheStore._(this._db);
 
   final Database _db;
+  bool _closed = false;
 
   static Future<NostrCacheStore> open() async {
-    final dir = await getApplicationSupportDirectory();
+    final dir = await AccountPaths.supportRoot();
     final dbPath = '${dir.path}/nostr_cache.db';
     final db = sqlite3.open(dbPath);
 
@@ -411,6 +413,8 @@ class NostrCacheStore {
   }
 
   void closeStore() {
+    if (_closed) return;
+    _closed = true;
     _db.close();
   }
 }

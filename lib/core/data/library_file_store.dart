@@ -2,7 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'package:zapbook/core/identity/account_paths.dart';
 
 @lazySingleton
 class LibraryFileStore {
@@ -17,10 +18,10 @@ class LibraryFileStore {
   Directory? _cache;
 
   Future<Directory> _supportRoot() async =>
-      _support ??= await getApplicationSupportDirectory();
+      _support ??= await AccountPaths.supportRoot();
 
   Future<Directory> _cacheRoot() async =>
-      _cache ??= await getApplicationCacheDirectory();
+      _cache ??= await AccountPaths.cacheRoot();
 
   Future<Directory> bookDir(String bookId) async {
     final root = await _supportRoot();

@@ -5,6 +5,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 
@@ -16,7 +17,7 @@ class ContactService {
   final NostrService _nostr;
   final IdentityLocalDataSource _identity;
 
-  static const _key = 'contacts.npubs';
+  static String get _key => ActiveAccount.key('contacts.npubs');
   final _log = logging.Logger('ContactService');
 
   bool isValidNpub(String value) => Nip19.isPubkey(value.trim());

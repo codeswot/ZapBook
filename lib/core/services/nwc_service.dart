@@ -5,6 +5,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/services/secure_storage_service.dart';
 
 @lazySingleton
@@ -18,8 +19,9 @@ class NwcService {
   final SecureStorageService _secureStorage;
   final _log = logging.Logger('NwcService');
 
-  static const _connectionKey = 'nwc_connection_string';
-  static const _walletNameKey = 'nwc_wallet_name';
+  static String get _connectionKey =>
+      ActiveAccount.key('nwc_connection_string');
+  static String get _walletNameKey => ActiveAccount.key('nwc_wallet_name');
 
   String? _connectionString;
   String? _walletName;

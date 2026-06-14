@@ -3,9 +3,9 @@ import 'dart:isolate';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'package:zapbook/core/identity/account_paths.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 class BookSearchHit {
@@ -39,7 +39,7 @@ class BookSearchIndex {
 
   Future<String> _path() async {
     if (_dbPath != null) return _dbPath!;
-    final dir = await getApplicationSupportDirectory();
+    final dir = await AccountPaths.supportRoot();
     return _dbPath = '${dir.path}/book_search.db';
   }
 
@@ -49,6 +49,12 @@ class BookSearchIndex {
     final db = sqlite3.open(await _path());
     _initSchema(db);
     return _db = db;
+  }
+
+  void close() {
+    final db = _db;
+    _db = null;
+    db?.close();
   }
 
   static void _initSchema(Database db) {

@@ -4,9 +4,9 @@ import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'package:zapbook/core/identity/account_paths.dart';
 import 'package:zapbook/core/data/search/book_chunker.dart';
 import 'package:zapbook/core/data/search/embedding_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -40,8 +40,14 @@ class BookVectorIndex {
 
   Future<String> _path() async {
     if (_dbPath != null) return _dbPath!;
-    final dir = await getApplicationSupportDirectory();
+    final dir = await AccountPaths.supportRoot();
     return _dbPath = '${dir.path}/book_vectors.db';
+  }
+
+  void close() {
+    final db = _db;
+    _db = null;
+    db?.close();
   }
 
   Future<Database> _open() async {

@@ -58,6 +58,7 @@ import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
 import 'package:zapbook/core/services/welcome_inbox_service.dart' as _i82;
 import 'package:zapbook/core/services/zap_nudge_service.dart' as _i718;
 import 'package:zapbook/core/services/zap_service.dart' as _i362;
+import 'package:zapbook/core/session/session_reloader.dart' as _i803;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
@@ -197,6 +198,8 @@ import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart'
     as _i397;
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
     as _i145;
+import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart'
+    as _i982;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -244,6 +247,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1.ZbfWriter>(() => ingestionModule.zbfWriter());
     gh.lazySingleton<_i1.ZbfReader>(() => ingestionModule.zbfReader());
     gh.lazySingleton<_i539.HeadsUpCubit>(() => _i539.HeadsUpCubit());
+    gh.lazySingleton<_i803.SessionReloader>(
+      () => const _i803.SessionManagerReloader(),
+    );
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -416,6 +422,13 @@ extension GetItInjectableX on _i174.GetIt {
         writer: gh<_i1.ZbfWriter>(),
       ),
     );
+    gh.factory<_i341.CompleteOnboarding>(
+      () => _i341.CompleteOnboarding(
+        gh<_i63.IdentityRepository>(),
+        gh<_i377.OnboardingRepository>(),
+        gh<_i803.SessionReloader>(),
+      ),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.MarmotLibraryRepository(
         gh<_i398.BookGroupDatasource>(),
@@ -433,16 +446,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i31.MilestoneService>(),
       ),
     );
-    gh.lazySingleton<_i140.MarmotSyncService>(
-      () => _i140.MarmotSyncService(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i397.KeyPackageService>(),
-      ),
-    );
     gh.lazySingleton<_i265.HomeDashboardDataSource>(
       () => _i265.HomeDashboardDataSourceImpl(
         gh<_i970.Marmot>(),
@@ -456,21 +459,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
-    );
-    gh.lazySingleton<_i1073.NostrSession>(
-      () => _i1073.NostrSession(
-        gh<_i857.Ndk>(),
-        gh<_i148.NostrSignerSource>(),
-        gh<_i11.NostrService>(),
-        gh<_i140.MarmotSyncService>(),
-      ),
-    );
-    gh.factory<_i341.CompleteOnboarding>(
-      () => _i341.CompleteOnboarding(
-        gh<_i63.IdentityRepository>(),
-        gh<_i377.OnboardingRepository>(),
-        gh<_i1073.NostrSession>(),
-      ),
     );
     gh.factory<_i1071.AddBookToLibrary>(
       () => _i1071.AddBookToLibrary(gh<_i516.LibraryRepository>()),
@@ -567,8 +555,34 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i1053.ClipboardService>(),
+        gh<_i11.NostrService>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+      ),
+    );
     gh.factory<_i668.CirclesCubit>(
       () => _i668.CirclesCubit(gh<_i96.WatchCircles>()),
+    );
+    gh.lazySingleton<_i140.MarmotSyncService>(
+      () => _i140.MarmotSyncService(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i397.KeyPackageService>(),
+      ),
+    );
+    gh.factory<_i982.SwitchAccountCubit>(
+      () => _i982.SwitchAccountCubit(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i63.IdentityRepository>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+      ),
     );
     gh.factory<_i659.ShareCircleCubit>(
       () => _i659.ShareCircleCubit(
@@ -591,40 +605,19 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i265.HomeDashboardDataSource>(),
       ),
     );
-    gh.lazySingleton<_i582.ProfileRepository>(
-      () => _i160.ProfileRepositoryImpl(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i342.OnboardingLocalDataSource>(),
-        gh<_i1073.NostrSession>(),
-        gh<_i507.NwcService>(),
-        gh<_i182.ReadingStatsService>(),
-      ),
-    );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i1053.ClipboardService>(),
-        gh<_i11.NostrService>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
-        gh<_i397.KeyPackageService>(),
-      ),
-    );
-    gh.factory<_i385.LoadProfile>(
-      () => _i385.LoadProfile(gh<_i582.ProfileRepository>()),
-    );
-    gh.factory<_i915.SignOut>(
-      () => _i915.SignOut(gh<_i582.ProfileRepository>()),
-    );
-    gh.factory<_i223.UpdateProfile>(
-      () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
-    );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
     );
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
+    );
+    gh.lazySingleton<_i1073.NostrSession>(
+      () => _i1073.NostrSession(
+        gh<_i857.Ndk>(),
+        gh<_i148.NostrSignerSource>(),
+        gh<_i11.NostrService>(),
+        gh<_i140.MarmotSyncService>(),
+      ),
     );
     gh.factoryParam<_i404.BookEditCubit, _i297.LibraryBook, dynamic>(
       (book, _) => _i404.BookEditCubit(
@@ -634,16 +627,14 @@ extension GetItInjectableX on _i174.GetIt {
         book,
       ),
     );
-    gh.factory<_i145.ProfileCubit>(
-      () => _i145.ProfileCubit(
-        gh<_i385.LoadProfile>(),
-        gh<_i223.UpdateProfile>(),
-        gh<_i915.SignOut>(),
-        gh<_i1053.ClipboardService>(),
-        gh<_i507.NwcService>(),
+    gh.lazySingleton<_i582.ProfileRepository>(
+      () => _i160.ProfileRepositoryImpl(
         gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1034.FilePickerService>(),
-        gh<_i397.KeyPackageService>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+        gh<_i1073.NostrSession>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i803.SessionReloader>(),
       ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(
@@ -659,6 +650,27 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i362.ZapService>(),
         gh<_i718.ZapNudgeService>(),
         gh<_i11.NostrService>(),
+      ),
+    );
+    gh.factory<_i385.LoadProfile>(
+      () => _i385.LoadProfile(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i915.SignOut>(
+      () => _i915.SignOut(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i223.UpdateProfile>(
+      () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i385.LoadProfile>(),
+        gh<_i223.UpdateProfile>(),
+        gh<_i915.SignOut>(),
+        gh<_i1053.ClipboardService>(),
+        gh<_i507.NwcService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1034.FilePickerService>(),
+        gh<_i397.KeyPackageService>(),
       ),
     );
     gh.factory<_i602.HomeCubit>(
