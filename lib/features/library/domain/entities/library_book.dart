@@ -20,6 +20,7 @@ final class LibraryBook extends Equatable {
     this.lastOpenedAt,
     this.contentHash,
     this.memberCount = 1,
+    this.removedFromCircle = false,
   });
 
   final String id;
@@ -38,6 +39,7 @@ final class LibraryBook extends Equatable {
   final DateTime? lastOpenedAt;
   final String? contentHash;
   final int memberCount;
+  final bool removedFromCircle;
 
   bool get isShared => memberCount > 1;
 
@@ -48,6 +50,7 @@ final class LibraryBook extends Equatable {
     String? coverPath,
     DateTime? lastOpenedAt,
     int? memberCount,
+    bool? removedFromCircle,
   }) {
     return LibraryBook(
       id: id,
@@ -66,6 +69,7 @@ final class LibraryBook extends Equatable {
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       contentHash: contentHash,
       memberCount: memberCount ?? this.memberCount,
+      removedFromCircle: removedFromCircle ?? this.removedFromCircle,
     );
   }
 
@@ -87,5 +91,6 @@ final class LibraryBook extends Equatable {
     lastOpenedAt,
     contentHash,
     memberCount,
+    removedFromCircle,
   ];
 }

@@ -8,6 +8,7 @@ import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
@@ -20,6 +21,7 @@ class MarmotSyncService {
     this._identity,
     this._library,
     this._milestone,
+    this._keyPackages,
   );
 
   final Marmot _marmot;
@@ -27,6 +29,7 @@ class MarmotSyncService {
   final IdentityLocalDataSource _identity;
   final LibraryRepository _library;
   final MilestoneService _milestone;
+  final KeyPackageService _keyPackages;
   final _log = logging.Logger('MarmotSyncService');
 
   static const _giftWrapKind = 1059;
@@ -34,6 +37,7 @@ class MarmotSyncService {
   static const _debounce = Duration(milliseconds: 600);
 
   bool _running = false;
+  String? _selfNpub;
   StreamSubscription<Nip01Event>? _welcomeSub;
   String? _welcomeSubId;
   StreamSubscription<Nip01Event>? _groupSub;
@@ -45,6 +49,7 @@ class MarmotSyncService {
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
     _running = true;
+    _selfNpub = npub;
     try {
       final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
       _startWelcomeSub(hex);
@@ -86,13 +91,38 @@ class MarmotSyncService {
       for (final welcome in await _marmot.getPendingWelcomes()) {
         try {
           await _marmot.acceptWelcome(welcome.id);
-        } on Object catch (_) {}
+        } on Object catch (_) {
+          if (await _purgeStaleGroup(welcome.groupName)) {
+            try {
+              await _marmot.acceptWelcome(welcome.id);
+            } on Object catch (_) {}
+          }
+        }
       }
+      await _keyPackages.forceRotate();
       await _restartGroupSub();
       _scheduleRefresh();
     } on Object catch (error) {
       _log.fine('Welcome event skipped: $error');
     }
+  }
+
+  Future<bool> _purgeStaleGroup(String groupName) async {
+    final self = _selfNpub;
+    try {
+      for (final group in await _marmot.listGroups()) {
+        if (group.name != groupName) continue;
+        if (self != null) {
+          final members = await _marmot.getMembers(group.id);
+          if (members.any((member) => member.npub == self)) return false;
+        }
+        await _marmot.deleteGroup(group.id);
+        return true;
+      }
+    } on Object catch (error, stack) {
+      _log.warning('Purge stale group failed for $groupName', error, stack);
+    }
+    return false;
   }
 
   Future<void> _startGroupSub() async {

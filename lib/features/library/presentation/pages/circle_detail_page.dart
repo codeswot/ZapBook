@@ -18,6 +18,7 @@ import 'package:zapbook/features/library/presentation/widgets/circle_detail/circ
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_shimmer.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_my_progress_card.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_reader_tile.dart';
+import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 
@@ -58,6 +59,48 @@ class _CircleDetailView extends StatelessWidget {
             };
           },
         ),
+      ),
+    );
+  }
+}
+
+class _RemovedBanner extends StatelessWidget {
+  const _RemovedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.coralTint,
+        borderRadius: AppRadii.br12,
+        border: Border.all(color: colors.coral.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(LucideIcons.userMinus, size: 20, color: colors.coral),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "You've been removed from this circle",
+                  style: typography.label.copyWith(color: colors.ink),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'You can still read your downloaded copy, but progress no '
+                  'longer syncs with the group.',
+                  style: typography.bodyS.copyWith(color: colors.slate),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -146,13 +189,19 @@ class _Loaded extends StatelessWidget {
           readersCount: state.members.length,
           bookId: bookId,
           bookTitle: book.title,
-          onSettings: () => _openSettings(context),
+          onSettings: book.removedFromCircle
+              ? null
+              : () => _openSettings(context),
         ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
             children: [
               const SizedBox(height: 18),
+              if (book.removedFromCircle) ...[
+                const _RemovedBanner(),
+                const SizedBox(height: 14),
+              ],
               CircleMyProgressCard(
                 book: book,
                 cover: _coverImage,
