@@ -73,8 +73,7 @@ class DriftCacheManager implements CacheManager {
         return false;
       }
       return true;
-    }).toList();
-    if (mem.isNotEmpty) return mem;
+    });
     final db = _store.loadEvents(
       ids: ids,
       pubKeys: pubKeys,
@@ -85,10 +84,20 @@ class DriftCacheManager implements CacheManager {
       search: search,
       limit: limit,
     );
+    final byId = <String, Nip01Event>{};
     for (final e in db) {
       _events[e.id] = e;
+      byId[e.id] = e;
     }
-    return db;
+    for (final e in mem) {
+      byId.putIfAbsent(e.id, () => e);
+    }
+    final merged = byId.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (limit != null && merged.length > limit) {
+      return merged.sublist(0, limit);
+    }
+    return merged;
   }
 
   @override
