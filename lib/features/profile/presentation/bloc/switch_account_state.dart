@@ -9,10 +9,7 @@ class SwitchAccountLoading extends SwitchAccountState {
 class SwitchAccountLoaded extends SwitchAccountState {
   final List<SwitchAccountItem> accounts;
   final String activeNpub;
-  const SwitchAccountLoaded({
-    required this.accounts,
-    required this.activeNpub,
-  });
+  const SwitchAccountLoaded({required this.accounts, required this.activeNpub});
 }
 
 class SwitchAccountBusy extends SwitchAccountState {
@@ -79,10 +76,7 @@ class SwitchAccountItem {
     required this.picture,
   });
 
-  SwitchAccountItem copyWith({
-    String? name,
-    String? picture,
-  }) {
+  SwitchAccountItem copyWith({String? name, String? picture}) {
     return SwitchAccountItem(
       npub: npub,
       name: name ?? this.name,
