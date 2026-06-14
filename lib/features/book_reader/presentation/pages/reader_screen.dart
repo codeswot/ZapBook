@@ -237,10 +237,19 @@ class _ReaderScreenState extends State<ReaderScreen>
                       child: KeyedSubtree(
                         key: ValueKey<int>(index),
                         child: blocks == null
-                            ? ReaderPageLoading(
-                                key: ValueKey<String>('loading_$index'),
-                                message: 'Preparing page ${index + 1}…',
-                              )
+                            ? (state.failedPages.contains(index)
+                                  ? ReaderPagePrepFailed(
+                                      key: ValueKey<String>('failed_$index'),
+                                      pageNumber: index + 1,
+                                      onRetry: () => cubit.retryPage(index),
+                                      onSkip: index < total - 1
+                                          ? cubit.nextPage
+                                          : null,
+                                    )
+                                  : ReaderPageLoading(
+                                      key: ValueKey<String>('loading_$index'),
+                                      message: 'Preparing page ${index + 1}…',
+                                    ))
                             : (state.rasterizingPages.contains(index) &&
                                   page.layoutType ==
                                       BookLayoutType.illustration &&

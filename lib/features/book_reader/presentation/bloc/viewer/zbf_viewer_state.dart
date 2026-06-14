@@ -6,6 +6,7 @@ class ZbfViewerState extends Equatable {
     this.currentPage = 0,
     this.imagePages = const {},
     this.rasterizingPages = const {},
+    this.failedPages = const {},
     this.updateTrigger = 0,
   });
 
@@ -15,18 +16,22 @@ class ZbfViewerState extends Equatable {
 
   final Set<int> rasterizingPages;
 
+  final Set<int> failedPages;
+
   final int updateTrigger;
 
   ZbfViewerState copyWith({
     int? currentPage,
     Map<int, List<BookBlock>>? imagePages,
     Set<int>? rasterizingPages,
+    Set<int>? failedPages,
     int? updateTrigger,
   }) {
     return ZbfViewerState(
       currentPage: currentPage ?? this.currentPage,
       imagePages: imagePages ?? this.imagePages,
       rasterizingPages: rasterizingPages ?? this.rasterizingPages,
+      failedPages: failedPages ?? this.failedPages,
       updateTrigger: updateTrigger ?? this.updateTrigger,
     );
   }
@@ -36,6 +41,7 @@ class ZbfViewerState extends Equatable {
     currentPage,
     imagePages,
     rasterizingPages,
+    failedPages,
     updateTrigger,
   ];
 }
