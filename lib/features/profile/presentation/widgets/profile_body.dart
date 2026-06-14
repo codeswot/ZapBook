@@ -14,6 +14,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart'
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_package_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
+import 'package:zapbook/features/profile/presentation/widgets/account_switch_sheet.dart';
 import 'package:zapbook/widgets/app_nwc_connect_sheet.dart';
 import 'package:zapbook/widgets/app_nwc_connected_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -80,6 +81,12 @@ class ProfileBody extends StatelessWidget {
             tiles: [
               const ProfileDonateTile(),
               const ProfileAppearanceTile(),
+              ProfileTile(
+                icon: LucideIcons.users,
+                title: 'Switch account',
+                subtitle: 'Switch or add another identity',
+                onTap: () => AccountSwitchSheet.show(context),
+              ),
               const ProfileSignOutTile(),
             ],
           ),

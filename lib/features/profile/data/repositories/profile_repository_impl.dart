@@ -2,9 +2,9 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
-import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
@@ -17,16 +17,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
     this._remote,
     this._onboardingLocal,
     this._session,
-    this._nwc,
     this._stats,
+    this._reloader,
   );
 
   final IdentityLocalDataSource _identityLocal;
   final ProfileRemoteDataSource _remote;
   final OnboardingLocalDataSource _onboardingLocal;
   final NostrSession _session;
-  final NwcService _nwc;
   final ReadingStatsService _stats;
+  final SessionReloader _reloader;
 
   @override
   Future<UserProfile> load() async {
@@ -73,9 +73,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<void> signOut() async {
-    _session.logout();
-    await _nwc.disconnect();
     await _identityLocal.clear();
     await _onboardingLocal.clear();
+    await _reloader.reload();
   }
 }

@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
 import 'package:ndk/ndk.dart' show Nip19;
 import 'package:zapbook/core/services/clipboard_service.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
@@ -23,7 +20,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     this._generateIdentity,
     this._importIdentity,
     this._completeOnboarding,
-    this._keyPackage,
   ) : super(const OnboardingState(step: OnboardingStep.welcome)) {
     generateKeys();
   }
@@ -35,7 +31,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   final GenerateIdentity _generateIdentity;
   final ImportIdentity _importIdentity;
   final CompleteOnboarding _completeOnboarding;
-  final KeyPackageService _keyPackage;
 
   void nextStep() {
     switch (state.step) {
@@ -212,25 +207,16 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       return false;
     }
     emit(state.copyWith(isBusy: true));
-    await _completeOnboarding(npub: npub, nsec: nsec);
-    if (publish && _nostrService.isLoggedIn) {
-      unawaited(
-        _nostrService.publishMetadata(
-          displayName: state.displayName.isNotEmpty ? state.displayName : null,
-          lud16: state.lightningAddress.isNotEmpty
-              ? state.lightningAddress
-              : null,
-          picture: state.picture.isNotEmpty ? state.picture : null,
-        ),
-      );
-    }
-    final keyPackageOk = await _keyPackage.ensurePublished();
-    emit(
-      state.copyWith(
-        isComplete: true,
-        isBusy: false,
-        keyPackagePublishFailed: !keyPackageOk,
-      ),
+    await _completeOnboarding(
+      npub: npub,
+      nsec: nsec,
+      displayName: publish && state.displayName.isNotEmpty
+          ? state.displayName
+          : null,
+      lud16: publish && state.lightningAddress.isNotEmpty
+          ? state.lightningAddress
+          : null,
+      picture: publish && state.picture.isNotEmpty ? state.picture : null,
     );
     return true;
   }

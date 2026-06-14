@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_fade_overlay.dart';
-import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_header.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_footer.dart';
@@ -49,89 +47,72 @@ class _OnboardingViewState extends State<_OnboardingView> {
     BuildContext context,
     OnboardingCubit cubit, {
     required bool publish,
-  }) async {
-    final saved = await cubit.completeOnboarding(publish: publish);
-    if (saved && context.mounted) {
-      const HomeRoute().go(context);
-    }
+  }) {
+    // On success the active identity changes, which rebuilds the dependency
+    // graph and remounts the app; the router then redirects to home. No
+    // manual navigation needed here.
+    cubit.completeOnboarding(publish: publish);
   }
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<OnboardingCubit>();
 
-    return BlocListener<OnboardingCubit, OnboardingState>(
-      listener: (context, state) {
-        if (state.isComplete) {
-          if (state.keyPackagePublishFailed) {
-            AppToast.show(
-              context,
-              message:
-                  "Couldn't finish setting you up for reading circles. "
-                  "Reopen the app to retry.",
-              type: AppToastType.warning,
-              rootNavigator: true,
-            );
-          }
-          const HomeRoute().go(context);
-        }
-      },
-      child: BlocBuilder<OnboardingCubit, OnboardingState>(
-        builder: (context, state) {
-          final currentStepIndex = _getStepIndex(state.step);
+    return BlocBuilder<OnboardingCubit, OnboardingState>(
+      builder: (context, state) {
+        final currentStepIndex = _getStepIndex(state.step);
 
-          return Scaffold(
-            backgroundColor: context.colors.paper,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  if (currentStepIndex > 0)
-                    ObHeader(
-                      currentStep: currentStepIndex,
-                      onBack: () => cubit.previousStep(),
-                    ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          child: _OnboardingStepContent(
-                            state: state,
-                            cubit: cubit,
-                            nsecController: _nsecController,
-                            lnAddressController: _lnAddressController,
-                            displayNameController: _displayNameController,
-                          ),
-                        ),
-                        AppFadeOverlay.top(
-                          color: context.colors.paper,
-                          height: 16,
-                        ),
-                        AppFadeOverlay.bottom(
-                          color: context.colors.paper,
-                          height: 16,
-                        ),
-                      ],
-                    ),
+        return Scaffold(
+          backgroundColor: context.colors.paper,
+          body: SafeArea(
+            child: Column(
+              children: [
+                if (currentStepIndex > 0)
+                  ObHeader(
+                    currentStep: currentStepIndex,
+                    onBack: () => cubit.previousStep(),
                   ),
-                  ObFooter(
-                    state: state,
-                    cubit: cubit,
-                    nsecController: _nsecController,
-                    lnAddressController: _lnAddressController,
-                    displayNameController: _displayNameController,
-                    onComplete: (publish) =>
-                        _onComplete(context, cubit, publish: publish),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        child: _OnboardingStepContent(
+                          state: state,
+                          cubit: cubit,
+                          nsecController: _nsecController,
+                          lnAddressController: _lnAddressController,
+                          displayNameController: _displayNameController,
+                        ),
+                      ),
+                      AppFadeOverlay.top(
+                        color: context.colors.paper,
+                        height: 16,
+                      ),
+                      AppFadeOverlay.bottom(
+                        color: context.colors.paper,
+                        height: 16,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                ObFooter(
+                  state: state,
+                  cubit: cubit,
+                  nsecController: _nsecController,
+                  lnAddressController: _lnAddressController,
+                  displayNameController: _displayNameController,
+                  onComplete: (publish) =>
+                      _onComplete(context, cubit, publish: publish),
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

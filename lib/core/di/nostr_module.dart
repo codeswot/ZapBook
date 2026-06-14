@@ -11,6 +11,8 @@ final class NostrCacheWarmup {
 
   static Future<NostrCacheStore> start() =>
       _warmStore ??= NostrCacheStore.open();
+
+  static void reset() => _warmStore = null;
 }
 
 @module

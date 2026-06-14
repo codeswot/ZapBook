@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:injectable/injectable.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:reading_progress/reading_progress.dart';
 
+import 'package:zapbook/core/identity/account_paths.dart';
 import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
@@ -14,7 +14,7 @@ class DensityService {
 
   Future<String> _dir() async {
     if (_dirPath != null) return _dirPath!;
-    final appDir = await getApplicationSupportDirectory();
+    final appDir = await AccountPaths.supportRoot();
     final dir = Directory('${appDir.path}/densities');
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);

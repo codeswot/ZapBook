@@ -6,7 +6,8 @@ import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'package:zapbook/core/identity/account_paths.dart';
 
 @module
 abstract class MarmotModule {
@@ -22,8 +23,10 @@ final class MarmotWarmup {
 
   static Future<Marmot> start() => _warm ??= _open();
 
+  static void reset() => _warm = null;
+
   static Future<Marmot> _open() async {
-    final dir = await getApplicationSupportDirectory();
+    final dir = await AccountPaths.supportRoot();
     final dbPath = '${dir.path}/marmot.db';
 
     if (Platform.isAndroid) {

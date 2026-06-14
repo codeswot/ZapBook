@@ -16,4 +16,15 @@ final class OnboardingRepositoryImpl implements OnboardingRepository {
 
   @override
   Future<void> complete() => _local.setComplete();
+
+  @override
+  Future<void> stashPendingProfile({
+    String? displayName,
+    String? lud16,
+    String? picture,
+  }) => _local.writePendingProfile(
+    displayName: displayName,
+    lud16: lud16,
+    picture: picture,
+  );
 }

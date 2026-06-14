@@ -2,10 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
-import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/services/clipboard_service.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
@@ -20,17 +19,14 @@ class MockIdentityRepository extends Mock implements IdentityRepository {}
 
 class MockOnboardingRepository extends Mock implements OnboardingRepository {}
 
-class MockNostrSession extends Mock implements NostrSession {}
-
-class MockKeyPackageService extends Mock implements KeyPackageService {}
+class MockSessionReloader extends Mock implements SessionReloader {}
 
 void main() {
   late MockClipboardService clipboard;
   late MockNostrService nostr;
   late MockIdentityRepository identityRepo;
   late MockOnboardingRepository onboardingRepo;
-  late MockNostrSession session;
-  late MockKeyPackageService keyPackage;
+  late MockSessionReloader reloader;
   late GenerateIdentity generateIdentity;
   late ImportIdentity importIdentity;
   late CompleteOnboarding completeOnboarding;
@@ -46,15 +42,14 @@ void main() {
     nostr = MockNostrService();
     identityRepo = MockIdentityRepository();
     onboardingRepo = MockOnboardingRepository();
-    session = MockNostrSession();
-    keyPackage = MockKeyPackageService();
+    reloader = MockSessionReloader();
 
     generateIdentity = GenerateIdentity(identityRepo);
     importIdentity = ImportIdentity(identityRepo);
     completeOnboarding = CompleteOnboarding(
       identityRepo,
       onboardingRepo,
-      session,
+      reloader,
     );
 
     when(() => identityRepo.generate()).thenAnswer((_) async => keypair);
@@ -64,9 +59,15 @@ void main() {
         nsec: any(named: 'nsec'),
       ),
     ).thenAnswer((_) async {});
-    when(() => session.login()).thenAnswer((_) async => true);
     when(() => onboardingRepo.complete()).thenAnswer((_) async {});
-    when(() => nostr.isLoggedIn).thenReturn(false);
+    when(
+      () => onboardingRepo.stashPendingProfile(
+        displayName: any(named: 'displayName'),
+        lud16: any(named: 'lud16'),
+        picture: any(named: 'picture'),
+      ),
+    ).thenAnswer((_) async {});
+    when(() => reloader.reload()).thenAnswer((_) async {});
   });
 
   OnboardingCubit buildCubit() => OnboardingCubit(
@@ -75,7 +76,6 @@ void main() {
     generateIdentity,
     importIdentity,
     completeOnboarding,
-    keyPackage,
   );
 
   Future<OnboardingCubit> buildReadyCubit() async {
@@ -86,32 +86,24 @@ void main() {
     return cubit;
   }
 
-  test('publishes key package on completion and clears failure flag', () async {
-    when(() => keyPackage.ensurePublished()).thenAnswer((_) async => true);
+  test('persists, completes and reloads the session on completion', () async {
     final cubit = await buildReadyCubit();
 
     final ok = await cubit.completeOnboarding(publish: false);
 
     expect(ok, isTrue);
-    expect(cubit.state.isComplete, isTrue);
-    expect(cubit.state.keyPackagePublishFailed, isFalse);
-    verify(() => keyPackage.ensurePublished()).called(1);
+    verify(
+      () => identityRepo.persist(
+        npub: keypair.npub,
+        nsec: any(named: 'nsec'),
+      ),
+    ).called(1);
+    verify(() => onboardingRepo.complete()).called(1);
+    verify(() => reloader.reload()).called(1);
     await cubit.close();
   });
 
-  test('flags failure when key package publish fails', () async {
-    when(() => keyPackage.ensurePublished()).thenAnswer((_) async => false);
-    final cubit = await buildReadyCubit();
-
-    final ok = await cubit.completeOnboarding(publish: false);
-
-    expect(ok, isTrue);
-    expect(cubit.state.isComplete, isTrue);
-    expect(cubit.state.keyPackagePublishFailed, isTrue);
-    await cubit.close();
-  });
-
-  test('does not complete or publish when identity is missing', () async {
+  test('does not complete or reload when identity is missing', () async {
     when(
       () => identityRepo.generate(),
     ).thenAnswer((_) async => const NostrKeypair(npub: '', pubkeyHex: ''));
@@ -120,7 +112,7 @@ void main() {
     final ok = await cubit.completeOnboarding();
 
     expect(ok, isFalse);
-    verifyNever(() => keyPackage.ensurePublished());
+    verifyNever(() => reloader.reload());
     await cubit.close();
   });
 }
