@@ -203,8 +203,16 @@ class BookGroupDatasource {
       currentWordCount: currentWordCount,
       totalWordCount: totalWordCount,
     );
-    final event = await _marmot.sendStructured(npub, groupId, payload.toJson());
-    _publish(event);
+    try {
+      final event = await _marmot.sendStructured(
+        npub,
+        groupId,
+        payload.toJson(),
+      );
+      _publish(event);
+    } on Object catch (error, stack) {
+      _log.warning('Send progress failed for $bookId', error, stack);
+    }
   }
 
   Future<BookMetaPayload?> currentMeta(String bookId) async {
@@ -338,7 +346,24 @@ class BookGroupDatasource {
     final meta = _latestMeta(messages);
     if (meta == null) return null;
     final progress = _latestProgress(messages);
-    return _toLibraryBook(meta, lastReadAtMs: progress?.lastReadAtMs);
+    return _toLibraryBook(
+      meta,
+      lastReadAtMs: progress?.lastReadAtMs,
+      removedFromCircle: await _isRemoved(groupId),
+    );
+  }
+
+  Future<bool> _isRemoved(String groupId) async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return false;
+    try {
+      final members = await _marmot.getMembers(groupId);
+      if (members.isEmpty) return false;
+      return !members.any((member) => member.npub == npub);
+    } on Object catch (error, stack) {
+      _log.warning('Membership check failed for $groupId', error, stack);
+      return false;
+    }
   }
 
   BookMetaPayload? _latestMeta(List<MarmotMessage> messages) {
@@ -385,6 +410,7 @@ class BookGroupDatasource {
   Future<LibraryBook> _toLibraryBook(
     BookMetaPayload meta, {
     required int? lastReadAtMs,
+    bool removedFromCircle = false,
   }) async {
     final zbf = await _fileStore.zbfFile(meta.bookId);
     final coverPath = await _fileStore.coverPathIfExists(meta.bookId);
@@ -406,6 +432,7 @@ class BookGroupDatasource {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(lastReadAtMs),
       contentHash: meta.contentHash,
+      removedFromCircle: removedFromCircle,
     );
   }
 

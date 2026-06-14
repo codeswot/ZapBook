@@ -440,6 +440,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i516.LibraryRepository>(),
         gh<_i31.MilestoneService>(),
+        gh<_i397.KeyPackageService>(),
       ),
     );
     gh.lazySingleton<_i265.HomeDashboardDataSource>(
