@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/performance/performance_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/theme/app_theme.dart';
@@ -153,33 +155,45 @@ class _RichText extends StatelessWidget {
       return [TextSpan(text: input, style: base)];
     }
 
-    final colors = context.colors;
-    final p = highlightProgress ?? 0.0;
-    final envelope = _envelope(p);
-    final center = 0.16 + ((p * 3.0) % 1.0) * 0.68;
-
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          colors.nostr.withValues(alpha: 0.35 * envelope),
-          colors.bitcoin2.withValues(alpha: 0.68 * envelope),
-          colors.paper.withValues(alpha: 0.85 * envelope),
-          colors.bitcoin2.withValues(alpha: 0.68 * envelope),
-          colors.nostr.withValues(alpha: 0.35 * envelope),
-        ],
-        stops: [0.0, center - 0.15, center, center + 0.15, 1.0],
-      ).createShader(const Rect.fromLTWH(0, 0, 280, 40));
-
-    final highlighted = base.copyWith(
-      background: paint,
-      fontWeight: FontWeight.w600,
-    );
-
-    final spans = <InlineSpan>[];
     final lowerInput = input.toLowerCase();
     final lowerQuery = query.toLowerCase();
+    if (!lowerInput.contains(lowerQuery)) {
+      return [TextSpan(text: input, style: base)];
+    }
+
+    final colors = context.colors;
+    final TextStyle highlighted;
+    if (getIt<PerformanceService>().reduceEffects) {
+      highlighted = base.copyWith(
+        backgroundColor: colors.bitcoin2.withValues(alpha: 0.4),
+        fontWeight: FontWeight.w600,
+      );
+    } else {
+      final p = highlightProgress ?? 0.0;
+      final envelope = _envelope(p);
+      final center = 0.16 + ((p * 3.0) % 1.0) * 0.68;
+
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            colors.nostr.withValues(alpha: 0.35 * envelope),
+            colors.bitcoin2.withValues(alpha: 0.68 * envelope),
+            colors.paper.withValues(alpha: 0.85 * envelope),
+            colors.bitcoin2.withValues(alpha: 0.68 * envelope),
+            colors.nostr.withValues(alpha: 0.35 * envelope),
+          ],
+          stops: [0.0, center - 0.15, center, center + 0.15, 1.0],
+        ).createShader(const Rect.fromLTWH(0, 0, 280, 40));
+
+      highlighted = base.copyWith(
+        background: paint,
+        fontWeight: FontWeight.w600,
+      );
+    }
+
+    final spans = <InlineSpan>[];
 
     int start = 0;
     while (true) {

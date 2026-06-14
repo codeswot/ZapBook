@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/data/paragraph_merger.dart';
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/performance/performance_service.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_block_view.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
@@ -340,11 +342,12 @@ class _HighlightableBlocks extends StatelessWidget {
         anchorKey: anchorKey,
       );
     }
+    final reduceEffects = getIt<PerformanceService>().reduceEffects;
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         key: ValueKey(query),
         tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 2800),
+        duration: Duration(milliseconds: reduceEffects ? 700 : 2800),
         curve: Curves.linear,
         onEnd: onHighlightComplete,
         builder: (context, t, _) => _BlockColumn(

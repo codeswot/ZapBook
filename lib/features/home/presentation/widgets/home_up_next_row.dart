@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
@@ -57,6 +58,7 @@ class HomeUpNextRow extends StatelessWidget {
           height: 160,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
+            scrollCacheExtent: const ScrollCacheExtent.pixels(600),
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: books.length,
             itemBuilder: (context, index) {

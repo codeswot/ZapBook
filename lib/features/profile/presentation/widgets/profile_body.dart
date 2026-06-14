@@ -7,6 +7,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_ai_tile.da
 import 'package:zapbook/features/profile/presentation/widgets/profile_appearance_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_friends_tile.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_performance_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_section.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_stats_row.dart';
@@ -81,6 +82,7 @@ class ProfileBody extends StatelessWidget {
             tiles: [
               const ProfileDonateTile(),
               const ProfileAppearanceTile(),
+              const ProfilePerformanceTile(),
               ProfileTile(
                 icon: LucideIcons.users,
                 title: 'Switch account',

@@ -12,6 +12,7 @@ import 'package:zapbook/core/di/marmot_module.dart';
 import 'package:zapbook/core/di/nostr_module.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
+import 'package:zapbook/core/performance/performance_service.dart';
 import 'package:zapbook/core/session/start_session.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -43,6 +44,12 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     unawaited(MarmotWarmup.start());
     unawaited(NostrCacheWarmup.start());
     await configureDependencies();
+    await getIt<PerformanceService>().init();
+    if (getIt<PerformanceService>().reduceEffects) {
+      PaintingBinding.instance.imageCache
+        ..maximumSizeBytes = 40 << 20
+        ..maximumSize = 120;
+    }
     await startSession();
   } on Exception catch (error, stack) {
     Logger.root.warning('Bootstrap setup Error', error, stack);

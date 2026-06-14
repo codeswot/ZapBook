@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+import 'package:zapbook/core/data/cache/page_cache_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
@@ -17,25 +18,51 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     this.segmentLoader,
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
+    PageCacheStore? pageCache,
     int initialPage = 0,
   }) : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
        _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
+       _pageCache = pageCache ?? getIt<PageCacheStore>(),
        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
        super(ZbfViewerState(currentPage: initialPage)) {
+    _initialize(initialPage);
+  }
+
+  Future<void> _initialize(int initialPage) async {
+    await _hydrateFromCache(initialPage);
+    if (isClosed) return;
     _ensureSegment(initialPage);
     _prefetch(initialPage);
     _ensureInitialChunk(initialPage);
     _armPrepWatchdog(initialPage);
   }
 
+  Future<void> _hydrateFromCache(int initialPage) async {
+    final cached = await _pageCache.load(handle.manifest.id);
+    if (isClosed || cached.isEmpty) return;
+    final pageCount = handle.manifest.pageCount;
+    var changed = false;
+    cached.forEach((index, page) {
+      if (index >= 0 && index < pageCount) {
+        handle.updatePage(index, page);
+        changed = true;
+      }
+    });
+    if (!changed || isClosed) return;
+    _reconcilePrep();
+    emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+  }
+
   final ZbfBookHandle handle;
   final BookSegmentLoader? segmentLoader;
   final PdfPageRasterizer _rasterizer;
   final PdfChunkExtractor _chunkExtractor;
+  final PageCacheStore _pageCache;
   final _logger = Logger('ZbfViewerCubit');
 
   static const _prepTimeout = Duration(seconds: 8);
   static const _loadTimeout = Duration(seconds: 20);
+  static const _window = 3;
 
   final List<int> _prefetchQueue = [];
   bool _isProcessingQueue = false;
@@ -79,7 +106,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     final currentChunk = _chunkForPage(index);
     final page = handle.pageAt(index);
     if (page.layoutType == BookLayoutType.processing) {
-      _ensureChunkIngested(currentChunk);
+      _ensureChunkIngested(currentChunk, priorityPage: index);
     }
 
     final nextChunk = currentChunk + 1;
@@ -100,7 +127,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
     final chunk = _chunkForPage(index);
     _scheduledChunks.remove(chunk);
-    _ensureChunkIngested(chunk);
+    _ensureChunkIngested(chunk, priorityPage: index);
   }
 
   void _armPrepWatchdog(int index) {
@@ -140,7 +167,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     if (handle.pageAt(index).layoutType == BookLayoutType.processing) {
       final chunk = _chunkForPage(index);
       _scheduledChunks.remove(chunk);
-      _ensureChunkIngested(chunk);
+      _ensureChunkIngested(chunk, priorityPage: index);
     }
     _armPrepWatchdog(index);
   }
@@ -172,59 +199,90 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
   }
 
-  Future<void> _ensureChunkIngested(int chunkIndex) async {
+  Future<void> _ensureChunkIngested(int chunkIndex, {int? priorityPage}) async {
     if (_scheduledChunks.contains(chunkIndex)) return;
 
     final pdf = handle.sourceDocument();
     if (pdf == null) return;
 
+    final pageCount = handle.manifest.pageCount;
     final start = chunkIndex == 0 ? 0 : 10 + (chunkIndex - 1) * 20;
-    if (start >= handle.manifest.pageCount) return;
-    final end = chunkIndex == 0 ? 9 : start + 19;
+    if (start >= pageCount) return;
+    final rawEnd = chunkIndex == 0 ? 9 : start + 19;
+    final end = rawEnd >= pageCount ? pageCount - 1 : rawEnd;
 
     _scheduledChunks.add(chunkIndex);
 
-    try {
-      final pages = await _chunkExtractor
-          .extractRange(
-            pdf,
-            start,
-            end,
-            'Chapter ${chunkIndex + 1}',
-            chunkIndex,
-          )
-          .timeout(_loadTimeout);
+    if (!_hasProcessingPage(start, end)) return;
 
-      for (var i = 0; i < pages.length; i++) {
-        handle.updatePage(start + i, pages[i]);
+    final title = 'Chapter ${chunkIndex + 1}';
+    final priority = (priorityPage ?? start).clamp(start, end);
+
+    try {
+      final windowEnd = (priority + _window - 1).clamp(start, end);
+      await _extractInto(pdf, priority, windowEnd, title, chunkIndex);
+
+      if (windowEnd < end) {
+        await _extractInto(pdf, windowEnd + 1, end, title, chunkIndex);
+      }
+      if (priority > start) {
+        await _extractInto(pdf, start, priority - 1, title, chunkIndex);
       }
 
       if (isClosed) return;
-      _reconcilePrep();
-      emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
-
       _prefetch(state.currentPage);
     } catch (e, stack) {
       _logger.severe('Failed to extract chunk $chunkIndex', e, stack);
-      for (var i = start; i <= end; i++) {
-        if (i < handle.manifest.pageCount) {
-          handle.updatePage(
-            i,
-            BookPage(
-              pageNumber: i + 1,
-              chapterIndex: chunkIndex,
-              chapterTitle: 'Chapter ${chunkIndex + 1}',
-              layoutType: BookLayoutType.textHeavy,
-              needsAiProcessing: false,
-              blocks: const [],
-            ),
-          );
-        }
-      }
-      if (isClosed) return;
-      _reconcilePrep();
-      emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+      _fillProcessingEmpty(start, end, chunkIndex);
     }
+  }
+
+  Future<void> _extractInto(
+    Uint8List pdf,
+    int start,
+    int end,
+    String title,
+    int chunkIndex,
+  ) async {
+    final pages = await _chunkExtractor
+        .extractRange(pdf, start, end, title, chunkIndex)
+        .timeout(_loadTimeout);
+    final saved = <int, BookPage>{};
+    for (var i = 0; i < pages.length; i++) {
+      handle.updatePage(start + i, pages[i]);
+      saved[start + i] = pages[i];
+    }
+    if (isClosed) return;
+    unawaited(_pageCache.saveAll(handle.manifest.id, saved));
+    _reconcilePrep();
+    emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+  }
+
+  bool _hasProcessingPage(int start, int end) {
+    for (var i = start; i <= end && i < handle.manifest.pageCount; i++) {
+      if (handle.pageAt(i).layoutType == BookLayoutType.processing) return true;
+    }
+    return false;
+  }
+
+  void _fillProcessingEmpty(int start, int end, int chunkIndex) {
+    for (var i = start; i <= end && i < handle.manifest.pageCount; i++) {
+      if (handle.pageAt(i).layoutType != BookLayoutType.processing) continue;
+      handle.updatePage(
+        i,
+        BookPage(
+          pageNumber: i + 1,
+          chapterIndex: chunkIndex,
+          chapterTitle: 'Chapter ${chunkIndex + 1}',
+          layoutType: BookLayoutType.textHeavy,
+          needsAiProcessing: false,
+          blocks: const [],
+        ),
+      );
+    }
+    if (isClosed) return;
+    _reconcilePrep();
+    emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
   }
 
   void _prefetch(int centerIndex) {

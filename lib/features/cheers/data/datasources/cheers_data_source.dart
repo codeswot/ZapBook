@@ -39,22 +39,52 @@ class CheersDataSourceImpl implements CheersDataSource {
   @override
   Stream<List<CheersActivity>> watchActivities() {
     final controller = StreamController<List<CheersActivity>>.broadcast();
+    int? lastSignature;
 
-    void reload() async {
+    void reload({bool force = false}) async {
       try {
-        final data = await _fetchActivities();
+        final myNpub = await _identityLocal.readNpub() ?? '';
+        final groups = await _marmot.listGroups();
+        final bookGroups = groups
+            .where((group) => BookGroupNaming.matches(group.name))
+            .toList();
+        final perGroupMessages = await Future.wait(
+          bookGroups.map((group) => _marmot.getMessages(group.id)),
+        );
+
+        final signature = _signatureFor(perGroupMessages);
+        if (!force && signature == lastSignature) return;
+        lastSignature = signature;
+
+        final cutoffSecs =
+            DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
+        final activities = <CheersActivity>[];
+        for (var i = 0; i < bookGroups.length; i++) {
+          activities.addAll(
+            _groupActivities(
+              bookGroups[i],
+              perGroupMessages[i],
+              myNpub,
+              cutoffSecs,
+            ),
+          );
+        }
+        activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
         if (!controller.isClosed) {
-          controller.add(data);
+          controller.add(activities);
         }
       } catch (error, stack) {
         _log.warning('activities reload failed', error, stack);
       }
     }
 
-    reload();
+    reload(force: true);
 
     final timer = Timer.periodic(const Duration(seconds: 5), (_) => reload());
-    final sub = _changeController.stream.listen((_) => reload());
+    final sub = _changeController.stream.listen(
+      (_) => reload(force: true),
+    );
 
     controller.onCancel = () {
       timer.cancel();
@@ -63,6 +93,14 @@ class CheersDataSourceImpl implements CheersDataSource {
     };
 
     return controller.stream;
+  }
+
+  int _signatureFor(List<List<MarmotMessage>> perGroupMessages) {
+    var signature = 17;
+    for (final messages in perGroupMessages) {
+      signature = signature * 31 + messages.length;
+    }
+    return signature;
   }
 
   @override
@@ -159,32 +197,13 @@ class CheersDataSourceImpl implements CheersDataSource {
     }
   }
 
-  Future<List<CheersActivity>> _fetchActivities() async {
-    final myNpub = await _identityLocal.readNpub() ?? '';
-    final groups = await _marmot.listGroups();
-    final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
-
-    final bookGroups = groups
-        .where((group) => BookGroupNaming.matches(group.name))
-        .toList();
-    final perGroup = await Future.wait(
-      bookGroups.map((group) => _groupActivities(group, myNpub, cutoffSecs)),
-    );
-    final activities = perGroup
-        .expand((groupActivities) => groupActivities)
-        .toList();
-
-    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return activities;
-  }
-
-  Future<List<CheersActivity>> _groupActivities(
+  List<CheersActivity> _groupActivities(
     MarmotGroup group,
+    List<MarmotMessage> messages,
     String myNpub,
     int cutoffSecs,
-  ) async {
+  ) {
     final activities = <CheersActivity>[];
-    final messages = await _marmot.getMessages(group.id);
 
     {
       var bookTitle = 'Unknown Book';
