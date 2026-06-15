@@ -90,10 +90,14 @@ class ZapService {
       return null;
     }
 
+    final recipientHex = recipientPubkey.startsWith('npub')
+        ? Nip19.decode(recipientPubkey)
+        : recipientPubkey;
+
     final tags = [
       ['relays', ..._zapReceiptRelays],
       ['amount', amountMillisats.toString()],
-      ['p', recipientPubkey],
+      ['p', recipientHex],
       ['client', 'zapbook'],
     ];
     if (targetEventId.isNotEmpty) {
