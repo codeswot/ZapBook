@@ -60,6 +60,7 @@ class CheersCubit extends Cubit<CheersState> {
     required ZapGesture gesture,
     required int amount,
     String? comment,
+    String? circleId,
   }) => _zapService.send(
     recipientLud16: recipientLud16,
     recipientPubkey: recipientPubkey,
@@ -67,6 +68,7 @@ class CheersCubit extends Cubit<CheersState> {
     gesture: gesture,
     customSats: amount,
     comment: comment,
+    circleId: circleId,
   );
 
   Future<bool> payInvoice(String invoice) =>

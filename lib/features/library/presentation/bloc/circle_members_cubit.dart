@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
@@ -21,24 +24,35 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
   final ContactService _contacts;
   final IdentityLocalDataSource _identity;
 
+  StreamSubscription<List<Contact>>? _sub;
+
+  @override
+  Future<void> close() {
+    _sub?.cancel();
+    return super.close();
+  }
+
   Future<void> load(String bookId, bool isAdmin) async {
     emit(const CircleMembersLoading());
     final memberNpubs = await _getBookMembers(bookId);
-    final contactNpubs = _contacts.stored.toSet();
     final myNpub = await _identity.readNpub();
 
-    final contacts = await Future.wait(memberNpubs.map(_contacts.resolve));
-    final entries = [
-      for (var i = 0; i < memberNpubs.length; i++)
-        MemberEntry(
-          npub: memberNpubs[i],
-          contact: contacts[i],
-          isSelf: memberNpubs[i] == myNpub,
-          isContact: contactNpubs.contains(memberNpubs[i]),
-        ),
-    ];
-
-    emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
+    await _sub?.cancel();
+    _sub = _contacts.watch(memberNpubs).listen((contacts) {
+      if (isClosed || state is CircleMembersBusy) return;
+      final byNpub = {for (final c in contacts) c.npub: c};
+      final contactNpubs = _contacts.stored.toSet();
+      final entries = [
+        for (final npub in memberNpubs)
+          MemberEntry(
+            npub: npub,
+            contact: byNpub[npub] ?? Contact(npub: npub),
+            isSelf: npub == myNpub,
+            isContact: contactNpubs.contains(npub),
+          ),
+      ];
+      emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
+    });
   }
 
   Future<void> remove(String bookId, String npub) async {

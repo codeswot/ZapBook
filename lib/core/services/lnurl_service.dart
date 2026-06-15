@@ -51,12 +51,14 @@ class LnurlService {
     required LnurlPayResponse payResponse,
     required int amountMillisats,
     String? comment,
+    String? nostr,
   }) async {
     final url = payResponse.callback.replace(
       queryParameters: {
         ...payResponse.callback.queryParameters,
         'amount': amountMillisats.toString(),
         'comment': ?comment,
+        'nostr': ?nostr,
       },
     );
 

@@ -180,6 +180,7 @@ class _CheersViewState extends State<_CheersView> {
           gesture: gesture,
           amount: amount,
           comment: comment,
+          circleId: activity.bookId,
         );
         await cubit.payInvoice(result.invoice);
         messenger.showSuccess('Zapping $amount sats to ${activity.actorName}');

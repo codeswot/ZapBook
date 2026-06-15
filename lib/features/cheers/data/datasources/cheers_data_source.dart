@@ -6,6 +6,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -27,12 +28,14 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._ndk,
     this._identityLocal,
     this._milestone,
+    this._contacts,
   );
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
   final MilestoneService _milestone;
+  final ContactService _contacts;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -40,6 +43,18 @@ class CheersDataSourceImpl implements CheersDataSource {
   Stream<List<CheersActivity>> watchActivities() {
     final controller = StreamController<List<CheersActivity>>.broadcast();
     int? lastSignature;
+    var lastBase = <CheersActivity>[];
+    var lastMyNpub = '';
+
+    Future<void> emitEnriched() async {
+      final actorNpubs = {for (final a in lastBase) a.actorNpub}.toList();
+      await _contacts.prime(actorNpubs);
+      final enriched = [
+        for (final a in lastBase)
+          a.actorNpub == lastMyNpub ? a : _withMetadata(a),
+      ];
+      if (!controller.isClosed) controller.add(enriched);
+    }
 
     void reload({bool force = false}) async {
       try {
@@ -56,8 +71,7 @@ class CheersDataSourceImpl implements CheersDataSource {
         if (!force && signature == lastSignature) return;
         lastSignature = signature;
 
-        final cutoffSecs =
-            DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
+        final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
         final activities = <CheersActivity>[];
         for (var i = 0; i < bookGroups.length; i++) {
           activities.addAll(
@@ -71,9 +85,9 @@ class CheersDataSourceImpl implements CheersDataSource {
         }
         activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        if (!controller.isClosed) {
-          controller.add(activities);
-        }
+        lastBase = activities;
+        lastMyNpub = myNpub;
+        await emitEnriched();
       } catch (error, stack) {
         _log.warning('activities reload failed', error, stack);
       }
@@ -82,17 +96,30 @@ class CheersDataSourceImpl implements CheersDataSource {
     reload(force: true);
 
     final timer = Timer.periodic(const Duration(seconds: 5), (_) => reload());
-    final sub = _changeController.stream.listen(
-      (_) => reload(force: true),
-    );
+    final sub = _changeController.stream.listen((_) => reload(force: true));
+    final metaSub = _contacts.metadataChanges.listen((_) {
+      if (lastBase.isNotEmpty) emitEnriched();
+    });
 
     controller.onCancel = () {
       timer.cancel();
       sub.cancel();
+      metaSub.cancel();
       controller.close();
     };
 
     return controller.stream;
+  }
+
+  CheersActivity _withMetadata(CheersActivity activity) {
+    final contact = _contacts.contactFor(activity.actorNpub);
+    final name = (contact.displayName?.trim().isNotEmpty ?? false)
+        ? contact.displayName!.trim()
+        : activity.actorName;
+    final avatar = (contact.picture?.trim().isNotEmpty ?? false)
+        ? contact.picture
+        : activity.actorAvatar;
+    return activity.copyWith(actorName: name, actorAvatar: avatar);
   }
 
   int _signatureFor(List<List<MarmotMessage>> perGroupMessages) {
@@ -279,6 +306,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorName: isMine ? 'You' : fallback.displayName,
             actorAvatar: fallback.avatar,
             bookTitle: bookTitle,
+            bookId: event.bookId,
             activityDescription: description,
             timestamp: event.timestamp,
             type: isMine ? 'mine' : 'milestone',

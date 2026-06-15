@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/earnings/earnings_cubit.dart';
+import 'package:zapbook/core/extensions/int_extension.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -25,7 +27,6 @@ class ProfileWalletCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final formatted = NumberFormat.decimalPattern().format(profile.satsEarned);
 
     return Container(
       decoration: BoxDecoration(
@@ -71,11 +72,13 @@ class ProfileWalletCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Text(
-                            formatted,
-                            style: typography.h2.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colors.ink,
+                          BlocBuilder<EarningsCubit, int>(
+                            builder: (context, sats) => Text(
+                              sats.formatSatsDelimited,
+                              style: typography.h2.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.ink,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 5),

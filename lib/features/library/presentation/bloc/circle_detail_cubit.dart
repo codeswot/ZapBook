@@ -44,6 +44,13 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     _library.watchBooks().listen((_) {
       if (!isClosed) refresh(_currentBookId);
     });
+    _stats.satsEarnedListenable.addListener(_onEarningsChanged);
+  }
+
+  void _onEarningsChanged() {
+    final s = state;
+    if (s is! CircleDetailLoaded || _currentBookId.isEmpty) return;
+    emit(s.copyWith(satsEarned: _stats.satsEarnedForCircle(_currentBookId)));
   }
 
   final GetLibraryBook _getLibraryBook;
@@ -69,6 +76,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> close() {
     _currentBookId = '';
     _progressSub?.cancel();
+    _stats.satsEarnedListenable.removeListener(_onEarningsChanged);
     return super.close();
   }
 
@@ -109,7 +117,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         myNpub: myNpub,
         milestones: milestones,
         memberProgress: progress,
-        satsEarned: _stats.satsEarned,
+        satsEarned: _stats.satsEarnedForCircle(bookId),
       ),
     );
   }
@@ -154,6 +162,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     gesture: gesture,
     customSats: amount,
     comment: comment,
+    circleId: _currentBookId,
   );
 
   Future<bool> payInvoice(String invoice) =>

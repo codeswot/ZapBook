@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
@@ -8,10 +10,21 @@ import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
 @injectable
 class FriendsCubit extends Cubit<FriendsState> {
-  FriendsCubit(this._contacts) : super(const FriendsLoading());
+  FriendsCubit(this._contacts) : super(const FriendsLoading()) {
+    _sub = _contacts.friendsStream.listen((friends) {
+      if (!isClosed && state is! FriendsBusy) emit(FriendsLoaded(friends));
+    });
+  }
 
   final ContactService _contacts;
   final _log = logging.Logger('FriendsCubit');
+  StreamSubscription<List<Contact>>? _sub;
+
+  @override
+  Future<void> close() {
+    _sub?.cancel();
+    return super.close();
+  }
 
   Future<void> load() async {
     emit(const FriendsLoading());

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/earnings/earnings_cubit.dart';
+import 'package:zapbook/core/extensions/int_extension.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_stat_card.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -14,12 +17,7 @@ class HomeStatsRow extends StatelessWidget {
     final colors = context.colors;
 
     final streak = stats.dayStreak;
-    final sats = stats.satsEarned;
     final books = stats.booksRead;
-
-    final formattedSats = sats >= 1000
-        ? '${(sats / 1000).toStringAsFixed(0)}k'
-        : '$sats';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -35,11 +33,13 @@ class HomeStatsRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: HomeStatCard(
-              value: formattedSats,
-              label: 'sats earned',
-              icon: LucideIcons.zap,
-              color: colors.bitcoin,
+            child: BlocBuilder<EarningsCubit, int>(
+              builder: (context, sats) => HomeStatCard(
+                value: sats.formatSats,
+                label: 'sats earned',
+                icon: LucideIcons.zap,
+                color: colors.bitcoin,
+              ),
             ),
           ),
           const SizedBox(width: 12),

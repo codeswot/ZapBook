@@ -7,6 +7,7 @@ final class CheersActivity extends Equatable {
     required this.actorName,
     this.actorAvatar,
     required this.bookTitle,
+    this.bookId,
     required this.activityDescription,
     required this.timestamp,
     required this.type,
@@ -24,6 +25,7 @@ final class CheersActivity extends Equatable {
   final String actorName;
   final String? actorAvatar;
   final String bookTitle;
+  final String? bookId;
   final String activityDescription;
   final DateTime timestamp;
   final String type;
@@ -35,6 +37,26 @@ final class CheersActivity extends Equatable {
   final int rocketCount;
   final int trophyCount;
 
+  CheersActivity copyWith({String? actorName, String? actorAvatar}) =>
+      CheersActivity(
+        id: id,
+        actorNpub: actorNpub,
+        actorName: actorName ?? this.actorName,
+        actorAvatar: actorAvatar ?? this.actorAvatar,
+        bookTitle: bookTitle,
+        bookId: bookId,
+        activityDescription: activityDescription,
+        timestamp: timestamp,
+        type: type,
+        isUnread: isUnread,
+        nudgeId: nudgeId,
+        thumbsUpCount: thumbsUpCount,
+        clapCount: clapCount,
+        fireCount: fireCount,
+        rocketCount: rocketCount,
+        trophyCount: trophyCount,
+      );
+
   @override
   List<Object?> get props => [
     id,
@@ -42,6 +64,7 @@ final class CheersActivity extends Equatable {
     actorName,
     actorAvatar,
     bookTitle,
+    bookId,
     activityDescription,
     timestamp,
     type,

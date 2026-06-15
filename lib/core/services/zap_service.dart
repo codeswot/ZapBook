@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,6 +36,7 @@ class ZapService {
     required ZapGesture gesture,
     int? customSats,
     String? comment,
+    String? circleId,
   }) async {
     final amountSats = gesture.sats ?? customSats ?? 21;
     if (amountSats <= 0) throw ZapException('Amount must be positive');
@@ -49,10 +52,19 @@ class ZapService {
       throw ZapException('Amount above maximum');
     }
 
+    final nostr = await _buildZapRequest(
+      recipientPubkey: recipientPubkey,
+      targetEventId: targetEventId,
+      amountMillisats: amountMillisats,
+      content: comment ?? gesture.label,
+      circleId: circleId,
+    );
+
     final invoice = await _lnurl.fetchInvoice(
       payResponse: payResponse,
       amountMillisats: amountMillisats,
       comment: comment ?? gesture.label,
+      nostr: nostr,
     );
 
     return ZapResult(
@@ -64,6 +76,59 @@ class ZapService {
     );
   }
 
+  Future<String?> _buildZapRequest({
+    required String recipientPubkey,
+    required String targetEventId,
+    required int amountMillisats,
+    required String content,
+    String? circleId,
+  }) async {
+    final account = _ndk.accounts.getLoggedAccount();
+    if (account == null ||
+        !account.signer.canSign() ||
+        recipientPubkey.isEmpty) {
+      return null;
+    }
+
+    final tags = [
+      ['relays', ..._zapReceiptRelays],
+      ['amount', amountMillisats.toString()],
+      ['p', recipientPubkey],
+      ['client', 'zapbook'],
+    ];
+    if (targetEventId.isNotEmpty) {
+      tags.add([targetEventId.contains(':') ? 'a' : 'e', targetEventId]);
+    }
+    if (circleId != null && circleId.isNotEmpty) {
+      tags.add(['circle', circleId]);
+    }
+
+    final request = Nip01Event(
+      pubKey: account.pubkey,
+      kind: 9734,
+      tags: tags,
+      content: content,
+      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+    final signed = await account.signer.sign(request);
+
+    return jsonEncode({
+      'id': signed.id,
+      'pubkey': signed.pubKey,
+      'created_at': signed.createdAt,
+      'kind': signed.kind,
+      'tags': signed.tags,
+      'content': signed.content,
+      'sig': signed.sig,
+    });
+  }
+
+  static const _zapReceiptRelays = [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://relay.primal.net',
+  ];
+
   Future<bool> payWithFallback(String invoice) async {
     if (_nwc.isConnected) {
       try {
@@ -72,7 +137,11 @@ class ZapService {
           return true;
         }
       } catch (error, stack) {
-        _log.warning('NWC payment failed, falling back to external wallet', error, stack);
+        _log.warning(
+          'NWC payment failed, falling back to external wallet',
+          error,
+          stack,
+        );
       }
     }
 

@@ -1,34 +1,42 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
-import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
 class ReadingStatsService {
-  ReadingStatsService(this._ndk, this._cache, this._milestoneService);
-  final _log = logging.Logger('ReadingStatsService');
+  ReadingStatsService(
+    this._ndk,
+    this._cache,
+    this._milestoneService,
+    this._earnings,
+  );
   final Ndk _ndk;
   final NostrCacheStore _cache;
   final MilestoneService _milestoneService;
+  final ZapEarningsService _earnings;
 
   static const _statsKind = 30078;
   static const _statsTag = 'zapbook:stats';
   static const _rawTag = 'zapbook:stats:raw';
 
-  int _satsEarned = 0;
   final _milestoneDates = <String>{};
   String? _lastPublishDate;
   bool _loaded = false;
 
   int get booksRead => _milestoneService.completedBooksCount;
   int get milestones => _milestoneService.myMilestonesCount;
-  int get satsEarned => _satsEarned;
+  int get satsEarned => _earnings.totalEarned.value;
+  int satsEarnedForCircle(String circleId) =>
+      _earnings.earnedForCircle(circleId);
+  ValueListenable<int> get satsEarnedListenable => _earnings.totalEarned;
 
   Future<void> syncBookStats() => _milestoneService.syncAll();
 
@@ -95,33 +103,7 @@ class ReadingStatsService {
 
     _loaded = true;
 
-    unawaited(_loadZaps(pubkey));
-  }
-
-  final _processedZapIds = <String>{};
-
-  Future<void> _loadZaps(String pubkey) async {
-    try {
-      final sub = _ndk.requests.subscription(
-        filter: Filter(kinds: const [ZapReceipt.kKind], pTags: [pubkey]),
-      );
-
-      sub.stream.listen((event) {
-        if (_processedZapIds.contains(event.id)) return;
-        _processedZapIds.add(event.id);
-
-        try {
-          final receipt = ZapReceipt.fromEvent(event);
-          if (receipt.amountSats != null) {
-            _satsEarned += receipt.amountSats!;
-          }
-        } catch (error, trace) {
-          _log.info('_loadZaps stream $error', trace);
-        }
-      });
-    } catch (error, trace) {
-      _log.info('_loadZaps $error', trace);
-    }
+    unawaited(_earnings.start());
   }
 
   void _writeCache() {
@@ -134,7 +116,6 @@ class ReadingStatsService {
         ['d', _rawTag],
       ],
       content: jsonEncode({
-        'sats_earned': _satsEarned,
         'last_publish_date': _lastPublishDate,
         'milestone_dates': _milestoneDates.toList(),
       }),
@@ -150,7 +131,6 @@ class ReadingStatsService {
     if (account == null) return;
 
     final plaintext = jsonEncode({
-      'sats_earned': _satsEarned,
       'last_publish_date': _lastPublishDate,
       'milestone_dates': _milestoneDates.toList(),
     });
@@ -183,12 +163,6 @@ class ReadingStatsService {
   }
 
   void recordBookCompleted() {
-    _writeCache();
-    unawaited(_syncToRelays());
-  }
-
-  void addSats(int amount) {
-    _satsEarned += amount;
     _writeCache();
     unawaited(_syncToRelays());
   }

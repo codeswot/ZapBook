@@ -86,5 +86,14 @@ class NostrService {
     void Function(Metadata)? onLoad,
   }) => _ndk.metadata.loadMetadatas(pubkeys, relaySet, onLoad: onLoad);
 
+  NdkResponse subscribeMetadata(List<String> pubkeys) =>
+      _ndk.requests.subscription(
+        cacheWrite: true,
+        filter: Filter(kinds: const [Metadata.kKind], authors: pubkeys),
+      );
+
+  void closeSubscription(String requestId) =>
+      _ndk.requests.closeSubscription(requestId);
+
   Future<void> dispose() => _ndk.destroy();
 }

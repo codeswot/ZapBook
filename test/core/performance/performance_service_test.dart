@@ -5,7 +5,9 @@ import 'package:zapbook/core/performance/performance_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<PerformanceService> build([Map<String, Object> seed = const {}]) async {
+  Future<PerformanceService> build([
+    Map<String, Object> seed = const {},
+  ]) async {
     SharedPreferences.setMockInitialValues(seed);
     final prefs = await SharedPreferences.getInstance();
     return PerformanceService(prefs);
@@ -25,11 +27,14 @@ void main() {
   });
 
   group('PerformanceService', () {
-    test('defaults to auto with effects on when device is not legacy', () async {
-      final service = await build();
-      expect(service.mode, PerfMode.auto);
-      expect(service.reduceEffects, isFalse);
-    });
+    test(
+      'defaults to auto with effects on when device is not legacy',
+      () async {
+        final service = await build();
+        expect(service.mode, PerfMode.auto);
+        expect(service.reduceEffects, isFalse);
+      },
+    );
 
     test('setMode on forces reduced effects regardless of device', () async {
       final service = await build();
