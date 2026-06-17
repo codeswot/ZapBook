@@ -5,6 +5,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 
@@ -58,7 +59,7 @@ class KeyPackageService {
       final events = await response.future;
       if (events.isEmpty) return null;
       events.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final json = _eventJson(events.first);
+      final json = events.first.toMarmotJson();
       _keyPackageCache[npub] = json;
       return json;
     } on Object catch (error, stack) {
@@ -67,15 +68,6 @@ class KeyPackageService {
     }
   }
 
-  String _eventJson(Nip01Event event) => jsonEncode({
-    'id': event.id,
-    'pubkey': event.pubKey,
-    'created_at': event.createdAt,
-    'kind': event.kind,
-    'tags': event.tags,
-    'content': event.content,
-    'sig': event.sig,
-  });
 
   Future<bool> publishIfNeeded() {
     if (_activePublishFuture != null) return _activePublishFuture!;

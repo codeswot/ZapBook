@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
@@ -105,7 +105,7 @@ class MarmotSyncService {
         final giftWrap = _welcomeQueue.removeAt(0);
         try {
           final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
-          await _marmot.processWelcome(giftWrap.id, _eventJson(rumor));
+          await _marmot.processWelcome(giftWrap.id, rumor.toMarmotJson());
           for (final welcome in await _marmot.getPendingWelcomes()) {
             try {
               await _marmot.acceptWelcome(welcome.id);
@@ -193,7 +193,7 @@ class MarmotSyncService {
 
   Future<void> _onGroupMessage(Nip01Event event) async {
     try {
-      final message = await _marmot.processIncoming(_eventJson(event));
+      final message = await _marmot.processIncoming(event.toMarmotJson());
       if (message != null) _milestone.ingestMessage(message);
     } on Object catch (error) {
       _log.fine('processIncoming skipped: $error');
@@ -212,14 +212,4 @@ class MarmotSyncService {
       );
     });
   }
-
-  String _eventJson(Nip01Event event) => jsonEncode({
-    'id': event.id,
-    'pubkey': event.pubKey,
-    'created_at': event.createdAt,
-    'kind': event.kind,
-    'tags': event.tags,
-    'content': event.content,
-    'sig': event.sig,
-  });
 }

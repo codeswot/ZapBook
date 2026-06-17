@@ -7,6 +7,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
@@ -705,7 +706,7 @@ class BookGroupDatasource {
           .future;
       for (final event in events) {
         try {
-          await _marmot.processIncoming(_eventToJson(event));
+          await _marmot.processIncoming(event.toMarmotJson());
         } on Object catch (_) {}
       }
       _caughtUp.add(groupId);
@@ -713,16 +714,6 @@ class BookGroupDatasource {
       _log.warning('Catch-up fetch failed for $groupId', error, stack);
     }
   }
-
-  String _eventToJson(Nip01Event event) => jsonEncode({
-    'id': event.id,
-    'pubkey': event.pubKey,
-    'created_at': event.createdAt,
-    'kind': event.kind,
-    'tags': event.tags,
-    'content': event.content,
-    'sig': event.sig,
-  });
 
   String _hex(Uint8List bytes) =>
       bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
