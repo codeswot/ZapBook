@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'dart:isolate';
+
 import 'package:archive/archive_io.dart';
 
 import 'package:zapbook/zbf/entities/book_block.dart';
@@ -50,7 +52,11 @@ class ZbfSegmenter {
     const JsonDecoder(),
   );
 
-  ParsedSegment parseSegment(Uint8List zip) {
+  Future<ParsedSegment> parseSegmentAsync(Uint8List zip) async {
+    return Isolate.run(() => const ZbfSegmenter()._parseSegmentSync(zip));
+  }
+
+  ParsedSegment _parseSegmentSync(Uint8List zip) {
     final archive = ZipDecoder().decodeBytes(zip);
     final pages = _pagesFrom(archive);
     final assets = <String, Uint8List>{};
@@ -58,7 +64,7 @@ class ZbfSegmenter {
       if (!file.name.startsWith('assets/')) continue;
       final name = file.name.substring('assets/'.length);
       if (!_isSafeAssetName(name)) continue;
-      assets[name] = Uint8List.fromList(file.content);
+      assets[name] = Uint8List.fromList(file.content as List<int>);
     }
     return ParsedSegment(pages: pages, assets: assets);
   }
@@ -66,7 +72,7 @@ class ZbfSegmenter {
   static int segmentCountFor(int pageCount) =>
       pageCount <= 0 ? 0 : ((pageCount - 1) ~/ pagesPerSegment) + 1;
 
-  Iterable<SegmentBlob> segment(ZbfBookHandle handle) sync* {
+  Stream<SegmentBlob> segment(ZbfBookHandle handle) async* {
     final manifest = handle.manifest;
     final manifestBytes = _json(manifest.toJson());
     final total = manifest.pageCount;
@@ -98,11 +104,13 @@ class ZbfSegmenter {
         }
       }
 
+      final zipBytes = await Isolate.run(() => ZipEncoder().encodeBytes(archive));
+
       yield SegmentBlob(
         index: start ~/ pagesPerSegment,
         pageStart: start,
         pageEnd: end,
-        bytes: Uint8List.fromList(ZipEncoder().encodeBytes(archive)),
+        bytes: Uint8List.fromList(zipBytes),
       );
     }
   }
@@ -122,7 +130,7 @@ class ZbfSegmenter {
       final writtenAssets = <String>{};
 
       await for (final zip in segmentZips) {
-        final archive = ZipDecoder().decodeBytes(zip);
+        final archive = await Isolate.run(() => ZipDecoder().decodeBytes(zip));
         manifest ??= _manifestFrom(archive);
         pages.addAll(_pagesFrom(archive));
         for (final file in archive.files) {

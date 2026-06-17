@@ -50,7 +50,7 @@ void main() {
         'cover.jpg': Uint8List.fromList([1]),
       },
     );
-    return const ZbfWriter().write(book, tempDir);
+    return const ZbfWriter().write(book, '${tempDir.path}/book.zbf');
   }
 
   test('indexes a book and finds matching pages', () async {

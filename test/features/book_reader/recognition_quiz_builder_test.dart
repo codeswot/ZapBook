@@ -98,7 +98,7 @@ void main() {
         'cover.jpg': Uint8List.fromList([1]),
       },
     );
-    return const ZbfWriter().write(book, tempDir);
+    return const ZbfWriter().write(book, '${tempDir.path}/book.zbf');
   }
 
   Future<void> seedCorpus() async {

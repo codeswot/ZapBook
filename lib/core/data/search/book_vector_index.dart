@@ -117,7 +117,7 @@ class BookVectorIndex {
           ),
         ]);
       }
-      insert.close();
+      insert.dispose();
       db.execute(
         'INSERT OR REPLACE INTO embedded_books (book_id, chunk_count, embedded_at) '
         'VALUES (?, ?, ?)',
@@ -133,16 +133,20 @@ class BookVectorIndex {
 
   static Future<List<_EmbedInput>> _chunkAndTokenize(String zbfPath) async {
     final handle = await const ZbfReader().open(zbfPath);
-    const chunker = BookChunker();
-    final inputs = <_EmbedInput>[];
-    for (var i = 0; i < handle.manifest.pageCount; i++) {
-      final page = handle.pageAt(i);
-      if (page.layoutType == BookLayoutType.processing) continue;
-      for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
-        inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
+    try {
+      const chunker = BookChunker();
+      final inputs = <_EmbedInput>[];
+      for (var i = 0; i < handle.manifest.pageCount; i++) {
+        final page = handle.pageAt(i);
+        if (page.layoutType == BookLayoutType.processing) continue;
+        for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
+          inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
+        }
       }
+      return inputs;
+    } finally {
+      handle.close();
     }
-    return inputs;
   }
 
   Future<List<SemanticHit>> search(

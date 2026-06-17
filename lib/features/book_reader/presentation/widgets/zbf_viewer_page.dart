@@ -42,7 +42,7 @@ class ZbfViewerPage extends StatelessWidget {
   }
 }
 
-class _LocalReader extends StatelessWidget {
+class _LocalReader extends StatefulWidget {
   const _LocalReader({
     required this.zbfPath,
     required this.reader,
@@ -56,9 +56,40 @@ class _LocalReader extends StatelessWidget {
   final String? highlightQuery;
 
   @override
+  State<_LocalReader> createState() => _LocalReaderState();
+}
+
+class _LocalReaderState extends State<_LocalReader> {
+  Future<ZbfBookHandle>? _openFuture;
+  ZbfBookHandle? _handle;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    _openFuture = widget.reader.open(widget.zbfPath).then((handle) {
+      if (mounted) {
+        _handle = handle;
+      } else {
+        handle.close();
+      }
+      return handle;
+    });
+  }
+
+  @override
+  void dispose() {
+    _handle?.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<ZbfBookHandle>(
-      future: reader.open(zbfPath),
+      future: _openFuture,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _ViewerError(message: '${snapshot.error}');
@@ -67,8 +98,8 @@ class _LocalReader extends StatelessWidget {
         if (handle == null) return const _ViewerLoading();
         return ReaderScreen(
           handle: handle,
-          initialPage: initialPage,
-          highlightQuery: highlightQuery,
+          initialPage: widget.initialPage,
+          highlightQuery: widget.highlightQuery,
         );
       },
     );
