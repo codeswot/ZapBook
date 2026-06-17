@@ -259,6 +259,15 @@ class CheersDataSourceImpl implements CheersDataSource {
             };
             cheers.add(entry);
             cheerEntries.add(entry);
+          case 'zapbook.zap.sent':
+            cheerEntries.add({
+              'activityId': '${decoded['fromNpub']}:${decoded['sentAtMs']}',
+              'reactionType': decoded['reactionType'] ?? 'like',
+              'amount': (decoded['amount'] as num?)?.toInt() ?? 0,
+              'senderNpub': decoded['fromNpub'] as String? ?? msg.senderNpub,
+              'timestampSecs': msg.timestampSecs.toInt(),
+              'recipientNpub': decoded['toNpub'],
+            });
           case 'zapbook.zap.nudge':
             nudges.add(decoded);
           case 'zapbook.zap.ready':
@@ -359,7 +368,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             zapReaction: reactionType,
             zapTargetId: activityId,
             zapTargetDescription: targetDesc,
-            zapRecipientNpub: targetEvent?.npub,
+            zapRecipientNpub: targetEvent?.npub ?? cheer['recipientNpub'] as String?,
           ),
         );
       }

@@ -629,24 +629,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i118.DecodedMessageCache>(),
       ),
     );
-    gh.factory<_i458.CircleDetailCubit>(
-      () => _i458.CircleDetailCubit(
-        gh<_i807.GetLibraryBook>(),
-        gh<_i1000.GetBookMembers>(),
-        gh<_i428.GetCircleAdmins>(),
-        gh<_i310.RemoveBookMember>(),
-        gh<_i1056.LeaveCircle>(),
-        gh<_i210.DissolveCircle>(),
-        gh<_i296.TouchBookOpened>(),
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i362.ZapService>(),
-        gh<_i718.ZapNudgeService>(),
-      ),
-    );
     gh.factory<_i906.CircleMembersCubit>(
       () => _i906.CircleMembersCubit(
         gh<_i1000.GetBookMembers>(),
@@ -667,6 +649,25 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i1000.GetBookMembers>(),
         gh<_i286.ShareBookWith>(),
+      ),
+    );
+    gh.factory<_i458.CircleDetailCubit>(
+      () => _i458.CircleDetailCubit(
+        gh<_i807.GetLibraryBook>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i428.GetCircleAdmins>(),
+        gh<_i310.RemoveBookMember>(),
+        gh<_i1056.LeaveCircle>(),
+        gh<_i210.DissolveCircle>(),
+        gh<_i296.TouchBookOpened>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i362.ZapService>(),
+        gh<_i718.ZapNudgeService>(),
+        gh<_i970.Marmot>(),
       ),
     );
     gh.factory<_i327.IngestionQueueCubit>(

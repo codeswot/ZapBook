@@ -11,7 +11,9 @@ import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/services/zap_service.dart';
+import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
@@ -41,6 +43,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._library,
     this._zapService,
     this._nudgeService,
+    this._marmot,
   ) : super(const CircleDetailLoading()) {
     _library.watchBooks().listen((_) {
       if (!isClosed) refresh(_currentBookId);
@@ -68,6 +71,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final LibraryRepository _library;
   final ZapService _zapService;
   final ZapNudgeService _nudgeService;
+  final Marmot _marmot;
 
   final _log = logging.Logger('CircleDetailCubit');
   String _currentBookId = '';
@@ -219,6 +223,34 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   );
 
   Future<bool> payZap(ZapResult result) => _zapService.payZap(result);
+
+  Future<void> notifyZapSent({
+    required String recipientNpub,
+    required int amount,
+    required String reactionType,
+  }) async {
+    final npub = await _identity.readNpub();
+    if (npub == null) return;
+    final groupId = await _resolveGroupId(_currentBookId);
+    if (groupId == null) return;
+    await _marmot.sendStructured(npub, groupId, {
+      'type': 'zapbook.zap.sent',
+      'fromNpub': npub,
+      'toNpub': recipientNpub,
+      'amount': amount,
+      'reactionType': reactionType,
+      'sentAtMs': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  Future<String?> _resolveGroupId(String bookId) async {
+    final name = BookGroupNaming.nameFor(bookId);
+    final groups = await _marmot.listGroups();
+    for (final g in groups) {
+      if (g.name == name) return g.id;
+    }
+    return null;
+  }
 
   Future<void> nudgeReader({required String bookId, required String toNpub}) =>
       _nudgeService.nudgeForBook(bookId: bookId, toNpub: toNpub);

@@ -48,3 +48,9 @@ zsp
 zapstore.yaml
 /screenshots
 .vercel
+
+# Android keys
+*.jks
+*.keystore
+*.p12
+*.pfx

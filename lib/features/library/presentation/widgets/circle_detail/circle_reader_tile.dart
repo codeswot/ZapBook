@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -117,6 +118,24 @@ class CircleReaderTile extends StatelessWidget {
         await Clipboard.setData(ClipboardData(text: result.invoice));
         messenger.showInfo('Invoice copied to clipboard');
       } else {
+        final reactionType = gesture == ZapGesture.thumbsUp
+            ? 'like'
+            : gesture == ZapGesture.clap
+            ? 'clap'
+            : gesture == ZapGesture.fire
+            ? 'fire'
+            : gesture == ZapGesture.rocket
+            ? 'rocket'
+            : gesture == ZapGesture.trophy
+            ? 'trophy'
+            : 'like';
+        unawaited(
+          cubit.notifyZapSent(
+            recipientNpub: entry.npub,
+            amount: amount,
+            reactionType: reactionType,
+          ),
+        );
         final support = result.hasSupportZap
             ? ' (+${result.supportAmount} to ZapBook)'
             : '';

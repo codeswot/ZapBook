@@ -77,7 +77,8 @@ class _CheersViewState extends State<_CheersView> {
     if (_selectedFilter == 'Zaps') {
       return visible.where((a) {
         if (a.type != 'zap') return false;
-        return myNpub != null && a.zapRecipientNpub == myNpub;
+        if (myNpub == null) return false;
+        return a.zapRecipientNpub == myNpub || a.actorNpub == myNpub;
       }).toList();
     }
     if (_selectedFilter == 'notification') {
