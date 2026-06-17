@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
@@ -69,7 +68,7 @@ class WelcomeInboxService {
       for (final wrap in wraps) {
         try {
           final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: wrap);
-          await _marmot.processWelcome(wrap.id, rumor.toJsonString());
+          await _marmot.processWelcome(wrap.id, rumor.toMarmotJson());
         } on Object catch (error) {
           _log.fine('Skipping gift-wrap ${wrap.id}: $error');
         }

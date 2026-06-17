@@ -7,6 +7,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
@@ -706,7 +707,7 @@ class BookGroupDatasource {
           .future;
       for (final event in events) {
         try {
-          await _marmot.processIncoming(event.toJsonString());
+          await _marmot.processIncoming(event.toMarmotJson());
         } on Object catch (_) {}
       }
       _caughtUp.add(groupId);

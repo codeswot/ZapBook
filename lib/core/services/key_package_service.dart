@@ -59,14 +59,24 @@ class KeyPackageService {
       final events = await response.future;
       if (events.isEmpty) return null;
       events.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return events.first.toJsonString();
+      final json = events.first.toMarmotJson();
+      _keyPackageCache[npub] = json;
+      return json;
     } on Object catch (error, stack) {
       _log.warning('Failed to fetch key package for $npub', error, stack);
       return null;
     }
   }
 
-  Future<bool> publishIfNeeded() async {
+  Future<bool> publishIfNeeded() {
+    if (_activePublishFuture != null) return _activePublishFuture!;
+    _activePublishFuture = _publishIfNeededInternal().whenComplete(() {
+      _activePublishFuture = null;
+    });
+    return _activePublishFuture!;
+  }
+
+  Future<bool> _publishIfNeededInternal() async {
     final npub = await _identity.readNpub();
     final nsec = await _identity.readNsec();
     if (npub == null || nsec == null) return false;

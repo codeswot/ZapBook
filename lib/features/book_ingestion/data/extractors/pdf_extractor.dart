@@ -22,11 +22,10 @@ final class PdfExtractor extends IsolateBookExtractor
   String get fileExtension => '.pdf';
 
   @override
-  Future<ParsedContent> parse(String filePath, String title) =>
-      Isolate.run(() {
-        final bytes = File(filePath).readAsBytesSync();
-        return _parsePdf(bytes, title);
-      });
+  Future<ParsedContent> parse(String filePath, String title) => Isolate.run(() {
+    final bytes = File(filePath).readAsBytesSync();
+    return _parsePdf(bytes, title);
+  });
 
   @override
   Future<List<BookPage>> extractRange(

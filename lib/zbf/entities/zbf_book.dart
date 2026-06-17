@@ -33,7 +33,12 @@ final class ZbfBook extends Equatable {
   }
 
   @override
-  List<Object?> get props => [manifest, chapters, assets.keys.toList(), fileAssets];
+  List<Object?> get props => [
+    manifest,
+    chapters,
+    assets.keys.toList(),
+    fileAssets,
+  ];
 
   @override
   String toString() {
