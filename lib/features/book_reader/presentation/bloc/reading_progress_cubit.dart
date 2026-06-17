@@ -236,7 +236,6 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
           milestoneService?.markCompleted(bookId, totalWords: totalWords),
         );
         unawaited(milestoneService?.publishBookCompleted(bookId));
-        statsService?.recordBookCompleted();
       }
     }
   }

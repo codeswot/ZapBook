@@ -241,7 +241,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );
-    gh.lazySingleton<_i96.LnurlService>(() => const _i96.LnurlService());
+    gh.lazySingleton<_i96.LnurlService>(
+      () => _i96.LnurlService(),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i995.QuizService>(() => _i995.QuizService());
     gh.lazySingleton<_i123.SecureStorageService>(
       () => _i123.SecureStorageService(),

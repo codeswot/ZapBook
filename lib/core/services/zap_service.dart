@@ -154,11 +154,8 @@ class ZapService {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  void subscribeToReceipts({
-    required String targetEventId,
-    required void Function(Nip01Event event) onReceipt,
-  }) {
-    final sub = _ndk.requests.subscription(
+  NdkResponse subscribeToReceipts({required String targetEventId}) {
+    return _ndk.requests.subscription(
       filter: Filter(
         kinds: const [9735],
         tags: {
@@ -166,7 +163,6 @@ class ZapService {
         },
       ),
     );
-    sub.stream.listen(onReceipt);
   }
 }
 

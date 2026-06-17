@@ -133,6 +133,15 @@ class AppToast {
               ),
             ),
           ],
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            child: Icon(
+              LucideIcons.x,
+              color: colors.ink.withValues(alpha: 0.3),
+              size: 20,
+            ),
+          ),
         ],
       ),
     );
@@ -228,19 +237,13 @@ class _OverlayToastState extends State<_OverlayToast>
         child: GestureDetector(
           onTap: _dismiss,
           child: Material(
+            color: colors.transparent,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: colors.paper3,
                 borderRadius: AppRadii.br12,
                 border: Border.all(color: colors.hairline),
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.ink.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Row(
                 children: [
@@ -268,6 +271,15 @@ class _OverlayToastState extends State<_OverlayToast>
                       ),
                     ),
                   ],
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _dismiss,
+                    child: Icon(
+                      LucideIcons.x,
+                      color: colors.ink.withValues(alpha: 0.3),
+                      size: 20,
+                    ),
+                  ),
                 ],
               ),
             ),

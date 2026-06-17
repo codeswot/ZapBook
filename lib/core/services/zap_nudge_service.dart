@@ -70,7 +70,9 @@ class ZapNudgeService {
       final resolved = <String>{};
       for (final msg in messages) {
         final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
+        if (raw == null || raw.isEmpty || !raw.contains('zapbook.zap.')) {
+          continue;
+        }
         final decoded = jsonDecode(raw);
         if (decoded is! Map<String, dynamic>) continue;
         final id = decoded['nudgeId'] as String? ?? '';

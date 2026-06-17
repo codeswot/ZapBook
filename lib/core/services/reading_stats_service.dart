@@ -40,24 +40,42 @@ class ReadingStatsService {
 
   Future<void> syncBookStats() => _milestoneService.syncAll();
 
+  int? _cachedStreak;
+  int? _cachedStreakDatesLength;
+  String? _cachedStreakToday;
+
   int get streak {
     final dates = {..._milestoneService.allMilestoneDates, ..._milestoneDates};
     if (dates.isEmpty) return 0;
-    final sorted = dates.toList()..sort();
+
     final today = _today();
+    if (_cachedStreak != null &&
+        _cachedStreakDatesLength == dates.length &&
+        _cachedStreakToday == today) {
+      return _cachedStreak!;
+    }
+
+    final sorted = dates.toList()..sort();
     final yesterday = _dayOffset(-1);
     final lastDate = sorted.last;
-    if (lastDate != today && lastDate != yesterday) return 0;
-    var count = 0;
-    var expected = lastDate;
-    for (var i = sorted.length - 1; i >= 0; i--) {
-      if (sorted[i] == expected) {
-        count++;
-        expected = _dayBefore(expected);
-      } else {
-        break;
+
+    int count = 0;
+    if (lastDate == today || lastDate == yesterday) {
+      var expected = lastDate;
+      for (var i = sorted.length - 1; i >= 0; i--) {
+        if (sorted[i] == expected) {
+          count++;
+          expected = _dayBefore(expected);
+        } else {
+          break;
+        }
       }
     }
+
+    _cachedStreak = count;
+    _cachedStreakDatesLength = dates.length;
+    _cachedStreakToday = today;
+
     return count;
   }
 
@@ -158,11 +176,6 @@ class ReadingStatsService {
 
   void recordMilestone() {
     _milestoneDates.add(_today());
-    _writeCache();
-    unawaited(_syncToRelays());
-  }
-
-  void recordBookCompleted() {
     _writeCache();
     unawaited(_syncToRelays());
   }
