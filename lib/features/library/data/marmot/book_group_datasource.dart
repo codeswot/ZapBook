@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
@@ -13,7 +12,8 @@ import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/blossom_service.dart';
+import 'package:zapbook/core/services/group_envelope_service.dart';
+import 'package:zapbook/core/services/group_transfer_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/features/library/data/marmot/book_payloads.dart';
@@ -25,25 +25,23 @@ import 'package:zapbook/zbf/zbf.dart';
 class BookGroupDatasource {
   BookGroupDatasource(
     this._marmot,
-    this._blossom,
     this._fileStore,
     this._identity,
     this._ndk,
     this._keyPackages,
-    this._reader,
     this._cache,
+    this._transfer,
+    this._envelope,
   );
 
   final Marmot _marmot;
-  final BlossomService _blossom;
   final LibraryFileStore _fileStore;
   final IdentityLocalDataSource _identity;
   final Ndk _ndk;
   final KeyPackageService _keyPackages;
-  final ZbfReader _reader;
   final DecodedMessageCache _cache;
-
-  final _segmenter = const ZbfSegmenter();
+  final GroupTransferService _transfer;
+  final GroupEnvelopeService _envelope;
   final _log = logging.Logger('BookGroupDatasource');
   final Map<String, String> _groupIdByBookId = {};
 
@@ -122,31 +120,14 @@ class BookGroupDatasource {
       groupId,
       meta.toJson(),
     );
-    _publish(metaEvent);
+    _envelope.publish(metaEvent);
 
     if (coverBytes != null) {
       await _fileStore.writeCover(bookId, coverBytes);
-      await _setGroupCover(groupId, coverBytes);
+      await _transfer.uploadGroupCover(groupId, coverBytes);
     }
 
     return _toLibraryBook(meta, lastReadAtMs: null);
-  }
-
-  Future<void> _setGroupCover(String groupId, Uint8List coverBytes) async {
-    try {
-      final prep = await Marmot.prepareGroupImage(coverBytes, 'image/jpeg');
-      await _blossom.upload(prep.encryptedData, mimeType: 'image/jpeg');
-      final commit = await _marmot.setGroupImage(
-        groupId,
-        imageHash: prep.imageHash,
-        imageKey: prep.imageKey,
-        imageNonce: prep.imageNonce,
-        imageUploadKey: prep.imageUploadKey,
-      );
-      _publish(commit);
-    } on Object catch (error, stack) {
-      _log.warning('Set group cover failed', error, stack);
-    }
   }
 
   Future<String?> hydrateCover(String bookId) async {
@@ -159,27 +140,7 @@ class BookGroupDatasource {
       await _ensureMessages(group.id, group.nostrGroupId);
       group = await _group(bookId);
     }
-    final hash = group?.imageHash;
-    final key = group?.imageKey;
-    final nonce = group?.imageNonce;
-    if (group == null || hash == null || key == null || nonce == null) {
-      return null;
-    }
-    try {
-      final blob = await _blossom.download(
-        '${BlossomService.servers.first}/${_hex(hash)}',
-      );
-      final bytes = await Marmot.decryptGroupImage(
-        encryptedData: blob,
-        imageHash: hash,
-        imageKey: key,
-        imageNonce: nonce,
-      );
-      return _fileStore.writeCover(bookId, bytes);
-    } on Object catch (error, stack) {
-      _log.warning('Hydrate cover failed for $bookId', error, stack);
-      return null;
-    }
+    return _transfer.hydrateCover(bookId, group);
   }
 
   Future<void> sendMeta(String bookId, BookMetaPayload meta) async {
@@ -187,7 +148,7 @@ class BookGroupDatasource {
     if (groupId == null) return;
     final npub = await _requireNpub();
     final event = await _marmot.sendStructured(npub, groupId, meta.toJson());
-    _publish(event);
+    _envelope.publish(event);
   }
 
   Future<void> sendProgress(
@@ -213,7 +174,7 @@ class BookGroupDatasource {
         groupId,
         payload.toJson(),
       );
-      _publish(event);
+      _envelope.publish(event);
     } on Object catch (error, stack) {
       _log.warning('Send progress failed for $bookId', error, stack);
     }
@@ -258,11 +219,11 @@ class BookGroupDatasource {
         continue;
       }
       final change = await _marmot.addMember(groupId, keyPackage);
-      _publish(change.evolutionEventJson);
+      _envelope.publish(change.evolutionEventJson);
 
       final recipientHex = await MarmotIdentity.pubkeyHexFromNpub(memberNpub);
       for (final rumor in change.welcomeRumors) {
-        await _giftWrapAndPublish(rumor, recipientHex);
+        await _envelope.giftWrapAndPublish(rumor, recipientHex);
       }
       added++;
     }
@@ -270,7 +231,7 @@ class BookGroupDatasource {
     if (added > 0) {
       final meta = await currentMeta(bookId);
       if (meta != null) await sendMeta(bookId, meta);
-      await _uploadContent(groupId, bookId);
+      await _transfer.uploadBookContent(await _requireNpub(), groupId, bookId);
     }
 
     return skipped;
@@ -296,7 +257,7 @@ class BookGroupDatasource {
     final groupId = await _resolveGroupId(bookId);
     if (groupId == null) return;
     final change = await _marmot.removeMember(groupId, memberNpub);
-    _publish(change.evolutionEventJson);
+    _envelope.publish(change.evolutionEventJson);
   }
 
   Future<void> leaveCircle(String bookId) async {
@@ -304,7 +265,7 @@ class BookGroupDatasource {
     if (groupId != null) {
       try {
         final change = await _marmot.leaveGroup(groupId);
-        _publish(change.evolutionEventJson);
+        _envelope.publish(change.evolutionEventJson);
       } on Object catch (error, stack) {
         _log.warning(
           'leaveGroup failed for $bookId, will still delete locally',
@@ -325,23 +286,7 @@ class BookGroupDatasource {
     for (final member in await _marmot.getMembers(groupId)) {
       if (member.npub == myNpub) continue;
       final change = await _marmot.removeMember(groupId, member.npub);
-      _publish(change.evolutionEventJson);
-    }
-  }
-
-  Future<void> _giftWrapAndPublish(
-    String rumorJson,
-    String recipientHex,
-  ) async {
-    try {
-      final rumor = _toNip01Event(rumorJson);
-      final wrap = await _ndk.giftWrap.toGiftWrap(
-        rumor: rumor,
-        recipientPubkey: recipientHex,
-      );
-      _ndk.broadcast.broadcast(nostrEvent: wrap, specificRelays: _relays);
-    } on Object catch (error, stack) {
-      _log.warning('Gift-wrap welcome failed', error, stack);
+      _envelope.publish(change.evolutionEventJson);
     }
   }
 
@@ -451,104 +396,31 @@ class BookGroupDatasource {
     );
   }
 
-  Future<void> _uploadContent(String groupId, String bookId) async {
-    final npub = await _identity.readNpub();
-    if (npub == null || npub.isEmpty) return;
-
-    final zbf = await _fileStore.zbfFile(bookId);
-    if (!zbf.existsSync()) return;
-
-    final handle = await _reader.open(zbf.path);
-    try {
-      final source = handle.sourceDocument();
-      if (source != null) {
-        await _uploadBlob(
-          npub,
-          groupId,
-          source,
-          'application/octet-stream',
-          '$bookId.source',
-        );
-      }
-
-      await for (final segment in _segmenter.segment(handle)) {
-        final index = segment.index.toString().padLeft(4, '0');
-        await _uploadBlob(
-          npub,
-          groupId,
-          segment.bytes,
-          'application/octet-stream',
-          '$bookId.seg$index.zbfseg',
-        );
-      }
-    } finally {
-      handle.close();
-    }
-  }
-
   Future<bool> downloadBookContent(String bookId) async {
     final group = await _group(bookId);
     if (group == null) return false;
-    try {
-      await _ensureMessages(group.id, group.nostrGroupId);
-      final messages = await _marmot.getMessages(group.id);
-      final segmentRefs = _latestSegmentRefs(messages);
-      if (segmentRefs.isEmpty) return false;
-
-      final sourceRef = _latestMediaRef(messages, contains: '.source');
-      Uint8List? sourceBytes;
-      if (sourceRef != null) {
-        sourceBytes = await _downloadAndDecrypt(group.id, sourceRef);
-      }
-
-      final zbf = await _fileStore.zbfFile(bookId);
-      await _segmenter.reassembleToFile(
-        _downloadSegments(group.id, segmentRefs),
-        zbf.path,
-        sourceBytes: sourceBytes,
-      );
-      return true;
-    } on Object catch (error, stack) {
-      _log.warning('Download book content failed for $bookId', error, stack);
-      return false;
-    }
+    await _ensureMessages(group.id, group.nostrGroupId);
+    final messages = await _marmot.getMessages(group.id);
+    final segmentRefs = _latestSegmentRefs(messages);
+    if (segmentRefs.isEmpty) return false;
+    final sourceRef = _latestMediaRef(messages, contains: '.source');
+    return _transfer.downloadBookContent(
+      bookId,
+      group.id,
+      segmentRefs,
+      sourceRef,
+    );
   }
 
   Future<SegmentData?> loadSegment(String bookId, int segmentIndex) async {
     final group = await _group(bookId);
     if (group == null) return null;
-    try {
-      await _ensureMessages(group.id, group.nostrGroupId);
-      final messages = await _marmot.getMessages(group.id);
-      final index = segmentIndex.toString().padLeft(4, '0');
-      final ref = _latestMediaRef(messages, contains: '.seg$index.zbfseg');
-      if (ref == null) return null;
-
-      final zip = await _downloadAndDecrypt(group.id, ref);
-      final parsed = await _segmenter.parseSegmentAsync(zip);
-      if (parsed.pages.isEmpty) return null;
-      return SegmentData(
-        pageStart: parsed.pages.first.pageNumber - 1,
-        pages: parsed.pages,
-        assets: parsed.assets,
-      );
-    } on Object catch (error, stack) {
-      _log.warning(
-        'Load segment $segmentIndex for $bookId failed',
-        error,
-        stack,
-      );
-      return null;
-    }
-  }
-
-  Stream<Uint8List> _downloadSegments(
-    String groupId,
-    List<MarmotMediaRef> refs,
-  ) async* {
-    for (final ref in refs) {
-      yield await _downloadAndDecrypt(groupId, ref);
-    }
+    await _ensureMessages(group.id, group.nostrGroupId);
+    final messages = await _marmot.getMessages(group.id);
+    final index = segmentIndex.toString().padLeft(4, '0');
+    final ref = _latestMediaRef(messages, contains: '.seg$index.zbfseg');
+    if (ref == null) return null;
+    return _transfer.loadSegment(bookId, group.id, segmentIndex, ref);
   }
 
   List<MarmotMediaRef> _latestSegmentRefs(List<MarmotMessage> messages) {
@@ -588,89 +460,6 @@ class BookGroupDatasource {
     return latest;
   }
 
-  Future<Uint8List> _downloadAndDecrypt(
-    String groupId,
-    MarmotMediaRef ref,
-  ) async {
-    final blob = await _blossom.download(ref.url);
-    return _marmot.decryptMedia(
-      groupId,
-      blob,
-      MediaRefInput(
-        url: ref.url,
-        originalHash: ref.originalHash,
-        mimeType: ref.mimeType,
-        filename: ref.filename,
-        schemeVersion: ref.schemeVersion,
-        nonce: ref.nonce,
-      ),
-    );
-  }
-
-  Future<void> _uploadBlob(
-    String npub,
-    String groupId,
-    Uint8List bytes,
-    String mimeType,
-    String filename,
-  ) async {
-    try {
-      final enc = await _marmot.encryptMedia(
-        groupId,
-        bytes,
-        mimeType,
-        filename,
-      );
-      final url = await _blossom.upload(enc.encryptedData);
-      final rumor = await _marmot.buildMediaRumor(
-        npub: npub,
-        groupId: groupId,
-        caption: '',
-        url: url,
-        originalHash: enc.originalHash,
-        mimeType: enc.mimeType,
-        filename: enc.filename,
-        nonce: enc.nonce,
-        blurhash: enc.blurhash,
-        thumbhash: enc.thumbhash,
-        dimensionsWidth: enc.dimensionsWidth,
-        dimensionsHeight: enc.dimensionsHeight,
-      );
-      final event = await _marmot.sendMessage(rumor, groupId);
-      _publish(event);
-      _log.info('Uploaded blob $filename');
-    } on Object catch (error, stack) {
-      _log.warning('Blob upload failed for $filename', error, stack);
-    }
-  }
-
-  void _publish(String eventJson) {
-    try {
-      _ndk.broadcast.broadcast(
-        nostrEvent: _toNip01Event(eventJson),
-        specificRelays: _relays,
-      );
-    } on Object catch (error, stack) {
-      _log.warning('Relay publish failed', error, stack);
-    }
-  }
-
-  Nip01Event _toNip01Event(String eventJson) {
-    final map = jsonDecode(eventJson) as Map<String, dynamic>;
-    final tags = (map['tags'] as List)
-        .map((tag) => (tag as List).map((e) => e.toString()).toList())
-        .toList();
-    return Nip01Event(
-      id: map['id'] as String?,
-      pubKey: map['pubkey'] as String,
-      kind: (map['kind'] as num).toInt(),
-      tags: tags,
-      content: map['content'] as String,
-      sig: map['sig'] as String?,
-      createdAt: (map['created_at'] as num).toInt(),
-    );
-  }
-
   Future<MarmotGroup?> _group(String bookId) async {
     final groupId = await _resolveGroupId(bookId);
     if (groupId == null) return null;
@@ -706,9 +495,6 @@ class BookGroupDatasource {
       _log.warning('Catch-up fetch failed for $groupId', error, stack);
     }
   }
-
-  String _hex(Uint8List bytes) =>
-      bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
   Future<String?> _resolveGroupId(String bookId) async {
     final cached = _groupIdByBookId[bookId];

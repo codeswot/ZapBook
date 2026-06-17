@@ -51,6 +51,8 @@ import 'package:zapbook/core/services/decoded_message_cache.dart' as _i118;
 import 'package:zapbook/core/services/density_service.dart' as _i740;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
+import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
+import 'package:zapbook/core/services/group_transfer_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
@@ -361,6 +363,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i873.BlossomService>(
       () => _i873.BlossomService(gh<_i857.Ndk>()),
     );
+    gh.lazySingleton<_i394.GroupEnvelopeService>(
+      () => _i394.GroupEnvelopeService(gh<_i857.Ndk>()),
+    );
     gh.lazySingleton<_i240.ZapEarningsService>(
       () => _i240.ZapEarningsService(gh<_i857.Ndk>()),
       dispose: (i) => i.dispose(),
@@ -384,6 +389,14 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
+    );
+    gh.lazySingleton<_i860.GroupTransferService>(
+      () => _i860.GroupTransferService(
+        gh<_i970.Marmot>(),
+        gh<_i873.BlossomService>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i394.GroupEnvelopeService>(),
+      ),
     );
     gh.lazySingleton<_i362.ZapService>(
       () => _i362.ZapService(
@@ -415,18 +428,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i491.BookVectorIndex>(),
       ),
     );
-    gh.lazySingleton<_i398.BookGroupDatasource>(
-      () => _i398.BookGroupDatasource(
-        gh<_i970.Marmot>(),
-        gh<_i873.BlossomService>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i857.Ndk>(),
-        gh<_i397.KeyPackageService>(),
-        gh<_i1.ZbfReader>(),
-        gh<_i118.DecodedMessageCache>(),
-      ),
-    );
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
@@ -438,9 +439,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
       dispose: (i) => i.dispose(),
-    );
-    gh.lazySingleton<_i1063.ProgressiveBookOpener>(
-      () => _i1063.ProgressiveBookOpener(gh<_i398.BookGroupDatasource>()),
     );
     gh.factory<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
@@ -463,6 +461,18 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    );
+    gh.lazySingleton<_i398.BookGroupDatasource>(
+      () => _i398.BookGroupDatasource(
+        gh<_i970.Marmot>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i857.Ndk>(),
+        gh<_i397.KeyPackageService>(),
+        gh<_i118.DecodedMessageCache>(),
+        gh<_i860.GroupTransferService>(),
+        gh<_i394.GroupEnvelopeService>(),
+      ),
     );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
@@ -509,6 +519,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i31.MilestoneService>(),
         gh<_i397.KeyPackageService>(),
       ),
+    );
+    gh.lazySingleton<_i1063.ProgressiveBookOpener>(
+      () => _i1063.ProgressiveBookOpener(gh<_i398.BookGroupDatasource>()),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
