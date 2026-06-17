@@ -13,7 +13,10 @@ import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:marmot_dart/marmot_dart.dart';
+import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
+import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
@@ -233,14 +236,37 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     if (npub == null) return;
     final groupId = await _resolveGroupId(_currentBookId);
     if (groupId == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
     await _marmot.sendStructured(npub, groupId, {
       'type': 'zapbook.zap.sent',
       'fromNpub': npub,
       'toNpub': recipientNpub,
       'amount': amount,
       'reactionType': reactionType,
-      'sentAtMs': DateTime.now().millisecondsSinceEpoch,
+      'sentAtMs': now,
     });
+
+    final recGen = ProfileMetaGenerator.generate(seed: recipientNpub);
+    final bookTitle = _currentBookId;
+    CheersDataSourceImpl.addDirectZap(
+      CheersActivity(
+        id: '$groupId:${npub}_${recipientNpub}_$now',
+        actorNpub: npub,
+        actorName: 'You',
+        bookTitle: bookTitle,
+        bookId: groupId,
+        activityDescription: 'You zapped ${recGen.displayName} $amount sats in $bookTitle',
+        timestamp: DateTime.fromMillisecondsSinceEpoch(now),
+        type: 'zap',
+        isUnread: false,
+        zapAmount: amount,
+        zapReaction: reactionType,
+        zapTargetId: '$npub:$now',
+        zapTargetDescription: 'You zapped ${recGen.displayName} in $bookTitle',
+        zapRecipientNpub: recipientNpub,
+      ),
+    );
   }
 
   Future<String?> _resolveGroupId(String bookId) async {

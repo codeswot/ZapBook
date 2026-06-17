@@ -44,6 +44,13 @@ class CheersDataSourceImpl implements CheersDataSource {
   final _changeController = StreamController<void>.broadcast();
   final _caughtUpGroups = <String>{};
 
+  static final _directZaps = StreamController<CheersActivity>.broadcast();
+  static Stream<CheersActivity> get directZaps => _directZaps.stream;
+
+  static void addDirectZap(CheersActivity activity) {
+    _directZaps.add(activity);
+  }
+
   Future<void> _catchUpGroup(MarmotGroup group, {bool force = false}) async {
     if (!force && _caughtUpGroups.contains(group.id)) return;
     try {
@@ -118,6 +125,12 @@ class CheersDataSourceImpl implements CheersDataSource {
         }
         activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
+        _directZaps.stream.listen((zap) {
+          if (!controller.isClosed) {
+            lastBase = [zap, ...lastBase];
+            emitEnriched();
+          }
+        });
         lastBase = activities;
         lastMyNpub = myNpub;
         await emitEnriched();
@@ -129,7 +142,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     reload(force: true);
 
     final timer = Timer.periodic(
-      const Duration(seconds: 10),
+      const Duration(seconds: 5),
       (_) => reload(force: true),
     );
     final sub = _changeController.stream.listen((_) => reload(force: true));
