@@ -9,14 +9,21 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class FakeEmbeddingService extends EmbeddingService {
   @override
-  Future<Float32List> embedTokens(List<List<int>> pieces) async {
-    final vector = Float32List(EmbeddingService.dimensions);
-    for (final tokens in pieces) {
-      for (final token in tokens) {
-        vector[token % EmbeddingService.dimensions] += 1;
-      }
-    }
-    return EmbeddingService.normalized(vector);
+  Future<List<Float32List>> embedTokensBatch(
+    List<List<List<int>>> batch,
+  ) async {
+    return [
+      for (final pieces in batch)
+        () {
+          final vector = Float32List(EmbeddingService.dimensions);
+          for (final tokens in pieces) {
+            for (final token in tokens) {
+              vector[token % EmbeddingService.dimensions] += 1;
+            }
+          }
+          return EmbeddingService.normalized(vector);
+        }(),
+    ];
   }
 }
 

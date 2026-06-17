@@ -178,10 +178,9 @@ class BookVectorIndex {
     try {
       final rows = bookId == null
           ? db.select('SELECT rowid, embedding FROM chunks')
-          : db.select(
-              'SELECT rowid, embedding FROM chunks WHERE book_id = ?',
-              [bookId],
-            );
+          : db.select('SELECT rowid, embedding FROM chunks WHERE book_id = ?', [
+              bookId,
+            ]);
 
       final topHits = <_ScoredRow>[];
       for (final row in rows) {
@@ -211,7 +210,7 @@ class BookVectorIndex {
           );
         }
       }
-      
+
       if (topHits.isEmpty) return const [];
       if (topHits.length < limit) {
         topHits.sort((a, b) => b.score.compareTo(a.score));

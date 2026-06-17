@@ -284,7 +284,7 @@ class NostrCacheStore {
 
   List<Metadata> loadMetadatas(List<String> pubKeys) {
     if (pubKeys.isEmpty) return const [];
-    
+
     final result = <Metadata>[];
     // SQLite has a limit on the number of variables in a single query (e.g. 999 or 32766).
     // We chunk the list to avoid throwing 'too many SQL variables'.
@@ -300,7 +300,7 @@ class NostrCacheStore {
       );
       result.addAll(rows.map(_metadataFromRow));
     }
-    
+
     return result;
   }
 
