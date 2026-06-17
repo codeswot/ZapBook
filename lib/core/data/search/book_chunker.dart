@@ -15,6 +15,8 @@ class BookChunk {
 class BookChunker {
   const BookChunker({this.targetWords = 180, this.maxWords = 220});
 
+  static final RegExp _whitespace = RegExp(r'\s+');
+
   final int targetWords;
   final int maxWords;
 
@@ -41,14 +43,17 @@ class BookChunker {
     }
 
     for (final paragraph in paragraphs) {
-      final words = paragraph.split(RegExp(r'\s+'));
+      final words = paragraph.split(_whitespace);
       if (words.length > maxWords) {
         flush();
         for (var start = 0; start < words.length; start += targetWords) {
           final end = start + targetWords > words.length
               ? words.length
               : start + targetWords;
-          current.write(words.sublist(start, end).join(' '));
+          for (var i = start; i < end; i++) {
+            if (i > start) current.write(' ');
+            current.write(words[i]);
+          }
           currentWords = end - start;
           flush();
         }

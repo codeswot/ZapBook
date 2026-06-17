@@ -39,6 +39,9 @@ class ReadingProgressRepository {
       content: encrypted,
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
+    await account.signer.sign(event);
+
+    _cache.saveEvent(event);
 
     _ndk.broadcast.broadcast(
       nostrEvent: event,

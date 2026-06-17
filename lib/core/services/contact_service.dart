@@ -251,10 +251,12 @@ class ContactService {
     _metaSub = response;
     _metaListen = response.stream.listen((event) {
       try {
-        _store(Metadata.fromEvent(event));
+        final meta = Metadata.fromEvent(event);
+        _store(meta);
+        _nostr.saveMetadata(meta);
         _tick();
       } on Object catch (e, stack) {
-        _log.info('metadata event $e', stack);
+        _log.info('parse metadata failed', e, stack);
       }
     });
   }

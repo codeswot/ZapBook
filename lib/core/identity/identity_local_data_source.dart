@@ -6,26 +6,32 @@ import 'package:zapbook/core/services/secure_storage_service.dart';
 
 @lazySingleton
 class IdentityLocalDataSource {
-  const IdentityLocalDataSource(this._storage);
+  IdentityLocalDataSource(this._storage);
 
   final SecureStorageService _storage;
 
   static const String _accountsKey = 'accounts';
   static const String _activeKey = ActiveAccount.activeNpubKey;
 
+  Map<String, String>? _cachedAccounts;
+
   Future<Map<String, String>> _accounts() async {
+    if (_cachedAccounts != null) return Map.from(_cachedAccounts!);
     final raw = await _storage.read(_accountsKey);
     if (raw == null || raw.isEmpty) return <String, String>{};
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
-      return map.map((k, v) => MapEntry(k, v as String));
+      _cachedAccounts = map.map((k, v) => MapEntry(k, v as String));
+      return Map.from(_cachedAccounts!);
     } on Object {
       return <String, String>{};
     }
   }
 
-  Future<void> _saveAccounts(Map<String, String> accounts) =>
-      _storage.write(_accountsKey, jsonEncode(accounts));
+  Future<void> _saveAccounts(Map<String, String> accounts) async {
+    _cachedAccounts = Map.from(accounts);
+    await _storage.write(_accountsKey, jsonEncode(accounts));
+  }
 
   Future<void> addAccount({required String npub, required String nsec}) async {
     final accounts = await _accounts();
@@ -44,7 +50,7 @@ class IdentityLocalDataSource {
     final accounts = await _accounts();
     accounts.remove(npub);
     await _saveAccounts(accounts);
-    if (await readNpub() == npub) {
+    if (ActiveAccount.currentNpub == npub) {
       await _storage.delete(_activeKey);
       ActiveAccount.setNpub(null);
     }
@@ -55,7 +61,12 @@ class IdentityLocalDataSource {
     await setActive(npub);
   }
 
-  Future<String?> readNpub() => _storage.read(_activeKey);
+  Future<String?> readNpub() async {
+    if (ActiveAccount.currentNpub != null) return ActiveAccount.currentNpub;
+    final npub = await _storage.read(_activeKey);
+    ActiveAccount.setNpub(npub);
+    return npub;
+  }
 
   Future<String?> readNsec() async {
     final npub = await readNpub();

@@ -156,6 +156,18 @@ class NostrCacheStore {
       conditions.add('content LIKE ?');
       params.add('%$search%');
     }
+    if (tags != null && tags.isNotEmpty) {
+      for (final entry in tags.entries) {
+        if (entry.value.isEmpty) continue;
+        final key = entry.key;
+        final tagConditions = <String>[];
+        for (final val in entry.value) {
+          tagConditions.add('tags LIKE ?');
+          params.add('%["$key","${val.replaceAll('"', '\\"')}"%');
+        }
+        conditions.add('(${tagConditions.join(' OR ')})');
+      }
+    }
 
     var query = 'SELECT * FROM events';
     if (conditions.isNotEmpty) {
@@ -205,6 +217,18 @@ class NostrCacheStore {
     if (until != null) {
       conditions.add('created_at <= ?');
       params.add(until);
+    }
+    if (tags != null && tags.isNotEmpty) {
+      for (final entry in tags.entries) {
+        if (entry.value.isEmpty) continue;
+        final key = entry.key;
+        final tagConditions = <String>[];
+        for (final val in entry.value) {
+          tagConditions.add('tags LIKE ?');
+          params.add('%["$key","${val.replaceAll('"', '\\"')}"%');
+        }
+        conditions.add('(${tagConditions.join(' OR ')})');
+      }
     }
 
     if (conditions.isEmpty) return;
@@ -260,12 +284,24 @@ class NostrCacheStore {
 
   List<Metadata> loadMetadatas(List<String> pubKeys) {
     if (pubKeys.isEmpty) return const [];
-    final placeholders = List.filled(pubKeys.length, '?').join(', ');
-    final result = _db.select(
-      'SELECT * FROM metadatas WHERE pub_key IN ($placeholders)',
-      pubKeys,
-    );
-    return result.map(_metadataFromRow).toList();
+    
+    final result = <Metadata>[];
+    // SQLite has a limit on the number of variables in a single query (e.g. 999 or 32766).
+    // We chunk the list to avoid throwing 'too many SQL variables'.
+    for (var i = 0; i < pubKeys.length; i += 900) {
+      final chunk = pubKeys.sublist(
+        i,
+        i + 900 > pubKeys.length ? pubKeys.length : i + 900,
+      );
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      final rows = _db.select(
+        'SELECT * FROM metadatas WHERE pub_key IN ($placeholders)',
+        chunk,
+      );
+      result.addAll(rows.map(_metadataFromRow));
+    }
+    
+    return result;
   }
 
   void saveMetadatas(List<Metadata> metadatas) {

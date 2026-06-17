@@ -12,10 +12,12 @@ class ActiveAccount {
   );
 
   static String? _hex;
+  static String? _npub;
 
   static String get scope => _hex ?? _pendingScope;
 
   static bool get hasActive => _hex != null;
+  static String? get currentNpub => _npub;
 
   static String key(String base) => '$scope:$base';
 
@@ -25,6 +27,7 @@ class ActiveAccount {
   }
 
   static void setNpub(String? npub) {
+    _npub = npub;
     _hex = (npub == null || npub.isEmpty) ? null : _hexOf(npub);
   }
 

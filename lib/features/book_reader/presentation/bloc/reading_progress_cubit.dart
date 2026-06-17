@@ -39,12 +39,14 @@ ProgressConfig _configFor(int totalWords, BookSourceFormat format) {
   return ProgressConfig(wordUnitSize: unit, milestoneThresholdUnits: 1);
 }
 
+const defaultHeartbeat = Duration(seconds: 10);
+
 class ReadingProgressCubit extends Cubit<ReadingState> {
   factory ReadingProgressCubit.forBook(
     ZbfBookHandle handle, {
     required String bookId,
     int Function()? clock,
-    Duration heartbeat = const Duration(seconds: 10),
+    Duration heartbeat = defaultHeartbeat,
     ReadingProgressRepository? repository,
     DensityService? densityService,
     MilestoneService? milestoneService,
@@ -70,7 +72,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     required ReadingDeps deps,
     String bookId = '',
     int Function()? clock,
-    Duration heartbeat = const Duration(seconds: 10),
+    Duration heartbeat = defaultHeartbeat,
     ReadingProgressRepository? repository,
   }) {
     return ReadingProgressCubit._(
@@ -86,7 +88,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     required ReadingDeps deps,
     required this.bookId,
     int Function()? clock,
-    this.heartbeat = const Duration(seconds: 10),
+    this.heartbeat = defaultHeartbeat,
     this.repository,
     this.milestoneService,
     this.quizService,
@@ -171,7 +173,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     );
     _dirty = true;
     _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(seconds: 2), () {
+    _saveTimer = Timer(const Duration(seconds: 60), () {
       _save();
     });
   }
@@ -212,6 +214,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
         PageExited(page: page, direction: ExitDirection.forward, atMs: _now()),
       );
     }
+    milestoneService?.flushProgress(bookId);
     _save();
     quizService?.onPause();
   }
@@ -259,8 +262,17 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     if (qs == null) return;
     final handle = _handle;
     if (handle == null) return;
-    final text = extractMilestoneText(handle, _deps.density, effect.index);
-    qs.stashMilestone(effect.index, effect.wordsRead, state.pointsBanked, text);
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_closed) return;
+      final text = extractMilestoneText(handle, _deps.density, effect.index);
+      qs.stashMilestone(
+        effect.index,
+        effect.wordsRead,
+        state.pointsBanked,
+        text,
+      );
+    });
   }
 
   void _save() {

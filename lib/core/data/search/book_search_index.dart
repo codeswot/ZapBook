@@ -30,6 +30,7 @@ class BookSearchIndex {
 
   static const highlightStart = '‹';
   static const highlightEnd = '›';
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   final _log = logging.Logger('BookSearchIndex');
 
@@ -141,7 +142,7 @@ class BookSearchIndex {
   }
 
   static String _pageText(BookPage page) {
-    final parts = <String>[];
+    final buffer = StringBuffer();
     for (final block in page.blocks) {
       final text = switch (block) {
         HeadingBlock(:final text) => text,
@@ -152,9 +153,13 @@ class BookSearchIndex {
         ImageBlock(:final altText) => altText,
         _ => '',
       };
-      if (text.trim().isNotEmpty) parts.add(text.trim());
+      final trimmed = text.trim();
+      if (trimmed.isNotEmpty) {
+        if (buffer.isNotEmpty) buffer.write('\n');
+        buffer.write(trimmed);
+      }
     }
-    return parts.join('\n');
+    return buffer.toString();
   }
 
   Future<List<BookSearchHit>> search(
@@ -196,7 +201,7 @@ class BookSearchIndex {
   static String? _toMatchQuery(String raw) {
     final terms = raw
         .trim()
-        .split(RegExp(r'\s+'))
+        .split(_whitespace)
         .map((t) => t.replaceAll('"', ''))
         .where((t) => t.isNotEmpty)
         .toList();

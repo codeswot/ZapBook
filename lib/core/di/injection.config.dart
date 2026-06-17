@@ -336,9 +336,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i873.BlossomService>(
       () => _i873.BlossomService(gh<_i857.Ndk>()),
     );
-    gh.lazySingleton<_i11.NostrService>(
-      () => _i11.NostrService(gh<_i857.Ndk>()),
-    );
     gh.lazySingleton<_i240.ZapEarningsService>(
       () => _i240.ZapEarningsService(gh<_i857.Ndk>()),
       dispose: (i) => i.dispose(),
@@ -391,6 +388,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i31.MilestoneService>(),
         gh<_i240.ZapEarningsService>(),
       ),
+    );
+    gh.lazySingleton<_i11.NostrService>(
+      () => _i11.NostrService(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
     );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),

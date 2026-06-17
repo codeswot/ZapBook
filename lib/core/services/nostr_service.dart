@@ -4,11 +4,14 @@ import 'package:ndk/ndk.dart';
 import 'package:ndk/domain_layer/entities/read_write_marker.dart';
 import 'package:ndk/domain_layer/entities/user_relay_list.dart';
 
+import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
+
 @lazySingleton
 class NostrService {
-  NostrService(this._ndk);
+  NostrService(this._ndk, this._store);
 
   final Ndk _ndk;
+  final NostrCacheStore _store;
   final _log = logging.Logger('NostrService');
 
   static const List<String> broadcastRelays = [
@@ -91,6 +94,8 @@ class NostrService {
         cacheWrite: true,
         filter: Filter(kinds: const [Metadata.kKind], authors: pubkeys),
       );
+
+  void saveMetadata(Metadata meta) => _store.saveMetadata(meta);
 
   void closeSubscription(String requestId) =>
       _ndk.requests.closeSubscription(requestId);

@@ -17,10 +17,7 @@ bool _isNoise(BookBlock block) {
   return false;
 }
 
-List<BookBlock> _stripNoise(List<BookBlock> blocks) =>
-    blocks.where((b) => !_isNoise(b)).toList();
-
-bool pageHasContent(List<BookBlock> blocks) => _stripNoise(blocks).isNotEmpty;
+bool pageHasContent(List<BookBlock> blocks) => blocks.any((b) => !_isNoise(b));
 
 final RegExp _dotLeaderPattern = RegExp(r'[.·•‣⋯]{2,}\s*\d{0,4}\s*$');
 
@@ -31,27 +28,38 @@ bool _isDotLeaderLine(String text) {
 }
 
 bool isTableOfContentsPage(List<BookBlock> blocks) {
-  final lines = <String>[];
-  for (final block in _stripNoise(blocks)) {
+  var count = 0;
+  var leaders = 0;
+  for (final block in blocks) {
+    if (_isNoise(block)) continue;
     if (block is ParagraphBlock) {
-      lines.add(block.text);
+      count++;
+      if (_isDotLeaderLine(block.text)) leaders++;
     } else if (block is HeadingBlock) {
-      lines.add(block.text);
+      count++;
+      if (_isDotLeaderLine(block.text)) leaders++;
     }
   }
-  if (lines.length < 3) return false;
-  final leaders = lines.where(_isDotLeaderLine).length;
-  return leaders / lines.length >= 0.5;
+  if (count < 3) return false;
+  return leaders / count >= 0.5;
 }
 
 List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
-  final blocks = _stripNoise(rawBlocks);
-  if (blocks.length < 2) return List.unmodifiable(blocks);
+  var maxLen = 0;
+  var count = 0;
+  for (final b in rawBlocks) {
+    if (!_isNoise(b)) {
+      count++;
+      if (b is ParagraphBlock && b.text.length > maxLen) {
+        maxLen = b.text.length;
+      }
+    }
+  }
 
-  final maxLen = blocks.whereType<ParagraphBlock>().fold<int>(
-    0,
-    (m, b) => b.text.length > m ? b.text.length : m,
-  );
+  if (count < 2) {
+    return List.unmodifiable(rawBlocks.where((b) => !_isNoise(b)));
+  }
+
   final widthThreshold = maxLen == 0 ? 0 : (maxLen * 0.66).floor();
 
   final result = <BookBlock>[];
@@ -64,7 +72,9 @@ List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
     }
   }
 
-  for (final block in blocks) {
+  for (final block in rawBlocks) {
+    if (_isNoise(block)) continue;
+
     if (block is! ParagraphBlock) {
       flush();
       result.add(block);
@@ -89,15 +99,21 @@ List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
 }
 
 final RegExp _whitespace = RegExp(r'\s');
-final RegExp _endsLetter = RegExp(r'[A-Za-z]$');
 
 bool _isWordFragmentSplit(ParagraphBlock previous, ParagraphBlock next) {
   final prev = previous.text.trimRight();
   final cont = next.text.trim();
   if (prev.isEmpty || cont.isEmpty) return false;
   if (_whitespace.hasMatch(cont)) return false;
-  if (!_endsLetter.hasMatch(prev)) return false;
-  if (!RegExp(r'^[a-z]').hasMatch(cont)) return false;
+
+  final lastChar = prev.codeUnitAt(prev.length - 1);
+  final isLetter =
+      (lastChar >= 65 && lastChar <= 90) || (lastChar >= 97 && lastChar <= 122);
+  if (!isLetter) return false;
+
+  final firstChar = cont.codeUnitAt(0);
+  final isLowerLetter = firstChar >= 97 && firstChar <= 122;
+  if (!isLowerLetter) return false;
 
   final prevSingleToken = !_whitespace.hasMatch(prev);
   if (prevSingleToken) return true;

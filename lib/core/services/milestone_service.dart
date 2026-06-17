@@ -177,7 +177,13 @@ class MilestoneService {
   void _storeProgress(String bookId, String npub, BookProgress progress) {
     final members = _membersByBook.putIfAbsent(bookId, () => {});
     final existing = members[npub];
-    if (existing != null && progress.fraction < existing.fraction) return;
+    if (existing != null) {
+      if (progress.updatedAtMs > 0 && existing.updatedAtMs > 0) {
+        if (progress.updatedAtMs < existing.updatedAtMs) return;
+      } else {
+        if (progress.fraction < existing.fraction) return;
+      }
+    }
     members[npub] = progress;
     _tick.add(bookId);
   }
@@ -206,6 +212,7 @@ class MilestoneService {
         currentPage: (payload['currentPage'] as num?)?.toInt() ?? 0,
         currentWordCount: words,
         totalWordCount: total,
+        updatedAtMs: (payload['lastReadAtMs'] as num?)?.toInt() ?? 0,
       );
     }
 
@@ -353,7 +360,7 @@ class MilestoneService {
     _tick.add(bookId);
 
     _publishDebouncers[bookId]?.cancel();
-    _publishDebouncers[bookId] = Timer(const Duration(seconds: 10), () {
+    _publishDebouncers[bookId] = Timer(const Duration(seconds: 5), () {
       final last = _lastPublished[bookId];
       if (last != null &&
           last.currentPage == currentPage &&
@@ -363,6 +370,24 @@ class MilestoneService {
       _lastPublished[bookId] = progress;
       unawaited(_publishProgress(bookId));
     });
+  }
+
+  void flushProgress(String bookId) {
+    final debouncer = _publishDebouncers[bookId];
+    if (debouncer != null && debouncer.isActive) {
+      debouncer.cancel();
+      final progress = _selfByBook[bookId];
+      if (progress != null) {
+        final last = _lastPublished[bookId];
+        if (last != null &&
+            last.currentPage == progress.currentPage &&
+            last.currentWordCount == progress.currentWordCount) {
+          return;
+        }
+        _lastPublished[bookId] = progress;
+        unawaited(_publishProgress(bookId));
+      }
+    }
   }
 
   Future<void> markCompleted(String bookId, {int? totalWords}) async {
@@ -561,10 +586,12 @@ class BookProgress {
     required this.currentPage,
     required this.currentWordCount,
     required this.totalWordCount,
+    this.updatedAtMs = 0,
   });
 
   final double fraction;
   final int currentPage;
   final int currentWordCount;
   final int totalWordCount;
+  final int updatedAtMs;
 }

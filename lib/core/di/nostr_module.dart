@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 
-import 'package:zapbook/core/data/cache/drift_cache_manager.dart';
+import 'package:zapbook/core/data/cache/local_cache_manager.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 
 final class NostrCacheWarmup {
@@ -27,7 +27,7 @@ abstract class NostrModule {
     return Ndk(
       NdkConfig(
         engine: NdkEngine.JIT,
-        cache: DriftCacheManager(store),
+        cache: LocalCacheManager(store),
         eventVerifier: Bip340EventVerifier(),
         bootstrapRelays: const [
           'wss://relay.damus.io',

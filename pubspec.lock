@@ -41,6 +41,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.7.0"
+  ascii_qr:
+    dependency: transitive
+    description:
+      name: ascii_qr
+      sha256: "2046e400a0fa4ea0de5df44c87b992cdd1f76403bb15e64513b89263598750ae"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   async:
     dependency: transitive
     description:
@@ -81,6 +89,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
+  bip39_mnemonic:
+    dependency: transitive
+    description:
+      name: bip39_mnemonic
+      sha256: dd6bdfc2547d986b2c00f99bba209c69c0b6fa5c1a185e1f728998282f1249d5
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   bloc:
     dependency: transitive
     description:
@@ -105,6 +121,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  bs58check:
+    dependency: transitive
+    description:
+      name: bs58check
+      sha256: c4a164d42b25c2f6bc88a8beccb9fc7d01440f3c60ba23663a20a70faf484ea9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   build:
     dependency: transitive
     description:
@@ -185,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.1"
+  cbor:
+    dependency: transitive
+    description:
+      name: cbor
+      sha256: "2c5c37650f0a2d25149f03e748ab7b2857787bde338f95fe947738b80d713da2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.5.1"
   change_app_package_name:
     dependency: "direct dev"
     description:
@@ -577,6 +609,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  hex:
+    dependency: transitive
+    description:
+      name: hex
+      sha256: "4e7cd54e4b59ba026432a6be2dd9d96e4c5205725194997193bf871703b82c4a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   hooks:
     dependency: transitive
     description:
@@ -617,6 +657,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  idb_shim:
+    dependency: transitive
+    description:
+      name: idb_shim
+      sha256: "65d2fbda05f707f9c6e0b502bc4bf411d9f799d391f709c121aeb44d0dc0fd2a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.4"
   image:
     dependency: "direct main"
     description:
@@ -801,14 +849,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.17.6"
+  native_toolchain_rust:
+    dependency: transitive
+    description:
+      name: native_toolchain_rust
+      sha256: "26d4dcae954328af4ebfa8fc56cca0bf74b9ae8b4a6132de5da2071ac3d237b3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   ndk:
     dependency: "direct main"
     description:
       name: ndk
-      sha256: cb65ac0c2a5b57b42352f35edbdeb6c359fe80e145e9cc4e527fc39e435deac3
+      sha256: c4a2fa747f6a6adf46ec8ee4dcd588daac16fe991096c0a85509d0ddcdc47750
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.8.3"
+  ndk_bip32_keys:
+    dependency: transitive
+    description:
+      name: ndk_bip32_keys
+      sha256: "6bc311451646b6d488ca8e4c9907dc0e8486d93de752d5ab09c5c7b6c96238d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   nested:
     dependency: transitive
     description:
@@ -1057,6 +1121,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  sembast:
+    dependency: transitive
+    description:
+      name: sembast
+      sha256: "60746eb3377fe953367c10d549e9d99a3e0bccb464f32d0528d4e44933898597"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.8.9"
+  sembast_web:
+    dependency: transitive
+    description:
+      name: sembast_web
+      sha256: b5aa2a2d9524c4f6efad86a6be18baa1d43f6abf83ccab534c29699af32980bd
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.5"
   share_plus:
     dependency: "direct main"
     description:
@@ -1350,6 +1430,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.17"
+  toml:
+    dependency: transitive
+    description:
+      name: toml
+      sha256: "35a35f782228656a2af31e8c73d1353cc4ef3d683fd68af1111b44631879c05e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.0"
   typed_data:
     dependency: transitive
     description:
@@ -1366,6 +1454,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  unorm_dart:
+    dependency: transitive
+    description:
+      name: unorm_dart
+      sha256: "0c69186b03ca6addab0774bcc0f4f17b88d4ce78d9d4d8f0619e30a99ead58e7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
   url_launcher:
     dependency: "direct main"
     description:

@@ -5,8 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zapbook/core/data/account_migration.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/di/marmot_module.dart';
 import 'package:zapbook/core/di/nostr_module.dart';
@@ -37,8 +35,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Bloc.observer = AppBlocObserver();
 
   try {
-    final prefs = await SharedPreferences.getInstance();
-    await AccountMigration.run(prefs);
     await ActiveAccount.resolve();
 
     unawaited(MarmotWarmup.start());

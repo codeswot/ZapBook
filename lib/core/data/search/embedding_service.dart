@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -40,19 +39,29 @@ class EmbeddingService {
   Future<Float32List> embed(String text) => embedTokens(tokenize(text));
 
   Future<Float32List> embedTokens(List<List<int>> pieces) async {
-    if (pieces.isEmpty) {
-      return Float32List(dimensions);
-    }
+    final batch = await embedTokensBatch([pieces]);
+    return batch.isEmpty ? Float32List(dimensions) : batch.first;
+  }
+
+  Future<List<Float32List>> embedTokensBatch(
+    List<List<List<int>>> batch,
+  ) async {
+    if (batch.isEmpty) return const [];
     final dir = await getApplicationSupportDirectory();
     final modelPath = '${dir.path}/models/$_modelFileName';
     await _load();
-    final token = RootIsolateToken.instance!;
-    return Isolate.run(() async {
-      BackgroundIsolateBinaryMessenger.ensureInitialized(token);
-      final model = MiniLmL6V2.load(modelPath);
+
+    final model = MiniLmL6V2.load(modelPath);
+    final results = <Float32List>[];
+    for (final pieces in batch) {
+      if (pieces.isEmpty) {
+        results.add(Float32List(dimensions));
+        continue;
+      }
       if (pieces.length == 1) {
         final vector = await model.getEmbeddingAsVector(pieces.first);
-        return Float32List.fromList(vector.toList());
+        results.add(Float32List.fromList(vector.toList()));
+        continue;
       }
       final sum = Float32List(dimensions);
       for (final tokens in pieces) {
@@ -62,8 +71,9 @@ class EmbeddingService {
           sum[i] += values[i];
         }
       }
-      return normalized(sum);
-    });
+      results.add(normalized(sum));
+    }
+    return results;
   }
 
   static Float32List normalized(Float32List input) {
