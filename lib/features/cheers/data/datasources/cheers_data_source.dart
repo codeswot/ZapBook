@@ -234,6 +234,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     {
       var bookTitle = 'Unknown Book';
       final cheers = <Map<String, dynamic>>[];
+      final cheerEntries = <Map<String, dynamic>>[];
       final nudges = <Map<String, dynamic>>[];
       final resolvedNudgeIds = <String>{};
       final seenNudgeIds = <String>{};
@@ -249,10 +250,15 @@ class CheersDataSourceImpl implements CheersDataSource {
           case 'zapbook.book.meta':
             bookTitle = decoded['title'] as String? ?? bookTitle;
           case _cheerType:
-            cheers.add({
+            final entry = {
               'activityId': decoded['activityId'],
               'reactionType': decoded['reactionType'],
-            });
+              'amount': (decoded['amount'] as num?)?.toInt() ?? 0,
+              'senderNpub': msg.senderNpub,
+              'timestampSecs': msg.timestampSecs.toInt(),
+            };
+            cheers.add(entry);
+            cheerEntries.add(entry);
           case 'zapbook.zap.nudge':
             nudges.add(decoded);
           case 'zapbook.zap.ready':
@@ -317,6 +323,47 @@ class CheersDataSourceImpl implements CheersDataSource {
         );
       }
 
+      for (final cheer in cheerEntries) {
+        final senderNpub = cheer['senderNpub'] as String;
+        final isFromMe = senderNpub == myNpub;
+        final reactionType = cheer['reactionType'] as String;
+        final reactionEmoji = _reactionEmoji(reactionType);
+        final amount = cheer['amount'] as int;
+        final activityId = cheer['activityId'] as String;
+
+        final targetEvent = _findMilestoneEvent(group.id, activityId);
+        final targetDesc = targetEvent != null
+            ? '${targetEvent.completed ? "Finished" : "Milestone ${targetEvent.milestoneIdx + 1}"} in $bookTitle'
+            : 'activity in $bookTitle';
+
+        final gen = ProfileMetaGenerator.generate(seed: senderNpub);
+        final senderName = isFromMe ? 'You' : gen.displayName;
+
+        activities.add(
+          CheersActivity(
+            id: '${group.id}:${cheer['activityId']}:${cheer['senderNpub']}:${cheer['reactionType']}:${cheer['timestampSecs']}',
+            actorNpub: senderNpub,
+            actorName: senderName,
+            actorAvatar: isFromMe ? null : gen.avatar,
+            bookTitle: bookTitle,
+            bookId: group.id,
+            activityDescription: isFromMe
+                ? '$reactionEmoji You zapped $amount sats for $targetDesc'
+                : '$reactionEmoji $senderName zapped $amount sats for $targetDesc',
+            timestamp: DateTime.fromMillisecondsSinceEpoch(
+              (cheer['timestampSecs'] as int) * 1000,
+            ),
+            type: 'zap',
+            isUnread: false,
+            zapAmount: amount,
+            zapReaction: reactionType,
+            zapTargetId: activityId,
+            zapTargetDescription: targetDesc,
+            zapRecipientNpub: targetEvent?.npub,
+          ),
+        );
+      }
+
       for (final nudge in nudges) {
         if (nudge['toNpub'] != myNpub) continue;
         final nudgeId = nudge['nudgeId'] as String? ?? '';
@@ -373,5 +420,27 @@ class CheersDataSourceImpl implements CheersDataSource {
     }
 
     return activities;
+  }
+
+  static String _reactionEmoji(String reactionType) {
+    switch (reactionType) {
+      case 'clap':
+        return '👏';
+      case 'fire':
+        return '🔥';
+      case 'rocket':
+        return '🚀';
+      case 'trophy':
+        return '🏆';
+      default:
+        return '👍';
+    }
+  }
+
+  MilestoneEvent? _findMilestoneEvent(String groupId, String eventId) {
+    for (final event in _milestone.eventsForGroup(groupId)) {
+      if (event.id == eventId) return event;
+    }
+    return null;
   }
 }

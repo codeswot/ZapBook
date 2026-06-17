@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
@@ -8,16 +9,18 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/lnurl_service.dart';
 import 'package:zapbook/core/services/nwc_service.dart';
+import 'package:zapbook/core/services/zap_support_service.dart';
 
 import 'package:logging/logging.dart' as logging;
 
 @lazySingleton
 class ZapService {
-  ZapService(this._lnurl, this._ndk, this._nwc);
+  ZapService(this._lnurl, this._ndk, this._nwc, this._support);
 
   final LnurlService _lnurl;
   final Ndk _ndk;
   final NwcService _nwc;
+  final ZapSupportService _support;
   final _log = logging.Logger('ZapService');
 
   Future<ZapResult> donate({required int amountSats, String? comment}) => send(
@@ -67,12 +70,44 @@ class ZapService {
       nostr: nostr,
     );
 
+    String? supportInvoice;
+    int supportAmount = 0;
+    final isDonation = recipientPubkey == ZapbookConfig.npub;
+    final feePercent = (isDonation || !_nwc.isConnected) ? 0 : _support.percent;
+    if (feePercent > 0) {
+      supportAmount = (amountSats * feePercent / 100).round().clamp(1, amountSats);
+      if (supportAmount > 0) {
+        try {
+          final supportNostr = await _buildZapRequest(
+            recipientPubkey: ZapbookConfig.npub,
+            targetEventId: '',
+            amountMillisats: supportAmount * 1000,
+            content: 'ZapBook support ($feePercent%)',
+          );
+          final supportPayResponse = await _lnurl.resolveLightningAddress(
+            ZapbookConfig.lnAddress,
+          );
+          final supportInv = await _lnurl.fetchInvoice(
+            payResponse: supportPayResponse,
+            amountMillisats: supportAmount * 1000,
+            comment: 'ZapBook support ($feePercent%)',
+            nostr: supportNostr,
+          );
+          supportInvoice = supportInv.pr;
+        } catch (error, stack) {
+          _log.warning('Support fee invoice failed', error, stack);
+        }
+      }
+    }
+
     return ZapResult(
       invoice: invoice.pr,
       amountSats: amountSats,
       gesture: gesture,
       recipientPubkey: recipientPubkey,
       targetEventId: targetEventId,
+      supportInvoice: supportInvoice,
+      supportAmount: supportAmount,
     );
   }
 
@@ -133,6 +168,40 @@ class ZapService {
     'wss://relay.primal.net',
   ];
 
+  Future<bool> payZap(ZapResult result) async {
+    if (_nwc.isConnected) {
+      try {
+        final response = await _nwc.payInvoice(result.invoice);
+        if (response.preimage != null && response.preimage!.isNotEmpty) {
+          if (result.hasSupportZap) {
+            try {
+              await _nwc.payInvoice(result.supportInvoice!);
+            } catch (error, stack) {
+              _log.warning('Support payment failed', error, stack);
+            }
+          }
+          return true;
+        }
+      } catch (error, stack) {
+        _log.warning('NWC zap failed', error, stack);
+      }
+    }
+
+    final uri = Uri.tryParse('lightning:${result.invoice}');
+    if (uri == null) return false;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (opened && result.hasSupportZap) {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final supportUri = Uri.tryParse(
+        'lightning:${result.supportInvoice}',
+      );
+      if (supportUri != null) {
+        unawaited(launchUrl(supportUri, mode: LaunchMode.externalApplication));
+      }
+    }
+    return opened;
+  }
+
   Future<bool> payWithFallback(String invoice) async {
     if (_nwc.isConnected) {
       try {
@@ -172,6 +241,10 @@ class ZapResult {
   final ZapGesture gesture;
   final String recipientPubkey;
   final String targetEventId;
+  final String? supportInvoice;
+  final int supportAmount;
+
+  bool get hasSupportZap => supportInvoice != null && supportAmount > 0;
 
   const ZapResult({
     required this.invoice,
@@ -179,6 +252,8 @@ class ZapResult {
     required this.gesture,
     required this.recipientPubkey,
     required this.targetEventId,
+    this.supportInvoice,
+    this.supportAmount = 0,
   });
 }
 

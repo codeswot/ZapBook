@@ -218,8 +218,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     circleId: _currentBookId,
   );
 
-  Future<bool> payInvoice(String invoice) =>
-      _zapService.payWithFallback(invoice);
+  Future<bool> payZap(ZapResult result) => _zapService.payZap(result);
 
   Future<void> nudgeReader({required String bookId, required String toNpub}) =>
       _nudgeService.nudgeForBook(bookId: bookId, toNpub: toNpub);

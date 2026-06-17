@@ -18,6 +18,11 @@ final class CheersActivity extends Equatable {
     this.fireCount = 0,
     this.rocketCount = 0,
     this.trophyCount = 0,
+    this.zapAmount,
+    this.zapReaction,
+    this.zapTargetId,
+    this.zapTargetDescription,
+    this.zapRecipientNpub,
   });
 
   final String id;
@@ -36,6 +41,11 @@ final class CheersActivity extends Equatable {
   final int fireCount;
   final int rocketCount;
   final int trophyCount;
+  final int? zapAmount;
+  final String? zapReaction;
+  final String? zapTargetId;
+  final String? zapTargetDescription;
+  final String? zapRecipientNpub;
 
   CheersActivity copyWith({String? actorName, String? actorAvatar}) =>
       CheersActivity(
@@ -55,6 +65,11 @@ final class CheersActivity extends Equatable {
         fireCount: fireCount,
         rocketCount: rocketCount,
         trophyCount: trophyCount,
+        zapAmount: zapAmount,
+        zapReaction: zapReaction,
+        zapTargetId: zapTargetId,
+        zapTargetDescription: zapTargetDescription,
+        zapRecipientNpub: zapRecipientNpub,
       );
 
   @override
@@ -75,5 +90,10 @@ final class CheersActivity extends Equatable {
     fireCount,
     rocketCount,
     trophyCount,
+    zapAmount,
+    zapReaction,
+    zapTargetId,
+    zapTargetDescription,
+    zapRecipientNpub,
   ];
 }

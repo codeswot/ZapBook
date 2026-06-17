@@ -50,9 +50,12 @@ class ReaderZapSheet extends StatelessWidget {
         targetEventId: '',
         gesture: gesture,
       );
-      await zap.payWithFallback(result.invoice);
+      final support = result.hasSupportZap
+          ? ' (+${result.supportAmount} to ZapBook)'
+          : '';
+      await zap.payZap(result);
       messenger.showSuccess(
-        'Zapping ${result.amountSats} sats to ${reader.label}',
+        'Zapping ${result.amountSats} sats to ${reader.label}$support',
       );
     } on ZapException catch (error) {
       messenger.showError(error.message);

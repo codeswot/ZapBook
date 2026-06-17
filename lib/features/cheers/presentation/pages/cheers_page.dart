@@ -46,20 +46,27 @@ class _CheersViewState extends State<_CheersView> {
   String? _cachedFilter;
   List<CheersActivity>? _cachedResult;
 
-  List<CheersActivity> _filterActivities(List<CheersActivity> list) {
-    if (identical(list, _cachedSource) &&
+  List<CheersActivity> _filterActivities(
+    List<CheersActivity> list,
+    String? myNpub,
+  ) {
+    if (_cachedSource != null &&
+        identical(list, _cachedSource) &&
         _selectedFilter == _cachedFilter &&
         _cachedResult != null) {
       return _cachedResult!;
     }
-    final result = _computeFiltered(list);
+    final result = _computeFiltered(list, myNpub);
     _cachedSource = list;
     _cachedFilter = _selectedFilter;
     _cachedResult = result;
     return result;
   }
 
-  List<CheersActivity> _computeFiltered(List<CheersActivity> list) {
+  List<CheersActivity> _computeFiltered(
+    List<CheersActivity> list,
+    String? myNpub,
+  ) {
     final visible = list.where((a) => a.type != 'zap_ready');
     if (_selectedFilter == 'All') return visible.toList();
     if (_selectedFilter == 'Milestones') {
@@ -68,17 +75,10 @@ class _CheersViewState extends State<_CheersView> {
           .toList();
     }
     if (_selectedFilter == 'Zaps') {
-      return visible
-          .where(
-            (a) =>
-                a.type == 'zap_nudge' ||
-                a.thumbsUpCount > 0 ||
-                a.clapCount > 0 ||
-                a.fireCount > 0 ||
-                a.rocketCount > 0 ||
-                a.trophyCount > 0,
-          )
-          .toList();
+      return visible.where((a) {
+        if (a.type != 'zap') return false;
+        return myNpub != null && a.zapRecipientNpub == myNpub;
+      }).toList();
     }
     if (_selectedFilter == 'notification') {
       return visible.where((a) => a.type == 'notification').toList();
@@ -89,7 +89,7 @@ class _CheersViewState extends State<_CheersView> {
   void _surfaceBuzzes(BuildContext context, List<CheersActivity> list) {}
 
   void _showZapSheet(BuildContext context, CheersActivity activity) {
-    if (activity.type == 'mine') {
+    if (activity.type == 'mine' || activity.actorName == 'You') {
       return;
     }
     final colors = context.colors;
@@ -182,8 +182,13 @@ class _CheersViewState extends State<_CheersView> {
           comment: comment,
           circleId: activity.bookId,
         );
-        await cubit.payInvoice(result.invoice);
-        messenger.showSuccess('Zapping $amount sats to ${activity.actorName}');
+        final supportMsg = result.hasSupportZap
+            ? ' (+${result.supportAmount} to ZapBook)'
+            : '';
+        await cubit.payZap(result);
+        messenger.showSuccess(
+          'Zapping $amount sats to ${activity.actorName}$supportMsg',
+        );
       } else {
         await cubit.nudge(
           groupId: activity.id.split(':').first,
@@ -351,7 +356,8 @@ class _CheersViewState extends State<_CheersView> {
 
                   final list = (state as CheersLoaded).activities;
                   _surfaceBuzzes(context, list);
-                  final filtered = _filterActivities(list);
+                  final myNpub = context.read<CheersCubit>().myPubkey;
+                  final filtered = _filterActivities(list, myNpub);
 
                   if (filtered.isEmpty) {
                     return Center(
@@ -396,6 +402,8 @@ class _CheersViewState extends State<_CheersView> {
                             : _showZapSheet(context, item),
                         onLongPress: () => item.type == 'zap_nudge'
                             ? _handleNudgeTap(context, item)
+                            : item.type == 'zap'
+                            ? null
                             : _showLongPressMenu(context, item),
                         onReactionTap: (type) {
                           if (item.type == 'mine') {

@@ -10,6 +10,7 @@ import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/services/app_info_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
+import 'package:zapbook/core/services/zap_support_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart';
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart';
@@ -29,6 +30,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     this._filePicker,
     this._keyPackage,
     this._appInfo,
+    this._support,
   ) : super(const ProfileLoading()) {
     load();
   }
@@ -42,10 +44,16 @@ class ProfileCubit extends Cubit<ProfileState> {
   final FilePickerService _filePicker;
   final KeyPackageService _keyPackage;
   final AppInfoService _appInfo;
+  final ZapSupportService _support;
 
   String? get nwcConnectionString => _nwc.connectionString;
+  bool get isNwcConnected => _nwc.isConnected;
   String get appVersion => _appInfo.version;
   String get donationRecipient => ZapbookConfig.lnAddress;
+  int get supportPercent => _support.percent;
+  List<int> get supportPercentOptions => ZapSupportService.options;
+
+  Future<void> setSupportPercent(int value) => _support.setPercent(value);
 
   Future<void> load() async {
     emit(const ProfileLoading());

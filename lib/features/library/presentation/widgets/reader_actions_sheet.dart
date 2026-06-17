@@ -128,12 +128,17 @@ class ReaderActionsSheet extends StatelessWidget {
         amount: amount,
         comment: comment,
       );
-      final launched = await cubit.payInvoice(result.invoice);
-      if (!launched) {
+      final ok = await cubit.payZap(result);
+      if (!ok) {
         await Clipboard.setData(ClipboardData(text: result.invoice));
         messenger.showInfo('Invoice copied to clipboard');
       } else {
-        messenger.showSuccess('Zapping $amount sats to ${entry.contact.label}');
+        final support = result.hasSupportZap
+            ? ' (+${result.supportAmount} to ZapBook)'
+            : '';
+        messenger.showSuccess(
+          'Zapping $amount sats to ${entry.contact.label}$support',
+        );
       }
     } catch (_) {
       messenger.showError('Could not zap ${entry.contact.label}');

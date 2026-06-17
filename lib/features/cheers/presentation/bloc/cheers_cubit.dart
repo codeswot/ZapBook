@@ -71,8 +71,7 @@ class CheersCubit extends Cubit<CheersState> {
     circleId: circleId,
   );
 
-  Future<bool> payInvoice(String invoice) =>
-      _zapService.payWithFallback(invoice);
+  Future<bool> payZap(ZapResult result) => _zapService.payZap(result);
 
   Future<void> nudge({required String groupId, required String toNpub}) =>
       _nudgeService.nudge(groupId: groupId, toNpub: toNpub);

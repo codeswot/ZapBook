@@ -66,6 +66,7 @@ import 'package:zapbook/core/services/welcome_inbox_service.dart' as _i82;
 import 'package:zapbook/core/services/zap_earnings_service.dart' as _i240;
 import 'package:zapbook/core/services/zap_nudge_service.dart' as _i718;
 import 'package:zapbook/core/services/zap_service.dart' as _i362;
+import 'package:zapbook/core/services/zap_support_service.dart' as _i582;
 import 'package:zapbook/core/session/session_reloader.dart' as _i803;
 import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
@@ -300,6 +301,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i342.OnboardingLocalDataSource>(
       () => _i342.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
     );
+    gh.lazySingleton<_i582.ZapSupportService>(
+      () => _i582.ZapSupportService(gh<_i460.SharedPreferences>()),
+    );
     gh.lazySingleton<_i465.ThemeCubit>(
       () => _i465.ThemeCubit(gh<_i460.SharedPreferences>()),
     );
@@ -398,13 +402,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i394.GroupEnvelopeService>(),
       ),
     );
-    gh.lazySingleton<_i362.ZapService>(
-      () => _i362.ZapService(
-        gh<_i96.LnurlService>(),
-        gh<_i857.Ndk>(),
-        gh<_i507.NwcService>(),
-      ),
-    );
     gh.lazySingleton<_i182.ReadingStatsService>(
       () => _i182.ReadingStatsService(
         gh<_i857.Ndk>(),
@@ -415,6 +412,14 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i11.NostrService>(
       () => _i11.NostrService(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
+    );
+    gh.lazySingleton<_i362.ZapService>(
+      () => _i362.ZapService(
+        gh<_i96.LnurlService>(),
+        gh<_i857.Ndk>(),
+        gh<_i507.NwcService>(),
+        gh<_i582.ZapSupportService>(),
+      ),
     );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
@@ -711,6 +716,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1034.FilePickerService>(),
         gh<_i397.KeyPackageService>(),
         gh<_i19.AppInfoService>(),
+        gh<_i582.ZapSupportService>(),
       ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(

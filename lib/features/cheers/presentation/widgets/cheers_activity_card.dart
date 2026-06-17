@@ -35,6 +35,7 @@ class CheersActivityCard extends StatelessWidget {
     final isMine = activity.type == 'mine';
     final isNotice =
         activity.type == 'zap_nudge' || activity.type == 'zap_ready';
+    final isZap = activity.type == 'zap';
 
     final hasReactions =
         activity.thumbsUpCount > 0 ||
@@ -109,7 +110,7 @@ class CheersActivityCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (!isNotice) ...[
+              if (!isNotice && !isZap) ...[
                 const SizedBox(height: 12),
                 if (hasReactions)
                   _ReactionsRow(
@@ -120,6 +121,21 @@ class CheersActivityCard extends StatelessWidget {
                   )
                 else if (!isMine)
                   _EmptyReactions(onTap: onTap),
+              ],
+              if (isZap) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    ZapAmountPill(amount: activity.zapAmount ?? 0),
+                    const Spacer(),
+                    Text(
+                      _formatTimeAgo(activity.timestamp),
+                      style: context.typography.caption.copyWith(
+                        color: context.colors.slate,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ],
           ),
@@ -193,5 +209,41 @@ class _EmptyReactions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AddReactionButton(onTap: onTap);
+  }
+}
+
+class ZapAmountPill extends StatelessWidget {
+  const ZapAmountPill({super.key, required this.amount});
+
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.bitcoin.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '⚡',
+            style: typography.bodyS.copyWith(fontSize: 13),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$amount sats',
+            style: typography.bodyS.copyWith(
+              color: colors.bitcoinDark,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
