@@ -1,7 +1,7 @@
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:archive/archive.dart';
+import 'package:archive/archive_io.dart';
 import 'package:xml/xml.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -23,72 +23,77 @@ final class EpubExtractor extends IsolateBookExtractor {
   String get fileExtension => '.epub';
 
   @override
-  Future<ParsedContent> parse(Uint8List bytes, String title) =>
-      Isolate.run(() => _parseEpub(bytes, title));
+  Future<ParsedContent> parse(String filePath, String title) =>
+      Isolate.run(() => _parseEpub(filePath, title));
 }
 
-ParsedContent _parseEpub(Uint8List bytes, String fallbackTitle) {
-  final archive = ZipDecoder().decodeBytes(bytes);
-  final opfPath = _locateOpf(archive);
-  if (opfPath == null) {
-    throw const FormatException('EPUB is missing content.opf');
-  }
-  final opfXml = archive.textFile(opfPath);
-  if (opfXml == null) {
-    throw const FormatException('EPUB content.opf is unreadable');
-  }
-
-  final opfDir = _directoryOf(opfPath);
-  final package = _Package.parse(XmlDocument.parse(opfXml), opfDir);
-
-  final assetRegistry = _AssetRegistry();
-  final chapters = <BookChapter>[];
-  for (var index = 0; index < package.spine.length; index++) {
-    final chapter = _parseChapter(
-      archive,
-      package.spine[index],
-      index,
-      assetRegistry,
-    );
-    if (chapter != null) {
-      chapters.add(chapter);
+Future<ParsedContent> _parseEpub(String filePath, String fallbackTitle) async {
+  final inputStream = InputFileStream(filePath);
+  try {
+    final archive = ZipDecoder().decodeStream(inputStream);
+    final opfPath = _locateOpf(archive);
+    if (opfPath == null) {
+      throw const FormatException('EPUB is missing content.opf');
     }
-  }
+    final opfXml = archive.textFile(opfPath);
+    if (opfXml == null) {
+      throw const FormatException('EPUB content.opf is unreadable');
+    }
 
-  final coverHref = package.coverHref;
-  final coverSource = coverHref == null ? null : archive.binaryFile(coverHref);
+    final opfDir = _directoryOf(opfPath);
+    final package = _Package.parse(XmlDocument.parse(opfXml), opfDir);
 
-  final pageWords = <int>[];
-  final skippable = <int>[];
-  for (final chapter in chapters) {
-    for (final page in chapter.pages) {
-      var words = 0;
-      for (final block in page.blocks) {
-        final text = switch (block) {
-          ParagraphBlock(:final text) => text,
-          HeadingBlock(:final text) => text,
-          PullquoteBlock(:final text) => text,
-          CaptionBlock(:final text) => text,
-          CodeBlock(:final text) => text,
-          _ => '',
-        };
-        words += text.wordCount;
+    final assetRegistry = _AssetRegistry();
+    final chapters = <BookChapter>[];
+    for (var index = 0; index < package.spine.length; index++) {
+      final chapter = _parseChapter(
+        archive,
+        package.spine[index],
+        index,
+        assetRegistry,
+      );
+      if (chapter != null) {
+        chapters.add(chapter);
       }
-      pageWords.add(words);
-      if (words == 0) skippable.add(pageWords.length - 1);
     }
-  }
 
-  return ParsedContent(
-    title: package.title.isEmpty ? fallbackTitle : package.title,
-    author: package.author,
-    needsAiProcessing: false,
-    chapters: chapters,
-    assets: assetRegistry.assets,
-    coverSource: coverSource,
-    pageWords: pageWords,
-    skippablePages: skippable,
-  );
+    final coverHref = package.coverHref;
+    final coverSource = coverHref == null ? null : archive.binaryFile(coverHref);
+
+    final pageWords = <int>[];
+    final skippable = <int>[];
+    for (final chapter in chapters) {
+      for (final page in chapter.pages) {
+        var words = 0;
+        for (final block in page.blocks) {
+          final text = switch (block) {
+            ParagraphBlock(:final text) => text,
+            HeadingBlock(:final text) => text,
+            PullquoteBlock(:final text) => text,
+            CaptionBlock(:final text) => text,
+            CodeBlock(:final text) => text,
+            _ => '',
+          };
+          words += text.wordCount;
+        }
+        pageWords.add(words);
+        if (words == 0) skippable.add(pageWords.length - 1);
+      }
+    }
+
+    return ParsedContent(
+      title: package.title.isEmpty ? fallbackTitle : package.title,
+      author: package.author,
+      needsAiProcessing: false,
+      chapters: chapters,
+      assets: assetRegistry.assets,
+      coverSource: coverSource,
+      pageWords: pageWords,
+      skippablePages: skippable,
+    );
+  } finally {
+    await inputStream.close();
+  }
 }
 
 BookChapter? _parseChapter(

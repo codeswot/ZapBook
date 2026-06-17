@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'dart:isolate';
@@ -35,6 +36,13 @@ final class ZbfWriter {
           ? name
           : 'assets/$name';
       encoder.addArchiveFile(ArchiveFile(assetPath, bytes.length, bytes));
+    });
+
+    book.fileAssets.forEach((name, filePath) {
+      final assetPath = _isRootAsset(name, book.manifest.coverAsset)
+          ? name
+          : 'assets/$name';
+      encoder.addFile(File(filePath), assetPath);
     });
 
     encoder.close();

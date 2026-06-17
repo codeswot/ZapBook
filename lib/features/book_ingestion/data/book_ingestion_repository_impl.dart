@@ -79,9 +79,8 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     if (book.manifest.sourceFormat != BookSourceFormat.pdf) {
       return book;
     }
-    final sourceBytes = await file.readAsBytes();
     return book.copyWith(
-      assets: {...book.assets, AssetNaming.sourceDocument: sourceBytes},
+      fileAssets: {...book.fileAssets, AssetNaming.sourceDocument: file.path},
     );
   }
 

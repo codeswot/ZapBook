@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -21,8 +22,11 @@ final class PdfExtractor extends IsolateBookExtractor
   String get fileExtension => '.pdf';
 
   @override
-  Future<ParsedContent> parse(Uint8List bytes, String title) =>
-      Isolate.run(() => _parsePdf(bytes, title));
+  Future<ParsedContent> parse(String filePath, String title) =>
+      Isolate.run(() {
+        final bytes = File(filePath).readAsBytesSync();
+        return _parsePdf(bytes, title);
+      });
 
   @override
   Future<List<BookPage>> extractRange(
@@ -31,15 +35,15 @@ final class PdfExtractor extends IsolateBookExtractor
     int endPageIndex,
     String chapterTitle,
     int chapterIndex,
-  ) => Isolate.run(
-    () => _extractRange(
+  ) => Isolate.run(() {
+    return _extractRange(
       bytes,
       startPageIndex,
       endPageIndex,
       chapterTitle,
       chapterIndex,
-    ),
-  );
+    );
+  });
 }
 
 const double _headingScale = 1.25;
