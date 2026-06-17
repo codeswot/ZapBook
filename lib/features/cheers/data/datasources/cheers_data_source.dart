@@ -7,6 +7,7 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -29,6 +30,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._identityLocal,
     this._milestone,
     this._contacts,
+    this._cache,
   );
 
   final Marmot _marmot;
@@ -36,6 +38,7 @@ class CheersDataSourceImpl implements CheersDataSource {
   final IdentityLocalDataSource _identityLocal;
   final MilestoneService _milestone;
   final ContactService _contacts;
+  final DecodedMessageCache _cache;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -159,17 +162,13 @@ class CheersDataSourceImpl implements CheersDataSource {
       final messages = await _marmot.getMessages(groupId);
       Map<String, dynamic>? latestCheer;
       for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic> &&
-              decoded['type'] == _cheerType &&
-              decoded['activityId'] == messageId &&
-              decoded['reactionType'] == reactionType) {
-            latestCheer = decoded;
-          }
-        } catch (_) {}
+        final decoded = _cache.get(msg);
+        if (decoded == null) continue;
+        if (decoded['type'] == _cheerType &&
+            decoded['activityId'] == messageId &&
+            decoded['reactionType'] == reactionType) {
+          latestCheer = decoded;
+        }
       }
 
       if (latestCheer != null) {
@@ -241,30 +240,26 @@ class CheersDataSourceImpl implements CheersDataSource {
       final readyForMe = <Map<String, dynamic>>{};
 
       for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is! Map<String, dynamic>) continue;
-          switch (decoded['type']) {
-            case 'zapbook.book.milestone':
-            case 'zapbook.book.completed':
-              _milestone.ingestMessage(msg);
-            case 'zapbook.book.meta':
-              bookTitle = decoded['title'] as String? ?? bookTitle;
-            case _cheerType:
-              cheers.add({
-                'activityId': decoded['activityId'],
-                'reactionType': decoded['reactionType'],
-              });
-            case 'zapbook.zap.nudge':
-              nudges.add(decoded);
-            case 'zapbook.zap.ready':
-              final id = decoded['nudgeId'] as String? ?? '';
-              resolvedNudgeIds.add(id);
-              if (decoded['toNpub'] == myNpub) readyForMe.add(decoded);
-          }
-        } catch (_) {}
+        final decoded = _cache.get(msg);
+        if (decoded == null) continue;
+        switch (decoded['type']) {
+          case 'zapbook.book.milestone':
+          case 'zapbook.book.completed':
+            _milestone.ingestMessage(msg);
+          case 'zapbook.book.meta':
+            bookTitle = decoded['title'] as String? ?? bookTitle;
+          case _cheerType:
+            cheers.add({
+              'activityId': decoded['activityId'],
+              'reactionType': decoded['reactionType'],
+            });
+          case 'zapbook.zap.nudge':
+            nudges.add(decoded);
+          case 'zapbook.zap.ready':
+            final id = decoded['nudgeId'] as String? ?? '';
+            resolvedNudgeIds.add(id);
+            if (decoded['toNpub'] == myNpub) readyForMe.add(decoded);
+        }
       }
 
       for (final event in _milestone.eventsForGroup(group.id)) {

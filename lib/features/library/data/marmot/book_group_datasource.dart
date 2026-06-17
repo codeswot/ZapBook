@@ -9,6 +9,7 @@ import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
@@ -30,6 +31,7 @@ class BookGroupDatasource {
     this._ndk,
     this._keyPackages,
     this._reader,
+    this._cache,
   );
 
   final Marmot _marmot;
@@ -39,6 +41,7 @@ class BookGroupDatasource {
   final Ndk _ndk;
   final KeyPackageService _keyPackages;
   final ZbfReader _reader;
+  final DecodedMessageCache _cache;
 
   final _segmenter = const ZbfSegmenter();
   final _log = logging.Logger('BookGroupDatasource');
@@ -371,7 +374,7 @@ class BookGroupDatasource {
     BookMetaPayload? latest;
     var latestTs = -1;
     for (final message in messages) {
-      final json = _payload(message);
+      final json = _cache.get(message);
       if (json == null || json['type'] != BookMessageType.meta) continue;
       final ts = message.timestampSecs.toInt();
       if (ts >= latestTs) {
@@ -386,7 +389,7 @@ class BookGroupDatasource {
     BookProgressPayload? latest;
     var latestMs = -1;
     for (final message in messages) {
-      final json = _payload(message);
+      final json = _cache.get(message);
       if (json == null || json['type'] != BookMessageType.progress) continue;
       final payload = BookProgressPayload.fromJson(json);
       if (payload.lastReadAtMs >= latestMs) {
@@ -395,17 +398,6 @@ class BookGroupDatasource {
       }
     }
     return latest;
-  }
-
-  Map<String, dynamic>? _payload(MarmotMessage message) {
-    final raw = message.payloadJson;
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final decoded = jsonDecode(raw);
-      return decoded is Map<String, dynamic> ? decoded : null;
-    } on Object {
-      return null;
-    }
   }
 
   Future<LibraryBook> _toLibraryBook(

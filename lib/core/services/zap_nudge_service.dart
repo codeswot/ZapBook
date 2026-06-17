@@ -8,15 +8,17 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 
 @lazySingleton
 class ZapNudgeService {
-  ZapNudgeService(this._marmot, this._ndk, this._identity);
+  ZapNudgeService(this._marmot, this._ndk, this._identity, this._cache);
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
+  final DecodedMessageCache _cache;
 
   static const _relays = NostrService.broadcastRelays;
 
@@ -69,12 +71,9 @@ class ZapNudgeService {
       final pending = <String>{};
       final resolved = <String>{};
       for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty || !raw.contains('zapbook.zap.')) {
-          continue;
-        }
-        final decoded = jsonDecode(raw);
-        if (decoded is! Map<String, dynamic>) continue;
+        if (!(msg.payloadJson ?? '').contains('zapbook.zap.')) continue;
+        final decoded = _cache.get(msg);
+        if (decoded == null) continue;
         final id = decoded['nudgeId'] as String? ?? '';
         if (decoded['type'] == 'zapbook.zap.nudge' &&
             decoded['fromNpub'] == from &&
