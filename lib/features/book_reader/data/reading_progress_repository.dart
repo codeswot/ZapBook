@@ -16,14 +16,22 @@ class ReadingProgressRepository {
 
   static const _kind = 30078;
 
-  Future<void> saveSnapshot(String bookId, ReadingState state) async {
+  Future<void> saveSnapshot(
+    String bookId,
+    ReadingState state, {
+    double? scrollOffset,
+  }) async {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return;
 
     final account = _ndk.accounts.getLoggedAccount();
     if (account == null) return;
 
-    final plaintext = jsonEncode(_stateToJson(state));
+    final json = _stateToJson(state);
+    if (scrollOffset != null) {
+      json['_scroll_offset'] = scrollOffset;
+    }
+    final plaintext = jsonEncode(json);
     final encrypted = await account.signer.encryptNip44(
       plaintext: plaintext,
       recipientPubKey: pubkey,
@@ -49,7 +57,9 @@ class ReadingProgressRepository {
     );
   }
 
-  Future<ReadingState?> loadSnapshot(String bookId) async {
+  Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(
+    String bookId,
+  ) async {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return null;
 
@@ -71,7 +81,9 @@ class ReadingProgressRepository {
     );
     if (plaintext == null) return null;
 
-    return _stateFromJson(jsonDecode(plaintext) as Map<String, dynamic>);
+    final json = jsonDecode(plaintext) as Map<String, dynamic>;
+    final scrollOffset = (json['_scroll_offset'] as num?)?.toDouble();
+    return (state: _stateFromJson(json), scrollOffset: scrollOffset);
   }
 
   Map<String, dynamic> _stateToJson(ReadingState state) => {

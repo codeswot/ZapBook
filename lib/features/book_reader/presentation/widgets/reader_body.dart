@@ -37,6 +37,8 @@ class ReaderBody extends StatefulWidget {
     required this.onTap,
     required this.onUserScrollDirection,
     required this.onPullChanged,
+    required this.onScrollOffsetChanged,
+    this.initialScrollOffset,
     this.highlightQuery,
     this.onHighlightComplete,
     super.key,
@@ -53,6 +55,8 @@ class ReaderBody extends StatefulWidget {
 
   final ValueChanged<ScrollDirection> onUserScrollDirection;
   final ValueChanged<ReaderPullState?> onPullChanged;
+  final double? initialScrollOffset;
+  final ValueChanged<double> onScrollOffsetChanged;
   final String? highlightQuery;
   final VoidCallback? onHighlightComplete;
 
@@ -71,15 +75,22 @@ class _ReaderBodyState extends State<ReaderBody> {
   int? _pointerDownTime;
   Timer? _tapTimer;
 
+  late final _scrollController = ScrollController();
   late final List<BookBlock> _merged = mergeReadingBlocks(widget.blocks);
   final GlobalKey _anchorKey = GlobalKey();
   int _anchorIndex = -1;
+  bool _initialOffsetApplied = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScrollChange);
     _anchorIndex = _findAnchor();
-    if (_anchorIndex >= 0) _scheduleScroll();
+    if (_anchorIndex >= 0) {
+      _scheduleScroll();
+    } else {
+      _applyInitialOffset();
+    }
   }
 
   @override
@@ -91,6 +102,27 @@ class _ReaderBodyState extends State<ReaderBody> {
       setState(() => _anchorIndex = next);
     }
     if (next >= 0) _scheduleScroll();
+  }
+
+  void _applyInitialOffset() {
+    if (_initialOffsetApplied) return;
+    final offset = widget.initialScrollOffset;
+    if (offset == null || offset <= 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _initialOffsetApplied = true;
+      final target = offset >= double.infinity
+          ? _scrollController.position.maxScrollExtent
+          : offset
+                .clamp(0.0, _scrollController.position.maxScrollExtent)
+                .toDouble();
+      if (target > 0) _scrollController.jumpTo(target);
+    });
+  }
+
+  void _onScrollChange() {
+    if (!_scrollController.hasClients) return;
+    widget.onScrollOffsetChanged(_scrollController.position.pixels);
   }
 
   void _scheduleScroll() {
@@ -166,6 +198,7 @@ class _ReaderBodyState extends State<ReaderBody> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _tapTimer?.cancel();
     super.dispose();
   }
@@ -264,6 +297,7 @@ class _ReaderBodyState extends State<ReaderBody> {
         child: ScrollConfiguration(
           behavior: const _NoGlowScrollBehavior(),
           child: ListView(
+            controller: _scrollController,
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),

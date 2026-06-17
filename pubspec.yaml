@@ -2,7 +2,7 @@ name: zapbook
 description: "Read together. Share progress. Get sats"
 publish_to: 'none'
 
-version: 0.0.4
+version: 1.0.1
 
 environment:
   sdk: ^3.12.0

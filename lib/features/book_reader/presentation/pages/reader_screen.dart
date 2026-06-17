@@ -68,6 +68,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   int _savedPage = 0;
   bool _ready = false;
 
+  final _scrollOffsets = <int, double>{};
+
   String? _activeQuery;
   int? _highlightPage;
 
@@ -108,8 +110,12 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
     _milestone = getIt<MilestoneService>();
     _progressStream = _milestone.watchProgress(widget.handle.manifest.id);
-    _progress.restore().then((savedPage) {
-      if (savedPage != null) _savedPage = savedPage;
+    _progress.restore().then((saved) {
+      if (saved.page != null) _savedPage = saved.page!;
+      final so = saved.scrollOffset;
+      if (so != null && saved.page != null) {
+        _scrollOffsets[saved.page!] = so;
+      }
       final override = widget.initialPage;
       if (override != null &&
           override >= 0 &&
@@ -199,7 +205,16 @@ class _ReaderScreenState extends State<ReaderScreen>
         body: BlocListener<ZbfViewerCubit, ZbfViewerState>(
           listenWhen: (previous, current) =>
               previous.currentPage != current.currentPage,
-          listener: (context, state) => _progress.openPage(state.currentPage),
+          listener: (context, state) {
+            final prev = _savedPage;
+            final next = state.currentPage;
+            final goingBack = next < prev;
+            _progress.openPage(next);
+            _savedPage = next;
+            if (goingBack && !_scrollOffsets.containsKey(next)) {
+              _scrollOffsets[next] = double.infinity;
+            }
+          },
           child: BlocBuilder<ZbfViewerCubit, ZbfViewerState>(
             builder: (context, state) {
               final cubit = context.read<ZbfViewerCubit>();
@@ -272,6 +287,11 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   asset: widget.handle.asset,
                                   canGoForward: index < total - 1,
                                   canGoBack: index > 0,
+                                  initialScrollOffset: _scrollOffsets[index],
+                                  onScrollOffsetChanged: (offset) {
+                                    _scrollOffsets[index] = offset;
+                                    _progress.saveScrollOffset(offset);
+                                  },
                                   onTap: () {
                                     _toggleChrome();
                                     _progress.tap();
