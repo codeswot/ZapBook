@@ -43,6 +43,7 @@ import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
 import 'package:zapbook/core/performance/performance_service.dart' as _i399;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
+import 'package:zapbook/core/services/app_info_service.dart' as _i19;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
@@ -219,6 +220,10 @@ extension GetItInjectableX on _i174.GetIt {
     final ingestionModule = _$IngestionModule();
     await gh.factoryAsync<_i460.SharedPreferences>(
       () => registerModule.prefs,
+      preResolve: true,
+    );
+    await gh.singletonAsync<_i19.AppInfoService>(
+      () => registerModule.appInfoService(),
       preResolve: true,
     );
     gh.lazySingleton<_i165.PageCacheStore>(() => _i165.PageCacheStore());
@@ -682,6 +687,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i1034.FilePickerService>(),
         gh<_i397.KeyPackageService>(),
+        gh<_i19.AppInfoService>(),
       ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(

@@ -26,8 +26,6 @@ class ProfileBody extends StatelessWidget {
   final UserProfile profile;
   final String? nwcWalletName;
 
-  static const String _appVersion = '0.0.1';
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -93,7 +91,7 @@ class ProfileBody extends StatelessWidget {
           const SizedBox(height: 20),
           Center(
             child: Text(
-              'ZapBook · v$_appVersion',
+              'ZapBook · v${context.read<ProfileCubit>().appVersion}',
               style: context.typography.caption.copyWith(color: colors.slate2),
             ),
           ),
