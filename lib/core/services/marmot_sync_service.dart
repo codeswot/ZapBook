@@ -7,6 +7,7 @@ import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
@@ -100,9 +101,9 @@ class MarmotSyncService {
     if (_processingWelcome) return;
     _processingWelcome = true;
     try {
-      bool processedAny = false;
-      while (_welcomeQueue.isNotEmpty) {
-        final giftWrap = _welcomeQueue.removeAt(0);
+      final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
+      await _marmot.processWelcome(giftWrap.id, rumor.toJsonString());
+      for (final welcome in await _marmot.getPendingWelcomes()) {
         try {
           final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
           await _marmot.processWelcome(giftWrap.id, rumor.toMarmotJson());
