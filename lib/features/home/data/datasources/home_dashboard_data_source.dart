@@ -225,8 +225,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       _milestone.ingestMessage(msg);
       if (isMine && type == 'zapbook.book.progress') {
         final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-        if (lastReadAtMs != null &&
-            lastReadAtMs.toInt() >= latestProgressMs) {
+        if (lastReadAtMs != null && lastReadAtMs.toInt() >= latestProgressMs) {
           latestProgressMs = lastReadAtMs.toInt();
         }
       }
