@@ -67,10 +67,12 @@ class BookVectorIndex {
         PRIMARY KEY (book_id, seq)
       )
     ''');
-    try {
+    final columns = db
+        .select('PRAGMA table_info("chunks")')
+        .map((r) => r['name'] as String)
+        .toSet();
+    if (!columns.contains('cluster_id')) {
       db.execute('ALTER TABLE chunks ADD COLUMN cluster_id INTEGER');
-    } on Object catch (error, trace) {
-      _log.info('Column already exists from migration.', error, trace);
     }
     db.execute('''
       CREATE TABLE IF NOT EXISTS centroids (

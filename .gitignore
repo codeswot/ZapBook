@@ -54,3 +54,4 @@ zapstore.yaml
 *.keystore
 *.p12
 *.pfx
+.env

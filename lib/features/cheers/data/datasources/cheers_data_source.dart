@@ -5,6 +5,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
@@ -41,6 +42,32 @@ class CheersDataSourceImpl implements CheersDataSource {
   final DecodedMessageCache _cache;
 
   final _changeController = StreamController<void>.broadcast();
+  final _caughtUpGroups = <String>{};
+
+  Future<void> _catchUpGroup(MarmotGroup group, {bool force = false}) async {
+    if (!force && _caughtUpGroups.contains(group.id)) return;
+    try {
+      final events = await _ndk.requests
+          .query(
+            filter: Filter(
+              kinds: const [445],
+              tags: {
+                '#h': [group.nostrGroupId],
+              },
+            ),
+            explicitRelays: NostrService.broadcastRelays,
+          )
+          .future;
+      for (final event in events) {
+        try {
+          await _marmot.processIncoming(event.toMarmotJson());
+        } on Object catch (_) {}
+      }
+      _caughtUpGroups.add(group.id);
+    } on Object catch (error) {
+      _log.fine('Catch-up failed for ${group.id}: $error');
+    }
+  }
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
@@ -66,6 +93,9 @@ class CheersDataSourceImpl implements CheersDataSource {
         final bookGroups = groups
             .where((group) => BookGroupNaming.matches(group.name))
             .toList();
+        await Future.wait(
+          bookGroups.map((g) => _catchUpGroup(g, force: force)),
+        );
         final perGroupMessages = await Future.wait(
           bookGroups.map((group) => _marmot.getMessages(group.id)),
         );
@@ -98,7 +128,10 @@ class CheersDataSourceImpl implements CheersDataSource {
 
     reload(force: true);
 
-    final timer = Timer.periodic(const Duration(seconds: 5), (_) => reload());
+    final timer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => reload(force: true),
+    );
     final sub = _changeController.stream.listen((_) => reload(force: true));
     final metaSub = _contacts.metadataChanges.listen((_) {
       if (lastBase.isNotEmpty) emitEnriched();
@@ -336,17 +369,40 @@ class CheersDataSourceImpl implements CheersDataSource {
         final senderNpub = cheer['senderNpub'] as String;
         final isFromMe = senderNpub == myNpub;
         final reactionType = cheer['reactionType'] as String;
-        final reactionEmoji = _reactionEmoji(reactionType);
         final amount = cheer['amount'] as int;
         final activityId = cheer['activityId'] as String;
+        final recipientNpub = cheer['recipientNpub'] as String?;
 
         final targetEvent = _findMilestoneEvent(group.id, activityId);
-        final targetDesc = targetEvent != null
-            ? '${targetEvent.completed ? "Finished" : "Milestone ${targetEvent.milestoneIdx + 1}"} in $bookTitle'
-            : 'activity in $bookTitle';
-
-        final gen = ProfileMetaGenerator.generate(seed: senderNpub);
+        final isDirectZap = targetEvent == null;
+        final gen = ProfileMetaGenerator.generate(
+          seed: isFromMe ? (recipientNpub ?? senderNpub) : senderNpub,
+        );
         final senderName = isFromMe ? 'You' : gen.displayName;
+
+        String description;
+        if (isDirectZap) {
+          if (isFromMe && recipientNpub != null) {
+            final recName = ProfileMetaGenerator.generate(
+              seed: recipientNpub,
+            ).displayName;
+            description = 'You zapped $recName $amount sats in "$bookTitle"';
+          } else if (!isFromMe) {
+            description = '$senderName zapped you $amount sats in "$bookTitle"';
+          } else {
+            description = 'You zapped $amount sats in "$bookTitle"';
+          }
+        } else {
+          final target = targetEvent.completed
+              ? 'Finished'
+              : 'Milestone ${targetEvent.milestoneIdx + 1}';
+          if (isFromMe) {
+            description = 'You zapped $amount sats for $target in "$bookTitle"';
+          } else {
+            description =
+                '$senderName zapped $amount sats for $target in "$bookTitle"';
+          }
+        }
 
         activities.add(
           CheersActivity(
@@ -356,9 +412,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorAvatar: isFromMe ? null : gen.avatar,
             bookTitle: bookTitle,
             bookId: group.id,
-            activityDescription: isFromMe
-                ? '$reactionEmoji You zapped $amount sats for $targetDesc'
-                : '$reactionEmoji $senderName zapped $amount sats for $targetDesc',
+            activityDescription: description,
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               (cheer['timestampSecs'] as int) * 1000,
             ),
@@ -367,8 +421,13 @@ class CheersDataSourceImpl implements CheersDataSource {
             zapAmount: amount,
             zapReaction: reactionType,
             zapTargetId: activityId,
-            zapTargetDescription: targetDesc,
-            zapRecipientNpub: targetEvent?.npub ?? cheer['recipientNpub'] as String?,
+            zapTargetDescription: isDirectZap
+                ? '$senderName zapped $amount sats in $bookTitle'
+                : targetEvent.completed
+                ? 'Finished in $bookTitle'
+                : 'Milestone ${targetEvent.milestoneIdx + 1} in $bookTitle',
+            zapRecipientNpub:
+                (targetEvent?.npub) ?? (cheer['recipientNpub'] as String?),
           ),
         );
       }
@@ -429,21 +488,6 @@ class CheersDataSourceImpl implements CheersDataSource {
     }
 
     return activities;
-  }
-
-  static String _reactionEmoji(String reactionType) {
-    switch (reactionType) {
-      case 'clap':
-        return '👏';
-      case 'fire':
-        return '🔥';
-      case 'rocket':
-        return '🚀';
-      case 'trophy':
-        return '🏆';
-      default:
-        return '👍';
-    }
   }
 
   MilestoneEvent? _findMilestoneEvent(String groupId, String eventId) {

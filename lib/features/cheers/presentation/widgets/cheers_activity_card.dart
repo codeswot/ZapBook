@@ -124,18 +124,7 @@ class CheersActivityCard extends StatelessWidget {
               ],
               if (isZap) ...[
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    ZapAmountPill(amount: activity.zapAmount ?? 0),
-                    const Spacer(),
-                    Text(
-                      _formatTimeAgo(activity.timestamp),
-                      style: context.typography.caption.copyWith(
-                        color: context.colors.slate,
-                      ),
-                    ),
-                  ],
-                ),
+                ZapAmountPill(amount: activity.zapAmount ?? 0),
               ],
             ],
           ),
