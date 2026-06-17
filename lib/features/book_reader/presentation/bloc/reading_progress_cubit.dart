@@ -122,32 +122,34 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   Timer? _timer;
   Timer? _saveTimer;
+  Timer? _scrollSaveTimer;
   StreamSubscription<QuizResult>? _quizSub;
   bool _paused = false;
   bool _closed = false;
   bool _dirty = false;
+  double? _lastScrollOffset;
   final _publishedMilestones = <int>{};
 
-  Future<int?> restore() async {
+  Future<({int? page, double? scrollOffset})> restore() async {
     final repo = repository;
-    if (repo == null) return null;
+    if (repo == null) return (page: null, scrollOffset: null);
     final saved = await repo.loadSnapshot(bookId);
-    if (saved == null) return null;
+    if (saved == null) return (page: null, scrollOffset: null);
     emit(
       state.copyWith(
-        wpm: saved.wpm,
-        completedPages: saved.completedPages,
-        visitedPages: saved.visitedPages,
-        partials: saved.partials,
-        wordsRead: saved.wordsRead,
-        pointsBanked: saved.pointsBanked,
-        milestonesReached: saved.milestonesReached,
+        wpm: saved.state.wpm,
+        completedPages: saved.state.completedPages,
+        visitedPages: saved.state.visitedPages,
+        partials: saved.state.partials,
+        wordsRead: saved.state.wordsRead,
+        pointsBanked: saved.state.pointsBanked,
+        milestonesReached: saved.state.milestonesReached,
       ),
     );
-    for (var i = 0; i < saved.milestonesReached; i++) {
+    for (var i = 0; i < saved.state.milestonesReached; i++) {
       _publishedMilestones.add(i);
     }
-    return saved.currentPage;
+    return (page: saved.state.currentPage, scrollOffset: saved.scrollOffset);
   }
 
   void start({int initialPage = 0}) {
@@ -173,7 +175,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     );
     _dirty = true;
     _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(seconds: 60), () {
+    _saveTimer = Timer(const Duration(seconds: 5), () {
       _save();
     });
   }
@@ -208,6 +210,8 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     _closed = true;
     _timer?.cancel();
     _timer = null;
+    _scrollSaveTimer?.cancel();
+    _scrollSaveTimer = null;
     final page = state.currentPage;
     if (page != null) {
       _dispatch(
@@ -275,20 +279,33 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     });
   }
 
+  void saveScrollOffset(double offset) {
+    _lastScrollOffset = offset;
+    _dirty = true;
+    _scrollSaveTimer?.cancel();
+    _scrollSaveTimer = Timer(const Duration(seconds: 10), () {
+      _save();
+    });
+  }
+
   void _save() {
     final repo = repository;
     if (repo == null || !_dirty) return;
     _dirty = false;
-    unawaited(repo.saveSnapshot(bookId, state));
+    unawaited(
+      repo.saveSnapshot(bookId, state, scrollOffset: _lastScrollOffset),
+    );
   }
 
   @override
   Future<void> close() {
     _timer?.cancel();
     _saveTimer?.cancel();
+    _scrollSaveTimer?.cancel();
     _quizSub?.cancel();
     _timer = null;
     _saveTimer = null;
+    _scrollSaveTimer = null;
     _quizSub = null;
     _effects.close();
     return super.close();
