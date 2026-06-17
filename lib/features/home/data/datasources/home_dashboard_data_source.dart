@@ -7,6 +7,7 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
@@ -30,6 +31,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     this._stats,
     this._library,
     this._milestone,
+    this._cache,
   );
 
   final Marmot _marmot;
@@ -39,6 +41,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   final ReadingStatsService _stats;
   final LibraryRepository _library;
   final MilestoneService _milestone;
+  final DecodedMessageCache _cache;
 
   final _changeController = StreamController<void>.broadcast();
 
@@ -103,20 +106,16 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       Map<String, dynamic>? latestProgress;
 
       for (final msg in messages) {
-        final raw = msg.payloadJson;
-        if (raw == null || raw.isEmpty) continue;
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map<String, dynamic> &&
-              decoded['type'] == 'zapbook.book.progress') {
-            final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-            if (lastReadAtMs != null &&
-                lastReadAtMs.toInt() >= latestProgressMs) {
-              latestProgressMs = lastReadAtMs.toInt();
-              latestProgress = decoded;
-            }
+        final decoded = _cache.get(msg);
+        if (decoded == null) continue;
+        if (decoded['type'] == 'zapbook.book.progress') {
+          final lastReadAtMs = decoded['lastReadAtMs'] as num?;
+          if (lastReadAtMs != null &&
+              lastReadAtMs.toInt() >= latestProgressMs) {
+            latestProgressMs = lastReadAtMs.toInt();
+            latestProgress = decoded;
           }
-        } catch (_) {}
+        }
       }
 
       if (latestProgress != null) {
@@ -211,30 +210,25 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     var latestProgressMs = -1;
 
     for (final msg in messages) {
-      final raw = msg.payloadJson;
-      if (raw == null || raw.isEmpty) continue;
+      final decoded = _cache.get(msg);
+      if (decoded == null) continue;
       final isMine = myNpub != null && msg.senderNpub == myNpub;
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is! Map<String, dynamic>) continue;
-        final type = decoded['type'];
-        if (type == 'zapbook.book.meta') {
-          final ts = msg.timestampSecs.toInt();
-          if (ts >= latestMetaTs) {
-            latestMetaTs = ts;
-            latestMeta = decoded;
-          }
-          continue;
+      final type = decoded['type'];
+      if (type == 'zapbook.book.meta') {
+        final ts = msg.timestampSecs.toInt();
+        if (ts >= latestMetaTs) {
+          latestMetaTs = ts;
+          latestMeta = decoded;
         }
-        _milestone.ingestMessage(msg);
-        if (isMine && type == 'zapbook.book.progress') {
-          final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-          if (lastReadAtMs != null &&
-              lastReadAtMs.toInt() >= latestProgressMs) {
-            latestProgressMs = lastReadAtMs.toInt();
-          }
+        continue;
+      }
+      _milestone.ingestMessage(msg);
+      if (isMine && type == 'zapbook.book.progress') {
+        final lastReadAtMs = decoded['lastReadAtMs'] as num?;
+        if (lastReadAtMs != null && lastReadAtMs.toInt() >= latestProgressMs) {
+          latestProgressMs = lastReadAtMs.toInt();
         }
-      } catch (_) {}
+      }
     }
 
     if (latestMeta == null) return null;

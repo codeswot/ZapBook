@@ -7,13 +7,14 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/domain/milestone_payload.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class MilestoneService {
-  MilestoneService(this._marmot, this._ndk, this._identity) {
+  MilestoneService(this._marmot, this._ndk, this._identity, this._cache) {
     unawaited(
       _identity.readNpub().then((npub) {
         if (npub != null && npub.isNotEmpty) _selfNpub = npub;
@@ -24,6 +25,7 @@ class MilestoneService {
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
+  final DecodedMessageCache _cache;
 
   static const _relays = NostrService.broadcastRelays;
   final _log = logging.Logger('MilestoneService');
@@ -80,7 +82,7 @@ class MilestoneService {
   void ingestMessage(MarmotMessage message) {
     if (!(message.payloadJson ?? '').contains('zapbook.book.')) return;
 
-    final payload = _decode(message.payloadJson);
+    final payload = _cache.get(message);
     if (payload == null) return;
 
     final bookId = (payload['bookId'] ?? payload['book_id']) as String?;
@@ -186,16 +188,6 @@ class MilestoneService {
     }
     members[npub] = progress;
     _tick.add(bookId);
-  }
-
-  Map<String, dynamic>? _decode(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final decoded = jsonDecode(raw);
-      return decoded is Map<String, dynamic> ? decoded : null;
-    } on Object {
-      return null;
-    }
   }
 
   BookProgress? _progressFromPayload(

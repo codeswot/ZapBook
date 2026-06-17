@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
@@ -19,6 +20,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     this._session,
     this._stats,
     this._reloader,
+    this._cache,
   );
 
   final IdentityLocalDataSource _identityLocal;
@@ -27,6 +29,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final NostrSession _session;
   final ReadingStatsService _stats;
   final SessionReloader _reloader;
+  final DecodedMessageCache _cache;
 
   @override
   Future<UserProfile> load() async {
@@ -75,6 +78,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<void> signOut() async {
     await _identityLocal.clear();
     await _onboardingLocal.clear();
+    _cache.clear();
     await _reloader.reload();
   }
 }
