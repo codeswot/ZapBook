@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 
@@ -69,7 +69,7 @@ class WelcomeInboxService {
       for (final wrap in wraps) {
         try {
           final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: wrap);
-          await _marmot.processWelcome(wrap.id, _eventJson(rumor));
+          await _marmot.processWelcome(wrap.id, rumor.toJsonString());
         } on Object catch (error) {
           _log.fine('Skipping gift-wrap ${wrap.id}: $error');
         }
@@ -96,16 +96,6 @@ class WelcomeInboxService {
 
     return joined;
   }
-
-  String _eventJson(Nip01Event event) => jsonEncode({
-    'id': event.id,
-    'pubkey': event.pubKey,
-    'created_at': event.createdAt,
-    'kind': event.kind,
-    'tags': event.tags,
-    'content': event.content,
-    'sig': event.sig,
-  });
 
   @disposeMethod
   void dispose() {
