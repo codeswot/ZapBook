@@ -96,7 +96,6 @@ class WelcomeInboxService {
     return joined;
   }
 
-
   @disposeMethod
   void dispose() {
     _onJoinedController.close();

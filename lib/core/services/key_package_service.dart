@@ -68,7 +68,6 @@ class KeyPackageService {
     }
   }
 
-
   Future<bool> publishIfNeeded() {
     if (_activePublishFuture != null) return _activePublishFuture!;
     _activePublishFuture = _publishIfNeededInternal().whenComplete(() {

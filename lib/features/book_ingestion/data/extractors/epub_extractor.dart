@@ -58,7 +58,9 @@ Future<ParsedContent> _parseEpub(String filePath, String fallbackTitle) async {
     }
 
     final coverHref = package.coverHref;
-    final coverSource = coverHref == null ? null : archive.binaryFile(coverHref);
+    final coverSource = coverHref == null
+        ? null
+        : archive.binaryFile(coverHref);
 
     final pageWords = <int>[];
     final skippable = <int>[];
