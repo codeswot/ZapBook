@@ -230,10 +230,7 @@ class ZapAmountPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '⚡',
-            style: typography.bodyS.copyWith(fontSize: 13),
-          ),
+          Text('⚡', style: typography.bodyS.copyWith(fontSize: 13)),
           const SizedBox(width: 4),
           Text(
             '$amount sats',

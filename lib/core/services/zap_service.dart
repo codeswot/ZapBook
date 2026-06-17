@@ -75,7 +75,10 @@ class ZapService {
     final isDonation = recipientPubkey == ZapbookConfig.npub;
     final feePercent = (isDonation || !_nwc.isConnected) ? 0 : _support.percent;
     if (feePercent > 0) {
-      supportAmount = (amountSats * feePercent / 100).round().clamp(1, amountSats);
+      supportAmount = (amountSats * feePercent / 100).round().clamp(
+        1,
+        amountSats,
+      );
       if (supportAmount > 0) {
         try {
           final supportNostr = await _buildZapRequest(
@@ -192,9 +195,7 @@ class ZapService {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (opened && result.hasSupportZap) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
-      final supportUri = Uri.tryParse(
-        'lightning:${result.supportInvoice}',
-      );
+      final supportUri = Uri.tryParse('lightning:${result.supportInvoice}');
       if (supportUri != null) {
         unawaited(launchUrl(supportUri, mode: LaunchMode.externalApplication));
       }

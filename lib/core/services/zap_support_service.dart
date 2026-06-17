@@ -12,7 +12,8 @@ class ZapSupportService {
 
   int get percent => _prefs.getInt(_key) ?? defaultPercent;
 
-  Future<void> setPercent(int value) => _prefs.setInt(_key, value.clamp(0, 100));
+  Future<void> setPercent(int value) =>
+      _prefs.setInt(_key, value.clamp(0, 100));
 
   bool get isEnabled => percent > 0;
 
