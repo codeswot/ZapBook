@@ -9,7 +9,6 @@ import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
-import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
