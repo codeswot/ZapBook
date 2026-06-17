@@ -93,11 +93,8 @@ class BookVectorIndex {
     final inputs = await Isolate.run(() => _chunkAndTokenize(zbfPath));
     if (inputs.isEmpty) return;
 
-    final vectors = <Float32List>[];
-    for (final input in inputs) {
-      vectors.add(await _embeddings.embedTokens(input.tokens));
-      await Future<void>.delayed(Duration.zero);
-    }
+    final batch = inputs.map((e) => e.tokens).toList(growable: false);
+    final vectors = await _embeddings.embedTokensBatch(batch);
 
     db.execute('BEGIN');
     try {
@@ -136,16 +133,20 @@ class BookVectorIndex {
 
   static Future<List<_EmbedInput>> _chunkAndTokenize(String zbfPath) async {
     final handle = await const ZbfReader().open(zbfPath);
-    const chunker = BookChunker();
-    final inputs = <_EmbedInput>[];
-    for (var i = 0; i < handle.manifest.pageCount; i++) {
-      final page = handle.pageAt(i);
-      if (page.layoutType == BookLayoutType.processing) continue;
-      for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
-        inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
+    try {
+      const chunker = BookChunker();
+      final inputs = <_EmbedInput>[];
+      for (var i = 0; i < handle.manifest.pageCount; i++) {
+        final page = handle.pageAt(i);
+        if (page.layoutType == BookLayoutType.processing) continue;
+        for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
+          inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
+        }
       }
+      return inputs;
+    } finally {
+      handle.close();
     }
-    return inputs;
   }
 
   Future<List<SemanticHit>> search(
@@ -180,16 +181,12 @@ class BookVectorIndex {
     final db = sqlite3.open(dbPath);
     try {
       final rows = bookId == null
-          ? db.select(
-              'SELECT book_id, page_number, text, embedding FROM chunks',
-            )
-          : db.select(
-              'SELECT book_id, page_number, text, embedding FROM chunks '
-              'WHERE book_id = ?',
-              [bookId],
-            );
+          ? db.select('SELECT rowid, embedding FROM chunks')
+          : db.select('SELECT rowid, embedding FROM chunks WHERE book_id = ?', [
+              bookId,
+            ]);
 
-      final scored = <SemanticHit>[];
+      final topHits = <_ScoredRow>[];
       for (final row in rows) {
         final blob = row['embedding'] as Uint8List;
         final vector = Float32List.view(
@@ -199,17 +196,51 @@ class BookVectorIndex {
         );
         final score = EmbeddingService.cosine(queryVector, vector);
         if (score < minScore) continue;
-        scored.add(
-          SemanticHit(
-            bookId: row['book_id'] as String,
-            pageNumber: (row['page_number'] as num).toInt(),
-            text: row['text'] as String,
-            score: score,
-          ),
-        );
+
+        if (topHits.length < limit) {
+          topHits.add(_ScoredRow((row['rowid'] as num).toInt(), score));
+          if (topHits.length == limit) {
+            topHits.sort((a, b) => b.score.compareTo(a.score));
+          }
+        } else if (score > topHits.last.score) {
+          topHits.removeLast();
+          var index = 0;
+          while (index < topHits.length && topHits[index].score >= score) {
+            index++;
+          }
+          topHits.insert(
+            index,
+            _ScoredRow((row['rowid'] as num).toInt(), score),
+          );
+        }
       }
-      scored.sort((a, b) => b.score.compareTo(a.score));
-      return scored.length > limit ? scored.sublist(0, limit) : scored;
+
+      if (topHits.isEmpty) return const [];
+      if (topHits.length < limit) {
+        topHits.sort((a, b) => b.score.compareTo(a.score));
+      }
+
+      final rowIds = topHits.map((e) => e.rowid).toList();
+      final placeholders = List.filled(rowIds.length, '?').join(',');
+      final hydrationRows = db.select(
+        'SELECT rowid, book_id, page_number, text FROM chunks WHERE rowid IN ($placeholders)',
+        rowIds,
+      );
+
+      final rowIdToRow = <int, Row>{};
+      for (final r in hydrationRows) {
+        rowIdToRow[(r['rowid'] as num).toInt()] = r;
+      }
+
+      return topHits.map((hit) {
+        final r = rowIdToRow[hit.rowid]!;
+        return SemanticHit(
+          bookId: r['book_id'] as String,
+          pageNumber: (r['page_number'] as num).toInt(),
+          text: r['text'] as String,
+          score: hit.score,
+        );
+      }).toList();
     } finally {
       db.close();
     }
@@ -234,4 +265,10 @@ class _EmbedInput {
 
   final BookChunk chunk;
   final List<List<int>> tokens;
+}
+
+class _ScoredRow {
+  const _ScoredRow(this.rowid, this.score);
+  final int rowid;
+  final double score;
 }

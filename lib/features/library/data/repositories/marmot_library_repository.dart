@@ -87,13 +87,17 @@ class MarmotLibraryRepository implements LibraryRepository {
   @override
   Future<LibraryBook> indexExisting(String zbfPath) async {
     final handle = await _reader.open(zbfPath);
-    final manifest = handle.manifest;
-    final added = await _datasource.importExisting(
-      manifest: manifest,
-      coverBytes: _asset(handle, manifest.coverAsset),
-    );
-    _upsert(added);
-    return added;
+    try {
+      final manifest = handle.manifest;
+      final added = await _datasource.importExisting(
+        manifest: manifest,
+        coverBytes: _asset(handle, manifest.coverAsset),
+      );
+      _upsert(added);
+      return added;
+    } finally {
+      handle.close();
+    }
   }
 
   @override
@@ -206,12 +210,16 @@ class MarmotLibraryRepository implements LibraryRepository {
       if (!zbf.existsSync()) continue;
       try {
         final handle = await _reader.open(zbf.path);
-        final manifest = handle.manifest;
-        final added = await _datasource.importExisting(
-          manifest: manifest,
-          coverBytes: _asset(handle, manifest.coverAsset),
-        );
-        _upsert(added, emit: false);
+        try {
+          final manifest = handle.manifest;
+          final added = await _datasource.importExisting(
+            manifest: manifest,
+            coverBytes: _asset(handle, manifest.coverAsset),
+          );
+          _upsert(added, emit: false);
+        } finally {
+          handle.close();
+        }
       } on Object catch (error, stack) {
         _log.warning('Backfill failed for $bookId', error, stack);
       }

@@ -467,27 +467,30 @@ class BookGroupDatasource {
     if (!zbf.existsSync()) return;
 
     final handle = await _reader.open(zbf.path);
+    try {
+      final source = handle.sourceDocument();
+      if (source != null) {
+        await _uploadBlob(
+          npub,
+          groupId,
+          source,
+          'application/octet-stream',
+          '$bookId.source',
+        );
+      }
 
-    final source = handle.sourceDocument();
-    if (source != null) {
-      await _uploadBlob(
-        npub,
-        groupId,
-        source,
-        'application/octet-stream',
-        '$bookId.source',
-      );
-    }
-
-    for (final segment in _segmenter.segment(handle)) {
-      final index = segment.index.toString().padLeft(4, '0');
-      await _uploadBlob(
-        npub,
-        groupId,
-        segment.bytes,
-        'application/octet-stream',
-        '$bookId.seg$index.zbfseg',
-      );
+      await for (final segment in _segmenter.segment(handle)) {
+        final index = segment.index.toString().padLeft(4, '0');
+        await _uploadBlob(
+          npub,
+          groupId,
+          segment.bytes,
+          'application/octet-stream',
+          '$bookId.seg$index.zbfseg',
+        );
+      }
+    } finally {
+      handle.close();
     }
   }
 
@@ -530,7 +533,7 @@ class BookGroupDatasource {
       if (ref == null) return null;
 
       final zip = await _downloadAndDecrypt(group.id, ref);
-      final parsed = _segmenter.parseSegment(zip);
+      final parsed = await _segmenter.parseSegmentAsync(zip);
       if (parsed.pages.isEmpty) return null;
       return SegmentData(
         pageStart: parsed.pages.first.pageNumber - 1,

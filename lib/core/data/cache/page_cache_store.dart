@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
@@ -66,14 +67,23 @@ class PageCacheStore {
     if (pages.isEmpty) return;
     try {
       final db = await _open();
+      // Offload JSON encoding to an isolate to prevent UI thread blocking
+      final encodedPages = await Isolate.run(() {
+        final result = <int, String>{};
+        pages.forEach((index, page) {
+          result[index] = jsonEncode(page.toJson());
+        });
+        return result;
+      });
+
       final statement = db.prepare(
         'INSERT OR REPLACE INTO pages (book_id, page_index, json) '
         'VALUES (?, ?, ?)',
       );
       db.execute('BEGIN');
       try {
-        pages.forEach((index, page) {
-          statement.execute([bookId, index, jsonEncode(page.toJson())]);
+        encodedPages.forEach((index, jsonStr) {
+          statement.execute([bookId, index, jsonStr]);
         });
         db.execute('COMMIT');
       } catch (_) {

@@ -7,12 +7,15 @@ import 'package:ndk/domain_layer/entities/nip_01_event.dart';
 import 'package:ndk/domain_layer/entities/nip_05.dart';
 import 'package:ndk/domain_layer/entities/relay_set.dart';
 import 'package:ndk/domain_layer/entities/user_relay_list.dart';
+import 'package:ndk/domain_layer/entities/cashu/cashu_keyset.dart';
+import 'package:ndk/domain_layer/entities/cashu/cashu_mint_info.dart';
+import 'package:ndk/domain_layer/entities/cashu/cashu_proof.dart';
 import 'package:ndk/domain_layer/repositories/cache_manager.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 
-class DriftCacheManager implements CacheManager {
-  DriftCacheManager(this._store);
+class LocalCacheManager implements CacheManager {
+  LocalCacheManager(this._store);
 
   final NostrCacheStore _store;
 
@@ -72,6 +75,21 @@ class DriftCacheManager implements CacheManager {
           !e.content.toLowerCase().contains(search.toLowerCase())) {
         return false;
       }
+      if (tags != null && tags.isNotEmpty) {
+        for (final entry in tags.entries) {
+          final key = entry.key;
+          final values = entry.value;
+          if (values.isEmpty) continue;
+          var hasMatch = false;
+          for (final t in e.tags) {
+            if (t.length > 1 && t[0] == key && values.contains(t[1])) {
+              hasMatch = true;
+              break;
+            }
+          }
+          if (!hasMatch) return false;
+        }
+      }
       return true;
     });
     final db = _store.loadEvents(
@@ -121,6 +139,21 @@ class DriftCacheManager implements CacheManager {
       if (kinds != null && !kinds.contains(e.kind)) return false;
       if (since != null && e.createdAt < since) return false;
       if (until != null && e.createdAt > until) return false;
+      if (tags != null && tags.isNotEmpty) {
+        for (final entry in tags.entries) {
+          final key = entry.key;
+          final values = entry.value;
+          if (values.isEmpty) continue;
+          var hasMatch = false;
+          for (final t in e.tags) {
+            if (t.length > 1 && t[0] == key && values.contains(t[1])) {
+              hasMatch = true;
+              break;
+            }
+          }
+          if (!hasMatch) return false;
+        }
+      }
       return true;
     });
     _store.removeEvents(
@@ -192,19 +225,25 @@ class DriftCacheManager implements CacheManager {
   @override
   Future<Iterable<Metadata>> searchMetadatas(String search, int limit) async {
     final searchLower = search.toLowerCase();
-    final mem = _metadatas.values
-        .where((m) {
-          final name = (m.name ?? '').toLowerCase();
-          final display = (m.displayName ?? '').toLowerCase();
-          final nip05 = (m.nip05 ?? '').toLowerCase();
-          return name.contains(searchLower) ||
-              display.contains(searchLower) ||
-              nip05.contains(searchLower);
-        })
-        .take(limit)
-        .toList();
-    if (mem.isNotEmpty) return mem;
-    return _store.searchMetadatas(search, limit);
+    final mem = _metadatas.values.where((m) {
+      final name = (m.name ?? '').toLowerCase();
+      final display = (m.displayName ?? '').toLowerCase();
+      final nip05 = (m.nip05 ?? '').toLowerCase();
+      return name.contains(searchLower) ||
+          display.contains(searchLower) ||
+          nip05.contains(searchLower);
+    });
+
+    final db = _store.searchMetadatas(search, limit);
+    final byKey = <String, Metadata>{};
+    for (final m in db) {
+      _metadatas[m.pubKey] = m;
+      byKey[m.pubKey] = m;
+    }
+    for (final m in mem) {
+      byKey.putIfAbsent(m.pubKey, () => m);
+    }
+    return byKey.values.take(limit);
   }
 
   @override
@@ -395,7 +434,18 @@ class DriftCacheManager implements CacheManager {
     int? until,
     String? search,
     int limit = 100,
-  }) async => [];
+  }) async {
+    return loadEvents(
+      ids: ids,
+      pubKeys: authors,
+      kinds: kinds,
+      tags: tags,
+      since: since,
+      until: until,
+      search: search,
+      limit: limit,
+    );
+  }
 
   @override
   Future<void> clearAll() async {
@@ -408,6 +458,54 @@ class DriftCacheManager implements CacheManager {
     _filterFetchedRanges.clear();
     _store.clearAll();
   }
+
+  @override
+  Future<void> saveKeyset(CahsuKeyset keyset) async {}
+
+  @override
+  Future<List<CahsuKeyset>> getKeysets({String? mintUrl}) async => [];
+
+  @override
+  Future<void> saveProofs({
+    required List<CashuProof> proofs,
+    required String mintUrl,
+  }) async {}
+
+  @override
+  Future<List<CashuProof>> getProofs({
+    String? mintUrl,
+    String? keysetId,
+    CashuProofState state = CashuProofState.unspend,
+  }) async => [];
+
+  @override
+  Future<void> removeProofs({
+    required List<CashuProof> proofs,
+    required String mintUrl,
+  }) async {}
+
+  @override
+  Future<void> saveMintInfo({required CashuMintInfo mintInfo}) async {}
+
+  @override
+  Future<void> removeMintInfo({required String mintUrl}) async {}
+
+  @override
+  Future<List<CashuMintInfo>?> getMintInfos({List<String>? mintUrls}) async =>
+      [];
+
+  @override
+  Future<int> getCashuSecretCounter({
+    required String mintUrl,
+    required String keysetId,
+  }) async => 0;
+
+  @override
+  Future<void> setCashuSecretCounter({
+    required String mintUrl,
+    required String keysetId,
+    required int counter,
+  }) async {}
 
   @override
   Future<void> close() async {

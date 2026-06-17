@@ -17,8 +17,23 @@ import 'package:zapbook/widgets/restart_widget.dart';
 final _log = logging.Logger('SessionManager');
 
 Future<void> reloadSession() async {
-  await _teardown();
+  final ndk = getIt<Ndk>();
+  final cache = getIt<NostrCacheStore>();
+  final marmot = getIt<Marmot>();
+  final search = getIt<BookSearchIndex>();
+  final vectors = getIt<BookVectorIndex>();
+
+  await _safe('stop sync', () async => getIt<MarmotSyncService>().stop());
+  await _safe('logout', () async => getIt<NostrSession>().logout());
+
   await getIt.reset();
+
+  await _safe('destroy ndk', () async => ndk.destroy());
+  await _safe('close cache', () async => cache.closeStore());
+  await _safe('dispose marmot', () async => marmot.dispose());
+  await _safe('close search', () async => search.close());
+  await _safe('close vectors', () async => vectors.close());
+
   MarmotWarmup.reset();
   NostrCacheWarmup.reset();
   await ActiveAccount.resolve();
@@ -30,16 +45,6 @@ Future<void> reloadSession() async {
   } finally {
     RestartWidget.restart();
   }
-}
-
-Future<void> _teardown() async {
-  await _safe('stop sync', () async => getIt<MarmotSyncService>().stop());
-  await _safe('logout', () async => getIt<NostrSession>().logout());
-  await _safe('destroy ndk', () async => getIt<Ndk>().destroy());
-  await _safe('close cache', () async => getIt<NostrCacheStore>().closeStore());
-  await _safe('dispose marmot', () async => getIt<Marmot>().dispose());
-  await _safe('close search', () async => getIt<BookSearchIndex>().close());
-  await _safe('close vectors', () async => getIt<BookVectorIndex>().close());
 }
 
 Future<void> _safe(String label, Future<void> Function() action) async {

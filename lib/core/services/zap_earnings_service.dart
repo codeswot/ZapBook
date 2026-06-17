@@ -21,6 +21,7 @@ class ZapEarningsService {
   final _byCircle = <String, int>{};
   final _countedIds = <String>{};
   final _subs = <StreamSubscription<Nip01Event>>[];
+  final _requestIds = <String>[];
   int _sum = 0;
   bool _started = false;
 
@@ -82,6 +83,7 @@ class ZapEarningsService {
       final response = _ndk.requests.subscription(
         filter: Filter(kinds: [kind], pTags: [pubkey]),
       );
+      _requestIds.add(response.requestId);
       _subs.add(
         response.stream.listen((event) {
           if (ingest(event)) _emit();
@@ -205,6 +207,10 @@ class ZapEarningsService {
       unawaited(sub.cancel());
     }
     _subs.clear();
+    for (final id in _requestIds) {
+      unawaited(_ndk.requests.closeSubscription(id));
+    }
+    _requestIds.clear();
     _total.dispose();
   }
 }

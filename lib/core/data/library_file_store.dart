@@ -28,28 +28,28 @@ class LibraryFileStore {
     return _ensure('${root.path}/$_libraryDir/$bookId');
   }
 
-  Future<Directory> _cacheBookDir(String bookId) async {
-    final root = await _cacheRoot();
-    return _ensure('${root.path}/$_libraryDir/$bookId');
+  Future<String> _bookPath(String bookId) async {
+    final root = await _supportRoot();
+    return '${root.path}/$_libraryDir/$bookId';
   }
 
   Future<File> zbfFile(String bookId) async =>
-      File('${(await bookDir(bookId)).path}/$_zbfName');
+      File('${await _bookPath(bookId)}/$_zbfName');
 
   Future<File> coverFile(String bookId) async =>
-      File('${(await bookDir(bookId)).path}/$_coverName');
+      File('${await _bookPath(bookId)}/$_coverName');
 
   Future<File> originalFile(String bookId, String extension) async =>
-      File('${(await bookDir(bookId)).path}/original.$extension');
+      File('${await _bookPath(bookId)}/original.$extension');
 
   Future<File> segmentCacheFile(String bookId, int index) async {
-    final dir = await _ensure(
-      '${(await _cacheBookDir(bookId)).path}/$_segmentDir',
-    );
-    return File('${dir.path}/${index.toString().padLeft(4, '0')}.zbfpart');
+    final root = await _cacheRoot();
+    final path = '${root.path}/$_libraryDir/$bookId/$_segmentDir';
+    return File('$path/${index.toString().padLeft(4, '0')}.zbfpart');
   }
 
   Future<String> writeZbf(String bookId, Uint8List bytes) async {
+    await bookDir(bookId);
     final file = await zbfFile(bookId);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
@@ -57,6 +57,7 @@ class LibraryFileStore {
 
   Future<String?> writeCover(String bookId, Uint8List? bytes) async {
     if (bytes == null || bytes.isEmpty) return null;
+    await bookDir(bookId);
     final file = await coverFile(bookId);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;

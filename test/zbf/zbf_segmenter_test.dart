@@ -76,10 +76,13 @@ void main() {
 
   test('segment splits book into page-bounded blobs', () async {
     const segmenter = ZbfSegmenter();
-    final path = await const ZbfWriter().write(buildBook(), tempDir);
+    final path = await const ZbfWriter().write(
+      buildBook(),
+      '${tempDir.path}/book1.zbf',
+    );
     final handle = await const ZbfReader().open(path);
 
-    final blobs = segmenter.segment(handle).toList();
+    final blobs = await segmenter.segment(handle).toList();
 
     expect(blobs.length, ZbfSegmenter.segmentCountFor(45));
     expect(blobs.first.pageStart, 0);
@@ -90,10 +93,13 @@ void main() {
   test('reassembleToFile rebuilds full book from segment stream', () async {
     const segmenter = ZbfSegmenter();
     final book = buildBook();
-    final path = await const ZbfWriter().write(book, tempDir);
+    final path = await const ZbfWriter().write(
+      book,
+      '${tempDir.path}/book2.zbf',
+    );
     final handle = await const ZbfReader().open(path);
 
-    final blobs = segmenter.segment(handle).toList();
+    final blobs = await segmenter.segment(handle).toList();
     final outputPath = '${tempDir.path}/rebuilt.zbf';
     await segmenter.reassembleToFile(
       Stream.fromIterable([for (final blob in blobs) blob.bytes]),

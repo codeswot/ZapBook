@@ -24,17 +24,42 @@ class ContactService {
 
   final _metaByHex = <String, Metadata>{};
   final _hexByNpub = <String, String>{};
-  final _subscribedHexes = <String>{};
+  final _npubByHex = <String, String>{};
+
+  final _permanentHexes = <String>{};
+  final _transientHexesCount = <String, int>{};
+  final _activeSubscriptionHexes = <String>{};
+
+  final _contactCache = <String, Contact>{};
+
   final _metaTick = StreamController<void>.broadcast();
   NdkResponse? _metaSub;
   StreamSubscription<Nip01Event>? _metaListen;
-  String _subKey = '';
+  Timer? _tickTimer;
+
+  bool _initialized = false;
+  final _storedContacts = <String>{};
+  final _storedContactsList = <String>[];
+
+  void _ensureInitialized() {
+    if (_initialized) return;
+    final list = _prefs.getStringList(_key) ?? const [];
+    _storedContacts.addAll(list);
+    _storedContactsList.addAll(list);
+    _initialized = true;
+  }
 
   bool isValidNpub(String value) => Nip19.isPubkey(value.trim());
 
-  bool contains(String npub) => _stored().contains(npub);
+  bool contains(String npub) {
+    _ensureInitialized();
+    return _storedContacts.contains(npub);
+  }
 
-  List<String> get stored => List.unmodifiable(_stored());
+  List<String> get stored {
+    _ensureInitialized();
+    return List.unmodifiable(_storedContactsList);
+  }
 
   Stream<void> get metadataChanges => _metaTick.stream;
 
@@ -42,43 +67,61 @@ class ContactService {
       _metaTick.stream.map((_) => _currentFriends());
 
   Stream<List<Contact>> watch(List<String> npubs) async* {
-    final hexes = <String>[];
-    for (final npub in npubs) {
-      try {
-        hexes.add(await _hexOf(npub));
-      } on ContactException {
-        // skip invalid npub
-      }
-    }
-    _subscribedHexes.addAll(hexes);
-    _subscribe();
-    yield _buildContacts(npubs);
-
-    final missing = hexes.where((h) => !_metaByHex.containsKey(h)).toList();
-    if (missing.isNotEmpty) {
-      try {
-        for (final meta in await _nostr.getMetadatas(missing)) {
-          _store(meta);
+    List<String> hexes = [];
+    try {
+      final futures = npubs.map((npub) async {
+        try {
+          return await _hexOf(npub);
+        } on ContactException catch (error, trace) {
+          _log.info('Watching npub $error', trace);
+          return '';
         }
-      } on Object catch (e, stack) {
-        _log.info('watch metadatas $e', stack);
+      });
+      final results = await Future.wait(futures);
+      hexes = results.where((h) => h.isNotEmpty).toList();
+
+      for (final hex in hexes) {
+        _transientHexesCount[hex] = (_transientHexesCount[hex] ?? 0) + 1;
       }
+      _subscribe();
       yield _buildContacts(npubs);
+
+      final missing = hexes.where((h) => !_metaByHex.containsKey(h)).toList();
+      if (missing.isNotEmpty) {
+        try {
+          for (final meta in await _nostr.getMetadatas(missing)) {
+            _store(meta);
+          }
+        } on Object catch (e, stack) {
+          _log.info('watch metadatas $e', stack);
+        }
+        yield _buildContacts(npubs);
+      }
+      yield* _metaTick.stream.map((_) => _buildContacts(npubs));
+    } finally {
+      for (final hex in hexes) {
+        final count = _transientHexesCount[hex] ?? 0;
+        if (count <= 1) {
+          _transientHexesCount.remove(hex);
+        } else {
+          _transientHexesCount[hex] = count - 1;
+        }
+      }
+      _subscribe();
     }
-    yield* _metaTick.stream.map((_) => _buildContacts(npubs));
   }
 
   Future<void> warm() async {
     try {
+      _ensureInitialized();
       await friends();
     } on Exception catch (e, stack) {
       _log.warning('Warm contact service failed', e, stack);
     }
   }
 
-  List<String> _stored() => _prefs.getStringList(_key) ?? const [];
-
   Future<List<Contact>> friends() async {
+    _ensureInitialized();
     final filtered = await _ensureHexMap();
     if (filtered.isEmpty) return const [];
 
@@ -93,24 +136,28 @@ class ContactService {
   Future<Contact> resolve(String npub) async {
     final hex = await _hexOf(npub);
     final cached = _metaByHex[hex];
-    if (cached != null) return _contact(npub, cached);
+    if (cached != null) return _contact(npub);
     final meta = await _nostr.getMetadata(hex);
     if (meta != null) _store(meta);
-    return _contact(npub, _metaByHex[hex]);
+    return _contact(npub);
   }
 
   Future<void> prime(List<String> npubs) async {
-    final hexes = <String>[];
-    for (final npub in npubs) {
+    final futures = npubs.map((npub) async {
       try {
-        hexes.add(await _hexOf(npub));
+        return await _hexOf(npub);
       } on ContactException {
-        // skip invalid npub
+        return '';
       }
-    }
+    });
+    final results = await Future.wait(futures);
+    final hexes = results.where((h) => h.isNotEmpty).toList();
+
     if (hexes.isEmpty) return;
-    _subscribedHexes.addAll(hexes);
+
+    _permanentHexes.addAll(hexes);
     _subscribe();
+
     final missing = hexes.where((h) => !_metaByHex.containsKey(h)).toList();
     if (missing.isNotEmpty) {
       try {
@@ -123,10 +170,10 @@ class ContactService {
     }
   }
 
-  Contact contactFor(String npub) =>
-      _contact(npub, _metaByHex[_hexByNpub[npub]]);
+  Contact contactFor(String npub) => _contact(npub);
 
   Future<Contact> add(String npub) async {
+    _ensureInitialized();
     final myNpub = await _identity.readNpub();
     if (npub == myNpub) {
       throw ContactException('Cannot add yourself as a contact');
@@ -134,53 +181,82 @@ class ContactService {
     final hex = await _hexOf(npub);
     final meta = await _nostr.getMetadata(hex, forceRefresh: true);
     if (meta != null) _store(meta);
-    if (!_stored().contains(npub)) {
-      await _prefs.setStringList(_key, [..._stored(), npub]);
+
+    if (!_storedContacts.contains(npub)) {
+      _storedContacts.add(npub);
+      _storedContactsList.add(npub);
+      await _prefs.setStringList(_key, _storedContactsList);
     }
     await _ensureHexMap();
     _tick();
-    return _contact(npub, _metaByHex[hex]);
+    return _contact(npub);
   }
 
   Future<void> remove(String npub) async {
-    await _prefs.setStringList(
-      _key,
-      _stored().where((stored) => stored != npub).toList(),
-    );
+    _ensureInitialized();
+    if (_storedContacts.contains(npub)) {
+      _storedContacts.remove(npub);
+      _storedContactsList.remove(npub);
+      await _prefs.setStringList(_key, _storedContactsList);
+    }
+
     await _ensureHexMap();
     _tick();
   }
 
   Future<List<String>> _ensureHexMap() async {
     final myNpub = await _identity.readNpub();
-    final filtered = _stored().where((n) => n != myNpub).toList();
-    for (final npub in filtered) {
-      _hexByNpub[npub] ??= await MarmotIdentity.pubkeyHexFromNpub(npub);
+    final filtered = _storedContactsList.where((n) => n != myNpub).toList();
+
+    final missingNpubs = filtered
+        .where((n) => !_hexByNpub.containsKey(n))
+        .toList();
+    if (missingNpubs.isNotEmpty) {
+      final futures = missingNpubs.map((npub) async {
+        try {
+          return await _hexOf(npub);
+        } on ContactException {
+          return '';
+        }
+      });
+      await Future.wait(futures);
     }
-    _subscribedHexes.addAll([for (final n in filtered) _hexByNpub[n]!]);
+
+    _permanentHexes.clear();
+    for (final n in filtered) {
+      final hex = _hexByNpub[n];
+      if (hex != null) _permanentHexes.add(hex);
+    }
     _subscribe();
     return filtered;
   }
 
   void _subscribe() {
-    final sorted = _subscribedHexes.toList()..sort();
-    if (sorted.isEmpty) return;
-    final key = sorted.join(',');
-    if (key == _subKey) return;
-    _subKey = key;
+    final allHexes = _permanentHexes.union(_transientHexesCount.keys.toSet());
+    if (allHexes.isEmpty) return;
+
+    if (allHexes.length == _activeSubscriptionHexes.length &&
+        allHexes.containsAll(_activeSubscriptionHexes)) {
+      return;
+    }
+
+    _activeSubscriptionHexes.clear();
+    _activeSubscriptionHexes.addAll(allHexes);
 
     final old = _metaSub;
     if (old != null) _nostr.closeSubscription(old.requestId);
     unawaited(_metaListen?.cancel());
 
-    final response = _nostr.subscribeMetadata(sorted);
+    final response = _nostr.subscribeMetadata(allHexes.toList());
     _metaSub = response;
     _metaListen = response.stream.listen((event) {
       try {
-        _store(Metadata.fromEvent(event));
+        final meta = Metadata.fromEvent(event);
+        _store(meta);
+        _nostr.saveMetadata(meta);
         _tick();
       } on Object catch (e, stack) {
-        _log.info('metadata event $e', stack);
+        _log.info('parse metadata failed', e, stack);
       }
     });
   }
@@ -190,6 +266,11 @@ class ContactService {
     if (existing == null ||
         (existing.updatedAt ?? 0) <= (meta.updatedAt ?? 0)) {
       _metaByHex[meta.pubKey] = meta;
+
+      final npub = _npubByHex[meta.pubKey];
+      if (npub != null) {
+        _contactCache.remove(npub);
+      }
     }
   }
 
@@ -199,6 +280,7 @@ class ContactService {
     try {
       final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
       _hexByNpub[npub] = hex;
+      _npubByHex[hex] = npub;
       return hex;
     } on Object {
       throw ContactException('Invalid npub format');
@@ -206,30 +288,49 @@ class ContactService {
   }
 
   List<Contact> _buildContacts(List<String> npubs) => [
-    for (final npub in npubs) _contact(npub, _metaByHex[_hexByNpub[npub]]),
+    for (final npub in npubs) _contact(npub),
   ];
 
-  List<Contact> _currentFriends() =>
-      _buildContacts(_stored().where(_hexByNpub.containsKey).toList());
-
-  void _tick() {
-    if (!_metaTick.isClosed) _metaTick.add(null);
+  List<Contact> _currentFriends() {
+    _ensureInitialized();
+    return _buildContacts(
+      _storedContactsList.where(_hexByNpub.containsKey).toList(),
+    );
   }
 
-  Contact _contact(String npub, Metadata? meta) {
+  void _tick() {
+    if (_metaTick.isClosed) return;
+    if (_tickTimer?.isActive ?? false) return;
+
+    _tickTimer = Timer(const Duration(milliseconds: 100), () {
+      if (!_metaTick.isClosed) _metaTick.add(null);
+    });
+  }
+
+  Contact _contact(String npub) {
+    var cached = _contactCache[npub];
+    if (cached != null) return cached;
+
+    final hex = _hexByNpub[npub];
+    final meta = hex != null ? _metaByHex[hex] : null;
+
     final name = (meta?.displayName?.trim().isNotEmpty ?? false)
         ? meta!.displayName
         : meta?.name;
-    return Contact(
+
+    cached = Contact(
       npub: npub,
       displayName: name,
       picture: meta?.picture,
       lud16: meta?.lud16,
     );
+    _contactCache[npub] = cached;
+    return cached;
   }
 
   @disposeMethod
   void dispose() {
+    _tickTimer?.cancel();
     unawaited(_metaListen?.cancel());
     final sub = _metaSub;
     if (sub != null) _nostr.closeSubscription(sub.requestId);

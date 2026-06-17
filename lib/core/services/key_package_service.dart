@@ -23,11 +23,37 @@ class KeyPackageService {
   static const _rotateAfter = Duration(days: 7);
   static const _keyPackageKind = 30443;
 
-  Future<String?> fetchKeyPackage(String npub) async {
+  Future<bool>? _activePublishFuture;
+
+  final _keyPackageCache = <String, String>{};
+  final _activeFetches = <String, Future<String?>>{};
+
+  Future<String?> fetchKeyPackage(String npub) {
+    if (_keyPackageCache.containsKey(npub)) {
+      return Future.value(_keyPackageCache[npub]);
+    }
+
+    if (_activeFetches.containsKey(npub)) {
+      return _activeFetches[npub]!;
+    }
+
+    final future = _fetchKeyPackageInternal(npub).whenComplete(() {
+      _activeFetches.remove(npub);
+    });
+
+    _activeFetches[npub] = future;
+    return future;
+  }
+
+  Future<String?> _fetchKeyPackageInternal(String npub) async {
     try {
       final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
       final response = _ndk.requests.query(
-        filter: Filter(kinds: const [_keyPackageKind], authors: [hex]),
+        filter: Filter(
+          kinds: const [_keyPackageKind],
+          authors: [hex],
+          limit: 1,
+        ),
         explicitRelays: NostrService.broadcastRelays,
       );
       final events = await response.future;
@@ -72,7 +98,15 @@ class KeyPackageService {
     return false;
   }
 
-  Future<bool> forceRotate() async {
+  Future<bool> forceRotate() {
+    if (_activePublishFuture != null) return _activePublishFuture!;
+    _activePublishFuture = _forceRotateInternal().whenComplete(() {
+      _activePublishFuture = null;
+    });
+    return _activePublishFuture!;
+  }
+
+  Future<bool> _forceRotateInternal() async {
     final npub = await _identity.readNpub();
     final nsec = await _identity.readNsec();
     if (npub == null || nsec == null) return false;

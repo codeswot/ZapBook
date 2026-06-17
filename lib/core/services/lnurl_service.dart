@@ -6,9 +6,35 @@ import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class LnurlService {
-  const LnurlService();
+  LnurlService();
 
-  Future<LnurlPayResponse> resolveLightningAddress(String lud16) async {
+  final _client = http.Client();
+  final _payResponseCache = <String, LnurlPayResponse>{};
+  final _activePayResolutions = <String, Future<LnurlPayResponse>>{};
+
+  @disposeMethod
+  void dispose() {
+    _client.close();
+  }
+
+  Future<LnurlPayResponse> resolveLightningAddress(String lud16) {
+    if (_payResponseCache.containsKey(lud16)) {
+      return Future.value(_payResponseCache[lud16]!);
+    }
+    if (_activePayResolutions.containsKey(lud16)) {
+      return _activePayResolutions[lud16]!;
+    }
+
+    final future = _resolveLightningAddressInternal(lud16).whenComplete(() {
+      _activePayResolutions.remove(lud16);
+    });
+    _activePayResolutions[lud16] = future;
+    return future;
+  }
+
+  Future<LnurlPayResponse> _resolveLightningAddressInternal(
+    String lud16,
+  ) async {
     final parts = lud16.split('@');
     if (parts.length != 2) throw LnurlException('Invalid lightning address');
 
@@ -18,11 +44,13 @@ class LnurlService {
       throw LnurlException('Lightning address domain not allowed');
     }
     final url = Uri.https(domain, '/.well-known/lnurlp/$user');
-    return _fetchPayResponse(url);
+    final response = await _fetchPayResponse(url);
+    _payResponseCache[lud16] = response;
+    return response;
   }
 
   Future<LnurlPayResponse> _fetchPayResponse(Uri lnurlpUrl) async {
-    final response = await http
+    final response = await _client
         .get(lnurlpUrl)
         .timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
@@ -62,7 +90,9 @@ class LnurlService {
       },
     );
 
-    final response = await http.get(url).timeout(const Duration(seconds: 15));
+    final response = await _client
+        .get(url)
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw LnurlException('Invoice request returned ${response.statusCode}');
     }

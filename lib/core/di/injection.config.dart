@@ -43,6 +43,7 @@ import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
 import 'package:zapbook/core/performance/performance_service.dart' as _i399;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
+import 'package:zapbook/core/services/app_info_service.dart' as _i19;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
@@ -221,6 +222,10 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
+    await gh.singletonAsync<_i19.AppInfoService>(
+      () => registerModule.appInfoService(),
+      preResolve: true,
+    );
     gh.lazySingleton<_i165.PageCacheStore>(() => _i165.PageCacheStore());
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
     gh.lazySingleton<_i854.LibraryFileStore>(() => _i854.LibraryFileStore());
@@ -241,7 +246,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );
-    gh.lazySingleton<_i96.LnurlService>(() => const _i96.LnurlService());
+    gh.lazySingleton<_i96.LnurlService>(
+      () => _i96.LnurlService(),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i995.QuizService>(() => _i995.QuizService());
     gh.lazySingleton<_i123.SecureStorageService>(
       () => _i123.SecureStorageService(),
@@ -333,9 +341,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i873.BlossomService>(
       () => _i873.BlossomService(gh<_i857.Ndk>()),
     );
-    gh.lazySingleton<_i11.NostrService>(
-      () => _i11.NostrService(gh<_i857.Ndk>()),
-    );
     gh.lazySingleton<_i240.ZapEarningsService>(
       () => _i240.ZapEarningsService(gh<_i857.Ndk>()),
       dispose: (i) => i.dispose(),
@@ -388,6 +393,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i31.MilestoneService>(),
         gh<_i240.ZapEarningsService>(),
       ),
+    );
+    gh.lazySingleton<_i11.NostrService>(
+      () => _i11.NostrService(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
     );
     gh.factory<_i626.SyncWelcomes>(
       () => _i626.SyncWelcomes(gh<_i82.WelcomeInboxService>()),
@@ -679,6 +687,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i1034.FilePickerService>(),
         gh<_i397.KeyPackageService>(),
+        gh<_i19.AppInfoService>(),
       ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(

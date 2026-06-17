@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:zapbook/zbf/zbf.dart';
 
@@ -22,7 +21,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
 
   String get fileExtension;
 
-  Future<ParsedContent> parse(Uint8List bytes, String title);
+  Future<ParsedContent> parse(String filePath, String title);
 
   @override
   bool supports(File file) => file.path.toLowerCase().endsWith(fileExtension);
@@ -35,13 +34,12 @@ abstract base class IsolateBookExtractor implements BookExtractor {
     final title = _titleFromPath(file.path);
     yield IngestionProgress.fileSelected(title);
 
-    final bytes = await file.readAsBytes();
     yield IngestionProgress.extracting(
       progress: 0.1,
       currentItem: 'Reading $title',
     );
 
-    final parsed = await parse(bytes, title);
+    final parsed = await parse(file.path, title);
     yield IngestionProgress.extracting(
       progress: 0.85,
       currentItem: 'Parsed ${parsed.chapters.length} chapters',

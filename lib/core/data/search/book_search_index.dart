@@ -30,6 +30,7 @@ class BookSearchIndex {
 
   static const highlightStart = '‹';
   static const highlightEnd = '›';
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   final _log = logging.Logger('BookSearchIndex');
 
@@ -103,45 +104,49 @@ class BookSearchIndex {
     String zbfPath,
   ) async {
     final handle = await const ZbfReader().open(zbfPath);
-    final manifest = handle.manifest;
-
-    final db = sqlite3.open(dbPath);
     try {
-      _initSchema(db);
-      db.execute('BEGIN');
+      final manifest = handle.manifest;
+
+      final db = sqlite3.open(dbPath);
       try {
-        db.execute('DELETE FROM page_index WHERE book_id = ?', [bookId]);
-        final insert = db.prepare(
-          'INSERT INTO page_index (book_id, page_number, chapter_title, body) '
-          'VALUES (?, ?, ?, ?)',
-        );
-        var indexedPages = 0;
-        for (var i = 0; i < manifest.pageCount; i++) {
-          final page = handle.pageAt(i);
-          if (page.layoutType == BookLayoutType.processing) continue;
-          final body = _pageText(page);
-          if (body.isEmpty) continue;
-          insert.execute([bookId, page.pageNumber, page.chapterTitle, body]);
-          indexedPages++;
+        _initSchema(db);
+        db.execute('BEGIN');
+        try {
+          db.execute('DELETE FROM page_index WHERE book_id = ?', [bookId]);
+          final insert = db.prepare(
+            'INSERT INTO page_index (book_id, page_number, chapter_title, body) '
+            'VALUES (?, ?, ?, ?)',
+          );
+          var indexedPages = 0;
+          for (var i = 0; i < manifest.pageCount; i++) {
+            final page = handle.pageAt(i);
+            if (page.layoutType == BookLayoutType.processing) continue;
+            final body = _pageText(page);
+            if (body.isEmpty) continue;
+            insert.execute([bookId, page.pageNumber, page.chapterTitle, body]);
+            indexedPages++;
+          }
+          insert.close();
+          db.execute(
+            'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
+            'VALUES (?, ?, ?)',
+            [bookId, indexedPages, DateTime.now().millisecondsSinceEpoch],
+          );
+          db.execute('COMMIT');
+        } catch (_) {
+          db.execute('ROLLBACK');
+          rethrow;
         }
-        insert.close();
-        db.execute(
-          'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
-          'VALUES (?, ?, ?)',
-          [bookId, indexedPages, DateTime.now().millisecondsSinceEpoch],
-        );
-        db.execute('COMMIT');
-      } catch (_) {
-        db.execute('ROLLBACK');
-        rethrow;
+      } finally {
+        db.close();
       }
     } finally {
-      db.close();
+      handle.close();
     }
   }
 
   static String _pageText(BookPage page) {
-    final parts = <String>[];
+    final buffer = StringBuffer();
     for (final block in page.blocks) {
       final text = switch (block) {
         HeadingBlock(:final text) => text,
@@ -152,9 +157,13 @@ class BookSearchIndex {
         ImageBlock(:final altText) => altText,
         _ => '',
       };
-      if (text.trim().isNotEmpty) parts.add(text.trim());
+      final trimmed = text.trim();
+      if (trimmed.isNotEmpty) {
+        if (buffer.isNotEmpty) buffer.write('\n');
+        buffer.write(trimmed);
+      }
     }
-    return parts.join('\n');
+    return buffer.toString();
   }
 
   Future<List<BookSearchHit>> search(
@@ -196,7 +205,7 @@ class BookSearchIndex {
   static String? _toMatchQuery(String raw) {
     final terms = raw
         .trim()
-        .split(RegExp(r'\s+'))
+        .split(_whitespace)
         .map((t) => t.replaceAll('"', ''))
         .where((t) => t.isNotEmpty)
         .toList();

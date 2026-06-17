@@ -21,19 +21,20 @@ class WelcomeInboxService {
   final _log = logging.Logger('WelcomeInboxService');
 
   static const _giftWrapKind = 1059;
-  static const _interval = Duration(seconds: 30);
-
-  Timer? _timer;
   final _onJoinedController = StreamController<int>.broadcast();
+
+  bool _isSyncing = false;
+  int? _lastSyncTimestamp;
 
   Stream<int> get onJoined => _onJoinedController.stream;
 
   void _start() {
     _syncLoop();
-    _timer = Timer.periodic(_interval, (_) => _syncLoop());
   }
 
   Future<void> _syncLoop() async {
+    if (_isSyncing) return;
+
     try {
       final joined = await sync();
       if (joined > 0) _onJoinedController.add(joined);
@@ -43,17 +44,26 @@ class WelcomeInboxService {
   }
 
   Future<int> sync() async {
+    if (_isSyncing) return 0;
+
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return 0;
 
+    _isSyncing = true;
     var joined = 0;
+
     try {
+      final nextSyncTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+
+      final filter = Filter(
+        kinds: const [_giftWrapKind],
+        pTags: [hex],
+        since: _lastSyncTimestamp,
+      );
+
       final wraps = await _ndk.requests
-          .query(
-            filter: Filter(kinds: const [_giftWrapKind], pTags: [hex]),
-            explicitRelays: NostrService.broadcastRelays,
-          )
+          .query(filter: filter, explicitRelays: NostrService.broadcastRelays)
           .future;
 
       for (final wrap in wraps) {
@@ -74,16 +84,21 @@ class WelcomeInboxService {
           _log.fine('Accept welcome ${welcome.id} failed: $error');
         }
       }
+
       if (joined > 0) _log.info('Joined $joined group(s) from welcomes');
+
+      _lastSyncTimestamp = nextSyncTimestamp;
     } on Object catch (error, stack) {
       _log.warning('Welcome inbox sync failed', error, stack);
+    } finally {
+      _isSyncing = false;
     }
+
     return joined;
   }
 
   @disposeMethod
   void dispose() {
-    _timer?.cancel();
     _onJoinedController.close();
   }
 }

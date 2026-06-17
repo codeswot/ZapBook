@@ -42,7 +42,12 @@ class MarmotSyncService {
   String? _welcomeSubId;
   StreamSubscription<Nip01Event>? _groupSub;
   String? _groupSubId;
+
   Timer? _refreshTimer;
+  Timer? _heavyUpdateTimer;
+
+  final _welcomeQueue = <Nip01Event>[];
+  bool _processingWelcome = false;
 
   Future<void> start() async {
     if (_running) return;
@@ -63,6 +68,8 @@ class MarmotSyncService {
   Future<void> stop() async {
     _running = false;
     _refreshTimer?.cancel();
+    _heavyUpdateTimer?.cancel();
+    _welcomeQueue.clear();
     await _welcomeSub?.cancel();
     await _groupSub?.cancel();
     final welcomeId = _welcomeSubId;
@@ -84,26 +91,60 @@ class MarmotSyncService {
     _welcomeSub = response.stream.listen(_onWelcome);
   }
 
-  Future<void> _onWelcome(Nip01Event giftWrap) async {
+  void _onWelcome(Nip01Event giftWrap) {
+    _welcomeQueue.add(giftWrap);
+    _processWelcomeQueue();
+  }
+
+  Future<void> _processWelcomeQueue() async {
+    if (_processingWelcome) return;
+    _processingWelcome = true;
     try {
       final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
       await _marmot.processWelcome(giftWrap.id, rumor.toJsonString());
       for (final welcome in await _marmot.getPendingWelcomes()) {
         try {
-          await _marmot.acceptWelcome(welcome.id);
-        } on Object catch (_) {
-          if (await _purgeStaleGroup(welcome.groupName)) {
+          final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
+          await _marmot.processWelcome(giftWrap.id, _eventJson(rumor));
+          for (final welcome in await _marmot.getPendingWelcomes()) {
             try {
               await _marmot.acceptWelcome(welcome.id);
-            } on Object catch (_) {}
+            } on Object catch (_) {
+              if (await _purgeStaleGroup(welcome.groupName)) {
+                try {
+                  await _marmot.acceptWelcome(welcome.id);
+                } on Object catch (_) {}
+              }
+            }
           }
+          processedAny = true;
+        } on Object catch (error) {
+          _log.fine('Welcome event skipped: $error');
         }
       }
+
+      if (processedAny) {
+        _scheduleHeavyUpdates();
+      }
+    } finally {
+      _processingWelcome = false;
+    }
+  }
+
+  void _scheduleHeavyUpdates() {
+    _heavyUpdateTimer?.cancel();
+    _heavyUpdateTimer = Timer(_debounce, () {
+      unawaited(_executeHeavyUpdates());
+    });
+  }
+
+  Future<void> _executeHeavyUpdates() async {
+    try {
       await _keyPackages.forceRotate();
       await _restartGroupSub();
       _scheduleRefresh();
-    } on Object catch (error) {
-      _log.fine('Welcome event skipped: $error');
+    } on Object catch (error, stack) {
+      _log.warning('Heavy updates failed', error, stack);
     }
   }
 

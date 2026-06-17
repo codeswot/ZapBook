@@ -64,8 +64,9 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       }
       book = await _stashSourceForAi(book, file);
       yield IngestionProgress.writing('Writing ${book.manifest.title}');
-      final bytes = _writer.encode(book);
-      final path = await _fileStore.writeZbf(book.manifest.id, bytes);
+      final zbfFile = await _fileStore.zbfFile(book.manifest.id);
+      await zbfFile.parent.create(recursive: true);
+      final path = await _writer.write(book, zbfFile.path);
       unawaited(_searchIndex.ensureIndexed(book.manifest.id, path));
       unawaited(_vectorIndex.ensureEmbedded(book.manifest.id, path));
       yield IngestionProgress.written(result: book, zbfPath: path);
@@ -78,9 +79,8 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     if (book.manifest.sourceFormat != BookSourceFormat.pdf) {
       return book;
     }
-    final sourceBytes = await file.readAsBytes();
     return book.copyWith(
-      assets: {...book.assets, AssetNaming.sourceDocument: sourceBytes},
+      fileAssets: {...book.fileAssets, AssetNaming.sourceDocument: file.path},
     );
   }
 

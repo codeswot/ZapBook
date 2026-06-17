@@ -83,14 +83,30 @@ String extractMilestoneText(
   final pages = <_PageText>[];
   var cumulative = 0;
   for (var i = 0; i < handle.manifest.pageCount; i++) {
-    final page = handle.pageAt(i);
     if (density.skippablePages.contains(i)) continue;
-    final text = _pageText(page);
-    if (text.isEmpty) continue;
-    pages.add(_PageText(i, text, cumulative));
-    final pWords = density.pageWords.length > i
-        ? density.pageWords[i]
-        : countWords(text);
+
+    int pWords;
+    String? loadedText;
+
+    if (density.pageWords.length > i) {
+      pWords = density.pageWords[i];
+    } else {
+      final page = handle.pageAt(i);
+      loadedText = _pageText(page);
+      pWords = countWords(loadedText);
+    }
+
+    if (pWords == 0) continue;
+
+    if (cumulative + pWords > startWord) {
+      if (loadedText == null) {
+        final page = handle.pageAt(i);
+        loadedText = _pageText(page);
+      }
+      if (loadedText.isNotEmpty) {
+        pages.add(_PageText(i, loadedText, cumulative));
+      }
+    }
     cumulative += pWords;
     if (cumulative >= endWord) break;
   }

@@ -4,8 +4,9 @@ import 'package:logging/logging.dart' as logging;
 
 import 'dart:async';
 
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
@@ -71,11 +72,13 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final _log = logging.Logger('CircleDetailCubit');
   String _currentBookId = '';
   StreamSubscription<Map<String, BookProgress>>? _progressSub;
+  StreamSubscription<List<Contact>>? _contactsSub;
 
   @override
   Future<void> close() {
     _currentBookId = '';
     _progressSub?.cancel();
+    _contactsSub?.cancel();
     _stats.satsEarnedListenable.removeListener(_onEarningsChanged);
     return super.close();
   }
@@ -109,10 +112,11 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
       await _milestoneService.loadMembers(bookId),
     );
     _watchMembers(bookId);
+    _watchContacts(memberNpubs, myNpub, contactNpubs);
     emit(
       CircleDetailLoaded(
         book: book,
-        members: entries,
+        members: _sortEntries(entries, progress),
         adminNpubs: admins,
         myNpub: myNpub,
         milestones: milestones,
@@ -122,12 +126,61 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     );
   }
 
+  void _watchContacts(
+    List<String> memberNpubs,
+    String? myNpub,
+    Set<String> contactNpubs,
+  ) {
+    _contactsSub?.cancel();
+    _contactsSub = _contacts.watch(memberNpubs).listen((contacts) {
+      final s = state;
+      if (s is! CircleDetailLoaded) return;
+      final entries = [
+        for (var i = 0; i < memberNpubs.length; i++)
+          MemberEntry(
+            npub: memberNpubs[i],
+            contact: contacts[i],
+            isSelf: memberNpubs[i] == myNpub,
+            isContact: contactNpubs.contains(memberNpubs[i]),
+          ),
+      ];
+      emit(s.copyWith(members: _sortEntries(entries, s.memberProgress)));
+    });
+  }
+
+  List<MemberEntry> _sortEntries(
+    List<MemberEntry> entries,
+    Map<String, MemberProgress> progress,
+  ) {
+    final list = List<MemberEntry>.from(entries);
+    list.sort((a, b) {
+      if (a.isSelf && !b.isSelf) return 1;
+      if (!a.isSelf && b.isSelf) return -1;
+
+      final pA = progress[a.npub]?.fraction ?? 0.0;
+      final pB = progress[b.npub]?.fraction ?? 0.0;
+      final cmp = pB.compareTo(pA);
+      if (cmp != 0) return cmp;
+
+      final nameA = a.contact.displayName?.toLowerCase() ?? '';
+      final nameB = b.contact.displayName?.toLowerCase() ?? '';
+      return nameA.compareTo(nameB);
+    });
+    return list;
+  }
+
   void _watchMembers(String bookId) {
     _progressSub?.cancel();
     _progressSub = _milestoneService.watchMembers(bookId).listen((members) {
       final s = state;
       if (s is! CircleDetailLoaded) return;
-      emit(s.copyWith(memberProgress: _toMemberProgress(members)));
+      final progress = _toMemberProgress(members);
+      emit(
+        s.copyWith(
+          memberProgress: progress,
+          members: _sortEntries(s.members, progress),
+        ),
+      );
     });
   }
 
