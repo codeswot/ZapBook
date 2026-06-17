@@ -104,7 +104,9 @@ class ZbfSegmenter {
         }
       }
 
-      final zipBytes = await Isolate.run(() => ZipEncoder().encodeBytes(archive));
+      final zipBytes = await Isolate.run(
+        () => ZipEncoder().encodeBytes(archive),
+      );
 
       yield SegmentBlob(
         index: start ~/ pagesPerSegment,

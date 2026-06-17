@@ -126,7 +126,7 @@ class BookSearchIndex {
             insert.execute([bookId, page.pageNumber, page.chapterTitle, body]);
             indexedPages++;
           }
-          insert.dispose();
+          insert.close();
           db.execute(
             'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
             'VALUES (?, ?, ?)',
@@ -138,7 +138,7 @@ class BookSearchIndex {
           rethrow;
         }
       } finally {
-        db.dispose();
+        db.close();
       }
     } finally {
       handle.close();

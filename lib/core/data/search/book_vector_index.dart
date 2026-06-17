@@ -117,7 +117,7 @@ class BookVectorIndex {
           ),
         ]);
       }
-      insert.dispose();
+      insert.close();
       db.execute(
         'INSERT OR REPLACE INTO embedded_books (book_id, chunk_count, embedded_at) '
         'VALUES (?, ?, ?)',
