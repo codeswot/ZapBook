@@ -4,8 +4,6 @@ import 'package:zapbook/core/data/paragraph_merger.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-final RegExp _whitespace = RegExp(r'\s+');
-
 int countWords(String text) => text.wordCount;
 
 int _blockWords(BookBlock block) {
@@ -112,7 +110,6 @@ String extractMilestoneText(
   }
 
   final buf = StringBuffer();
-  var started = false;
   for (final p in pages) {
     final pWords = density.pageWords.length > p.pageIndex
         ? density.pageWords[p.pageIndex]
@@ -121,22 +118,24 @@ String extractMilestoneText(
     if (pageEnd <= startWord) continue;
     if (p.startWord >= endWord) break;
 
-    if (!started) {
-      started = true;
-      final words = p.text.split(_whitespace);
-      final skipWords = startWord - p.startWord;
-      var wordCount = 0;
-      for (final w in words) {
-        if (wordCount >= skipWords) {
-          buf.write(w);
-          buf.write(' ');
-        }
-        wordCount++;
-        if (wordCount >= (endWord - p.startWord)) break;
+    final startIndex = startWord > p.startWord ? startWord : p.startWord;
+    final endIndex = endWord < pageEnd ? endWord : pageEnd;
+    final takeCount = endIndex - startIndex;
+
+    if (takeCount <= 0) continue;
+
+    final words = RegExp(
+      r'\S+',
+    ).allMatches(p.text).map((m) => m.group(0)!).toList();
+    final skipWords = startIndex - p.startWord;
+    var wordCount = 0;
+    for (final w in words) {
+      if (wordCount >= skipWords) {
+        buf.write(w);
+        buf.write(' ');
       }
-    } else {
-      buf.write(p.text);
-      buf.write(' ');
+      wordCount++;
+      if (wordCount >= (skipWords + takeCount)) break;
     }
   }
 
