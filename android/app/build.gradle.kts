@@ -44,6 +44,9 @@ android {
     }
 
     packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
         resources {
             excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w100.ttf"
             excludes += "assets/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w200.ttf"

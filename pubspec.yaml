@@ -32,7 +32,6 @@ dependencies:
   path_provider: ^2.1.5
   printing: ^5.14.3
   shared_preferences: ^2.5.5
-  sqlite3_flutter_libs: ^0.5.24
   syncfusion_flutter_pdf: ^33.2.8
   ulid: ^2.0.1
   xml: ^6.6.1  
@@ -40,7 +39,7 @@ dependencies:
   image: ^4.8.0
   flutter_secure_storage: ^10.3.1  
   ndk: ^0.8.3
-  sqlite3: ^3.3.2
+  sqlite3: ^3.3.3
   flutter_svg: ^2.3.0
   cached_network_image: ^3.4.1
   http: ^1.2.1
