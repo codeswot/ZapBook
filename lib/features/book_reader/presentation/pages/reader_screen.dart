@@ -20,6 +20,7 @@ import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
 import 'package:zapbook/features/book_reader/data/recognition_quiz_builder.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_state.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.dart';
@@ -220,10 +221,10 @@ class _ReaderScreenState extends State<ReaderScreen>
               final cubit = context.read<ZbfViewerCubit>();
               final total = widget.handle.manifest.pageCount;
               final index = state.currentPage;
-              final font = context.select<ReaderSettingsCubit, ReaderFont>(
-                (c) => c.state.font,
+              final settings = context.select<ReaderSettingsCubit, ReaderSettingsState>(
+                (c) => c.state,
               );
-              final style = ReadingStyle.of(font, colors);
+              final style = ReadingStyle.of(settings.font, colors, textScale: settings.textScale);
               final blocks = _blocksFor(index, state);
               final page = widget.handle.pageAt(index);
 

@@ -39,17 +39,17 @@ class ReadingStyle {
 
   static const double maxContentWidth = 680;
 
-  static ReadingStyle of(ReaderFont font, SemanticColors colors) {
+  static ReadingStyle of(ReaderFont font, SemanticColors colors, {double textScale = 1.0}) {
     final ink = colors.ink;
     final body = font == ReaderFont.serif
         ? GoogleFonts.newsreader(
-            fontSize: 19,
+            fontSize: 19 * textScale,
             height: 1.62,
             letterSpacing: 0.1,
             color: ink,
           )
         : GoogleFonts.hankenGrotesk(
-            fontSize: 18,
+            fontSize: 18 * textScale,
             height: 1.6,
             letterSpacing: 0.1,
             color: ink,
@@ -74,8 +74,8 @@ class ReadingStyle {
         fontStyle: FontStyle.italic,
         color: colors.slate,
       ),
-      caption: body.copyWith(fontSize: 14, color: colors.slate),
-      code: GoogleFonts.jetBrainsMono(fontSize: 14, height: 1.5, color: ink),
+      caption: body.copyWith(fontSize: 14 * textScale, color: colors.slate),
+      code: GoogleFonts.jetBrainsMono(fontSize: 14 * textScale, height: 1.5, color: ink),
       paragraphSpacing: 18,
       firstLineIndent: 0,
     );

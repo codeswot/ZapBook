@@ -12,9 +12,13 @@ class ReaderSettingsCubit extends Cubit<ReaderSettingsState> {
   final SharedPreferences _prefs;
 
   static const _fontKey = 'reader_font';
+  static const _textScaleKey = 'reader_text_scale';
 
   static ReaderSettingsState _load(SharedPreferences prefs) =>
-      ReaderSettingsState(font: ReaderFont.fromName(prefs.getString(_fontKey)));
+      ReaderSettingsState(
+        font: ReaderFont.fromName(prefs.getString(_fontKey)),
+        textScale: prefs.getDouble(_textScaleKey) ?? 1.0,
+      );
 
   void cycleFont() {
     final next =
@@ -26,5 +30,11 @@ class ReaderSettingsCubit extends Cubit<ReaderSettingsState> {
     if (font == state.font) return;
     emit(state.copyWith(font: font));
     _prefs.setString(_fontKey, font.name);
+  }
+
+  void setTextScale(double scale) {
+    if (scale == state.textScale) return;
+    emit(state.copyWith(textScale: scale));
+    _prefs.setDouble(_textScaleKey, scale);
   }
 }
