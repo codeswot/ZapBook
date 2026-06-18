@@ -39,7 +39,11 @@ class ReadingStyle {
 
   static const double maxContentWidth = 680;
 
-  static ReadingStyle of(ReaderFont font, SemanticColors colors, {double textScale = 1.0}) {
+  static ReadingStyle of(
+    ReaderFont font,
+    SemanticColors colors, {
+    double textScale = 1.0,
+  }) {
     final ink = colors.ink;
     final body = font == ReaderFont.serif
         ? GoogleFonts.newsreader(
@@ -75,7 +79,11 @@ class ReadingStyle {
         color: colors.slate,
       ),
       caption: body.copyWith(fontSize: 14 * textScale, color: colors.slate),
-      code: GoogleFonts.jetBrainsMono(fontSize: 14 * textScale, height: 1.5, color: ink),
+      code: GoogleFonts.jetBrainsMono(
+        fontSize: 14 * textScale,
+        height: 1.5,
+        color: ink,
+      ),
       paragraphSpacing: 18,
       firstLineIndent: 0,
     );

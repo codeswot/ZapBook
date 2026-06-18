@@ -221,10 +221,15 @@ class _ReaderScreenState extends State<ReaderScreen>
               final cubit = context.read<ZbfViewerCubit>();
               final total = widget.handle.manifest.pageCount;
               final index = state.currentPage;
-              final settings = context.select<ReaderSettingsCubit, ReaderSettingsState>(
-                (c) => c.state,
+              final settings = context
+                  .select<ReaderSettingsCubit, ReaderSettingsState>(
+                    (c) => c.state,
+                  );
+              final style = ReadingStyle.of(
+                settings.font,
+                colors,
+                textScale: settings.textScale,
               );
-              final style = ReadingStyle.of(settings.font, colors, textScale: settings.textScale);
               final blocks = _blocksFor(index, state);
               final page = widget.handle.pageAt(index);
 

@@ -256,7 +256,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         actorName: 'You',
         bookTitle: bookTitle,
         bookId: groupId,
-        activityDescription: 'You zapped ${recGen.displayName} $amount sats in $bookTitle',
+        activityDescription:
+            'You zapped ${recGen.displayName} $amount sats in $bookTitle',
         timestamp: DateTime.fromMillisecondsSinceEpoch(now),
         type: 'zap',
         isUnread: false,

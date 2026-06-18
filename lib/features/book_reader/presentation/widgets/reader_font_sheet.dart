@@ -17,10 +17,8 @@ class ReaderFontSheet extends StatelessWidget {
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: context.colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: cubit,
-        child: const ReaderFontSheet(),
-      ),
+      builder: (_) =>
+          BlocProvider.value(value: cubit, child: const ReaderFontSheet()),
     );
   }
 
@@ -92,7 +90,9 @@ class _FontFamilySelector extends StatelessWidget {
               right: font == ReaderFont.values.last ? 0 : 8.0,
             ),
             child: Material(
-              color: isSelected ? colors.plum.withValues(alpha: 0.1) : colors.paper2,
+              color: isSelected
+                  ? colors.plum.withValues(alpha: 0.1)
+                  : colors.paper2,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -110,7 +110,9 @@ class _FontFamilySelector extends StatelessWidget {
                     child: Text(
                       font.displayName,
                       style: typography.body.copyWith(
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         color: isSelected ? colors.plum : colors.ink,
                       ),
                     ),
@@ -160,9 +162,7 @@ class _ScaleSlider extends StatelessWidget {
           child: SliderTheme(
             data: SliderThemeData(
               trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(
-                enabledThumbRadius: 10,
-              ),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
               activeTrackColor: colors.plum,
               inactiveTrackColor: colors.hairline2,
               thumbColor: colors.plum,
@@ -224,4 +224,3 @@ class _StepButton extends StatelessWidget {
     );
   }
 }
-
