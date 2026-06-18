@@ -20,6 +20,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SIGN_WITH_KEY: ${{ secrets.SIGN_WITH }}
 
     steps:
       - name: Checkout repository
@@ -89,7 +91,7 @@ jobs:
 
       - name: Get latest zsp version
         id: zsp-version
-        if: ${{ secrets.SIGN_WITH != '' }}
+        if: env.SIGN_WITH_KEY != ''
         run: |
           LATEST_TAG=$(curl -s https://api.github.com/repos/zapstore/zsp/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           VERSION=${LATEST_TAG#v}
@@ -98,25 +100,25 @@ jobs:
 
       - name: Cache zsp binary
         id: cache-zsp
-        if: ${{ secrets.SIGN_WITH != '' }}
+        if: env.SIGN_WITH_KEY != ''
         uses: actions/cache@v4
         with:
           path: ~/bin/zsp
           key: zsp-${{ runner.os }}-${{ steps.zsp-version.outputs.tag }}
 
       - name: Install zsp
-        if: ${{ secrets.SIGN_WITH != '' && steps.cache-zsp.outputs.cache-hit != 'true' }}
+        if: env.SIGN_WITH_KEY != '' && steps.cache-zsp.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/bin
           curl -sL -o ~/bin/zsp "https://github.com/zapstore/zsp/releases/download/${{ steps.zsp-version.outputs.tag }}/zsp-${{ steps.zsp-version.outputs.version }}-linux-amd64"
           chmod +x ~/bin/zsp
 
       - name: Add bin to PATH
-        if: ${{ secrets.SIGN_WITH != '' }}
+        if: env.SIGN_WITH_KEY != ''
         run: echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Publish to Zapstore
-        if: ${{ secrets.SIGN_WITH != '' }}
+        if: env.SIGN_WITH_KEY != ''
         env:
           SIGN_WITH: ${{ secrets.SIGN_WITH }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
