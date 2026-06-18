@@ -24,4 +24,3 @@ images:
     - screenshots/f4df2a6a-fe10-4da9-87cf-f6a5f3a1057e.JPEG
 metadata_sources:
     - github
-release_source: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
