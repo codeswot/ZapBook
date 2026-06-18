@@ -45,8 +45,6 @@ app.*.map.json
 /android/app/release
 /docs/
 zsp
-zapstore.yaml
-/screenshots
 .vercel
 
 # Android keys

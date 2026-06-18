@@ -1,0 +1,27 @@
+repository: https://github.com/codeswot/ZapBook
+description:  A Nostr-native social reading app. Read books together in circles of 1-100 people, hit milestones share your progress with your circle and zap each other sats as encouragement.
+summary: Read together. Share progress. Get sats
+tags:
+    - books
+    - pdf
+    - epub
+    - nostr
+    - bitcoin
+    - marmot
+    - social
+license: MIT
+website: https://www.zapbook.space
+icon: assets/icon.png
+images:
+    - screenshots/5e877daf-c41b-4c12-8369-817e15d5cbf2.JPEG
+    - screenshots/9ab5fdef-b146-4697-9f55-ce093790e0f3.JPEG
+    - screenshots/27d2c5ca-e422-45a1-a1c9-ea34ba4de277.JPEG
+    - screenshots/ca68eec9-1733-4be5-886c-407800dda43f.JPEG
+    - screenshots/047ca91e-d817-4329-a71a-33a99eaa1aa0.JPEG
+    - screenshots/00a5c776-f02b-4baa-8162-04c441c1f817.JPEG
+    - screenshots/bd00b2c1-1919-4c8c-9162-f2bddde3e755.JPEG
+    - screenshots/460d0d46-1676-4d7f-9bee-ced3e885e71f.JPEG
+    - screenshots/f4df2a6a-fe10-4da9-87cf-f6a5f3a1057e.JPEG
+metadata_sources:
+    - github
+release_source: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk

@@ -1,9 +1,12 @@
 name: Release APK Pipeline
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Release version tag (e.g. 1.0.2)'
+        required: true
+        default: '1.0.2'
 
 permissions:
   contents: write
@@ -58,18 +61,66 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.APP_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "Error: APP_KEYSTORE_BASE64 secret is missing!"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.p12
+
       - name: Build APK Release
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.APP_KEYSTORE_PASSWORD }}
         run: flutter build apk --release --split-per-abi
 
       - name: Create GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0-build.${{ github.run_number }}
-          name: Release v1.0.0-build.${{ github.run_number }}
+          tag_name: v${{ github.event.inputs.version_tag }}-build.${{ github.run_number }}
+          name: Release v${{ github.event.inputs.version_tag }}-build.${{ github.run_number }}
           draft: false
           prerelease: false
           files: |
             build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
             build/app/outputs/flutter-apk/app-x86_64-release.apk
+
+      - name: Get latest zsp version
+        id: zsp-version
+        if: ${{ secrets.SIGN_WITH != '' }}
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/zapstore/zsp/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          VERSION=${LATEST_TAG#v}
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Cache zsp binary
+        id: cache-zsp
+        if: ${{ secrets.SIGN_WITH != '' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/bin/zsp
+          key: zsp-${{ runner.os }}-${{ steps.zsp-version.outputs.tag }}
+
+      - name: Install zsp
+        if: ${{ secrets.SIGN_WITH != '' && steps.cache-zsp.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ~/bin
+          curl -sL -o ~/bin/zsp "https://github.com/zapstore/zsp/releases/download/${{ steps.zsp-version.outputs.tag }}/zsp-${{ steps.zsp-version.outputs.version }}-linux-amd64"
+          chmod +x ~/bin/zsp
+
+      - name: Add bin to PATH
+        if: ${{ secrets.SIGN_WITH != '' }}
+        run: echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Publish to Zapstore
+        if: ${{ secrets.SIGN_WITH != '' }}
+        env:
+          SIGN_WITH: ${{ secrets.SIGN_WITH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          zsp publish --quiet zapstore.yaml
+
