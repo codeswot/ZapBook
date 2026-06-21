@@ -16,7 +16,9 @@ class ZapBookApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ThemeCubit>(create: (_) => getIt<ThemeCubit>()),
-        BlocProvider<PerformanceCubit>(create: (_) => getIt<PerformanceCubit>()),
+        BlocProvider<PerformanceCubit>(
+          create: (_) => getIt<PerformanceCubit>(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {

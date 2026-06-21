@@ -127,35 +127,41 @@ void main() {
     expect(blobs.last.pageEnd, 44);
   });
 
-  test('reassembleToFile rebuilds full book from segment stream', () async {
-    const segmenter = ZbfSegmenter();
-    final book = buildBook();
-    final path = await writeBookAndPages(book, '${tempDir.path}/book2.zbf', 45);
-    final handle = await const ZbfReader().open(path);
+  test(
+    'reassembleToDirectory rebuilds full book from segment stream',
+    () async {
+      const segmenter = ZbfSegmenter();
+      final book = buildBook();
+      final path = await writeBookAndPages(
+        book,
+        '${tempDir.path}/book2.zbf',
+        45,
+      );
+      final handle = await const ZbfReader().open(path);
 
-    final blobs = await segmenter.segment(handle).toList();
-    final outputPath = '${tempDir.path}/rebuilt.zbf';
-    await segmenter.reassembleToFile(
-      Stream.fromIterable([for (final blob in blobs) blob.bytes]),
-      outputPath,
-      coverBytes: book.assets['cover.jpg'],
-      sourceBytes: Uint8List.fromList([7, 7]),
-    );
+      final blobs = await segmenter.segment(handle).toList();
+      final outputPath = '${tempDir.path}/rebuilt_dir';
+      await segmenter.reassembleToDirectory(
+        Stream.fromIterable([for (final blob in blobs) blob.bytes]),
+        outputPath,
+        coverBytes: book.assets['cover.jpg'],
+        sourceBytes: Uint8List.fromList([7, 7]),
+      );
 
-    final rebuilt = await const ZbfReader().open(outputPath);
-    expect(rebuilt.manifest.id, book.manifest.id);
-    expect(rebuilt.manifest.pageCount, 45);
-    expect(rebuilt.pageAt(0).pageNumber, 1);
-    expect(rebuilt.pageAt(44).pageNumber, 45);
-    expect(rebuilt.pageAt(30).chapterTitle, 'Chapter 2');
-    expect(rebuilt.assetNamed('img_001.png'), [1, 2, 3, 4]);
-    expect(rebuilt.assetNamed('cover.jpg'), [9, 9, 9]);
-    final bytes = rebuilt.sourceDocumentPath() != null
-        ? File(rebuilt.sourceDocumentPath()!).readAsBytesSync()
-        : null;
-    expect(bytes, [7, 7]);
-    expect(File('$outputPath.part').existsSync(), isFalse);
-  });
+      final rebuilt = await const ZbfReader().open(outputPath);
+      expect(rebuilt.manifest.id, book.manifest.id);
+      expect(rebuilt.manifest.pageCount, 45);
+      expect(rebuilt.pageAt(0).pageNumber, 1);
+      expect(rebuilt.pageAt(44).pageNumber, 45);
+      expect(rebuilt.pageAt(30).chapterTitle, 'Chapter 2');
+      expect(rebuilt.assetNamed('img_001.png'), [1, 2, 3, 4]);
+      expect(rebuilt.assetNamed('cover.jpg'), [9, 9, 9]);
+      final bytes = rebuilt.sourceDocumentPath() != null
+          ? File(rebuilt.sourceDocumentPath()!).readAsBytesSync()
+          : null;
+      expect(bytes, [7, 7]);
+    },
+  );
 
   test('reassembleToFile cleans up partial file on failure', () async {
     const segmenter = ZbfSegmenter();

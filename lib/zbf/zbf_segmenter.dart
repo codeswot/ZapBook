@@ -44,7 +44,11 @@ class _PageRow {
 }
 
 class _DirectoryReassembleResult {
-  const _DirectoryReassembleResult(this.manifest, this.pages, this.writtenAssets);
+  const _DirectoryReassembleResult(
+    this.manifest,
+    this.pages,
+    this.writtenAssets,
+  );
   final BookManifest? manifest;
   final List<_PageRow> pages;
   final Set<String> writtenAssets;
@@ -181,7 +185,9 @@ class ZbfSegmenter {
 
         for (final asset in result.assets) {
           writtenAssets.add(asset.name.replaceFirst('assets/', ''));
-          encoder.addArchiveFile(ArchiveFile(asset.name, asset.bytes.length, asset.bytes));
+          encoder.addArchiveFile(
+            ArchiveFile(asset.name, asset.bytes.length, asset.bytes),
+          );
         }
       }
 
@@ -228,7 +234,9 @@ class ZbfSegmenter {
     }
   }
 
-  static _FileReassembleResult _reassembleToFileIsolate(Map<String, dynamic> args) {
+  static _FileReassembleResult _reassembleToFileIsolate(
+    Map<String, dynamic> args,
+  ) {
     final zip = args['zip'] as Uint8List;
     final alreadyWrittenAssets = args['writtenAssets'] as Set<String>;
     final hasCoverBytes = args['hasCoverBytes'] as bool;
@@ -239,7 +247,8 @@ class ZbfSegmenter {
     final manifestFile = archive.findFile('manifest.json');
     if (manifestFile != null) {
       manifest = BookManifest.fromJson(
-        _jsonUtf8.convert(manifestFile.content as List<int>) as Map<String, Object?>,
+        _jsonUtf8.convert(manifestFile.content as List<int>)
+            as Map<String, Object?>,
       );
     }
 
@@ -265,14 +274,20 @@ class ZbfSegmenter {
       if (hasCoverBytes && name == manifest?.coverAsset) continue;
       if (hasSourceBytes &&
           manifest != null &&
-          name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}')) {
+          name ==
+              AssetNaming.originalDocument(
+                '.${manifest.sourceFormat.wireValue}',
+              )) {
         continue;
       }
 
       final isRoot =
           name == manifest?.coverAsset ||
           (manifest != null &&
-              name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}'));
+              name ==
+                  AssetNaming.originalDocument(
+                    '.${manifest.sourceFormat.wireValue}',
+                  ));
 
       final path = isRoot ? name : file.name;
       assets.add(_AssetFile(path, file.content));
@@ -281,7 +296,9 @@ class ZbfSegmenter {
     return _FileReassembleResult(manifest, pages, assets);
   }
 
-  static _DirectoryReassembleResult _reassembleToDirectoryIsolate(Map<String, dynamic> args) {
+  static _DirectoryReassembleResult _reassembleToDirectoryIsolate(
+    Map<String, dynamic> args,
+  ) {
     final zip = args['zip'] as Uint8List;
     final outputDirectory = args['outputDirectory'] as String;
     final alreadyWrittenAssets = args['writtenAssets'] as Set<String>;
@@ -293,7 +310,8 @@ class ZbfSegmenter {
     final manifestFile = archive.findFile('manifest.json');
     if (manifestFile != null) {
       manifest = BookManifest.fromJson(
-        _jsonUtf8.convert(manifestFile.content as List<int>) as Map<String, Object?>,
+        _jsonUtf8.convert(manifestFile.content as List<int>)
+            as Map<String, Object?>,
       );
     }
 
@@ -317,19 +335,28 @@ class ZbfSegmenter {
       if (file.size > _maxAssetBytes) {
         throw StateError('Segment asset ${file.name} exceeds size limit');
       }
-      if (alreadyWrittenAssets.contains(name) || newlyWrittenAssets.contains(name)) continue;
+      if (alreadyWrittenAssets.contains(name) ||
+          newlyWrittenAssets.contains(name)) {
+        continue;
+      }
 
       if (hasCoverBytes && name == manifest?.coverAsset) continue;
       if (hasSourceBytes &&
           manifest != null &&
-          name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}')) {
+          name ==
+              AssetNaming.originalDocument(
+                '.${manifest.sourceFormat.wireValue}',
+              )) {
         continue;
       }
 
       final isRoot =
           name == manifest?.coverAsset ||
           (manifest != null &&
-              name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}'));
+              name ==
+                  AssetNaming.originalDocument(
+                    '.${manifest.sourceFormat.wireValue}',
+                  ));
 
       final destFile = isRoot
           ? File('$outputDirectory/$name')
@@ -386,11 +413,7 @@ class ZbfSegmenter {
         writtenAssets.addAll(result.writtenAssets);
 
         for (final page in result.pages) {
-          stmt.execute([
-            page.pageIndex,
-            page.chapterIndex,
-            page.json,
-          ]);
+          stmt.execute([page.pageIndex, page.chapterIndex, page.json]);
         }
       }
 
@@ -415,7 +438,6 @@ class ZbfSegmenter {
       db.close();
     }
   }
-
 
   List<BookPage> _pagesFrom(Archive archive) {
     final file = archive.findFile('pages.json');

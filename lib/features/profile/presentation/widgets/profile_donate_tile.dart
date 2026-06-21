@@ -105,7 +105,9 @@ class ProfileDonateTile extends StatelessWidget {
                             pressedElevation: 0,
                           ),
                           activeTrackColor: colors.bitcoin,
-                          inactiveTrackColor: colors.bitcoin.withValues(alpha: 0.24),
+                          inactiveTrackColor: colors.bitcoin.withValues(
+                            alpha: 0.24,
+                          ),
                           thumbColor: colors.paper,
                           overlayColor: colors.bitcoin.withValues(alpha: 0.12),
                           valueIndicatorColor: colors.bitcoin,

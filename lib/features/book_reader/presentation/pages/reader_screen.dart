@@ -275,7 +275,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                 children: [
                   Positioned.fill(
                     child: AnimatedSwitcher(
-                      duration: context.watch<PerformanceCubit>().state.reduceEffects
+                      duration:
+                          context.watch<PerformanceCubit>().state.reduceEffects
                           ? Duration.zero
                           : const Duration(milliseconds: 280),
                       switchInCurve: Curves.easeOutCubic,

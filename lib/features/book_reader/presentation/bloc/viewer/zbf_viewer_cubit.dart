@@ -342,21 +342,18 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     );
 
     final imageName = 'page_${page.pageNumber}.png';
-    
+
     final hasExistingImage = page.blocks.any(
       (b) => b is ImageBlock && b.assetRef == imageName,
     );
-    final newBlocks = hasExistingImage 
-        ? page.blocks 
+    final newBlocks = hasExistingImage
+        ? page.blocks
         : [ImageBlock(assetRef: imageName), ...page.blocks];
 
     if (handle.hasAsset(imageName)) {
       emit(
         state.copyWith(
-          imagePages: {
-            ...state.imagePages,
-            pageIndex: newBlocks,
-          },
+          imagePages: {...state.imagePages, pageIndex: newBlocks},
           rasterizingPages: state.rasterizingPages.difference({pageIndex}),
         ),
       );
@@ -373,10 +370,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
         handle.updateAsset(imageName, imageBytes);
         emit(
           state.copyWith(
-            imagePages: {
-              ...state.imagePages,
-              pageIndex: newBlocks,
-            },
+            imagePages: {...state.imagePages, pageIndex: newBlocks},
             rasterizingPages: state.rasterizingPages.difference({pageIndex}),
           ),
         );

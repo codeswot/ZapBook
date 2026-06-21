@@ -6,28 +6,34 @@ import 'package:zapbook/core/performance/performance_state.dart';
 @LazySingleton()
 class PerformanceCubit extends Cubit<PerformanceState> {
   PerformanceCubit(this._service)
-      : super(PerformanceState(
+    : super(
+        PerformanceState(
           reduceEffects: _service.reduceEffects,
           mode: _service.mode,
-        )) {
+        ),
+      ) {
     _service.reduceEffectsListenable.addListener(_onServiceChanged);
   }
 
   final PerformanceService _service;
 
   void _onServiceChanged() {
-    emit(PerformanceState(
-      reduceEffects: _service.reduceEffects,
-      mode: _service.mode,
-    ));
+    emit(
+      PerformanceState(
+        reduceEffects: _service.reduceEffects,
+        mode: _service.mode,
+      ),
+    );
   }
 
   Future<void> setMode(PerfMode mode) async {
     await _service.setMode(mode);
-    emit(PerformanceState(
-      reduceEffects: _service.reduceEffects,
-      mode: _service.mode,
-    ));
+    emit(
+      PerformanceState(
+        reduceEffects: _service.reduceEffects,
+        mode: _service.mode,
+      ),
+    );
   }
 
   @override

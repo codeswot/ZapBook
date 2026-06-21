@@ -51,11 +51,18 @@ final class ZbfBookHandle {
   final BookManifest manifest;
   final Database _db;
 
-  late final PreparedStatement _pageStmt = _db.prepare('SELECT json FROM pages WHERE page_index = ?');
-  late final PreparedStatement _chapterStmt = _db.prepare('SELECT json FROM pages WHERE chapter_index = ? ORDER BY page_index ASC');
-  late final PreparedStatement _updateStmt = _db.prepare('INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)');
+  late final PreparedStatement _pageStmt = _db.prepare(
+    'SELECT json FROM pages WHERE page_index = ?',
+  );
+  late final PreparedStatement _chapterStmt = _db.prepare(
+    'SELECT json FROM pages WHERE chapter_index = ? ORDER BY page_index ASC',
+  );
+  late final PreparedStatement _updateStmt = _db.prepare(
+    'INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+  );
 
-  final LinkedHashMap<int, BookPage> _pageCache = LinkedHashMap<int, BookPage>();
+  final LinkedHashMap<int, BookPage> _pageCache =
+      LinkedHashMap<int, BookPage>();
   static const int _maxCacheSize = 50;
 
   BookPage? _getCachedPage(int index) {
@@ -91,17 +98,23 @@ final class ZbfBookHandle {
       final pageIndex = row['page_index'] as int;
       final cached = _getCachedPage(pageIndex);
       if (cached != null) return cached;
-      
-      final decoded = BookPage.fromJson(jsonDecode(row['json'] as String) as Map<String, dynamic>);
+
+      final decoded = BookPage.fromJson(
+        jsonDecode(row['json'] as String) as Map<String, dynamic>,
+      );
       _cachePage(pageIndex, decoded);
       return decoded;
     }).toList();
-    
+
     return BookChapter(index: index, title: summary.title, pages: pages);
   }
 
   void updatePage(int globalIndex, BookPage page) {
-    _updateStmt.execute([globalIndex, page.chapterIndex, jsonEncode(page.toJson())]);
+    _updateStmt.execute([
+      globalIndex,
+      page.chapterIndex,
+      jsonEncode(page.toJson()),
+    ]);
     _cachePage(globalIndex, page);
   }
 
@@ -109,13 +122,13 @@ final class ZbfBookHandle {
     if (globalIndex < 0 || globalIndex >= manifest.pageCount) {
       return null;
     }
-    
+
     final cached = _getCachedPage(globalIndex);
     if (cached != null) return cached;
 
     final result = _pageStmt.select([globalIndex]);
     if (result.isEmpty) return null;
-    
+
     final decoded = BookPage.fromJson(
       jsonDecode(result.first['json'] as String) as Map<String, dynamic>,
     );
@@ -135,7 +148,7 @@ final class ZbfBookHandle {
     if (result.isEmpty) {
       throw StateError('Missing page $globalIndex');
     }
-    
+
     final decoded = BookPage.fromJson(
       jsonDecode(result.first['json'] as String) as Map<String, dynamic>,
     );
@@ -152,7 +165,9 @@ final class ZbfBookHandle {
 
   String? sourceDocumentPath() {
     if (dirPath.isEmpty) return null;
-    final f = File('$dirPath/${manifest.id}.${manifest.sourceFormat.wireValue}');
+    final f = File(
+      '$dirPath/${AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}')}',
+    );
     if (f.existsSync()) return f.path;
     return null;
   }
@@ -189,9 +204,9 @@ final class ZbfBookHandle {
     if (dirPath.isEmpty) return null;
     final f = File('$dirPath/assets/$name');
     if (!f.existsSync()) {
-        final f2 = File('$dirPath/$name');
-        if (f2.existsSync()) return f2.readAsBytesSync();
-        return null;
+      final f2 = File('$dirPath/$name');
+      if (f2.existsSync()) return f2.readAsBytesSync();
+      return null;
     }
     return f.readAsBytesSync();
   }
@@ -201,9 +216,9 @@ final class ZbfBookHandle {
     if (dirPath.isEmpty) return null;
     final f = File('$dirPath/assets/$name');
     if (!f.existsSync()) {
-        final f2 = File('$dirPath/$name');
-        if (f2.existsSync()) return await f2.readAsBytes();
-        return null;
+      final f2 = File('$dirPath/$name');
+      if (f2.existsSync()) return await f2.readAsBytes();
+      return null;
     }
     return await f.readAsBytes();
   }
