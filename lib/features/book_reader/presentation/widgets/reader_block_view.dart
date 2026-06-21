@@ -1,12 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zapbook/core/performance/performance_cubit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/widgets/app_shimmer.dart';
 
 class ReaderBlockView extends StatelessWidget {
   const ReaderBlockView({
@@ -20,7 +21,7 @@ class ReaderBlockView extends StatelessWidget {
 
   final BookBlock block;
   final ReadingStyle style;
-  final Uint8List? Function(String assetRef) asset;
+  final Future<Uint8List?> Function(String) asset;
   final String? highlightQuery;
   final double? highlightProgress;
 
@@ -82,7 +83,7 @@ class ReaderBlockView extends StatelessWidget {
         child: Text(text, style: style.caption),
       ),
       ImageBlock(:final assetRef, :final altText) => _ReaderImage(
-        bytes: asset(assetRef),
+        assetGetter: asset,
         assetRef: assetRef,
         altText: altText,
         style: style,
@@ -163,7 +164,7 @@ class _RichText extends StatelessWidget {
 
     final colors = context.colors;
     final TextStyle highlighted;
-    if (getIt<PerformanceService>().reduceEffects) {
+    if (context.watch<PerformanceCubit>().state.reduceEffects) {
       highlighted = base.copyWith(
         backgroundColor: colors.bitcoin2.withValues(alpha: 0.4),
         fontWeight: FontWeight.w600,
@@ -229,46 +230,86 @@ class _RichText extends StatelessWidget {
   }
 }
 
-class _ReaderImage extends StatelessWidget {
+class _ReaderImage extends StatefulWidget {
   const _ReaderImage({
-    required this.bytes,
+    required this.assetGetter,
     required this.assetRef,
     required this.altText,
     required this.style,
   });
 
-  final Uint8List? bytes;
+  final Future<Uint8List?> Function(String) assetGetter;
   final String assetRef;
   final String altText;
   final ReadingStyle style;
 
   @override
+  State<_ReaderImage> createState() => _ReaderImageState();
+}
+
+class _ReaderImageState extends State<_ReaderImage> {
+  Uint8List? _data;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAsset();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReaderImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.assetRef != widget.assetRef ||
+        oldWidget.assetGetter != widget.assetGetter) {
+      _loadAsset();
+    }
+  }
+
+  Future<void> _loadAsset() async {
+    setState(() => _loading = true);
+    final data = await widget.assetGetter(widget.assetRef);
+    if (mounted) {
+      setState(() {
+        _data = data;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final data = bytes;
     return Padding(
-      padding: EdgeInsets.only(bottom: style.paragraphSpacing),
+      padding: EdgeInsets.only(bottom: widget.style.paragraphSpacing),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (data != null)
+          if (_loading)
+            const AppShimmer(
+              child: AppShimmerBox(height: 200, width: double.infinity),
+            )
+          else if (_data != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.memory(
-                data,
+                _data!,
                 fit: BoxFit.fitWidth,
                 gaplessPlayback: true,
                 cacheWidth:
-                    (MediaQuery.sizeOf(context).width *
+                    (ReadingStyle.maxContentWidth *
                             MediaQuery.devicePixelRatioOf(context))
                         .round(),
               ),
             )
           else
-            Text('[missing image: $assetRef]', style: style.caption),
-          if (altText.isNotEmpty)
+            Text(
+              '[missing image: ${widget.assetRef}]',
+              style: widget.style.caption,
+            ),
+          if (widget.altText.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(altText, style: style.caption),
+              child: Text(widget.altText, style: widget.style.caption),
             ),
         ],
       ),

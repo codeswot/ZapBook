@@ -98,13 +98,15 @@ class ProfileDonateTile extends StatelessWidget {
                     Expanded(
                       child: SliderTheme(
                         data: SliderThemeData(
-                          trackHeight: 6,
+                          trackHeight: 20,
                           thumbShape: const RoundSliderThumbShape(
                             enabledThumbRadius: 10,
+                            elevation: 0,
+                            pressedElevation: 0,
                           ),
                           activeTrackColor: colors.bitcoin,
-                          inactiveTrackColor: colors.hairline2,
-                          thumbColor: colors.bitcoin,
+                          inactiveTrackColor: colors.bitcoin.withValues(alpha: 0.24),
+                          thumbColor: colors.paper,
                           overlayColor: colors.bitcoin.withValues(alpha: 0.12),
                           valueIndicatorColor: colors.bitcoin,
                           valueIndicatorTextStyle: typography.caption.copyWith(

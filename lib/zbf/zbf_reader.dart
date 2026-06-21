@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -50,7 +51,33 @@ final class ZbfBookHandle {
   final BookManifest manifest;
   final Database _db;
 
+  late final PreparedStatement _pageStmt = _db.prepare('SELECT json FROM pages WHERE page_index = ?');
+  late final PreparedStatement _chapterStmt = _db.prepare('SELECT json FROM pages WHERE chapter_index = ? ORDER BY page_index ASC');
+  late final PreparedStatement _updateStmt = _db.prepare('INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)');
+
+  final LinkedHashMap<int, BookPage> _pageCache = LinkedHashMap<int, BookPage>();
+  static const int _maxCacheSize = 50;
+
+  BookPage? _getCachedPage(int index) {
+    final page = _pageCache.remove(index);
+    if (page != null) {
+      _pageCache[index] = page;
+      return page;
+    }
+    return null;
+  }
+
+  void _cachePage(int index, BookPage page) {
+    _pageCache[index] = page;
+    if (_pageCache.length > _maxCacheSize) {
+      _pageCache.remove(_pageCache.keys.first);
+    }
+  }
+
   void close() {
+    _pageStmt.close();
+    _chapterStmt.close();
+    _updateStmt.close();
     _db.close();
   }
 
@@ -59,36 +86,41 @@ final class ZbfBookHandle {
       throw RangeError.index(index, manifest.chapterCount, 'index');
     }
     final summary = manifest.chapters[index];
-    final result = _db.select(
-      'SELECT json FROM pages WHERE chapter_index = ? ORDER BY page_index ASC',
-      [index],
-    );
+    final result = _chapterStmt.select([index]);
     final pages = result.map((row) {
-      return BookPage.fromJson(jsonDecode(row['json'] as String) as Map<String, dynamic>);
+      final pageIndex = row['page_index'] as int;
+      final cached = _getCachedPage(pageIndex);
+      if (cached != null) return cached;
+      
+      final decoded = BookPage.fromJson(jsonDecode(row['json'] as String) as Map<String, dynamic>);
+      _cachePage(pageIndex, decoded);
+      return decoded;
     }).toList();
     
     return BookChapter(index: index, title: summary.title, pages: pages);
   }
 
   void updatePage(int globalIndex, BookPage page) {
-    _db.execute(
-      'INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
-      [globalIndex, page.chapterIndex, jsonEncode(page.toJson())],
-    );
+    _updateStmt.execute([globalIndex, page.chapterIndex, jsonEncode(page.toJson())]);
+    _cachePage(globalIndex, page);
   }
 
   BookPage? pageAtOrNull(int globalIndex) {
     if (globalIndex < 0 || globalIndex >= manifest.pageCount) {
       return null;
     }
+    
+    final cached = _getCachedPage(globalIndex);
+    if (cached != null) return cached;
 
-    final result = _db.select('SELECT json FROM pages WHERE page_index = ?', [
-      globalIndex,
-    ]);
+    final result = _pageStmt.select([globalIndex]);
     if (result.isEmpty) return null;
-    return BookPage.fromJson(
+    
+    final decoded = BookPage.fromJson(
       jsonDecode(result.first['json'] as String) as Map<String, dynamic>,
     );
+    _cachePage(globalIndex, decoded);
+    return decoded;
   }
 
   BookPage pageAt(int globalIndex) {
@@ -96,15 +128,19 @@ final class ZbfBookHandle {
       throw RangeError.index(globalIndex, manifest.pageCount, 'globalIndex');
     }
 
-    final result = _db.select('SELECT json FROM pages WHERE page_index = ?', [
-      globalIndex,
-    ]);
+    final cached = _getCachedPage(globalIndex);
+    if (cached != null) return cached;
+
+    final result = _pageStmt.select([globalIndex]);
     if (result.isEmpty) {
       throw StateError('Missing page $globalIndex');
     }
-    return BookPage.fromJson(
+    
+    final decoded = BookPage.fromJson(
       jsonDecode(result.first['json'] as String) as Map<String, dynamic>,
     );
+    _cachePage(globalIndex, decoded);
+    return decoded;
   }
 
   Uint8List? get asset {
@@ -158,5 +194,17 @@ final class ZbfBookHandle {
         return null;
     }
     return f.readAsBytesSync();
+  }
+
+  Future<Uint8List?> assetNamedAsync(String name) async {
+    if (_dynamicAssetCache.containsKey(name)) return _dynamicAssetCache[name]!;
+    if (dirPath.isEmpty) return null;
+    final f = File('$dirPath/assets/$name');
+    if (!f.existsSync()) {
+        final f2 = File('$dirPath/$name');
+        if (f2.existsSync()) return await f2.readAsBytes();
+        return null;
+    }
+    return await f.readAsBytes();
   }
 }

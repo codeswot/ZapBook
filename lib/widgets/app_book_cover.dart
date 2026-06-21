@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
+import 'package:zapbook/core/performance/performance_cubit.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 
@@ -30,7 +30,7 @@ class AppBookCover extends StatelessWidget {
     final semanticColors = context.colors;
     final typography = context.typography;
     final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context)).round();
-    final reduceEffects = getIt<PerformanceService>().reduceEffects;
+    final reduceEffects = context.watch<PerformanceCubit>().state.reduceEffects;
 
     Color hueColor;
     switch (hue) {

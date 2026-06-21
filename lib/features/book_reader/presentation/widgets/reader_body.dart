@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/data/paragraph_merger.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
+import 'package:zapbook/core/performance/performance_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_block_view.dart';
 import 'package:zapbook/theme/reading_style.dart';
 
@@ -46,7 +46,7 @@ class ReaderBody extends StatefulWidget {
 
   final List<BookBlock> blocks;
   final ReadingStyle style;
-  final Uint8List? Function(String assetRef) asset;
+  final Future<Uint8List?> Function(String assetRef) asset;
   final bool canGoForward;
   final bool canGoBack;
   final VoidCallback onTurnForward;
@@ -358,7 +358,7 @@ class _HighlightableBlocks extends StatelessWidget {
 
   final List<BookBlock> blocks;
   final ReadingStyle style;
-  final Uint8List? Function(String assetRef) asset;
+  final Future<Uint8List?> Function(String assetRef) asset;
   final String? highlightQuery;
   final VoidCallback? onHighlightComplete;
   final int anchorIndex;
@@ -376,7 +376,7 @@ class _HighlightableBlocks extends StatelessWidget {
         anchorKey: anchorKey,
       );
     }
-    final reduceEffects = getIt<PerformanceService>().reduceEffects;
+    final reduceEffects = context.watch<PerformanceCubit>().state.reduceEffects;
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         key: ValueKey(query),
@@ -411,7 +411,7 @@ class _BlockColumn extends StatelessWidget {
 
   final List<BookBlock> blocks;
   final ReadingStyle style;
-  final Uint8List? Function(String assetRef) asset;
+  final Future<Uint8List?> Function(String) asset;
   final int anchorIndex;
   final Key anchorKey;
   final String? highlightQuery;

@@ -41,6 +41,7 @@ import 'package:zapbook/core/identity/local_key_signer_source.dart' as _i429;
 import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
+import 'package:zapbook/core/performance/performance_cubit.dart' as _i636;
 import 'package:zapbook/core/performance/performance_service.dart' as _i399;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/app_info_service.dart' as _i19;
@@ -309,6 +310,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i58.ReaderSettingsCubit>(
       () => _i58.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i636.PerformanceCubit>(
+      () => _i636.PerformanceCubit(gh<_i399.PerformanceService>()),
     );
     gh.lazySingleton<_i397.KeyPackageService>(
       () => _i397.KeyPackageService(
