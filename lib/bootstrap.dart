@@ -41,11 +41,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     unawaited(NostrCacheWarmup.start());
     await configureDependencies();
     await getIt<PerformanceService>().init();
-    if (getIt<PerformanceService>().reduceEffects) {
-      PaintingBinding.instance.imageCache
-        ..maximumSizeBytes = 40 << 20
-        ..maximumSize = 120;
-    }
+    PaintingBinding.instance.imageCache
+      ..maximumSizeBytes = 40 << 20
+      ..maximumSize = 120;
     await startSession();
   } on Exception catch (error, stack) {
     Logger.root.warning('Bootstrap setup Error', error, stack);

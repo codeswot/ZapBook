@@ -131,6 +131,21 @@ final class ZbfBookHandle {
 
   void updateAsset(String name, Uint8List data) {
     _dynamicAssetCache[name] = data;
+    if (dirPath.isNotEmpty) {
+      final file = File('$dirPath/assets/$name');
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
+      }
+      file.writeAsBytesSync(data);
+    }
+  }
+
+  bool hasAsset(String name) {
+    if (_dynamicAssetCache.containsKey(name)) return true;
+    if (dirPath.isNotEmpty) {
+      return File('$dirPath/assets/$name').existsSync();
+    }
+    return false;
   }
 
   Uint8List? assetNamed(String name) {

@@ -158,6 +158,7 @@ ParsedContent _parsePdf(
         coverSource: coverSource,
         pageWords: pageWords,
         skippablePages: skippable,
+        assets: coverSource != null ? {'page_1.png': coverSource} : const {},
       );
     } finally {
       db.close();
@@ -283,6 +284,10 @@ _PdfPageDraft _buildPage(
     }
   }
   flushCode();
+
+  if (index == 0) {
+    blocks.insert(0, const ImageBlock(assetRef: 'page_1.png'));
+  }
 
   final sparse = characters < _sparseTextThreshold;
   final opensChapter = blocks.isNotEmpty && blocks.first is HeadingBlock;

@@ -14,25 +14,29 @@ final class ZbfWriter {
     return path;
   }
 
-  void _encodeToFile(ZbfBook book, String path) {
+  Future<void> _encodeToFile(ZbfBook book, String path) async {
     final rootDir = Directory(path);
-    if (!rootDir.existsSync()) {
-      rootDir.createSync(recursive: true);
+    if (!await rootDir.exists()) {
+      await rootDir.create(recursive: true);
     }
 
     final manifestBytes = _encodeJson(book.manifest.toJson());
-    File(
-      '${rootDir.path}/manifest.json',
-    ).writeAsBytesSync(manifestBytes, flush: true);
+    final futures = <Future<dynamic>>[
+      File('${rootDir.path}/manifest.json').writeAsBytes(manifestBytes),
+    ];
 
+    final hasAssets = book.assets.isNotEmpty || book.fileAssets.isNotEmpty;
     final assetsDir = Directory('${rootDir.path}/assets');
-    assetsDir.createSync(recursive: true);
+    if (hasAssets && !await assetsDir.exists()) {
+      await assetsDir.create(recursive: true);
+    }
+
     book.assets.forEach((name, bytes) {
       final isRoot = _isRootAsset(name, book.manifest.coverAsset);
       final destPath = isRoot
           ? '${rootDir.path}/$name'
           : '${assetsDir.path}/$name';
-      File(destPath).writeAsBytesSync(bytes, flush: true);
+      futures.add(File(destPath).writeAsBytes(bytes));
     });
 
     book.fileAssets.forEach((name, filePath) {
@@ -40,8 +44,10 @@ final class ZbfWriter {
       final destPath = isRoot
           ? '${rootDir.path}/$name'
           : '${assetsDir.path}/$name';
-      File(filePath).copySync(destPath);
+      futures.add(File(filePath).copy(destPath));
     });
+
+    await Future.wait(futures);
   }
 
   bool _isRootAsset(String name, String coverAsset) =>
