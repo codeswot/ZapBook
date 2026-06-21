@@ -6,6 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/features/library/domain/entities/share_skip.dart';
+import 'package:zapbook/features/library/domain/usecases/share_book_with.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -18,6 +20,7 @@ import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_row.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/share_result_sheet.dart';
+import 'package:zapbook/widgets/app_toast.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class ShareCircleSheet extends StatelessWidget {
@@ -75,8 +78,7 @@ class _BodyState extends State<_Body> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ShareCircleCubit, ShareCircleState>(
-      listener: _onStateChanged,
+    return BlocBuilder<ShareCircleCubit, ShareCircleState>(
       builder: (context, state) {
         final colors = context.colors;
         final typography = context.typography;
@@ -94,7 +96,6 @@ class _BodyState extends State<_Body> {
             : <String>[];
         final isLoading = state is ShareCircleLoading;
         final isAdding = state is ShareCircleBusy && state.adding;
-        final isSharing = state is ShareCircleBusy && state.sharing;
         final error = _validateNpub(_npubController.text, state);
 
         String labelFor(String npub) {
@@ -278,17 +279,59 @@ class _BodyState extends State<_Body> {
                   ),
                 const SizedBox(height: 24),
                 AppButton(
-                  label: isSharing
-                      ? 'Sharing…'
-                      : selectedNpubs.isEmpty
+                  label: selectedNpubs.isEmpty
                       ? 'Share'
                       : 'Share with ${selectedNpubs.length}',
                   icon: LucideIcons.userPlus,
                   variant: AppButtonVariant.purple,
                   fullWidth: true,
-                  onTap: (isSharing || selectedNpubs.isEmpty)
+                  onTap: selectedNpubs.isEmpty
                       ? null
-                      : () => cubit.share(widget.book.id),
+                      : () {
+                          final shareBookWith = getIt<ShareBookWith>();
+                          final rootContext = context;
+                          final friendsList = List<Contact>.from(friends);
+                          final npubsToShare = List<String>.from(selectedNpubs);
+                          final bookId = widget.book.id;
+
+                          context.toast.showInfo('Sharing book');
+
+                          rootContext.pop();
+
+                          shareBookWith(bookId, npubsToShare)
+                              .then((skipped) {
+                                if (rootContext.mounted) {
+                                  if (skipped.isNotEmpty) {
+                                    ShareResultSheet.show(
+                                      rootContext,
+                                      skipped,
+                                      friendsList,
+                                    );
+                                  } else {
+                                    context.toast.showSuccess(
+                                      'Book shared successfully!',
+                                    );
+                                  }
+                                }
+                              })
+                              .catchError((_) {
+                                if (rootContext.mounted) {
+                                  final allSkipped = npubsToShare
+                                      .map(
+                                        (n) => ShareSkip(
+                                          npub: n,
+                                          reason: ShareSkipReason.noKeyPackage,
+                                        ),
+                                      )
+                                      .toList();
+                                  ShareResultSheet.show(
+                                    rootContext,
+                                    allSkipped,
+                                    friendsList,
+                                  );
+                                }
+                              });
+                        },
                 ),
                 const SizedBox(height: 10),
                 AppButton(
@@ -303,15 +346,5 @@ class _BodyState extends State<_Body> {
         );
       },
     );
-  }
-
-  void _onStateChanged(BuildContext context, ShareCircleState state) {
-    if (state is ShareCircleLoaded && state.shareResult != null) {
-      final result = state.shareResult!;
-      context.pop();
-      if (result.isNotEmpty) {
-        ShareResultSheet.show(context, result, state.friends);
-      }
-    }
   }
 }

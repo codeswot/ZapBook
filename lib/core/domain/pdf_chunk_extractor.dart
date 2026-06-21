@@ -1,10 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:zapbook/zbf/zbf.dart';
 
 abstract interface class PdfChunkExtractor {
   Future<List<BookPage>> extractRange(
-    Uint8List bytes,
+    String pdfFilePath,
     int startPageIndex,
     int endPageIndex,
     String chapterTitle,

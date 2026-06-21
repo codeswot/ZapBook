@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 void main() {
@@ -66,7 +68,6 @@ void main() {
     );
     return ZbfBook(
       manifest: manifest,
-      chapters: chapters,
       assets: {
         'img_001.png': Uint8List.fromList([1, 2, 3, 4]),
         'cover.jpg': Uint8List.fromList([9, 9, 9]),
@@ -74,11 +75,47 @@ void main() {
     );
   }
 
+  Future<String> writeBookAndPages(
+    ZbfBook book,
+    String outPath,
+    int pageCount,
+  ) async {
+    final path = await const ZbfWriter().write(book, outPath);
+    final db = sqlite3.open('$path/pages.db');
+    db.execute(
+      'CREATE TABLE IF NOT EXISTS pages (page_index INTEGER PRIMARY KEY, chapter_index INTEGER, json TEXT)',
+    );
+    final stmt = db.prepare(
+      'INSERT INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+    );
+
+    final pagesPerChapter = 25;
+    for (var i = 0; i < pageCount; i++) {
+      final page = BookPage(
+        pageNumber: i + 1,
+        chapterIndex: i ~/ pagesPerChapter,
+        chapterTitle: 'Chapter ${i ~/ pagesPerChapter + 1}',
+        layoutType: i == 0
+            ? BookLayoutType.illustration
+            : BookLayoutType.textHeavy,
+        needsAiProcessing: false,
+        blocks: [
+          ParagraphBlock(text: 'Page ${i + 1} body'),
+          if (i == 0) const ImageBlock(assetRef: 'img_001.png'),
+        ],
+      );
+      stmt.execute([i, page.chapterIndex, jsonEncode(page.toJson())]);
+    }
+    db.close();
+    return path;
+  }
+
   test('segment splits book into page-bounded blobs', () async {
     const segmenter = ZbfSegmenter();
-    final path = await const ZbfWriter().write(
+    final path = await writeBookAndPages(
       buildBook(),
       '${tempDir.path}/book1.zbf',
+      45,
     );
     final handle = await const ZbfReader().open(path);
 
@@ -93,10 +130,7 @@ void main() {
   test('reassembleToFile rebuilds full book from segment stream', () async {
     const segmenter = ZbfSegmenter();
     final book = buildBook();
-    final path = await const ZbfWriter().write(
-      book,
-      '${tempDir.path}/book2.zbf',
-    );
+    final path = await writeBookAndPages(book, '${tempDir.path}/book2.zbf', 45);
     final handle = await const ZbfReader().open(path);
 
     final blobs = await segmenter.segment(handle).toList();
@@ -114,16 +148,19 @@ void main() {
     expect(rebuilt.pageAt(0).pageNumber, 1);
     expect(rebuilt.pageAt(44).pageNumber, 45);
     expect(rebuilt.pageAt(30).chapterTitle, 'Chapter 2');
-    expect(rebuilt.asset('img_001.png'), [1, 2, 3, 4]);
-    expect(rebuilt.asset('cover.jpg'), [9, 9, 9]);
-    expect(rebuilt.sourceDocument(), [7, 7]);
+    expect(rebuilt.assetNamed('img_001.png'), [1, 2, 3, 4]);
+    expect(rebuilt.assetNamed('cover.jpg'), [9, 9, 9]);
+    final bytes = rebuilt.sourceDocumentPath() != null
+        ? File(rebuilt.sourceDocumentPath()!).readAsBytesSync()
+        : null;
+    expect(bytes, [7, 7]);
     expect(File('$outputPath.part').existsSync(), isFalse);
   });
 
   test('reassembleToFile cleans up partial file on failure', () async {
     const segmenter = ZbfSegmenter();
     final outputPath = '${tempDir.path}/broken.zbf';
-
+    await writeBookAndPages(buildBook(), '${tempDir.path}/book3.zbf', 45);
     await expectLater(
       segmenter.reassembleToFile(
         Stream<Uint8List>.error(StateError('download failed')),

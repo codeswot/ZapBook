@@ -17,7 +17,7 @@ final class ParsedContent {
   final String title;
   final String author;
   final bool needsAiProcessing;
-  final List<BookChapter> chapters;
+  final List<ChapterSummary> chapters;
   final Map<String, Uint8List> assets;
   final Uint8List? coverSource;
   final List<int>? pageWords;

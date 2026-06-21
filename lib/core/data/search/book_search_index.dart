@@ -119,8 +119,10 @@ class BookSearchIndex {
           );
           var indexedPages = 0;
           for (var i = 0; i < manifest.pageCount; i++) {
-            final page = handle.pageAt(i);
-            if (page.layoutType == BookLayoutType.processing) continue;
+            final page = handle.pageAtOrNull(i);
+            if (page == null || page.layoutType == BookLayoutType.processing) {
+              continue;
+            }
             final body = _pageText(page);
             if (body.isEmpty) continue;
             insert.execute([bookId, page.pageNumber, page.chapterTitle, body]);

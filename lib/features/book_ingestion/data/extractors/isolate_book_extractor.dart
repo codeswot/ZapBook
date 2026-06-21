@@ -21,7 +21,12 @@ abstract base class IsolateBookExtractor implements BookExtractor {
 
   String get fileExtension;
 
-  Future<ParsedContent> parse(String filePath, String title);
+  Future<ParsedContent> parse(
+    String filePath,
+    String title,
+    String bookId,
+    String outputDirectory,
+  );
 
   @override
   bool supports(File file) => file.path.toLowerCase().endsWith(fileExtension);
@@ -29,6 +34,8 @@ abstract base class IsolateBookExtractor implements BookExtractor {
   @override
   Stream<IngestionProgress> extract(
     File file, {
+    required String bookId,
+    required String outputDirectory,
     Future<WizardData>? wizardDataFuture,
   }) async* {
     final title = _titleFromPath(file.path);
@@ -39,7 +46,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
       currentItem: 'Reading $title',
     );
 
-    final parsed = await parse(file.path, title);
+    final parsed = await parse(file.path, title, bookId, outputDirectory);
     yield IngestionProgress.extracting(
       progress: 0.85,
       currentItem: 'Parsed ${parsed.chapters.length} chapters',
@@ -65,6 +72,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
     final finalGenre = customData?.genre;
 
     final book = _assembler.assemble(
+      id: bookId,
       title: finalTitle,
       author: finalAuthor,
       genre: finalGenre,

@@ -290,7 +290,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                                 child: ReaderBody(
                                   blocks: blocks,
                                   style: style,
-                                  asset: widget.handle.asset,
+                                  asset: widget.handle.assetNamed,
                                   canGoForward: index < total - 1,
                                   canGoBack: index > 0,
                                   initialScrollOffset: _scrollOffsets[index],

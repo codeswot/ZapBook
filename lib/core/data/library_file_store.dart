@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/identity/account_paths.dart';
+import 'package:zapbook/zbf/support/asset_naming.dart';
 
 @lazySingleton
 class LibraryFileStore {
@@ -11,8 +12,8 @@ class LibraryFileStore {
 
   static const _libraryDir = 'library';
   static const _segmentDir = 'seg';
-  static const _zbfName = 'book.zbf';
-  static const _coverName = 'cover.png';
+
+  static const _coverName = AssetNaming.coverAsset;
 
   Directory? _support;
   Directory? _cache;
@@ -33,11 +34,14 @@ class LibraryFileStore {
     return '${root.path}/$_libraryDir/$bookId';
   }
 
-  Future<File> zbfFile(String bookId) async =>
-      File('${await _bookPath(bookId)}/$_zbfName');
+  Future<Directory> zbfFile(String bookId) async =>
+      Directory(await _bookPath(bookId));
 
   Future<File> coverFile(String bookId) async =>
       File('${await _bookPath(bookId)}/$_coverName');
+
+  Future<File> manifestFile(String bookId) async =>
+      File('${await _bookPath(bookId)}/manifest.json');
 
   Future<File> originalFile(String bookId, String extension) async =>
       File('${await _bookPath(bookId)}/original.$extension');
@@ -49,10 +53,9 @@ class LibraryFileStore {
   }
 
   Future<String> writeZbf(String bookId, Uint8List bytes) async {
-    await bookDir(bookId);
-    final file = await zbfFile(bookId);
-    await file.writeAsBytes(bytes, flush: true);
-    return file.path;
+    throw UnsupportedError(
+      'writeZbf is no longer supported as books are now directories.',
+    );
   }
 
   Future<String?> writeCover(String bookId, Uint8List? bytes) async {
@@ -63,11 +66,17 @@ class LibraryFileStore {
     return file.path;
   }
 
-  Future<bool> hasZbf(String bookId) async => (await zbfFile(bookId)).exists();
+  Future<bool> hasZbf(String bookId) async {
+    final zbf = await zbfFile(bookId);
+    return File('${zbf.path}/manifest.json').existsSync();
+  }
 
   Future<String?> zbfPathIfExists(String bookId) async {
-    final file = await zbfFile(bookId);
-    return file.existsSync() ? file.path : null;
+    if (await hasZbf(bookId)) {
+      final file = await zbfFile(bookId);
+      return file.path;
+    }
+    return null;
   }
 
   Future<String?> coverPathIfExists(String bookId) async {

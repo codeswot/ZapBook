@@ -34,13 +34,13 @@ JSON shape exactly.
 
 ## ZapBook Format (ZBF)
 
-A `.zbf` file is a ZIP archive:
+A `.zbf` package (directory or archive) structure:
 
 ```text
-book.zbf
+book.zbf/
 ├── manifest.json     metadata (title, author, counts, cover ref, flags)
 ├── cover.png         extracted or generated
-├── chapters/         ch_001.json … (ordered BookPage arrays)
+├── pages.db          SQLite database of pages (JSON rows) for fast on-demand rendering
 └── assets/           img_001.png … (extracted images)
 ```
 
@@ -56,6 +56,20 @@ seam the reader feature consumes later.
 | ------ |----------------------------------------------------------- |
 | PDF    | page 1 rendered to 600×900                                 |
 | EPUB   | cover image declared in `content.opf`                      |
+
+## Circle Sharing
+
+ZapBook securely shares books within Nostr circles using **Blossom** for decentralized storage and **Marmot** for NIP-104 group encryption.
+
+### How the Data Flows
+
+To keep sharing fast and reliable, ZapBook doesn't upload the entire book at once. Instead, it breaks it down into pieces:
+
+1. **Local Database (`pages.db`):** When you read a book locally, the app uses a highly efficient SQLite database (`pages.db`) to render pages on demand without bloating memory.
+2. **Chunking into Segments (`.zbfseg`):** During upload, the app reads from `pages.db` and chunks the book into 20-page zip archives called segments. Each segment contains the JSON data for those 20 pages and any image assets they reference.
+3. **The Manifest (`manifest.json`):** The book's metadata (title, author, total pages) is bundled into *every* segment. This guarantees the app knows what it's downloading even if segments arrive out of order.
+4. **Encryption & Upload:** Each `.zbfseg` segment is encrypted individually via Marmot using the circle's shared key and uploaded to a Blossom server. The metadata for these segments is securely published to the Nostr circle.
+5. **Download & Reassembly:** When a user opens a shared book, the app downloads the encrypted segments, decrypts them, and reassembles them locally. Finally, it unpacks them back into a fast, local `pages.db` so the new user gets the same smooth reading experience.
 
 ## Getting started
 

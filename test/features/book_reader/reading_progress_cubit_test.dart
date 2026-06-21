@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:archive/archive.dart';
+
 import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
@@ -73,10 +73,7 @@ void main() {
       needsAiProcessing: false,
       pageWords: const [1000, 1000],
     );
-    final epubHandle = ZbfBookHandle(
-      archive: Archive(),
-      manifest: epubManifest,
-    );
+    final epubHandle = ZbfBookHandle(dirPath: '', manifest: epubManifest);
     var now = 0;
     final epubCubit = ReadingProgressCubit.forBook(
       epubHandle,
@@ -105,7 +102,7 @@ void main() {
       needsAiProcessing: false,
       pageWords: const [1000, 1000],
     );
-    final pdfHandle = ZbfBookHandle(archive: Archive(), manifest: pdfManifest);
+    final pdfHandle = ZbfBookHandle(dirPath: '', manifest: pdfManifest);
     now = 0;
     final pdfCubit = ReadingProgressCubit.forBook(
       pdfHandle,

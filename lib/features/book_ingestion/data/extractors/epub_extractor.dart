@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:xml/xml.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -23,28 +26,56 @@ final class EpubExtractor extends IsolateBookExtractor {
   String get fileExtension => '.epub';
 
   @override
-  Future<ParsedContent> parse(String filePath, String title) =>
-      Isolate.run(() => _parseEpub(filePath, title));
+  Future<ParsedContent> parse(
+    String filePath,
+    String title,
+    String bookId,
+    String outputDirectory,
+  ) => Isolate.run(() {
+    final bytes = File(filePath).readAsBytesSync();
+    return _parseEpub(bytes, title, outputDirectory);
+  });
 }
 
-Future<ParsedContent> _parseEpub(String filePath, String fallbackTitle) async {
-  final inputStream = InputFileStream(filePath);
+ParsedContent _parseEpub(
+  Uint8List bytes,
+  String fallbackTitle,
+  String outputDirectory,
+) {
+  final archive = ZipDecoder().decodeBytes(bytes);
+  final opfPath = _locateOpf(archive);
+  if (opfPath == null) {
+    throw const FormatException('EPUB is missing content.opf');
+  }
+  final opfXml = archive.textFile(opfPath);
+  if (opfXml == null) {
+    throw const FormatException('EPUB content.opf is unreadable');
+  }
+
+  final opfDir = _directoryOf(opfPath);
+  final package = _Package.parse(XmlDocument.parse(opfXml), opfDir);
+
+  final db = sqlite3.open('$outputDirectory/pages.db');
+  db.execute('PRAGMA journal_mode=WAL;');
   try {
-    final archive = ZipDecoder().decodeStream(inputStream);
-    final opfPath = _locateOpf(archive);
-    if (opfPath == null) {
-      throw const FormatException('EPUB is missing content.opf');
-    }
-    final opfXml = archive.textFile(opfPath);
-    if (opfXml == null) {
-      throw const FormatException('EPUB content.opf is unreadable');
-    }
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS pages (
+          page_index INTEGER PRIMARY KEY,
+          chapter_index INTEGER,
+          json TEXT
+        )
+      ''');
 
-    final opfDir = _directoryOf(opfPath);
-    final package = _Package.parse(XmlDocument.parse(opfXml), opfDir);
+    final stmt = db.prepare(
+      'INSERT INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+    );
 
-    final assetRegistry = _AssetRegistry();
-    final chapters = <BookChapter>[];
+    final assetRegistry = _AssetRegistry(outputDirectory);
+    final chapters = <ChapterSummary>[];
+    final pageWords = <int>[];
+    final skippable = <int>[];
+    var globalPageIndex = 0;
+
     for (var index = 0; index < package.spine.length; index++) {
       final chapter = _parseChapter(
         archive,
@@ -53,7 +84,32 @@ Future<ParsedContent> _parseEpub(String filePath, String fallbackTitle) async {
         assetRegistry,
       );
       if (chapter != null) {
-        chapters.add(chapter);
+        for (final page in chapter.pages) {
+          stmt.execute([globalPageIndex, index, jsonEncode(page.toJson())]);
+          globalPageIndex++;
+
+          var words = 0;
+          for (final block in page.blocks) {
+            final text = switch (block) {
+              ParagraphBlock(:final text) => text,
+              HeadingBlock(:final text) => text,
+              PullquoteBlock(:final text) => text,
+              CaptionBlock(:final text) => text,
+              CodeBlock(:final text) => text,
+              _ => '',
+            };
+            words += text.wordCount;
+          }
+          pageWords.add(words);
+          if (words == 0) skippable.add(pageWords.length - 1);
+        }
+        chapters.add(
+          ChapterSummary(
+            index: index,
+            title: chapter.title,
+            pageCount: chapter.pages.length,
+          ),
+        );
       }
     }
 
@@ -62,39 +118,18 @@ Future<ParsedContent> _parseEpub(String filePath, String fallbackTitle) async {
         ? null
         : archive.binaryFile(coverHref);
 
-    final pageWords = <int>[];
-    final skippable = <int>[];
-    for (final chapter in chapters) {
-      for (final page in chapter.pages) {
-        var words = 0;
-        for (final block in page.blocks) {
-          final text = switch (block) {
-            ParagraphBlock(:final text) => text,
-            HeadingBlock(:final text) => text,
-            PullquoteBlock(:final text) => text,
-            CaptionBlock(:final text) => text,
-            CodeBlock(:final text) => text,
-            _ => '',
-          };
-          words += text.wordCount;
-        }
-        pageWords.add(words);
-        if (words == 0) skippable.add(pageWords.length - 1);
-      }
-    }
-
     return ParsedContent(
       title: package.title.isEmpty ? fallbackTitle : package.title,
       author: package.author,
       needsAiProcessing: false,
       chapters: chapters,
-      assets: assetRegistry.assets,
+      assets: const {},
       coverSource: coverSource,
       pageWords: pageWords,
       skippablePages: skippable,
     );
   } finally {
-    await inputStream.close();
+    db.close();
   }
 }
 
@@ -328,7 +363,9 @@ String _extension(String path) {
 }
 
 final class _AssetRegistry {
-  final Map<String, Uint8List> assets = {};
+  _AssetRegistry(this.outputDirectory);
+
+  final String outputDirectory;
   final Map<String, String> _byPath = {};
   int _counter = 0;
 
@@ -340,7 +377,11 @@ final class _AssetRegistry {
     _counter++;
     final assetName = AssetNaming.imageAsset(_counter, extension);
     _byPath[path] = assetName;
-    assets[assetName] = bytes;
+
+    final file = File('$outputDirectory/assets/$assetName');
+    file.createSync(recursive: true);
+    file.writeAsBytesSync(bytes, flush: true);
+
     return assetName;
   }
 }

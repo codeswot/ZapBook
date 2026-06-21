@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
@@ -184,6 +183,9 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       final data = await loader(pageIndex).timeout(_loadTimeout);
       if (data == null) {
         _loadedSegments.remove(segmentIndex);
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (!isClosed) retryPage(pageIndex);
+        });
         return;
       }
       for (var i = 0; i < data.pages.length; i++) {
@@ -196,14 +198,17 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     } catch (error, stack) {
       _loadedSegments.remove(segmentIndex);
       _logger.warning('Segment load failed for page $pageIndex', error, stack);
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!isClosed) retryPage(pageIndex);
+      });
     }
   }
 
   Future<void> _ensureChunkIngested(int chunkIndex, {int? priorityPage}) async {
     if (_scheduledChunks.contains(chunkIndex)) return;
 
-    final pdf = handle.sourceDocument();
-    if (pdf == null) return;
+    final pdfFilePath = handle.sourceDocumentPath();
+    if (pdfFilePath == null) return;
 
     final pageCount = handle.manifest.pageCount;
     final start = chunkIndex == 0 ? 0 : 10 + (chunkIndex - 1) * 20;
@@ -220,13 +225,13 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
     try {
       final windowEnd = (priority + _window - 1).clamp(start, end);
-      await _extractInto(pdf, priority, windowEnd, title, chunkIndex);
+      await _extractInto(pdfFilePath, priority, windowEnd, title, chunkIndex);
 
       if (windowEnd < end) {
-        await _extractInto(pdf, windowEnd + 1, end, title, chunkIndex);
+        await _extractInto(pdfFilePath, windowEnd + 1, end, title, chunkIndex);
       }
       if (priority > start) {
-        await _extractInto(pdf, start, priority - 1, title, chunkIndex);
+        await _extractInto(pdfFilePath, start, priority - 1, title, chunkIndex);
       }
 
       if (isClosed) return;
@@ -238,14 +243,14 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   }
 
   Future<void> _extractInto(
-    Uint8List pdf,
+    String pdfFilePath,
     int start,
     int end,
     String title,
     int chunkIndex,
   ) async {
     final pages = await _chunkExtractor
-        .extractRange(pdf, start, end, title, chunkIndex)
+        .extractRange(pdfFilePath, start, end, title, chunkIndex)
         .timeout(_loadTimeout);
     final saved = <int, BookPage>{};
     for (var i = 0; i < pages.length; i++) {
@@ -286,8 +291,8 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   }
 
   void _prefetch(int centerIndex) {
-    final pdf = handle.sourceDocument();
-    if (pdf == null) return;
+    final pdfFilePath = handle.sourceDocumentPath();
+    if (pdfFilePath == null) return;
 
     final pagesToQueue = <int>[];
     for (var i = centerIndex; i < centerIndex + 3; i++) {
@@ -307,11 +312,11 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
     if (pagesToQueue.isNotEmpty) {
       _prefetchQueue.addAll(pagesToQueue);
-      _processQueue(pdf);
+      _processQueue(pdfFilePath);
     }
   }
 
-  Future<void> _processQueue(Uint8List pdf) async {
+  Future<void> _processQueue(String pdfFilePath) async {
     if (_isProcessingQueue) return;
     _isProcessingQueue = true;
 
@@ -320,7 +325,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
       final pageIndex = _prefetchQueue.removeAt(0);
       final page = handle.pageAt(pageIndex);
       if (page.layoutType == BookLayoutType.processing) continue;
-      await _rasterizePage(pageIndex, pdf, page);
+      await _rasterizePage(pageIndex, pdfFilePath, page);
     }
 
     _isProcessingQueue = false;
@@ -328,7 +333,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   Future<void> _rasterizePage(
     int pageIndex,
-    Uint8List pdf,
+    String pdfFilePath,
     BookPage page,
   ) async {
     if (isClosed) return;
@@ -339,7 +344,10 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     final imageName = 'page_${page.pageNumber}.png';
 
     try {
-      final imageBytes = await _rasterizer.render(pdf, page.pageNumber - 1);
+      final imageBytes = await _rasterizer.render(
+        pdfFilePath,
+        page.pageNumber - 1,
+      );
       if (isClosed) return;
       if (imageBytes != null) {
         handle.updateAsset(imageName, imageBytes);

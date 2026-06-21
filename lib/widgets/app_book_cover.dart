@@ -176,6 +176,8 @@ class AppBookCover extends StatelessWidget {
                     children: [
                       Text(
                         title!,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: typography.displayM.copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: titleSize,

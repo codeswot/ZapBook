@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
@@ -11,10 +12,11 @@ final class PrintingPdfRasterizer implements PdfPageRasterizer {
 
   @override
   Future<Uint8List?> render(
-    Uint8List pdfBytes,
+    String pdfFilePath,
     int pageIndex, {
     double dpi = 150,
   }) async {
+    final pdfBytes = File(pdfFilePath).readAsBytesSync();
     await for (final page in Printing.raster(
       pdfBytes,
       pages: [pageIndex],

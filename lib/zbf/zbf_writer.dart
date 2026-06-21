@@ -4,10 +4,7 @@ import 'dart:typed_data';
 
 import 'dart:isolate';
 
-import 'package:archive/archive_io.dart';
-
 import 'package:zapbook/zbf/entities/zbf_book.dart';
-import 'package:zapbook/zbf/support/asset_naming.dart';
 
 final class ZbfWriter {
   const ZbfWriter();
@@ -18,38 +15,37 @@ final class ZbfWriter {
   }
 
   void _encodeToFile(ZbfBook book, String path) {
-    final encoder = ZipFileEncoder()..create(path);
-
-    final manifestBytes = _encodeJson(book.manifest.toJson());
-    encoder.addArchiveFile(
-      ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
-    );
-
-    for (final chapter in book.chapters) {
-      final name = 'chapters/${AssetNaming.chapterFile(chapter.index)}';
-      final bytes = _encodeJson(chapter.toJson());
-      encoder.addArchiveFile(ArchiveFile(name, bytes.length, bytes));
+    final rootDir = Directory(path);
+    if (!rootDir.existsSync()) {
+      rootDir.createSync(recursive: true);
     }
 
+    final manifestBytes = _encodeJson(book.manifest.toJson());
+    File(
+      '${rootDir.path}/manifest.json',
+    ).writeAsBytesSync(manifestBytes, flush: true);
+
+    final assetsDir = Directory('${rootDir.path}/assets');
+    assetsDir.createSync(recursive: true);
     book.assets.forEach((name, bytes) {
-      final assetPath = _isRootAsset(name, book.manifest.coverAsset)
-          ? name
-          : 'assets/$name';
-      encoder.addArchiveFile(ArchiveFile(assetPath, bytes.length, bytes));
+      final isRoot = _isRootAsset(name, book.manifest.coverAsset);
+      final destPath = isRoot
+          ? '${rootDir.path}/$name'
+          : '${assetsDir.path}/$name';
+      File(destPath).writeAsBytesSync(bytes, flush: true);
     });
 
     book.fileAssets.forEach((name, filePath) {
-      final assetPath = _isRootAsset(name, book.manifest.coverAsset)
-          ? name
-          : 'assets/$name';
-      encoder.addFile(File(filePath), assetPath);
+      final isRoot = _isRootAsset(name, book.manifest.coverAsset);
+      final destPath = isRoot
+          ? '${rootDir.path}/$name'
+          : '${assetsDir.path}/$name';
+      File(filePath).copySync(destPath);
     });
-
-    encoder.close();
   }
 
   bool _isRootAsset(String name, String coverAsset) =>
-      name == coverAsset || name == AssetNaming.sourceDocument;
+      name == coverAsset || name.startsWith('original.');
 
   Uint8List _encodeJson(Object? json) {
     return Uint8List.fromList(JsonUtf8Encoder().convert(json));

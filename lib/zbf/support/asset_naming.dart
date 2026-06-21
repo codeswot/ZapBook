@@ -3,7 +3,7 @@ final class AssetNaming {
 
   static const String coverAsset = 'cover.jpg';
 
-  static const String sourceDocument = 'source.pdf';
+  static String originalDocument(String extension) => 'original$extension';
 
   static String imageAsset(int index, String extension) {
     final padded = index.toString().padLeft(3, '0');

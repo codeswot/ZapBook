@@ -314,8 +314,8 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   Future<void> _indexForSearch(String bookId) async {
+    if (!await _fileStore.hasZbf(bookId)) return;
     final zbf = await _fileStore.zbfFile(bookId);
-    if (!zbf.existsSync()) return;
     await _searchIndex.ensureIndexed(bookId, zbf.path);
     await _vectorIndex.ensureEmbedded(bookId, zbf.path);
   }
@@ -340,7 +340,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   }
 
   Uint8List? _asset(ZbfBookHandle handle, String name) {
-    final bytes = handle.asset(name);
+    final bytes = handle.assetNamed(name);
     return bytes == null ? null : Uint8List.fromList(bytes);
   }
 

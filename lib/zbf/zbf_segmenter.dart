@@ -98,7 +98,7 @@ class ZbfSegmenter {
       archive.addFile(ArchiveFile('pages.json', pagesBytes.length, pagesBytes));
 
       for (final ref in assetRefs) {
-        final bytes = handle.asset(ref);
+        final bytes = handle.assetNamed(ref);
         if (bytes != null) {
           archive.addFile(ArchiveFile('assets/$ref', bytes.length, bytes));
         }
@@ -144,12 +144,19 @@ class ZbfSegmenter {
           }
           if (!writtenAssets.add(name)) continue;
           if (coverBytes != null && name == manifest?.coverAsset) continue;
-          if (sourceBytes != null && name == AssetNaming.sourceDocument) {
+          if (sourceBytes != null &&
+              name ==
+                  AssetNaming.originalDocument(
+                    '.${manifest!.sourceFormat.wireValue}',
+                  )) {
             continue;
           }
           final isRoot =
               name == manifest?.coverAsset ||
-              name == AssetNaming.sourceDocument;
+              name ==
+                  AssetNaming.originalDocument(
+                    '.${manifest!.sourceFormat.wireValue}',
+                  );
           final path = isRoot ? name : file.name;
           encoder.addArchiveFile(ArchiveFile(path, file.size, file.content));
         }
@@ -179,7 +186,7 @@ class ZbfSegmenter {
       if (sourceBytes != null) {
         encoder.addArchiveFile(
           ArchiveFile(
-            AssetNaming.sourceDocument,
+            AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}'),
             sourceBytes.length,
             sourceBytes,
           ),

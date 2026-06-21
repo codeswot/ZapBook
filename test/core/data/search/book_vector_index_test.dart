@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:zapbook/core/data/search/book_chunker.dart';
 import 'package:zapbook/core/data/search/book_vector_index.dart';
 import 'package:zapbook/core/data/search/embedding_service.dart';
@@ -70,12 +72,23 @@ void main() {
           ChapterSummary(index: 0, title: 'Chapter 1', pageCount: pages.length),
         ],
       ),
-      chapters: [BookChapter(index: 0, title: 'Chapter 1', pages: pages)],
       assets: {
         'cover.jpg': Uint8List.fromList([1]),
       },
     );
-    return const ZbfWriter().write(book, '${tempDir.path}/book.zbf');
+    final path = await const ZbfWriter().write(book, '${tempDir.path}/$id.zbf');
+    final db = sqlite3.open('$path/pages.db');
+    db.execute(
+      'CREATE TABLE IF NOT EXISTS pages (page_index INTEGER PRIMARY KEY, chapter_index INTEGER, json TEXT)',
+    );
+    final stmt = db.prepare(
+      'INSERT INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+    );
+    for (var i = 0; i < pages.length; i++) {
+      stmt.execute([i, 0, jsonEncode(pages[i].toJson())]);
+    }
+    db.close();
+    return path;
   }
 
   group('BookChunker', () {

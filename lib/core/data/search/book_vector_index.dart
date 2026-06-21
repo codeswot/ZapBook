@@ -117,7 +117,7 @@ class BookVectorIndex {
     List<Float32List> centroids;
     List<int> assignments;
     if (clusterCount > 1) {
-      final result = _runKMeans(vectors, clusterCount);
+      final result = await Isolate.run(() => _runKMeans(vectors, clusterCount));
       centroids = result.centroids;
       assignments = result.assignments;
     } else {
@@ -182,8 +182,10 @@ class BookVectorIndex {
       const chunker = BookChunker();
       final inputs = <_EmbedInput>[];
       for (var i = 0; i < handle.manifest.pageCount; i++) {
-        final page = handle.pageAt(i);
-        if (page.layoutType == BookLayoutType.processing) continue;
+        final page = handle.pageAtOrNull(i);
+        if (page == null || page.layoutType == BookLayoutType.processing) {
+          continue;
+        }
         for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
           inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
         }

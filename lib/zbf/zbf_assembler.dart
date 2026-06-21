@@ -1,8 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:ulid/ulid.dart';
-
-import 'package:zapbook/zbf/entities/book_chapter.dart';
 import 'package:zapbook/zbf/entities/book_manifest.dart';
 import 'package:zapbook/zbf/entities/chapter_summary.dart';
 import 'package:zapbook/zbf/entities/zbf_book.dart';
@@ -13,11 +10,12 @@ final class ZbfAssembler {
   const ZbfAssembler();
 
   ZbfBook assemble({
+    required String id,
     required String title,
     required String author,
     String? genre,
     required BookSourceFormat sourceFormat,
-    required List<BookChapter> chapters,
+    required List<ChapterSummary> chapters,
     required Map<String, Uint8List> assets,
     required Uint8List cover,
     required bool needsAiProcessing,
@@ -26,19 +24,10 @@ final class ZbfAssembler {
   }) {
     final pageCount = chapters.fold<int>(
       0,
-      (sum, chapter) => sum + chapter.pages.length,
+      (sum, chapter) => sum + chapter.pageCount,
     );
-    final summaries = chapters
-        .map(
-          (chapter) => ChapterSummary(
-            index: chapter.index,
-            title: chapter.title,
-            pageCount: chapter.pages.length,
-          ),
-        )
-        .toList();
     final manifest = BookManifest(
-      id: Ulid().toString(),
+      id: id,
       title: title,
       author: author,
       genre: genre,
@@ -48,7 +37,7 @@ final class ZbfAssembler {
       coverAsset: AssetNaming.coverAsset,
       createdAt: DateTime.now().toUtc(),
       needsAiProcessing: needsAiProcessing,
-      chapters: summaries,
+      chapters: chapters,
       pageWords: pageWords,
       skippablePages: skippablePages,
     );
@@ -56,6 +45,6 @@ final class ZbfAssembler {
       ...assets,
       AssetNaming.coverAsset: cover,
     };
-    return ZbfBook(manifest: manifest, chapters: chapters, assets: fullAssets);
+    return ZbfBook(manifest: manifest, assets: fullAssets);
   }
 }

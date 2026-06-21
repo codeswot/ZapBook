@@ -22,5 +22,6 @@ images:
     - screenshots/bd00b2c1-1919-4c8c-9162-f2bddde3e755.JPEG
     - screenshots/460d0d46-1676-4d7f-9bee-ced3e885e71f.JPEG
     - screenshots/f4df2a6a-fe10-4da9-87cf-f6a5f3a1057e.JPEG
+release_notes: CHANGELOG.md
 metadata_sources:
     - github

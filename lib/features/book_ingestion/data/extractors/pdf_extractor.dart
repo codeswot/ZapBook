@@ -1,11 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:sqlite3/sqlite3.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/zbf/zbf.dart';
+
+import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart';
 
 import 'package:zapbook/features/book_ingestion/data/support/parsed_content.dart';
 import 'package:zapbook/features/book_ingestion/data/support/text_runs.dart';
@@ -13,7 +18,13 @@ import 'package:zapbook/features/book_ingestion/data/extractors/isolate_book_ext
 
 final class PdfExtractor extends IsolateBookExtractor
     implements PdfChunkExtractor {
-  PdfExtractor({super.coverGenerator, super.assembler});
+  PdfExtractor({
+    super.coverGenerator,
+    super.assembler,
+    this.rasterizer = const PrintingPdfRasterizer(),
+  });
+
+  final PdfPageRasterizer rasterizer;
 
   @override
   BookSourceFormat get format => BookSourceFormat.pdf;
@@ -22,26 +33,43 @@ final class PdfExtractor extends IsolateBookExtractor
   String get fileExtension => '.pdf';
 
   @override
-  Future<ParsedContent> parse(String filePath, String title) => Isolate.run(() {
-    final bytes = File(filePath).readAsBytesSync();
-    return _parsePdf(bytes, title);
-  });
+  Future<ParsedContent> parse(
+    String filePath,
+    String title,
+    String bookId,
+    String outputDirectory,
+  ) async {
+    final coverSource = await rasterizer.render(filePath, 0);
+    return Isolate.run(() {
+      final bytes = File(filePath).readAsBytesSync();
+      return _parsePdf(bytes, title, outputDirectory, coverSource);
+    });
+  }
 
   @override
   Future<List<BookPage>> extractRange(
-    Uint8List bytes,
+    String pdfFilePath,
     int startPageIndex,
     int endPageIndex,
     String chapterTitle,
     int chapterIndex,
   ) => Isolate.run(() {
     return _extractRange(
-      bytes,
+      pdfFilePath,
       startPageIndex,
       endPageIndex,
       chapterTitle,
       chapterIndex,
     );
+  });
+
+  Future<void> extractRemainingInBackground(
+    String pdfFilePath,
+    String outputDirectory,
+    String fallbackTitle,
+  ) => Isolate.run(() {
+    final bytes = File(pdfFilePath).readAsBytesSync();
+    _extractRemaining(bytes, fallbackTitle, outputDirectory);
   });
 }
 
@@ -55,66 +83,98 @@ final RegExp _monospaceFont = RegExp(
   caseSensitive: false,
 );
 
-ParsedContent _parsePdf(Uint8List bytes, String fallbackTitle) {
+ParsedContent _parsePdf(
+  Uint8List bytes,
+  String fallbackTitle,
+  String outputDirectory,
+  Uint8List? coverSource,
+) {
   final document = PdfDocument(inputBytes: bytes);
   try {
     final extractor = PdfTextExtractor(document);
     final pageCount = document.pages.count;
     final metadata = _readMetadata(document, fallbackTitle);
 
-    final lineCache = <int, List<TextLine>>{};
-    final builder = _PdfChapterBuilder(fallbackTitle: metadata.title);
-    final limit = pageCount < 10 ? pageCount : 10;
-    for (var index = 0; index < limit; index++) {
-      final lines = extractor.extractTextLines(
-        startPageIndex: index,
-        endPageIndex: index,
+    final db = sqlite3.open('$outputDirectory/pages.db');
+    db.execute('PRAGMA journal_mode=WAL;');
+    try {
+      db.execute('''
+        CREATE TABLE IF NOT EXISTS pages (
+          page_index INTEGER PRIMARY KEY,
+          chapter_index INTEGER,
+          json TEXT
+        )
+      ''');
+
+      final stmt = db.prepare(
+        'INSERT INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
       );
-      lineCache[index] = lines;
-      builder.addPage(_buildPage(extractor, index, cachedLines: lines));
-    }
-    if (pageCount > limit) {
-      for (var index = limit; index < pageCount; index++) {
-        builder.addPlaceholderPage(index + 1);
-      }
-    }
 
-    final pageWords = <int>[];
-    final skippable = <int>[];
-    for (var i = 0; i < pageCount; i++) {
-      final lines =
-          lineCache[i] ??
-          extractor.extractTextLines(startPageIndex: i, endPageIndex: i);
-      var wordCount = 0;
-      for (final line in lines) {
-        wordCount += line.text.wordCount;
+      final lineCache = <int, List<TextLine>>{};
+      final builder = _PdfChapterBuilder(
+        fallbackTitle: metadata.title,
+        stmt: stmt,
+      );
+      final limit = pageCount < 10 ? pageCount : 10;
+      for (var index = 0; index < limit; index++) {
+        final lines = extractor.extractTextLines(
+          startPageIndex: index,
+          endPageIndex: index,
+        );
+        lineCache[index] = lines;
+        builder.addPage(_buildPage(extractor, index, cachedLines: lines));
       }
-      pageWords.add(wordCount);
-      if (wordCount == 0) {
-        skippable.add(i);
+      if (pageCount > limit) {
+        for (var index = limit; index < pageCount; index++) {
+          builder.addPlaceholderPage(index + 1);
+        }
       }
-    }
 
-    return ParsedContent(
-      title: metadata.title,
-      author: metadata.author,
-      needsAiProcessing: builder.needsAiProcessing,
-      chapters: builder.build(),
-      pageWords: pageWords,
-      skippablePages: skippable,
-    );
+      final pageWords = <int>[];
+      final skippable = <int>[];
+      for (var i = 0; i < pageCount; i++) {
+        if (i < limit) {
+          final lines =
+              lineCache[i] ??
+              extractor.extractTextLines(startPageIndex: i, endPageIndex: i);
+          var wordCount = 0;
+          for (final line in lines) {
+            wordCount += line.text.wordCount;
+          }
+          pageWords.add(wordCount);
+          if (wordCount == 0) {
+            skippable.add(i);
+          }
+        } else {
+          pageWords.add(100); // Placeholder word count for background pages
+        }
+      }
+
+      return ParsedContent(
+        title: metadata.title,
+        author: metadata.author,
+        needsAiProcessing: builder.needsAiProcessing,
+        chapters: builder.build(),
+        coverSource: coverSource,
+        pageWords: pageWords,
+        skippablePages: skippable,
+      );
+    } finally {
+      db.close();
+    }
   } finally {
     document.dispose();
   }
 }
 
 List<BookPage> _extractRange(
-  Uint8List bytes,
+  String pdfFilePath,
   int startPageIndex,
   int endPageIndex,
   String chapterTitle,
   int chapterIndex,
 ) {
+  final bytes = File(pdfFilePath).readAsBytesSync();
   final document = PdfDocument(inputBytes: bytes);
   try {
     final extractor = PdfTextExtractor(document);
@@ -135,6 +195,47 @@ List<BookPage> _extractRange(
       );
     }
     return pages;
+  } finally {
+    document.dispose();
+  }
+}
+
+void _extractRemaining(
+  Uint8List bytes,
+  String fallbackTitle,
+  String outputDirectory,
+) {
+  final document = PdfDocument(inputBytes: bytes);
+  try {
+    final extractor = PdfTextExtractor(document);
+    final pageCount = document.pages.count;
+    final limit = pageCount < 10 ? pageCount : 10;
+    if (pageCount <= limit) return;
+
+    final metadata = _readMetadata(document, fallbackTitle);
+
+    final db = sqlite3.open('$outputDirectory/pages.db');
+    db.execute('PRAGMA journal_mode=WAL;');
+    try {
+      final stmt = db.prepare(
+        'INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+      );
+
+      for (var index = limit; index < pageCount; index++) {
+        final draft = _buildPage(extractor, index);
+        final page = BookPage(
+          pageNumber: index + 1,
+          chapterIndex: 0,
+          chapterTitle: metadata.title,
+          layoutType: draft.layoutType,
+          needsAiProcessing: draft.needsAiProcessing,
+          blocks: List.unmodifiable(draft.blocks),
+        );
+        stmt.execute([index, 0, jsonEncode(page.toJson())]);
+      }
+    } finally {
+      db.close();
+    }
   } finally {
     document.dispose();
   }
@@ -298,11 +399,12 @@ final class _PdfMetadata {
 }
 
 final class _PdfChapterBuilder {
-  _PdfChapterBuilder({required this.fallbackTitle});
+  _PdfChapterBuilder({required this.fallbackTitle, required this.stmt});
 
   final String fallbackTitle;
-  final List<BookChapter> _chapters = [];
-  List<BookPage> _pages = [];
+  final PreparedStatement stmt;
+  final List<ChapterSummary> _chapters = [];
+  int _chapterPageCount = 0;
   String _currentTitle = '';
   int _chapterIndex = -1;
   int _pageNumber = 0;
@@ -316,16 +418,16 @@ final class _PdfChapterBuilder {
       _currentTitle = _titleFor(draft);
     }
     _pageNumber++;
-    _pages.add(
-      BookPage(
-        pageNumber: _pageNumber,
-        chapterIndex: _chapterIndex,
-        chapterTitle: _currentTitle,
-        layoutType: draft.layoutType,
-        needsAiProcessing: draft.needsAiProcessing,
-        blocks: List.unmodifiable(draft.blocks),
-      ),
+    _chapterPageCount++;
+    final page = BookPage(
+      pageNumber: _pageNumber,
+      chapterIndex: _chapterIndex,
+      chapterTitle: _currentTitle,
+      layoutType: draft.layoutType,
+      needsAiProcessing: draft.needsAiProcessing,
+      blocks: List.unmodifiable(draft.blocks),
     );
+    stmt.execute([_pageNumber - 1, _chapterIndex, jsonEncode(page.toJson())]);
   }
 
   void addPlaceholderPage(int pageNumber) {
@@ -335,16 +437,16 @@ final class _PdfChapterBuilder {
       _currentTitle = fallbackTitle;
     }
     _pageNumber++;
-    _pages.add(
-      BookPage(
-        pageNumber: pageNumber,
-        chapterIndex: _chapterIndex,
-        chapterTitle: _currentTitle,
-        layoutType: BookLayoutType.processing,
-        needsAiProcessing: false,
-        blocks: const [],
-      ),
+    _chapterPageCount++;
+    final page = BookPage(
+      pageNumber: pageNumber,
+      chapterIndex: _chapterIndex,
+      chapterTitle: _currentTitle,
+      layoutType: BookLayoutType.processing,
+      needsAiProcessing: false,
+      blocks: const [],
     );
+    stmt.execute([pageNumber - 1, _chapterIndex, jsonEncode(page.toJson())]);
   }
 
   String _titleFor(_PdfPageDraft draft) {
@@ -356,25 +458,31 @@ final class _PdfChapterBuilder {
     return 'Chapter ${_chapters.length + 1}';
   }
 
-  List<BookChapter> build() {
+  List<ChapterSummary> build() {
     _flush();
     if (_chapters.isEmpty) {
-      return [BookChapter(index: 0, title: fallbackTitle, pages: const [])];
+      return [
+        ChapterSummary(
+          index: 0,
+          title: fallbackTitle,
+          pageCount: _chapterPageCount,
+        ),
+      ];
     }
     return List.unmodifiable(_chapters);
   }
 
   void _flush() {
-    if (_pages.isEmpty) {
+    if (_chapterPageCount == 0) {
       return;
     }
     _chapters.add(
-      BookChapter(
+      ChapterSummary(
         index: _chapterIndex,
         title: _currentTitle.isEmpty ? fallbackTitle : _currentTitle,
-        pages: List.unmodifiable(_pages),
+        pageCount: _chapterPageCount,
       ),
     );
-    _pages = [];
+    _chapterPageCount = 0;
   }
 }

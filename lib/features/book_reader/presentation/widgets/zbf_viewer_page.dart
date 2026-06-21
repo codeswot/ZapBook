@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading.dart';
+import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/features/book_reader/presentation/pages/reader_screen.dart';
 import 'package:zapbook/features/library/data/marmot/progressive_book_opener.dart';
@@ -20,13 +22,19 @@ class ZbfViewerPage extends StatelessWidget {
   final String? highlightQuery;
   final ZbfReader? reader;
 
-  String get _bookId => File(
-    zbfPath,
-  ).parent.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+  String get _bookId {
+    final type = FileSystemEntity.typeSync(zbfPath);
+    if (type == FileSystemEntityType.directory) {
+      return Uri.parse(zbfPath).pathSegments.where((s) => s.isNotEmpty).last;
+    }
+    return File(
+      zbfPath,
+    ).parent.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (File(zbfPath).existsSync()) {
+    if (File('$zbfPath/manifest.json').existsSync()) {
       return _LocalReader(
         zbfPath: zbfPath,
         reader: reader ?? getIt<ZbfReader>(),
@@ -106,7 +114,7 @@ class _LocalReaderState extends State<_LocalReader> {
   }
 }
 
-class _ProgressiveReader extends StatelessWidget {
+class _ProgressiveReader extends StatefulWidget {
   const _ProgressiveReader({
     required this.bookId,
     required this.initialPage,
@@ -118,37 +126,69 @@ class _ProgressiveReader extends StatelessWidget {
   final String? highlightQuery;
 
   @override
+  State<_ProgressiveReader> createState() => _ProgressiveReaderState();
+}
+
+class _ProgressiveReaderState extends State<_ProgressiveReader> {
+  ProgressiveBook? _book;
+  String? _error;
+  bool _disposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tryOpen();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  Future<void> _tryOpen() async {
+    if (_disposed) return;
+    try {
+      final book = await getIt<ProgressiveBookOpener>().open(widget.bookId);
+      if (_disposed) return;
+      if (book != null) {
+        setState(() => _book = book);
+      } else {
+        Future.delayed(const Duration(milliseconds: 1500), _tryOpen);
+      }
+    } catch (e) {
+      if (_disposed) return;
+      setState(() => _error = e.toString());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ProgressiveBook?>(
-      future: getIt<ProgressiveBookOpener>().open(bookId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return _ViewerError(message: '${snapshot.error}');
-        }
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const _ViewerLoading();
-        }
-        final book = snapshot.data;
-        if (book == null) {
-          return const _ViewerError(message: 'Book content not available yet');
-        }
-        return ReaderScreen(
-          handle: book.handle,
-          segmentLoader: book.loader,
-          initialPage: initialPage,
-          highlightQuery: highlightQuery,
-        );
-      },
+    if (_error != null) {
+      return _ViewerError(message: _error!);
+    }
+    if (_book == null) {
+      return const _ViewerLoading(message: 'Preparing book...');
+    }
+    return ReaderScreen(
+      handle: _book!.handle,
+      segmentLoader: _book!.loader,
+      initialPage: widget.initialPage,
+      highlightQuery: widget.highlightQuery,
     );
   }
 }
 
 class _ViewerLoading extends StatelessWidget {
-  const _ViewerLoading();
+  const _ViewerLoading({this.message});
+
+  final String? message;
 
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: context.colors.paper,
+    body: ReaderPageLoading(message: message ?? 'Opening…'),
+  );
 }
 
 class _ViewerError extends StatelessWidget {

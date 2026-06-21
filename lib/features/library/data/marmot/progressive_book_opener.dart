@@ -1,4 +1,3 @@
-import 'package:archive/archive.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/domain/book_segment_source.dart';
@@ -36,7 +35,7 @@ class ProgressiveBookOpener {
       zbfVersion: meta.zbfVersion,
     );
 
-    final handle = ZbfBookHandle(archive: Archive(), manifest: manifest);
+    final handle = ZbfBookHandle(dirPath: '', manifest: manifest);
     for (var i = 0; i < meta.pageCount; i++) {
       handle.updatePage(
         i,

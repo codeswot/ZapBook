@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:archive/archive.dart';
+
 import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -111,7 +111,7 @@ void main() {
         pageWords: const [6, 6, 6],
         coverAsset: 'cover.png',
       );
-      final handle = ZbfBookHandle(archive: Archive(), manifest: manifest);
+      final handle = ZbfBookHandle(dirPath: '', manifest: manifest);
       handle.updatePage(
         0,
         page([const ParagraphBlock(text: 'one two three four five six')]),
@@ -173,7 +173,7 @@ void main() {
           pageWords: const [6, 6],
           coverAsset: 'cover.png',
         );
-        final handle = ZbfBookHandle(archive: Archive(), manifest: manifest);
+        final handle = ZbfBookHandle(dirPath: '', manifest: manifest);
         handle.updatePage(
           0,
           page([const ParagraphBlock(text: 'one. two three. four five six')]),

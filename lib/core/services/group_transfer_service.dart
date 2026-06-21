@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
@@ -39,12 +40,13 @@ class GroupTransferService {
 
     final handle = await _reader.open(zbf.path);
     try {
-      final source = handle.sourceDocument();
-      if (source != null) {
+      final sourcePath = handle.sourceDocumentPath();
+      if (sourcePath != null) {
+        final sourceBytes = File(sourcePath).readAsBytesSync();
         await _uploadBlob(
           npub,
           groupId,
-          source,
+          sourceBytes,
           'application/octet-stream',
           '$bookId.source',
         );
