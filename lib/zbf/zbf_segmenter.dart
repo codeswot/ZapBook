@@ -13,6 +13,7 @@ import 'package:zapbook/zbf/entities/book_manifest.dart';
 import 'package:zapbook/zbf/entities/book_page.dart';
 import 'package:zapbook/zbf/support/asset_naming.dart';
 import 'package:zapbook/zbf/zbf_reader.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 class SegmentBlob {
   const SegmentBlob({
@@ -79,11 +80,6 @@ class ZbfSegmenter {
 
     for (var start = 0; start < total; start += pagesPerSegment) {
       final end = min(start + pagesPerSegment, total) - 1;
-      final archive = Archive()
-        ..addFile(
-          ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
-        );
-
       final pagesJson = <Object?>[];
       final assetRefs = <String>{};
       for (var i = start; i <= end; i++) {
@@ -95,18 +91,30 @@ class ZbfSegmenter {
       }
 
       final pagesBytes = _json(pagesJson);
-      archive.addFile(ArchiveFile('pages.json', pagesBytes.length, pagesBytes));
 
+      final assetData = <String, Uint8List>{};
       for (final ref in assetRefs) {
         final bytes = handle.assetNamed(ref);
         if (bytes != null) {
-          archive.addFile(ArchiveFile('assets/$ref', bytes.length, bytes));
+          assetData[ref] = bytes;
         }
       }
 
-      final zipBytes = await Isolate.run(
-        () => ZipEncoder().encodeBytes(archive),
-      );
+      final zipBytes = await Isolate.run(() {
+        final archive = Archive()
+          ..addFile(
+            ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
+          )
+          ..addFile(ArchiveFile('pages.json', pagesBytes.length, pagesBytes));
+
+        for (final entry in assetData.entries) {
+          archive.addFile(
+            ArchiveFile('assets/${entry.key}', entry.value.length, entry.value),
+          );
+        }
+
+        return ZipEncoder().encodeBytes(archive);
+      });
 
       yield SegmentBlob(
         index: start ~/ pagesPerSegment,
@@ -202,6 +210,104 @@ class ZbfSegmenter {
       }
       final tmp = File(tmpPath);
       if (tmp.existsSync()) await tmp.delete();
+    }
+  }
+
+  Future<void> reassembleToDirectory(
+    Stream<Uint8List> segmentZips,
+    String outputDirectory, {
+    Uint8List? coverBytes,
+    Uint8List? sourceBytes,
+  }) async {
+    final dir = Directory(outputDirectory);
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+
+    final dbPath = '$outputDirectory/pages.db';
+    final db = sqlite3.open(dbPath);
+    db.execute('PRAGMA journal_mode=WAL;');
+    db.execute(
+      'CREATE TABLE IF NOT EXISTS pages (page_index INTEGER PRIMARY KEY, chapter_index INTEGER, json TEXT)',
+    );
+
+    try {
+      final stmt = db.prepare(
+        'INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+      );
+
+      BookManifest? manifest;
+      final writtenAssets = <String>{};
+
+      await for (final zip in segmentZips) {
+        final archive = await Isolate.run(() => ZipDecoder().decodeBytes(zip));
+        manifest ??= _manifestFrom(archive);
+
+        final pages = _pagesFrom(archive);
+        for (final page in pages) {
+          stmt.execute([
+            page.pageNumber - 1,
+            page.chapterIndex,
+            jsonEncode(page.toJson()),
+          ]);
+        }
+
+        for (final file in archive.files) {
+          if (!file.name.startsWith('assets/')) continue;
+          final name = file.name.substring('assets/'.length);
+          if (!_isSafeAssetName(name)) continue;
+          if (file.size > _maxAssetBytes) {
+            throw StateError('Segment asset ${file.name} exceeds size limit');
+          }
+          if (!writtenAssets.add(name)) continue;
+          if (coverBytes != null && name == manifest?.coverAsset) continue;
+          if (sourceBytes != null &&
+              manifest != null &&
+              name ==
+                  AssetNaming.originalDocument(
+                    '.${manifest.sourceFormat.wireValue}',
+                  )) {
+            continue;
+          }
+
+          final isRoot =
+              name == manifest?.coverAsset ||
+              (manifest != null &&
+                  name ==
+                      AssetNaming.originalDocument(
+                        '.${manifest.sourceFormat.wireValue}',
+                      ));
+
+          final destFile = isRoot
+              ? File('$outputDirectory/$name')
+              : File('$outputDirectory/assets/$name');
+
+          if (!destFile.parent.existsSync()) {
+            destFile.parent.createSync(recursive: true);
+          }
+          destFile.writeAsBytesSync(file.content as List<int>);
+        }
+      }
+
+      if (manifest == null) {
+        throw StateError('No manifest found in segments');
+      }
+
+      final manifestBytes = _json(manifest.toJson());
+      File('$outputDirectory/manifest.json').writeAsBytesSync(manifestBytes);
+
+      if (coverBytes != null) {
+        File(
+          '$outputDirectory/${manifest.coverAsset}',
+        ).writeAsBytesSync(coverBytes);
+      }
+      if (sourceBytes != null) {
+        final ext = manifest.sourceFormat.wireValue;
+        final name = AssetNaming.originalDocument('.$ext');
+        File('$outputDirectory/$name').writeAsBytesSync(sourceBytes);
+      }
+    } finally {
+      db.close();
     }
   }
 

@@ -121,7 +121,7 @@ class GroupTransferService {
       }
 
       final zbf = await _fileStore.zbfFile(bookId);
-      await _segmenter.reassembleToFile(
+      await _segmenter.reassembleToDirectory(
         _downloadSegments(groupId, segmentRefs),
         zbf.path,
         sourceBytes: sourceBytes,

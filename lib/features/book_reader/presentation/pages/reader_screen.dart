@@ -181,13 +181,51 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     if (!_ready) {
       return Scaffold(
-        backgroundColor: context.colors.paper,
-        body: const ReaderPageLoading(message: 'Opening…'),
+        backgroundColor: colors.paper,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  _toggleChrome();
+                  _progress.tap();
+                },
+                child: const ReaderPageLoading(message: 'Opening…'),
+              ),
+            ),
+            AppFadeOverlay.top(color: colors.paper, height: 130),
+            ReaderChromeSlot(
+              alignment: Alignment.topCenter,
+              visible: _chromeVisible,
+              fromTop: true,
+              child: ReaderHeader(
+                title: widget.handle.manifest.title,
+                chapterTitle: '',
+                onBack: widget.onExit ?? () => context.pop(),
+                onSearch: () {},
+                onOpenContents: () {},
+              ),
+            ),
+            AppFadeOverlay.bottom(color: colors.paper, height: 135),
+            ReaderChromeSlot(
+              alignment: Alignment.bottomCenter,
+              visible: _chromeVisible,
+              fromTop: false,
+              child: ReaderFooter(
+                progress: 0,
+                currentPage: 0,
+                totalPages: widget.handle.manifest.pageCount,
+              ),
+            ),
+          ],
+        ),
       );
     }
-    final colors = context.colors;
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -261,26 +299,40 @@ class _ReaderScreenState extends State<ReaderScreen>
                       child: KeyedSubtree(
                         key: ValueKey<int>(index),
                         child: blocks == null
-                            ? (state.failedPages.contains(index)
-                                  ? ReaderPagePrepFailed(
-                                      key: ValueKey<String>('failed_$index'),
-                                      pageNumber: index + 1,
-                                      onRetry: () => cubit.retryPage(index),
-                                      onSkip: index < total - 1
-                                          ? cubit.nextPage
-                                          : null,
-                                    )
-                                  : ReaderPageLoading(
-                                      key: ValueKey<String>('loading_$index'),
-                                      message: 'Preparing page ${index + 1}…',
-                                    ))
+                            ? GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  _toggleChrome();
+                                  _progress.tap();
+                                },
+                                child: state.failedPages.contains(index)
+                                    ? ReaderPagePrepFailed(
+                                        key: ValueKey<String>('failed_$index'),
+                                        pageNumber: index + 1,
+                                        onRetry: () => cubit.retryPage(index),
+                                        onSkip: index < total - 1
+                                            ? cubit.nextPage
+                                            : null,
+                                      )
+                                    : ReaderPageLoading(
+                                        key: ValueKey<String>('loading_$index'),
+                                        message: 'Preparing page ${index + 1}…',
+                                      ),
+                              )
                             : (state.rasterizingPages.contains(index) &&
                                   page.layoutType ==
                                       BookLayoutType.illustration &&
                                   !state.imagePages.containsKey(index))
-                            ? ReaderPageLoading(
-                                key: ValueKey<String>('raster_$index'),
-                                message: 'Rendering page ${index + 1}…',
+                            ? GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  _toggleChrome();
+                                  _progress.tap();
+                                },
+                                child: ReaderPageLoading(
+                                  key: ValueKey<String>('raster_$index'),
+                                  message: 'Rendering page ${index + 1}…',
+                                ),
                               )
                             : NotificationListener<ScrollUpdateNotification>(
                                 onNotification: (n) {
