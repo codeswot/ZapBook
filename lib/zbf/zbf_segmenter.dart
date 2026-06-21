@@ -36,6 +36,33 @@ class ParsedSegment {
   final Map<String, Uint8List> assets;
 }
 
+class _PageRow {
+  const _PageRow(this.pageIndex, this.chapterIndex, this.json);
+  final int pageIndex;
+  final int chapterIndex;
+  final String json;
+}
+
+class _DirectoryReassembleResult {
+  const _DirectoryReassembleResult(this.manifest, this.pages, this.writtenAssets);
+  final BookManifest? manifest;
+  final List<_PageRow> pages;
+  final Set<String> writtenAssets;
+}
+
+class _AssetFile {
+  const _AssetFile(this.name, this.bytes);
+  final String name;
+  final Uint8List bytes;
+}
+
+class _FileReassembleResult {
+  const _FileReassembleResult(this.manifest, this.pages, this.assets);
+  final BookManifest? manifest;
+  final List<BookPage> pages;
+  final List<_AssetFile> assets;
+}
+
 class ZbfSegmenter {
   const ZbfSegmenter();
 
@@ -140,33 +167,21 @@ class ZbfSegmenter {
       final writtenAssets = <String>{};
 
       await for (final zip in segmentZips) {
-        final archive = await Isolate.run(() => ZipDecoder().decodeBytes(zip));
-        manifest ??= _manifestFrom(archive);
-        pages.addAll(_pagesFrom(archive));
-        for (final file in archive.files) {
-          if (!file.name.startsWith('assets/')) continue;
-          final name = file.name.substring('assets/'.length);
-          if (!_isSafeAssetName(name)) continue;
-          if (file.size > _maxAssetBytes) {
-            throw StateError('Segment asset ${file.name} exceeds size limit');
-          }
-          if (!writtenAssets.add(name)) continue;
-          if (coverBytes != null && name == manifest?.coverAsset) continue;
-          if (sourceBytes != null &&
-              name ==
-                  AssetNaming.originalDocument(
-                    '.${manifest!.sourceFormat.wireValue}',
-                  )) {
-            continue;
-          }
-          final isRoot =
-              name == manifest?.coverAsset ||
-              name ==
-                  AssetNaming.originalDocument(
-                    '.${manifest!.sourceFormat.wireValue}',
-                  );
-          final path = isRoot ? name : file.name;
-          encoder.addArchiveFile(ArchiveFile(path, file.size, file.content));
+        final result = await Isolate.run(
+          () => _reassembleToFileIsolate({
+            'zip': zip,
+            'writtenAssets': writtenAssets,
+            'hasCoverBytes': coverBytes != null,
+            'hasSourceBytes': sourceBytes != null,
+          }),
+        );
+
+        manifest ??= result.manifest;
+        pages.addAll(result.pages);
+
+        for (final asset in result.assets) {
+          writtenAssets.add(asset.name.replaceFirst('assets/', ''));
+          encoder.addArchiveFile(ArchiveFile(asset.name, asset.bytes.length, asset.bytes));
         }
       }
 
@@ -213,6 +228,123 @@ class ZbfSegmenter {
     }
   }
 
+  static _FileReassembleResult _reassembleToFileIsolate(Map<String, dynamic> args) {
+    final zip = args['zip'] as Uint8List;
+    final alreadyWrittenAssets = args['writtenAssets'] as Set<String>;
+    final hasCoverBytes = args['hasCoverBytes'] as bool;
+    final hasSourceBytes = args['hasSourceBytes'] as bool;
+
+    final archive = ZipDecoder().decodeBytes(zip);
+    BookManifest? manifest;
+    final manifestFile = archive.findFile('manifest.json');
+    if (manifestFile != null) {
+      manifest = BookManifest.fromJson(
+        _jsonUtf8.convert(manifestFile.content as List<int>) as Map<String, Object?>,
+      );
+    }
+
+    final pages = <BookPage>[];
+    final pagesFile = archive.findFile('pages.json');
+    if (pagesFile != null) {
+      final decoded = _jsonUtf8.convert(pagesFile.content as List<int>) as List;
+      for (final p in decoded) {
+        pages.add(BookPage.fromJson(p as Map<String, Object?>));
+      }
+    }
+
+    final assets = <_AssetFile>[];
+    for (final file in archive.files) {
+      if (!file.name.startsWith('assets/')) continue;
+      final name = file.name.substring('assets/'.length);
+      if (!_isSafeAssetName(name)) continue;
+      if (file.size > _maxAssetBytes) {
+        throw StateError('Segment asset ${file.name} exceeds size limit');
+      }
+      if (alreadyWrittenAssets.contains(name)) continue;
+
+      if (hasCoverBytes && name == manifest?.coverAsset) continue;
+      if (hasSourceBytes &&
+          manifest != null &&
+          name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}')) {
+        continue;
+      }
+
+      final isRoot =
+          name == manifest?.coverAsset ||
+          (manifest != null &&
+              name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}'));
+
+      final path = isRoot ? name : file.name;
+      assets.add(_AssetFile(path, file.content));
+    }
+
+    return _FileReassembleResult(manifest, pages, assets);
+  }
+
+  static _DirectoryReassembleResult _reassembleToDirectoryIsolate(Map<String, dynamic> args) {
+    final zip = args['zip'] as Uint8List;
+    final outputDirectory = args['outputDirectory'] as String;
+    final alreadyWrittenAssets = args['writtenAssets'] as Set<String>;
+    final hasCoverBytes = args['hasCoverBytes'] as bool;
+    final hasSourceBytes = args['hasSourceBytes'] as bool;
+
+    final archive = ZipDecoder().decodeBytes(zip);
+    BookManifest? manifest;
+    final manifestFile = archive.findFile('manifest.json');
+    if (manifestFile != null) {
+      manifest = BookManifest.fromJson(
+        _jsonUtf8.convert(manifestFile.content as List<int>) as Map<String, Object?>,
+      );
+    }
+
+    final pages = <_PageRow>[];
+    final pagesFile = archive.findFile('pages.json');
+    if (pagesFile != null) {
+      final decoded = _jsonUtf8.convert(pagesFile.content as List<int>) as List;
+      for (final p in decoded) {
+        final map = p as Map<String, Object?>;
+        final pageNumber = map['pageNumber'] as int;
+        final chapterIndex = map['chapterIndex'] as int;
+        pages.add(_PageRow(pageNumber - 1, chapterIndex, jsonEncode(map)));
+      }
+    }
+
+    final newlyWrittenAssets = <String>{};
+    for (final file in archive.files) {
+      if (!file.name.startsWith('assets/')) continue;
+      final name = file.name.substring('assets/'.length);
+      if (!_isSafeAssetName(name)) continue;
+      if (file.size > _maxAssetBytes) {
+        throw StateError('Segment asset ${file.name} exceeds size limit');
+      }
+      if (alreadyWrittenAssets.contains(name) || newlyWrittenAssets.contains(name)) continue;
+
+      if (hasCoverBytes && name == manifest?.coverAsset) continue;
+      if (hasSourceBytes &&
+          manifest != null &&
+          name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}')) {
+        continue;
+      }
+
+      final isRoot =
+          name == manifest?.coverAsset ||
+          (manifest != null &&
+              name == AssetNaming.originalDocument('.${manifest.sourceFormat.wireValue}'));
+
+      final destFile = isRoot
+          ? File('$outputDirectory/$name')
+          : File('$outputDirectory/assets/$name');
+
+      if (!destFile.parent.existsSync()) {
+        destFile.parent.createSync(recursive: true);
+      }
+      destFile.writeAsBytesSync(file.content as List<int>);
+      newlyWrittenAssets.add(name);
+    }
+
+    return _DirectoryReassembleResult(manifest, pages, newlyWrittenAssets);
+  }
+
   Future<void> reassembleToDirectory(
     Stream<Uint8List> segmentZips,
     String outputDirectory, {
@@ -240,52 +372,25 @@ class ZbfSegmenter {
       final writtenAssets = <String>{};
 
       await for (final zip in segmentZips) {
-        final archive = await Isolate.run(() => ZipDecoder().decodeBytes(zip));
-        manifest ??= _manifestFrom(archive);
+        final result = await Isolate.run(
+          () => _reassembleToDirectoryIsolate({
+            'zip': zip,
+            'outputDirectory': outputDirectory,
+            'writtenAssets': writtenAssets,
+            'hasCoverBytes': coverBytes != null,
+            'hasSourceBytes': sourceBytes != null,
+          }),
+        );
 
-        final pages = _pagesFrom(archive);
-        for (final page in pages) {
+        manifest ??= result.manifest;
+        writtenAssets.addAll(result.writtenAssets);
+
+        for (final page in result.pages) {
           stmt.execute([
-            page.pageNumber - 1,
+            page.pageIndex,
             page.chapterIndex,
-            jsonEncode(page.toJson()),
+            page.json,
           ]);
-        }
-
-        for (final file in archive.files) {
-          if (!file.name.startsWith('assets/')) continue;
-          final name = file.name.substring('assets/'.length);
-          if (!_isSafeAssetName(name)) continue;
-          if (file.size > _maxAssetBytes) {
-            throw StateError('Segment asset ${file.name} exceeds size limit');
-          }
-          if (!writtenAssets.add(name)) continue;
-          if (coverBytes != null && name == manifest?.coverAsset) continue;
-          if (sourceBytes != null &&
-              manifest != null &&
-              name ==
-                  AssetNaming.originalDocument(
-                    '.${manifest.sourceFormat.wireValue}',
-                  )) {
-            continue;
-          }
-
-          final isRoot =
-              name == manifest?.coverAsset ||
-              (manifest != null &&
-                  name ==
-                      AssetNaming.originalDocument(
-                        '.${manifest.sourceFormat.wireValue}',
-                      ));
-
-          final destFile = isRoot
-              ? File('$outputDirectory/$name')
-              : File('$outputDirectory/assets/$name');
-
-          if (!destFile.parent.existsSync()) {
-            destFile.parent.createSync(recursive: true);
-          }
-          destFile.writeAsBytesSync(file.content as List<int>);
         }
       }
 
@@ -311,13 +416,6 @@ class ZbfSegmenter {
     }
   }
 
-  BookManifest? _manifestFrom(Archive archive) {
-    final file = archive.findFile('manifest.json');
-    if (file == null) return null;
-    return BookManifest.fromJson(
-      _jsonUtf8.convert(file.content) as Map<String, Object?>,
-    );
-  }
 
   List<BookPage> _pagesFrom(Archive archive) {
     final file = archive.findFile('pages.json');
