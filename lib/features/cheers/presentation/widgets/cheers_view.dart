@@ -39,11 +39,11 @@ class _CheersViewState extends State<CheersView> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       context.read<CheersCubit>().loadMore();
     }
   }
-
 
   void _showZapSheet(BuildContext context, CheersActivity activity) {
     if (activity.type == 'mine' || activity.actorName == 'You') {
@@ -155,7 +155,9 @@ class _CheersViewState extends State<CheersView> {
               child: BlocBuilder<CheersCubit, CheersState>(
                 buildWhen: (prev, current) => current is CheersLoaded,
                 builder: (context, state) {
-                  final activeFilter = state is CheersLoaded ? state.activeFilter : 'All';
+                  final activeFilter = state is CheersLoaded
+                      ? state.activeFilter
+                      : 'All';
                   return ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -170,7 +172,9 @@ class _CheersViewState extends State<CheersView> {
                           label: Text(
                             filter,
                             style: typography.bodyS.copyWith(
-                              color: isSelected ? colors.bitcoinDark : colors.slate,
+                              color: isSelected
+                                  ? colors.bitcoinDark
+                                  : colors.slate,
                               fontWeight: isSelected
                                   ? FontWeight.w800
                                   : FontWeight.w600,
@@ -187,7 +191,9 @@ class _CheersViewState extends State<CheersView> {
                           checkmarkColor: colors.bitcoinDark,
                           showCheckmark: false,
                           side: BorderSide(
-                            color: isSelected ? colors.bitcoin : colors.hairline2,
+                            color: isSelected
+                                ? colors.bitcoin
+                                : colors.hairline2,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(100),

@@ -36,21 +36,18 @@ class CheersCubit extends Cubit<CheersState> {
   final _log = logging.Logger('CheersCubit');
   StreamSubscription? _subscription;
   Timer? _debounceTimer;
-  
+
   List<CheersActivity> _rawActivities = [];
   String _activeFilter = 'All';
 
   void _subscribe() {
-    _subscription = _watchCheersActivities().listen(
-      (activities) {
-        _rawActivities = activities;
-        _debounceTimer?.cancel();
-        _debounceTimer = Timer(const Duration(milliseconds: 250), () {
-          _emitFiltered();
-        });
-      },
-      onError: (Object error) => emit(CheersError(error.toString())),
-    );
+    _subscription = _watchCheersActivities().listen((activities) {
+      _rawActivities = activities;
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+        _emitFiltered();
+      });
+    }, onError: (Object error) => emit(CheersError(error.toString())));
   }
 
   void loadMore() {
@@ -68,11 +65,13 @@ class CheersCubit extends Cubit<CheersState> {
   void _emitFiltered() {
     final visible = _rawActivities.where((a) => a.type != 'zap_ready');
     List<CheersActivity> filtered;
-    
+
     if (_activeFilter == 'All') {
       filtered = visible.toList();
     } else if (_activeFilter == 'Milestones') {
-      filtered = visible.where((a) => a.type == 'milestone' || a.type == 'notification').toList();
+      filtered = visible
+          .where((a) => a.type == 'milestone' || a.type == 'notification')
+          .toList();
     } else if (_activeFilter == 'Zaps') {
       filtered = visible.where((a) {
         if (a.type != 'zap') return false;
@@ -83,7 +82,7 @@ class CheersCubit extends Cubit<CheersState> {
     } else {
       filtered = visible.toList();
     }
-    
+
     emit(CheersLoaded(activities: filtered, activeFilter: _activeFilter));
   }
 
@@ -125,19 +124,25 @@ class CheersCubit extends Cubit<CheersState> {
             ? ' (+${result.supportAmount} to ZapBook)'
             : '';
         await _payZap(result);
-        emit(CheersZapSuccess('Zapping $amount sats to ${activity.actorName}$supportMsg'));
+        emit(
+          CheersZapSuccess(
+            'Zapping $amount sats to ${activity.actorName}$supportMsg',
+          ),
+        );
       } else {
         await _nudge(
           groupId: activity.id.split(':').first,
           toNpub: activity.actorNpub,
         );
-        emit(CheersNudgeRequired(
-          activity,
-          "${activity.actorName} can't be zapped yet",
-          "${activity.actorName} hasn't set up their lightning wallet. "
-          "We've let them know — you'll get a heads-up here when they're "
-          'ready.',
-        ));
+        emit(
+          CheersNudgeRequired(
+            activity,
+            "${activity.actorName} can't be zapped yet",
+            "${activity.actorName} hasn't set up their lightning wallet. "
+                "We've let them know — you'll get a heads-up here when they're "
+                'ready.',
+          ),
+        );
       }
     } catch (_) {
       emit(CheersZapInfo('Reacted with ${gesture.emoji}!'));
@@ -148,13 +153,15 @@ class CheersCubit extends Cubit<CheersState> {
     final lud16 = await _getMyLud16();
 
     if (lud16 == null || lud16.isEmpty) {
-      emit(CheersNudgeSetupRequired(
-        activity,
-        'Set up your wallet',
-        '${activity.actorName} wants to zap you. Add your lightning '
-        'address in your profile to receive it, then come back and tap '
-        'this card to buzz them.',
-      ));
+      emit(
+        CheersNudgeSetupRequired(
+          activity,
+          'Set up your wallet',
+          '${activity.actorName} wants to zap you. Add your lightning '
+              'address in your profile to receive it, then come back and tap '
+              'this card to buzz them.',
+        ),
+      );
       return;
     }
 
@@ -164,7 +171,9 @@ class CheersCubit extends Cubit<CheersState> {
         nudgeId: activity.nudgeId ?? '',
         toNpub: activity.actorNpub,
       );
-      emit(CheersNudgeSuccess("Buzzed ${activity.actorName} — you're all set!"));
+      emit(
+        CheersNudgeSuccess("Buzzed ${activity.actorName} — you're all set!"),
+      );
     } catch (error, stack) {
       _log.warning('Nudge ready failed', error, stack);
       emit(const CheersZapError('Failed to send buzz'));

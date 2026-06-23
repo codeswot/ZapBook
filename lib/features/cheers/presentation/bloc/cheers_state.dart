@@ -69,7 +69,12 @@ final class CheersNudgeRequired extends CheersActionState {
   final String title;
   final String message;
   @override
-  List<Object?> get props => [activity, title, message, DateTime.now().millisecondsSinceEpoch];
+  List<Object?> get props => [
+    activity,
+    title,
+    message,
+    DateTime.now().millisecondsSinceEpoch,
+  ];
 }
 
 final class CheersNudgeSetupRequired extends CheersActionState {
@@ -78,5 +83,10 @@ final class CheersNudgeSetupRequired extends CheersActionState {
   final String title;
   final String message;
   @override
-  List<Object?> get props => [activity, title, message, DateTime.now().millisecondsSinceEpoch];
+  List<Object?> get props => [
+    activity,
+    title,
+    message,
+    DateTime.now().millisecondsSinceEpoch,
+  ];
 }
