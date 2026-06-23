@@ -9,7 +9,7 @@ import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 
 @lazySingleton
 class ZapNudgeService {
@@ -101,7 +101,7 @@ class ZapNudgeService {
         if (name != null && name.isNotEmpty) return name;
       }
     } on Object catch (_) {}
-    return ProfileMetaGenerator.generate(seed: npub).displayName;
+    return npub.toNpubShort();
   }
 
   Future<void> _send(

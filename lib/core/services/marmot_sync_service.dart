@@ -46,6 +46,9 @@ class MarmotSyncService {
   Timer? _refreshTimer;
   Timer? _heavyUpdateTimer;
 
+  final _syncController = StreamController<void>.broadcast();
+  Stream<void> get onSync => _syncController.stream;
+
   final _welcomeQueue = <Nip01Event>[];
   bool _processingWelcome = false;
 
@@ -204,6 +207,7 @@ class MarmotSyncService {
   void _scheduleRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer(_debounce, () {
+      _syncController.add(null);
       unawaited(
         _library.refresh().catchError(
           (Object error, StackTrace stack) =>

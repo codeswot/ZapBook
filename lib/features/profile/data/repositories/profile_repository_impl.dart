@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
@@ -37,7 +38,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     await _stats.syncBookStats();
 
-    final fallback = ProfileMetaGenerator.generate(seed: npub);
+    final fallbackAvatar = ProfileMetaGenerator.generate(seed: npub).avatar;
+    final fallbackName = npub.toNpubShort();
     final metadata = await _remote.fetchMetadata(npub: npub);
 
     final fetchedName = metadata?.displayName ?? metadata?.name;
@@ -47,10 +49,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
       npub: npub,
       displayName: (fetchedName != null && fetchedName.isNotEmpty)
           ? fetchedName
-          : fallback.displayName,
+          : fallbackName,
       picture: (fetchedPicture != null && fetchedPicture.isNotEmpty)
           ? fetchedPicture
-          : fallback.avatar,
+          : fallbackAvatar,
       lightningAddress: metadata?.lud16 ?? '',
       satsEarned: _stats.satsEarned,
       dayStreak: _stats.streak,

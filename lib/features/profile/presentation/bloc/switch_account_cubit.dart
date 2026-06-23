@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
@@ -26,12 +27,12 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
 
       final accounts = <SwitchAccountItem>[];
       for (final npub in npubs) {
-        final fallback = ProfileMetaGenerator.generate(seed: npub);
+        final fallbackAvatar = ProfileMetaGenerator.generate(seed: npub).avatar;
         accounts.add(
           SwitchAccountItem(
             npub: npub,
-            name: fallback.displayName,
-            picture: fallback.avatar,
+            name: npub.toNpubShort(),
+            picture: fallbackAvatar,
           ),
         );
       }

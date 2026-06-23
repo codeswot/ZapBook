@@ -5,6 +5,25 @@ import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/extensions/date_time_extension.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
+
+int _getGestureCount(CheersActivity activity, ZapGesture gesture) {
+  switch (gesture) {
+    case ZapGesture.thumbsUp:
+      return activity.thumbsUpCount;
+    case ZapGesture.clap:
+      return activity.clapCount;
+    case ZapGesture.fire:
+      return activity.fireCount;
+    case ZapGesture.rocket:
+      return activity.rocketCount;
+    case ZapGesture.trophy:
+      return activity.trophyCount;
+    case ZapGesture.gift:
+      return 0;
+  }
+}
 
 class CheersActivityCard extends StatelessWidget {
   const CheersActivityCard({
@@ -17,16 +36,8 @@ class CheersActivityCard extends StatelessWidget {
 
   final CheersActivity activity;
   final VoidCallback onTap;
-  final void Function(String reactionType) onReactionTap;
+  final void Function(ZapGesture gesture) onReactionTap;
   final VoidCallback? onLongPress;
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final difference = DateTime.now().difference(dateTime);
-    if (difference.inDays > 0) return '${difference.inDays}d ago';
-    if (difference.inHours > 0) return '${difference.inHours}h';
-    if (difference.inMinutes > 0) return '${difference.inMinutes}m';
-    return 'just now';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,12 +48,9 @@ class CheersActivityCard extends StatelessWidget {
         activity.type == 'zap_nudge' || activity.type == 'zap_ready';
     final isZap = activity.type == 'zap';
 
-    final hasReactions =
-        activity.thumbsUpCount > 0 ||
-        activity.clapCount > 0 ||
-        activity.fireCount > 0 ||
-        activity.rocketCount > 0 ||
-        activity.trophyCount > 0;
+    final hasReactions = ZapGesture.values.any(
+      (g) => _getGestureCount(activity, g) > 0,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -82,7 +90,7 @@ class CheersActivityCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              _formatTimeAgo(activity.timestamp),
+                              activity.timestamp.formatTimeAgo(),
                               style: typography.caption.copyWith(
                                 color: colors.slate,
                               ),
@@ -122,10 +130,6 @@ class CheersActivityCard extends StatelessWidget {
                 else if (!isMine)
                   _EmptyReactions(onTap: onTap),
               ],
-              if (isZap) ...[
-                const SizedBox(height: 12),
-                ZapAmountPill(amount: activity.zapAmount ?? 0),
-              ],
             ],
           ),
         ),
@@ -143,7 +147,7 @@ class _ReactionsRow extends StatelessWidget {
   });
 
   final CheersActivity activity;
-  final void Function(String) onReactionTap;
+  final void Function(ZapGesture) onReactionTap;
   final VoidCallback onTap;
   final bool isMine;
 
@@ -154,36 +158,15 @@ class _ReactionsRow extends StatelessWidget {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (activity.thumbsUpCount > 0)
-          ReactionPill(
-            emoji: '👍',
-            count: activity.thumbsUpCount,
-            onTap: () => onReactionTap('like'),
-          ),
-        if (activity.clapCount > 0)
-          ReactionPill(
-            emoji: '👏',
-            count: activity.clapCount,
-            onTap: () => onReactionTap('clap'),
-          ),
-        if (activity.fireCount > 0)
-          ReactionPill(
-            emoji: '🔥',
-            count: activity.fireCount,
-            onTap: () => onReactionTap('fire'),
-          ),
-        if (activity.rocketCount > 0)
-          ReactionPill(
-            emoji: '🚀',
-            count: activity.rocketCount,
-            onTap: () => onReactionTap('rocket'),
-          ),
-        if (activity.trophyCount > 0)
-          ReactionPill(
-            emoji: '🏆',
-            count: activity.trophyCount,
-            onTap: () => onReactionTap('trophy'),
-          ),
+        ...ZapGesture.values
+            .where((g) => _getGestureCount(activity, g) > 0)
+            .map((g) {
+              return ReactionPill(
+                emoji: g.emoji,
+                count: _getGestureCount(activity, g),
+                onTap: () => onReactionTap(g),
+              );
+            }),
         if (!isMine) AddReactionButton(onTap: onTap),
       ],
     );

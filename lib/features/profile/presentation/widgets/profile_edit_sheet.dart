@@ -39,7 +39,6 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
 
   void _cycleAll() {
     final meta = ProfileMetaGenerator.generate();
-    _nameController.text = meta.displayName;
     setState(() => _picture = meta.avatar);
   }
 

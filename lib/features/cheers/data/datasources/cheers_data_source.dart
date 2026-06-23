@@ -10,6 +10,7 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -17,6 +18,13 @@ import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();
   Future<void> sendZap(String activityId, int amount, String reactionType);
+  Future<void> sendDirectZap(
+    String groupId,
+    String recipientNpub,
+    int amount,
+    String reactionType,
+  );
+  void bumpLimit();
 }
 
 final _log = logging.Logger('CheersDataSource');
@@ -32,6 +40,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._milestone,
     this._contacts,
     this._cache,
+    this._sync,
   );
 
   final Marmot _marmot;
@@ -40,6 +49,9 @@ class CheersDataSourceImpl implements CheersDataSource {
   final MilestoneService _milestone;
   final ContactService _contacts;
   final DecodedMessageCache _cache;
+  final MarmotSyncService _sync;
+
+  int _messageLimit = 300;
 
   final _changeController = StreamController<void>.broadcast();
   final _caughtUpGroups = <String>{};
@@ -93,18 +105,32 @@ class CheersDataSourceImpl implements CheersDataSource {
       if (!controller.isClosed) controller.add(enriched);
     }
 
+    bool isReloading = false;
     void reload({bool force = false}) async {
+      if (isReloading && !force) return;
+      isReloading = true;
       try {
         final myNpub = await _identityLocal.readNpub() ?? '';
         final groups = await _marmot.listGroups();
         final bookGroups = groups
             .where((group) => BookGroupNaming.matches(group.name))
             .toList();
-        await Future.wait(
-          bookGroups.map((g) => _catchUpGroup(g, force: force)),
-        );
+
+        if (force || bookGroups.any((g) => !_caughtUpGroups.contains(g.id))) {
+          Future.microtask(() async {
+            await Future.wait(
+              bookGroups.map((g) => _catchUpGroup(g, force: force)),
+            );
+            reload(force: false);
+          });
+        }
         final perGroupMessages = await Future.wait(
-          bookGroups.map((group) => _marmot.getMessages(group.id)),
+          bookGroups.map(
+            (group) => _marmot.getMessages(
+              group.id,
+              params: MessageListParams(limit: _messageLimit),
+            ),
+          ),
         );
 
         final signature = _signatureFor(perGroupMessages);
@@ -125,35 +151,37 @@ class CheersDataSourceImpl implements CheersDataSource {
         }
         activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        _directZaps.stream.listen((zap) {
-          if (!controller.isClosed) {
-            lastBase = [zap, ...lastBase];
-            emitEnriched();
-          }
-        });
         lastBase = activities;
         lastMyNpub = myNpub;
         await emitEnriched();
       } catch (error, stack) {
         _log.warning('activities reload failed', error, stack);
+      } finally {
+        isReloading = false;
       }
     }
 
-    reload(force: true);
+    final directZapSub = _directZaps.stream.listen((zap) {
+      if (!controller.isClosed) {
+        lastBase = [zap, ...lastBase];
+        emitEnriched();
+      }
+    });
 
-    final timer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => reload(force: true),
-    );
-    final sub = _changeController.stream.listen((_) => reload(force: true));
+    reload(force: false);
+    Future.microtask(() => reload(force: true));
+
+    final sub = _changeController.stream.listen((_) => reload(force: false));
+    final syncSub = _sync.onSync.listen((_) => reload(force: false));
     final metaSub = _contacts.metadataChanges.listen((_) {
       if (lastBase.isNotEmpty) emitEnriched();
     });
 
     controller.onCancel = () {
-      timer.cancel();
       sub.cancel();
+      syncSub.cancel();
       metaSub.cancel();
+      directZapSub.cancel();
       controller.close();
     };
 
@@ -200,73 +228,82 @@ class CheersDataSourceImpl implements CheersDataSource {
       'reactionType': reactionType,
     };
 
-    await _marmot.sendStructured(npub, groupId, payload);
+    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
 
     _changeController.add(null);
 
     try {
-      final messages = await _marmot.getMessages(groupId);
-      Map<String, dynamic>? latestCheer;
-      for (final msg in messages) {
-        final decoded = _cache.get(msg);
-        if (decoded == null) continue;
-        if (decoded['type'] == _cheerType &&
-            decoded['activityId'] == messageId &&
-            decoded['reactionType'] == reactionType) {
-          latestCheer = decoded;
-        }
+      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
+      final tags = (map['tags'] as List)
+          .map((tag) => (tag as List).map((e) => e.toString()).toList())
+          .toList();
+      String pubKey = map['pubkey'] as String;
+      if (pubKey.startsWith('npub')) {
+        pubKey = Nip19.decode(pubKey);
       }
-
-      if (latestCheer != null) {
-        final groups = await _marmot.listGroups();
-        MarmotGroup? match;
-        for (final g in groups) {
-          if (g.id == groupId) {
-            match = g;
-            break;
-          }
-        }
-        if (match != null) {
-          final eventJson = jsonEncode({
-            'id': latestCheer['id'],
-            'pubkey': latestCheer['pubkey'] ?? npub,
-            'created_at':
-                latestCheer['created_at'] ??
-                (DateTime.now().millisecondsSinceEpoch ~/ 1000),
-            'kind': 445,
-            'tags': [
-              ['h', match.nostrGroupId],
-            ],
-            'content': jsonEncode(latestCheer),
-            'sig': latestCheer['sig'],
-          });
-
-          final map = jsonDecode(eventJson) as Map<String, dynamic>;
-          final tags = (map['tags'] as List)
-              .map((tag) => (tag as List).map((e) => e.toString()).toList())
-              .toList();
-          String pubKey = map['pubkey'] as String;
-          if (pubKey.startsWith('npub')) {
-            pubKey = Nip19.decode(pubKey);
-          }
-          final nipEvent = Nip01Event(
-            id: map['id'] as String?,
-            pubKey: pubKey,
-            kind: (map['kind'] as num).toInt(),
-            tags: tags,
-            content: map['content'] as String,
-            sig: map['sig'] as String?,
-            createdAt: (map['created_at'] as num).toInt(),
-          );
-          _ndk.broadcast.broadcast(
-            nostrEvent: nipEvent,
-            specificRelays: NostrService.broadcastRelays,
-          );
-        }
-      }
+      final nipEvent = Nip01Event(
+        id: map['id'] as String?,
+        pubKey: pubKey,
+        kind: (map['kind'] as num).toInt(),
+        tags: tags,
+        content: map['content'] as String,
+        sig: map['sig'] as String?,
+        createdAt: (map['created_at'] as num).toInt(),
+      );
+      _ndk.broadcast.broadcast(
+        nostrEvent: nipEvent,
+        specificRelays: NostrService.broadcastRelays,
+      );
     } catch (error, stack) {
       _log.warning('cheer broadcast failed', error, stack);
     }
+  }
+
+  @override
+  Future<void> sendDirectZap(
+    String groupId,
+    String recipientNpub,
+    int amount,
+    String reactionType,
+  ) async {
+    final npub = await _identityLocal.readNpub();
+    if (npub == null || npub.isEmpty) return;
+
+    final payload = {
+      'type': _cheerType,
+      'activityId': '',
+      'amount': amount,
+      'reactionType': reactionType,
+      'recipientNpub': recipientNpub,
+    };
+
+    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
+
+    _changeController.add(null);
+
+    try {
+      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
+      final tags = (map['tags'] as List)
+          .map((tag) => (tag as List).map((e) => e.toString()).toList())
+          .toList();
+      String pubKey = map['pubkey'] as String;
+      if (pubKey.startsWith('npub')) {
+        pubKey = Nip19.decode(pubKey);
+      }
+      final nipEvent = Nip01Event(
+        id: map['id'] as String?,
+        pubKey: pubKey,
+        kind: (map['kind'] as num).toInt(),
+        tags: tags,
+        content: map['content'] as String,
+        sig: map['sig'] as String?,
+        createdAt: (map['created_at'] as num).toInt(),
+      );
+      _ndk.broadcast.broadcast(
+        nostrEvent: nipEvent,
+        specificRelays: NostrService.broadcastRelays,
+      );
+    } catch (_) {}
   }
 
   List<CheersActivity> _groupActivities(
@@ -386,35 +423,24 @@ class CheersDataSourceImpl implements CheersDataSource {
         final activityId = cheer['activityId'] as String;
         final recipientNpub = cheer['recipientNpub'] as String?;
 
-        final targetEvent = _findMilestoneEvent(group.id, activityId);
-        final isDirectZap = targetEvent == null;
+        final isDirectZap = activityId.isEmpty;
+        if (!isDirectZap) continue;
+
         final gen = ProfileMetaGenerator.generate(
           seed: isFromMe ? (recipientNpub ?? senderNpub) : senderNpub,
         );
         final senderName = isFromMe ? 'You' : gen.displayName;
 
         String description;
-        if (isDirectZap) {
-          if (isFromMe && recipientNpub != null) {
-            final recName = ProfileMetaGenerator.generate(
-              seed: recipientNpub,
-            ).displayName;
-            description = 'You zapped $recName $amount sats in "$bookTitle"';
-          } else if (!isFromMe) {
-            description = '$senderName zapped you $amount sats in "$bookTitle"';
-          } else {
-            description = 'You zapped $amount sats in "$bookTitle"';
-          }
+        if (isFromMe && recipientNpub != null) {
+          final recName = ProfileMetaGenerator.generate(
+            seed: recipientNpub,
+          ).displayName;
+          description = 'You zapped $recName $amount sats in "$bookTitle"';
+        } else if (!isFromMe) {
+          description = '$senderName zapped you $amount sats in "$bookTitle"';
         } else {
-          final target = targetEvent.completed
-              ? 'Finished'
-              : 'Milestone ${targetEvent.milestoneIdx + 1}';
-          if (isFromMe) {
-            description = 'You zapped $amount sats for $target in "$bookTitle"';
-          } else {
-            description =
-                '$senderName zapped $amount sats for $target in "$bookTitle"';
-          }
+          description = 'You zapped $amount sats in "$bookTitle"';
         }
 
         activities.add(
@@ -434,13 +460,9 @@ class CheersDataSourceImpl implements CheersDataSource {
             zapAmount: amount,
             zapReaction: reactionType,
             zapTargetId: activityId,
-            zapTargetDescription: isDirectZap
-                ? '$senderName zapped $amount sats in $bookTitle'
-                : targetEvent.completed
-                ? 'Finished in $bookTitle'
-                : 'Milestone ${targetEvent.milestoneIdx + 1} in $bookTitle',
-            zapRecipientNpub:
-                (targetEvent?.npub) ?? (cheer['recipientNpub'] as String?),
+            zapTargetDescription:
+                '$senderName zapped $amount sats in "$bookTitle"',
+            zapRecipientNpub: cheer['recipientNpub'] as String?,
           ),
         );
       }
@@ -503,10 +525,9 @@ class CheersDataSourceImpl implements CheersDataSource {
     return activities;
   }
 
-  MilestoneEvent? _findMilestoneEvent(String groupId, String eventId) {
-    for (final event in _milestone.eventsForGroup(groupId)) {
-      if (event.id == eventId) return event;
-    }
-    return null;
+  @override
+  void bumpLimit() {
+    _messageLimit += 300;
+    _changeController.add(null);
   }
 }

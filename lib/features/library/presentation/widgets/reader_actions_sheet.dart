@@ -134,17 +134,7 @@ class ReaderActionsSheet extends StatelessWidget {
         await Clipboard.setData(ClipboardData(text: result.invoice));
         messenger.showInfo('Invoice copied to clipboard');
       } else {
-        final reactionType = gesture == ZapGesture.thumbsUp
-            ? 'like'
-            : gesture == ZapGesture.clap
-            ? 'clap'
-            : gesture == ZapGesture.fire
-            ? 'fire'
-            : gesture == ZapGesture.rocket
-            ? 'rocket'
-            : gesture == ZapGesture.trophy
-            ? 'trophy'
-            : 'like';
+        final reactionType = gesture.id;
         unawaited(
           cubit.notifyZapSent(
             recipientNpub: entry.npub,

@@ -13,7 +13,7 @@ import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/services/zap_service.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -47,6 +47,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._zapService,
     this._nudgeService,
     this._marmot,
+    this._cheersDataSource,
   ) : super(const CircleDetailLoading()) {
     _library.watchBooks().listen((_) {
       if (!isClosed) refresh(_currentBookId);
@@ -75,6 +76,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final ZapService _zapService;
   final ZapNudgeService _nudgeService;
   final Marmot _marmot;
+  final CheersDataSource _cheersDataSource;
 
   final _log = logging.Logger('CircleDetailCubit');
   String _currentBookId = '';
@@ -238,16 +240,16 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     if (groupId == null) return;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    await _marmot.sendStructured(npub, groupId, {
-      'type': 'zapbook.zap.sent',
-      'fromNpub': npub,
-      'toNpub': recipientNpub,
-      'amount': amount,
-      'reactionType': reactionType,
-      'sentAtMs': now,
-    });
-
-    final recGen = ProfileMetaGenerator.generate(seed: recipientNpub);
+    await _cheersDataSource.sendDirectZap(
+      groupId,
+      recipientNpub,
+      amount,
+      reactionType,
+    );
+    final contact = _contacts.contactFor(recipientNpub);
+    final recName = (contact.displayName?.trim().isNotEmpty ?? false)
+        ? contact.displayName!.trim()
+        : recipientNpub.toNpubShort();
     final bookTitle = _currentBookId;
     CheersDataSourceImpl.addDirectZap(
       CheersActivity(
@@ -257,14 +259,14 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         bookTitle: bookTitle,
         bookId: groupId,
         activityDescription:
-            'You zapped ${recGen.displayName} $amount sats in $bookTitle',
+            'You zapped $recName $amount sats in $bookTitle',
         timestamp: DateTime.fromMillisecondsSinceEpoch(now),
         type: 'zap',
         isUnread: false,
         zapAmount: amount,
         zapReaction: reactionType,
         zapTargetId: '$npub:$now',
-        zapTargetDescription: 'You zapped ${recGen.displayName} in $bookTitle',
+        zapTargetDescription: 'You zapped $recName in $bookTitle',
         zapRecipientNpub: recipientNpub,
       ),
     );

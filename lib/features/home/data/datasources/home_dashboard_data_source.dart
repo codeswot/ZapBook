@@ -96,67 +96,35 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       'bookId': bookId,
       'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
     };
-    await _marmot.sendStructured(npub, groupId, payload);
+    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
 
     _changeController.add(null);
 
     try {
-      final messages = await _marmot.getMessages(groupId);
-      var latestProgressMs = -1;
-      Map<String, dynamic>? latestProgress;
-
-      for (final msg in messages) {
-        final decoded = _cache.get(msg);
-        if (decoded == null) continue;
-        if (decoded['type'] == 'zapbook.book.progress') {
-          final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-          if (lastReadAtMs != null &&
-              lastReadAtMs.toInt() >= latestProgressMs) {
-            latestProgressMs = lastReadAtMs.toInt();
-            latestProgress = decoded;
-          }
-        }
+      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
+      final tags = (map['tags'] as List)
+          .map((tag) => (tag as List).map((e) => e.toString()).toList())
+          .toList();
+      String pubKey = map['pubkey'] as String;
+      if (pubKey.startsWith('npub')) {
+        pubKey = Nip19.decode(pubKey);
       }
+      final nipEvent = Nip01Event(
+        id: map['id'] as String?,
+        pubKey: pubKey,
+        kind: (map['kind'] as num).toInt(),
+        tags: tags,
+        content: map['content'] as String,
+        sig: map['sig'] as String?,
+        createdAt: (map['created_at'] as num).toInt(),
+      );
 
-      if (latestProgress != null) {
-        final eventJson = jsonEncode({
-          'id': latestProgress['id'],
-          'pubkey': latestProgress['pubkey'] ?? npub,
-          'created_at':
-              latestProgress['created_at'] ??
-              (DateTime.now().millisecondsSinceEpoch ~/ 1000),
-          'kind': 445,
-          'tags': [
-            ['h', targetGroup.nostrGroupId],
-          ],
-          'content': jsonEncode(latestProgress),
-          'sig': latestProgress['sig'],
-        });
-
-        final map = jsonDecode(eventJson) as Map<String, dynamic>;
-        final tags = (map['tags'] as List)
-            .map((tag) => (tag as List).map((e) => e.toString()).toList())
-            .toList();
-        String pubKey = map['pubkey'] as String;
-        if (pubKey.startsWith('npub')) {
-          pubKey = Nip19.decode(pubKey);
-        }
-        final nipEvent = Nip01Event(
-          id: map['id'] as String?,
-          pubKey: pubKey,
-          kind: (map['kind'] as num).toInt(),
-          tags: tags,
-          content: map['content'] as String,
-          sig: map['sig'] as String?,
-          createdAt: (map['created_at'] as num).toInt(),
-        );
-        _ndk.broadcast.broadcast(
-          nostrEvent: nipEvent,
-          specificRelays: NostrService.broadcastRelays,
-        );
-      }
+      _ndk.broadcast.broadcast(
+        nostrEvent: nipEvent,
+        specificRelays: NostrService.broadcastRelays,
+      );
     } catch (error, stack) {
-      _log.warning('progress broadcast failed', error, stack);
+      _log.warning('mark read broadcast failed', error, stack);
     }
   }
 

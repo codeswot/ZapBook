@@ -10,6 +10,7 @@ import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_profile_avatar.dart';
 import 'package:zapbook/widgets/app_sheet.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
 
 class CheersLongPressSheet extends StatelessWidget {
   const CheersLongPressSheet({
@@ -80,10 +81,10 @@ class CheersLongPressSheet extends StatelessWidget {
               tone: colors.bitcoin,
               onTap: () {
                 context.pop();
-                cubit.sendZap(
-                  activityId: activity.id,
+                cubit.performZap(
+                  activity: activity,
                   amount: 21,
-                  reactionType: 'like',
+                  gesture: ZapGesture.thumbsUp,
                 );
               },
             ),
@@ -94,10 +95,10 @@ class CheersLongPressSheet extends StatelessWidget {
               tone: colors.bitcoin,
               onTap: () {
                 context.pop();
-                cubit.sendZap(
-                  activityId: activity.id,
+                cubit.performZap(
+                  activity: activity,
                   amount: 210,
-                  reactionType: 'fire',
+                  gesture: ZapGesture.fire,
                 );
               },
             ),
