@@ -7,7 +7,6 @@ import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.d
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
-import 'package:flutter/services.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/widgets/zap_sheet.dart';
 import 'package:zapbook/widgets/app_toast.dart';
@@ -121,37 +120,14 @@ class ReaderActionsSheet extends StatelessWidget {
       return;
     }
 
-    try {
-      final result = await cubit.sendReaderZap(
-        recipientLud16: lud16,
-        recipientPubkey: entry.npub,
-        gesture: gesture,
-        amount: amount,
-        comment: comment,
-      );
-      final ok = await cubit.payZap(result);
-      if (!ok) {
-        await Clipboard.setData(ClipboardData(text: result.invoice));
-        messenger.showInfo('Invoice copied to clipboard');
-      } else {
-        final reactionType = gesture.id;
-        unawaited(
-          cubit.notifyZapSent(
-            recipientNpub: entry.npub,
-            amount: amount,
-            reactionType: reactionType,
-          ),
-        );
-        final support = result.hasSupportZap
-            ? ' (+${result.supportAmount} to ZapBook)'
-            : '';
-        messenger.showSuccess(
-          'Zapping $amount sats to ${entry.contact.label}$support',
-        );
-      }
-    } catch (_) {
-      messenger.showError('Could not zap ${entry.contact.label}');
-    }
+    await cubit.zapMember(
+      entry: entry,
+      gesture: gesture,
+      amount: amount,
+      comment: comment,
+      onSuccess: (msg) => messenger.showSuccess(msg),
+      onError: (msg) => messenger.showError(msg),
+    );
   }
 
   @override

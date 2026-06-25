@@ -55,7 +55,7 @@ class ZapService {
       throw ZapException('Amount above maximum');
     }
 
-    final nostr = await _buildZapRequest(
+    final (:nostr, :zapRequestId) = await _buildZapRequest(
       recipientPubkey: recipientPubkey,
       targetEventId: targetEventId,
       amountMillisats: amountMillisats,
@@ -81,7 +81,7 @@ class ZapService {
       );
       if (supportAmount > 0) {
         try {
-          final supportNostr = await _buildZapRequest(
+          final (:nostr, :zapRequestId) = await _buildZapRequest(
             recipientPubkey: ZapbookConfig.npub,
             targetEventId: '',
             amountMillisats: supportAmount * 1000,
@@ -94,7 +94,7 @@ class ZapService {
             payResponse: supportPayResponse,
             amountMillisats: supportAmount * 1000,
             comment: 'ZapBook support ($feePercent%)',
-            nostr: supportNostr,
+            nostr: nostr,
           );
           supportInvoice = supportInv.pr;
         } catch (error, stack) {
@@ -105,6 +105,7 @@ class ZapService {
 
     return ZapResult(
       invoice: invoice.pr,
+      zapRequestId: zapRequestId ?? '',
       amountSats: amountSats,
       gesture: gesture,
       recipientPubkey: recipientPubkey,
@@ -114,7 +115,7 @@ class ZapService {
     );
   }
 
-  Future<String?> _buildZapRequest({
+  Future<({String? nostr, String? zapRequestId})> _buildZapRequest({
     required String recipientPubkey,
     required String targetEventId,
     required int amountMillisats,
@@ -125,7 +126,7 @@ class ZapService {
     if (account == null ||
         !account.signer.canSign() ||
         recipientPubkey.isEmpty) {
-      return null;
+      return (nostr: null, zapRequestId: null);
     }
 
     final recipientHex = recipientPubkey.startsWith('npub')
@@ -154,7 +155,7 @@ class ZapService {
     );
     final signed = await account.signer.sign(request);
 
-    return jsonEncode({
+    final nostr = jsonEncode({
       'id': signed.id,
       'pubkey': signed.pubKey,
       'created_at': signed.createdAt,
@@ -163,6 +164,7 @@ class ZapService {
       'content': signed.content,
       'sig': signed.sig,
     });
+    return (nostr: nostr, zapRequestId: signed.id);
   }
 
   static const _zapReceiptRelays = [
@@ -234,10 +236,12 @@ class ZapService {
       ),
     );
   }
+
 }
 
 class ZapResult {
   final String invoice;
+  final String zapRequestId;
   final int amountSats;
   final ZapGesture gesture;
   final String recipientPubkey;
@@ -249,6 +253,7 @@ class ZapResult {
 
   const ZapResult({
     required this.invoice,
+    required this.zapRequestId,
     required this.amountSats,
     required this.gesture,
     required this.recipientPubkey,

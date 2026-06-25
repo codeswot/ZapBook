@@ -4,7 +4,9 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/services/zap_confirmation_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -22,6 +24,8 @@ class CheersCubit extends Cubit<CheersState> {
     this._zapService,
     this._nudgeService,
     this._nostrService,
+    this._nwc,
+    this._zapConfirmation,
   ) : super(const CheersLoading()) {
     _subscribe();
   }
@@ -32,6 +36,8 @@ class CheersCubit extends Cubit<CheersState> {
   final ZapService _zapService;
   final ZapNudgeService _nudgeService;
   final NostrService _nostrService;
+  final NwcService _nwc;
+  final ZapConfirmationService _zapConfirmation;
 
   final _log = logging.Logger('CheersCubit');
   StreamSubscription? _subscription;
@@ -97,39 +103,10 @@ class CheersCubit extends Cubit<CheersState> {
     final reactionType = gesture.id;
 
     try {
-      await _sendCheersZap(
-        activityId: activity.id,
-        amount: amount,
-        reactionType: reactionType,
-      );
-    } on Object catch (error, stack) {
-      _log.warning('Send cheers reaction failed', error, stack);
-      emit(const CheersZapError('Failed to send reaction'));
-      return;
-    }
-
-    try {
       final pubkey = Nip19.decode(activity.actorNpub);
       final lud16 = await _lookupLud16(pubkey);
-      if (lud16 != null && lud16.isNotEmpty) {
-        final result = await _externalZap(
-          recipientLud16: lud16,
-          recipientPubkey: pubkey,
-          gesture: gesture,
-          amount: amount,
-          comment: comment,
-          circleId: activity.bookId,
-        );
-        final supportMsg = result.hasSupportZap
-            ? ' (+${result.supportAmount} to ZapBook)'
-            : '';
-        await _payZap(result);
-        emit(
-          CheersZapSuccess(
-            'Zapping $amount sats to ${activity.actorName}$supportMsg',
-          ),
-        );
-      } else {
+
+      if (lud16 == null || lud16.isEmpty) {
         await _nudge(
           groupId: activity.id.split(':').first,
           toNpub: activity.actorNpub,
@@ -139,18 +116,77 @@ class CheersCubit extends Cubit<CheersState> {
             activity,
             "${activity.actorName} can't be zapped yet",
             "${activity.actorName} hasn't set up their lightning wallet. "
-                "We've let them know — you'll get a heads-up here when they're "
-                'ready.',
+                "We've let them know — you'll get a heads-up here when they're ready.",
+          ),
+        );
+        return;
+      }
+
+      final result = await _externalZap(
+        recipientLud16: lud16,
+        recipientPubkey: pubkey,
+        gesture: gesture,
+        amount: amount,
+        comment: comment,
+        circleId: activity.bookId,
+      );
+
+      final supportMsg = result.hasSupportZap
+          ? ' (+${result.supportAmount} to ZapBook)'
+          : '';
+
+      if (_nwc.isConnected) {
+        final paid = await _payZap(result);
+        if (paid) {
+          await _sendCheersZap(
+            activityId: activity.id,
+            amount: amount,
+            reactionType: reactionType,
+          );
+          emit(
+            CheersZapSuccess(
+              'Zapped $amount sats to ${activity.actorName}$supportMsg',
+            ),
+          );
+        } else {
+          emit(const CheersZapError('Payment did not go through'));
+        }
+      } else {
+        final opened = await _payZap(result);
+        if (!opened) {
+          emit(const CheersZapError('Could not open wallet'));
+          return;
+        }
+        if (result.zapRequestId.isNotEmpty) {
+          _zapConfirmation.watch(
+            PendingZapRecord(
+              zapRequestId: result.zapRequestId,
+              invoice: result.invoice,
+              recipientPubkey: result.recipientPubkey,
+              activityId: activity.id,
+              amount: amount,
+              reactionType: reactionType,
+              createdAtMs: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+        }
+        emit(
+          CheersZapSuccess(
+            'Zapping $amount sats to ${activity.actorName}$supportMsg — '
+            'activity will appear once payment is confirmed',
           ),
         );
       }
-    } catch (_) {
+    } catch (error, stack) {
+      _log.warning('performZap failed', error, stack);
       emit(CheersZapInfo('Reacted with ${gesture.emoji}!'));
     }
   }
 
   Future<void> performNudge(CheersActivity activity) async {
-    final lud16 = await _getMyLud16();
+    final pubkey = _nostrService.pubkey;
+    if (pubkey == null) return;
+    final lud16 = await _lookupLud16(pubkey);
 
     if (lud16 == null || lud16.isEmpty) {
       emit(
@@ -216,13 +252,6 @@ class CheersCubit extends Cubit<CheersState> {
     }
     final fresh = await _nostrService.getMetadata(pubkey, forceRefresh: true);
     return fresh?.lud16;
-  }
-
-  Future<String?> _getMyLud16() async {
-    final pubkey = _nostrService.pubkey;
-    if (pubkey == null) return null;
-    final meta = await _nostrService.getMetadata(pubkey);
-    return meta?.lud16;
   }
 
   String? get myPubkey => _nostrService.pubkey;

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
@@ -13,6 +14,8 @@ import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/nwc_service.dart';
+import 'package:zapbook/core/services/zap_confirmation_service.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
@@ -48,6 +51,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._nudgeService,
     this._marmot,
     this._cheersDataSource,
+    this._nwc,
+    this._zapConfirmation,
   ) : super(const CircleDetailLoading()) {
     _library.watchBooks().listen((_) {
       if (!isClosed) refresh(_currentBookId);
@@ -77,6 +82,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final ZapNudgeService _nudgeService;
   final Marmot _marmot;
   final CheersDataSource _cheersDataSource;
+  final NwcService _nwc;
+  final ZapConfirmationService _zapConfirmation;
 
   final _log = logging.Logger('CircleDetailCubit');
   String _currentBookId = '';
@@ -228,6 +235,81 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   );
 
   Future<bool> payZap(ZapResult result) => _zapService.payZap(result);
+
+  Future<void> zapMember({
+    required MemberEntry entry,
+    required ZapGesture gesture,
+    required int amount,
+    String? comment,
+    required void Function(String message) onSuccess,
+    required void Function(String message) onError,
+  }) async {
+    final lud16 = entry.contact.lud16;
+    if (lud16 == null || lud16.isEmpty) {
+      onError("${entry.contact.label} has no lightning address");
+      return;
+    }
+
+    try {
+      final result = await sendReaderZap(
+        recipientLud16: lud16,
+        recipientPubkey: entry.npub,
+        gesture: gesture,
+        amount: amount,
+        comment: comment,
+      );
+
+      final supportMsg = result.hasSupportZap
+          ? ' (+${result.supportAmount} to ZapBook)'
+          : '';
+
+      if (_nwc.isConnected) {
+        final paid = await _zapService.payZap(result);
+        if (paid) {
+          await notifyZapSent(
+            recipientNpub: entry.npub,
+            amount: amount,
+            reactionType: gesture.id,
+          );
+          onSuccess('Zapped $amount sats to ${entry.contact.label}$supportMsg');
+        } else {
+          onError('Payment did not go through');
+        }
+      } else {
+        final opened = await _zapService.payZap(result);
+        if (!opened) {
+          await Clipboard.setData(ClipboardData(text: result.invoice));
+          onSuccess('Could not open wallet. Invoice copied to clipboard.');
+          return;
+        }
+
+        if (result.zapRequestId.isNotEmpty) {
+          final groupId = await _resolveGroupId(_currentBookId);
+          if (groupId != null) {
+            _zapConfirmation.watch(
+              PendingZapRecord(
+                zapRequestId: result.zapRequestId,
+                invoice: result.invoice,
+                recipientPubkey: result.recipientPubkey,
+                activityId: 'direct:$groupId:${entry.npub}',
+                amount: amount,
+                reactionType: gesture.id,
+                createdAtMs: DateTime.now().millisecondsSinceEpoch,
+              ),
+            );
+          }
+        }
+
+        onSuccess(
+          'Zapping $amount sats to ${entry.contact.label}$supportMsg — '
+          'activity will appear once payment is confirmed',
+        );
+      }
+    } catch (e, s) {
+      _log.warning('zapMember failed', e, s);
+      onError('Could not zap ${entry.contact.label}');
+    }
+  }
 
   Future<void> notifyZapSent({
     required String recipientNpub,
