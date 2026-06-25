@@ -146,7 +146,7 @@ ParsedContent _parsePdf(
             skippable.add(i);
           }
         } else {
-          pageWords.add(100); // Placeholder word count for background pages
+          pageWords.add(100);
         }
       }
 

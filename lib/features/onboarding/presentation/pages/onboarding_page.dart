@@ -48,9 +48,6 @@ class _OnboardingViewState extends State<_OnboardingView> {
     OnboardingCubit cubit, {
     required bool publish,
   }) {
-    // On success the active identity changes, which rebuilds the dependency
-    // graph and remounts the app; the router then redirects to home. No
-    // manual navigation needed here.
     cubit.completeOnboarding(publish: publish);
   }
 
