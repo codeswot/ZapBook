@@ -13,6 +13,7 @@ import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 
 abstract interface class CheersDataSource {
@@ -41,6 +42,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._contacts,
     this._cache,
     this._sync,
+    this._cheersDao,
   );
 
   final Marmot _marmot;
@@ -50,6 +52,7 @@ class CheersDataSourceImpl implements CheersDataSource {
   final ContactService _contacts;
   final DecodedMessageCache _cache;
   final MarmotSyncService _sync;
+  final CheersDao _cheersDao;
 
   int _messageLimit = 300;
 
@@ -90,20 +93,8 @@ class CheersDataSourceImpl implements CheersDataSource {
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
-    final controller = StreamController<List<CheersActivity>>.broadcast();
     int? lastSignature;
-    var lastBase = <CheersActivity>[];
     var lastMyNpub = '';
-
-    Future<void> emitEnriched() async {
-      final actorNpubs = {for (final a in lastBase) a.actorNpub}.toList();
-      await _contacts.prime(actorNpubs);
-      final enriched = [
-        for (final a in lastBase)
-          a.actorNpub == lastMyNpub ? a : _withMetadata(a),
-      ];
-      if (!controller.isClosed) controller.add(enriched);
-    }
 
     bool isReloading = false;
     void reload({bool force = false}) async {
@@ -151,9 +142,10 @@ class CheersDataSourceImpl implements CheersDataSource {
         }
         activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        lastBase = activities;
         lastMyNpub = myNpub;
-        await emitEnriched();
+        for (final activity in activities) {
+          await _cheersDao.saveActivity(activity);
+        }
       } catch (error, stack) {
         _log.warning('activities reload failed', error, stack);
       } finally {
@@ -162,10 +154,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     }
 
     final directZapSub = _directZaps.stream.listen((zap) {
-      if (!controller.isClosed) {
-        lastBase = [zap, ...lastBase];
-        emitEnriched();
-      }
+      _cheersDao.saveActivity(zap);
     });
 
     reload(force: false);
@@ -173,19 +162,16 @@ class CheersDataSourceImpl implements CheersDataSource {
 
     final sub = _changeController.stream.listen((_) => reload(force: false));
     final syncSub = _sync.onSync.listen((_) => reload(force: false));
-    final metaSub = _contacts.metadataChanges.listen((_) {
-      if (lastBase.isNotEmpty) emitEnriched();
+
+    return _cheersDao.watchActivities().asyncMap((activities) async {
+      final myNpub = await _identityLocal.readNpub() ?? '';
+      final actorNpubs = activities.map((a) => a.actorNpub).toSet().toList();
+      await _contacts.prime(actorNpubs);
+      return activities.map((a) {
+        if (a.actorNpub == myNpub) return a;
+        return _withMetadata(a);
+      }).toList();
     });
-
-    controller.onCancel = () {
-      sub.cancel();
-      syncSub.cancel();
-      metaSub.cancel();
-      directZapSub.cancel();
-      controller.close();
-    };
-
-    return controller.stream;
   }
 
   CheersActivity _withMetadata(CheersActivity activity) {

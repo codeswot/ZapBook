@@ -16,8 +16,10 @@ import 'package:injectable/injectable.dart' as _i526;
 import 'package:marmot_dart/marmot_dart.dart' as _i970;
 import 'package:ndk/ndk.dart' as _i857;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
+import 'package:zapbook/core/data/app_database.dart' as _i708;
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart' as _i68;
-import 'package:zapbook/core/data/cache/page_cache_store.dart' as _i165;
+import 'package:zapbook/core/data/dao/cheers_dao.dart' as _i826;
+import 'package:zapbook/core/data/dao/page_dao.dart' as _i50;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
     as _i342;
@@ -230,11 +232,11 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
+    gh.singleton<_i708.AppDatabase>(() => _i708.AppDatabase());
     await gh.singletonAsync<_i19.AppInfoService>(
       () => registerModule.appInfoService(),
       preResolve: true,
     );
-    gh.lazySingleton<_i165.PageCacheStore>(() => _i165.PageCacheStore());
     gh.lazySingleton<_i850.GenreDataSource>(() => _i850.GenreDataSource());
     gh.lazySingleton<_i854.LibraryFileStore>(() => _i854.LibraryFileStore());
     gh.lazySingleton<_i525.BookSearchIndex>(() => _i525.BookSearchIndex());
@@ -364,6 +366,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<List<_i751.BookExtractor>>(
       () => ingestionModule.bookExtractors(gh<_i201.CoverGenerator>()),
     );
+    gh.lazySingleton<_i826.CheersDao>(
+      () => _i826.CheersDao(gh<_i708.AppDatabase>()),
+    );
+    gh.lazySingleton<_i50.PageDao>(() => _i50.PageDao(gh<_i708.AppDatabase>()));
     gh.lazySingleton<_i507.NwcService>(
       () => _i507.NwcService(
         gh<_i460.SharedPreferences>(),
@@ -492,6 +498,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i1053.ClipboardService>(),
+        gh<_i11.NostrService>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+      ),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.MarmotLibraryRepository(
         gh<_i398.BookGroupDatasource>(),
@@ -500,16 +515,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i740.DensityService>(),
         gh<_i525.BookSearchIndex>(),
         gh<_i491.BookVectorIndex>(),
-        gh<_i165.PageCacheStore>(),
-      ),
-    );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i1053.ClipboardService>(),
-        gh<_i11.NostrService>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
+        gh<_i50.PageDao>(),
       ),
     );
     gh.lazySingleton<_i140.MarmotSyncService>(
@@ -530,17 +536,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i63.IdentityRepository>(),
         gh<_i735.ProfileRemoteDataSource>(),
-      ),
-    );
-    gh.lazySingleton<_i64.CheersDataSource>(
-      () => _i64.CheersDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i244.ContactService>(),
-        gh<_i118.DecodedMessageCache>(),
-        gh<_i140.MarmotSyncService>(),
       ),
     );
     gh.lazySingleton<_i1073.NostrSession>(
@@ -635,6 +630,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i182.ReadingStatsService>(),
         gh<_i803.SessionReloader>(),
         gh<_i118.DecodedMessageCache>(),
+      ),
+    );
+    gh.lazySingleton<_i64.CheersDataSource>(
+      () => _i64.CheersDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i244.ContactService>(),
+        gh<_i118.DecodedMessageCache>(),
+        gh<_i140.MarmotSyncService>(),
+        gh<_i826.CheersDao>(),
       ),
     );
     gh.factory<_i906.CircleMembersCubit>(

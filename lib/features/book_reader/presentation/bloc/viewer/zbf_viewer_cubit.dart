@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/core/data/cache/page_cache_store.dart';
+import 'package:zapbook/core/data/dao/page_dao.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
@@ -17,11 +17,11 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     this.segmentLoader,
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
-    PageCacheStore? pageCache,
+    PageDao? pageCache,
     int initialPage = 0,
   }) : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
        _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
-       _pageCache = pageCache ?? getIt<PageCacheStore>(),
+       _pageCache = pageCache ?? getIt<PageDao>(),
        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
        super(ZbfViewerState(currentPage: initialPage)) {
     _initialize(initialPage);
@@ -56,7 +56,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   final BookSegmentLoader? segmentLoader;
   final PdfPageRasterizer _rasterizer;
   final PdfChunkExtractor _chunkExtractor;
-  final PageCacheStore _pageCache;
+  final PageDao _pageCache;
   final _logger = Logger('ZbfViewerCubit');
 
   static const _prepTimeout = Duration(seconds: 8);

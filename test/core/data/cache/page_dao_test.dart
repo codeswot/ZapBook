@@ -1,19 +1,23 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zapbook/core/data/cache/page_cache_store.dart';
+import 'package:zapbook/core/data/app_database.dart';
+import 'package:zapbook/core/data/dao/page_dao.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 void main() {
   late Directory tempDir;
-  late PageCacheStore store;
+  late AppDatabase db;
+  late PageDao store;
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('page_cache_test');
-    store = PageCacheStore.forPath('${tempDir.path}/book_pages.db');
+    db = AppDatabase.forPath('${tempDir.path}/book_pages.db');
+    store = PageDao(db);
   });
 
   tearDown(() {
+    db.close();
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 

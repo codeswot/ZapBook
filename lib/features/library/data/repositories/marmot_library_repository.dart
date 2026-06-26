@@ -8,7 +8,7 @@ import 'package:archive/archive.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
-import 'package:zapbook/core/data/cache/page_cache_store.dart';
+import 'package:zapbook/core/data/dao/page_dao.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/core/data/search/book_vector_index.dart';
@@ -37,7 +37,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   final DensityService _density;
   final BookSearchIndex _searchIndex;
   final BookVectorIndex _vectorIndex;
-  final PageCacheStore _pageCache;
+  final PageDao _pageCache;
 
   final _log = logging.Logger('MarmotLibraryRepository');
   final _controller = StreamController<List<LibraryBook>>.broadcast();
