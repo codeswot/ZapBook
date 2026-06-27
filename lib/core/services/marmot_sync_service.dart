@@ -9,26 +9,15 @@ import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
-import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 
 @lazySingleton
 class MarmotSyncService {
-  MarmotSyncService(
-    this._marmot,
-    this._ndk,
-    this._identity,
-    this._library,
-    this._milestone,
-    this._keyPackages,
-  );
+  MarmotSyncService(this._marmot, this._ndk, this._identity, this._keyPackages);
 
   final Marmot _marmot;
   final Ndk _ndk;
   final IdentityLocalDataSource _identity;
-  final LibraryRepository _library;
-  final MilestoneService _milestone;
   final KeyPackageService _keyPackages;
   final _log = logging.Logger('MarmotSyncService');
 
@@ -43,7 +32,6 @@ class MarmotSyncService {
   StreamSubscription<Nip01Event>? _groupSub;
   String? _groupSubId;
 
-  Timer? _refreshTimer;
   Timer? _heavyUpdateTimer;
 
   final _syncController = StreamController<void>.broadcast();
@@ -51,6 +39,8 @@ class MarmotSyncService {
 
   final _welcomeQueue = <Nip01Event>[];
   bool _processingWelcome = false;
+  bool _isExecutingHeavyUpdates = false;
+  bool _heavyUpdatePending = false;
 
   Future<void> start() async {
     if (_running) return;
@@ -70,7 +60,6 @@ class MarmotSyncService {
 
   Future<void> stop() async {
     _running = false;
-    _refreshTimer?.cancel();
     _heavyUpdateTimer?.cancel();
     _welcomeQueue.clear();
     await _welcomeSub?.cancel();
@@ -102,31 +91,41 @@ class MarmotSyncService {
   Future<void> _processWelcomeQueue() async {
     if (_processingWelcome) return;
     _processingWelcome = true;
+
     try {
       bool processedAny = false;
       while (_welcomeQueue.isNotEmpty) {
-        final giftWrap = _welcomeQueue.removeAt(0);
-        try {
-          final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
-          await _marmot.processWelcome(giftWrap.id, rumor.toMarmotJson());
-          for (final welcome in await _marmot.getPendingWelcomes()) {
-            try {
-              await _marmot.acceptWelcome(welcome.id);
-            } on Object catch (_) {
-              if (await _purgeStaleGroup(welcome.groupName)) {
-                try {
-                  await _marmot.acceptWelcome(welcome.id);
-                } on Object catch (_) {}
-              }
-            }
+        final batch = _welcomeQueue.toList();
+        _welcomeQueue.clear();
+
+        for (final giftWrap in batch) {
+          try {
+            final rumor = await _ndk.giftWrap.fromGiftWrap(giftWrap: giftWrap);
+            await _marmot.processWelcome(giftWrap.id, rumor.toMarmotJson());
+            processedAny = true;
+          } on Object catch (error) {
+            _log.fine('Welcome event skipped: $error');
           }
-          processedAny = true;
-        } on Object catch (error) {
-          _log.fine('Welcome event skipped: $error');
         }
       }
 
       if (processedAny) {
+        final pendingWelcomes = await _marmot.getPendingWelcomes();
+
+        for (final welcome in pendingWelcomes) {
+          try {
+            await _marmot.acceptWelcome(welcome.id);
+          } on Object catch (_) {
+            if (await _purgeStaleGroup(welcome.groupName)) {
+              try {
+                await _marmot.acceptWelcome(welcome.id);
+              } on Object catch (error, trace) {
+                _log.warning('unable to process welcome', error, trace);
+              }
+            }
+          }
+        }
+
         _scheduleHeavyUpdates();
       }
     } finally {
@@ -137,32 +136,49 @@ class MarmotSyncService {
   void _scheduleHeavyUpdates() {
     _heavyUpdateTimer?.cancel();
     _heavyUpdateTimer = Timer(_debounce, () {
-      unawaited(_executeHeavyUpdates());
+      if (_isExecutingHeavyUpdates) {
+        _heavyUpdatePending = true;
+      } else {
+        unawaited(_executeHeavyUpdates());
+      }
     });
   }
 
   Future<void> _executeHeavyUpdates() async {
+    if (_isExecutingHeavyUpdates) return;
+    _isExecutingHeavyUpdates = true;
+    _heavyUpdatePending = false;
     try {
       await _keyPackages.forceRotate();
       await _restartGroupSub();
-      _scheduleRefresh();
     } on Object catch (error, stack) {
       _log.warning('Heavy updates failed', error, stack);
+    } finally {
+      _isExecutingHeavyUpdates = false;
+      if (_heavyUpdatePending) {
+        unawaited(_executeHeavyUpdates());
+      }
     }
   }
 
   Future<bool> _purgeStaleGroup(String groupName) async {
     final self = _selfNpub;
     try {
-      for (final group in await _marmot.listGroups()) {
+      bool purgedAny = false;
+      final groups = await _marmot.listGroups();
+      for (final group in groups) {
         if (group.name != groupName) continue;
+        bool isMember = false;
         if (self != null) {
           final members = await _marmot.getMembers(group.id);
-          if (members.any((member) => member.npub == self)) return false;
+          isMember = members.any((member) => member.npub == self);
         }
-        await _marmot.deleteGroup(group.id);
-        return true;
+        if (!isMember) {
+          await _marmot.deleteGroup(group.id);
+          purgedAny = true;
+        }
       }
+      return purgedAny;
     } on Object catch (error, stack) {
       _log.warning('Purge stale group failed for $groupName', error, stack);
     }
@@ -197,23 +213,13 @@ class MarmotSyncService {
   Future<void> _onGroupMessage(Nip01Event event) async {
     try {
       final message = await _marmot.processIncoming(event.toMarmotJson());
-      if (message != null) _milestone.ingestMessage(message);
+      if (message != null) {
+        //todo: add to messge stream
+      } else {
+        _scheduleHeavyUpdates();
+      }
     } on Object catch (error) {
       _log.fine('processIncoming skipped: $error');
     }
-    _scheduleRefresh();
-  }
-
-  void _scheduleRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer(_debounce, () {
-      _syncController.add(null);
-      unawaited(
-        _library.refresh().catchError(
-          (Object error, StackTrace stack) =>
-              _log.warning('Library refresh failed', error, stack),
-        ),
-      );
-    });
   }
 }
