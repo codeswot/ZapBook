@@ -177,6 +177,8 @@ class MarmotSyncService {
 
   Future<bool> _purgeStaleGroup(String groupName) async {
     final self = _selfNpub;
+    if (self == null) return false;
+
     try {
       final groups = await _marmot.listGroups();
       final targetGroups = groups.where((g) => g.name == groupName);
@@ -184,7 +186,7 @@ class MarmotSyncService {
       if (targetGroups.isEmpty) return false;
 
       final purgeFutures = targetGroups.map((group) async {
-        if (self == null || group.memberCount == 0) {
+        if (group.memberCount == 0) {
           await _marmot.deleteGroup(group.id);
           return true;
         }
