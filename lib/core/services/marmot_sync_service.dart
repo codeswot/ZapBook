@@ -34,6 +34,12 @@ class MarmotSyncService {
 
   Timer? _heavyUpdateTimer;
 
+  final _messageController = StreamController<MarmotMessage>.broadcast();
+  Stream<MarmotMessage> get onMessage => _messageController.stream;
+
+  final _groupController = StreamController<MarmotGroup>.broadcast();
+  Stream<MarmotGroup> get onGroup => _groupController.stream;
+
   final _syncController = StreamController<void>.broadcast();
   Stream<void> get onSync => _syncController.stream;
 
@@ -110,15 +116,18 @@ class MarmotSyncService {
       }
 
       if (processedAny) {
+        bool acceptedAny = false;
         final pendingWelcomes = await _marmot.getPendingWelcomes();
 
         for (final welcome in pendingWelcomes) {
           try {
             await _marmot.acceptWelcome(welcome.id);
+            acceptedAny = true;
           } on Object catch (_) {
             if (await _purgeStaleGroup(welcome.groupName)) {
               try {
                 await _marmot.acceptWelcome(welcome.id);
+                acceptedAny = true;
               } on Object catch (error, trace) {
                 _log.warning('unable to process welcome', error, trace);
               }
@@ -126,7 +135,12 @@ class MarmotSyncService {
           }
         }
 
-        _scheduleHeavyUpdates();
+        if (acceptedAny) {
+          _log.info(
+            'Scheduling heavy updates from welcome queue (acceptedAny = true)',
+          );
+          _scheduleHeavyUpdates();
+        }
       }
     } finally {
       _processingWelcome = false;
@@ -164,59 +178,97 @@ class MarmotSyncService {
   Future<bool> _purgeStaleGroup(String groupName) async {
     final self = _selfNpub;
     try {
-      bool purgedAny = false;
       final groups = await _marmot.listGroups();
-      for (final group in groups) {
-        if (group.name != groupName) continue;
-        bool isMember = false;
-        if (self != null) {
-          final members = await _marmot.getMembers(group.id);
-          isMember = members.any((member) => member.npub == self);
+      final targetGroups = groups.where((g) => g.name == groupName);
+
+      if (targetGroups.isEmpty) return false;
+
+      final purgeFutures = targetGroups.map((group) async {
+        if (self == null || group.memberCount == 0) {
+          await _marmot.deleteGroup(group.id);
+          return true;
         }
+
+        final members = await _marmot.getMembers(group.id);
+        final isMember = members.any((m) => m.npub == self);
+
         if (!isMember) {
           await _marmot.deleteGroup(group.id);
-          purgedAny = true;
+          return true;
         }
-      }
-      return purgedAny;
+        return false;
+      });
+
+      final results = await Future.wait(purgeFutures);
+      return results.contains(true);
     } on Object catch (error, stack) {
       _log.warning('Purge stale group failed for $groupName', error, stack);
+      return false;
     }
-    return false;
   }
 
   Future<void> _startGroupSub() async {
     final groups = await _marmot.listGroups();
-    final ids = groups
+    final bookGroups = groups
         .where((group) => BookGroupNaming.matches(group.name))
+        .toList();
+
+    final ids = bookGroups
         .map((group) => group.nostrGroupId)
         .toList(growable: false);
     if (ids.isEmpty) return;
 
+    int? since;
+    if (bookGroups.any((g) => g.lastMessageProcessedAtSecs == null)) {
+      since = null;
+    } else if (bookGroups.isNotEmpty) {
+      since = bookGroups
+          .map((g) => g.lastMessageProcessedAtSecs!)
+          .reduce((a, b) => a < b ? a : b);
+      since = since - 300;
+    }
+
+    _log.info("SINCE $since");
     final response = _ndk.requests.subscription(
-      filter: Filter(kinds: const [_groupMessageKind], tags: {'#h': ids}),
+      filter: Filter(
+        kinds: const [_groupMessageKind],
+        tags: {'#h': ids},
+        since: since,
+      ),
       explicitRelays: NostrService.broadcastRelays,
     );
     _groupSubId = response.requestId;
-    _groupSub = response.stream.listen(_onGroupMessage);
+    _groupSub = response.stream.listen(_onGroupEvent);
   }
 
   Future<void> _restartGroupSub() async {
     await _groupSub?.cancel();
-    final groupId = _groupSubId;
-    if (groupId != null) await _ndk.requests.closeSubscription(groupId);
+    final subId = _groupSubId;
+    if (subId != null) await _ndk.requests.closeSubscription(subId);
     _groupSub = null;
     _groupSubId = null;
     await _startGroupSub();
   }
 
-  Future<void> _onGroupMessage(Nip01Event event) async {
+  Future<void> _onGroupEvent(Nip01Event event) async {
     try {
       final message = await _marmot.processIncoming(event.toMarmotJson());
       if (message != null) {
-        //todo: add to messge stream
+        _log.info("TEST MSG ${message.payloadJson}");
+        _messageController.add(message);
       } else {
-        _scheduleHeavyUpdates();
+        final groupIdHex = event.getTags('h').firstOrNull;
+        if (groupIdHex != null) {
+          final groups = await _marmot.listGroups();
+          final group = groups
+              .where((g) => g.nostrGroupId == groupIdHex)
+              .firstOrNull;
+
+          if (group != null) {
+            _log.info("TEST GC ${group.name}");
+            _groupController.add(group);
+          }
+        }
       }
     } on Object catch (error) {
       _log.fine('processIncoming skipped: $error');
