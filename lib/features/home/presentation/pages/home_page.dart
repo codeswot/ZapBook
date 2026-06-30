@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/home/presentation/bloc/home_cubit.dart';
 import 'package:zapbook/features/home/presentation/bloc/home_state.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_header.dart';
@@ -30,9 +30,9 @@ class HomePage extends StatelessWidget {
 class _HomeView extends StatelessWidget {
   const _HomeView();
 
-  HomeDashboardBook? _lastOpened(List<HomeDashboardBook> books) {
+  CircleBook? _lastOpened(List<CircleBook> books) {
     if (books.isEmpty) return null;
-    HomeDashboardBook? opened;
+    CircleBook? opened;
     for (final book in books) {
       if (book.lastOpenedAt == null) continue;
       if (opened == null || book.lastOpenedAt!.isAfter(opened.lastOpenedAt!)) {
@@ -42,8 +42,8 @@ class _HomeView extends StatelessWidget {
     return opened ?? books.first;
   }
 
-  void _onCardTap(BuildContext context, HomeDashboardBook book) {
-    if (book.isShared) {
+  void _onCardTap(BuildContext context, CircleBook book) {
+    if (book.memberCount > 1) {
       CircleDetailRoute(bookId: book.id).push(context);
     } else {
       context.read<HomeCubit>().touchBookOpened(book.id);
@@ -51,12 +51,12 @@ class _HomeView extends StatelessWidget {
     }
   }
 
-  void _onBookOpen(BuildContext context, HomeDashboardBook book) {
+  void _onBookOpen(BuildContext context, CircleBook book) {
     context.read<HomeCubit>().touchBookOpened(book.id);
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
   }
 
-  void _onBookLongPress(BuildContext context, HomeDashboardBook book) {
+  void _onBookLongPress(BuildContext context, CircleBook book) {
     BookActionsSheet.showWithId(context, book.id);
   }
 
@@ -92,7 +92,7 @@ class _HomeView extends StatelessWidget {
             }
 
             final dashboard = (state as HomeLoaded).dashboard;
-            final books = dashboard.books;
+            final books = dashboard.circles;
             final stats = dashboard.stats;
             final streakCount = stats.dayStreak;
             final currentBook = _lastOpened(books);

@@ -528,6 +528,20 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.LibraryFileStore>(),
       ),
     );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i821.CircleStoreService>(),
+      ),
+    );
+    gh.lazySingleton<_i326.HomeDashboardRepository>(
+      () => _i139.HomeDashboardRepositoryImpl(
+        gh<_i265.HomeDashboardDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i140.ZapConfirmationService>(
       () => _i140.ZapConfirmationService(
         gh<_i460.SharedPreferences>(),
@@ -573,19 +587,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i582.ZapSupportService>(),
       ),
     );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i223.MessageRouterService>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i118.DecodedMessageCache>(),
-      ),
-    );
     gh.factory<_i584.CheersCubit>(
       () => _i584.CheersCubit(
         gh<_i654.WatchCheersActivities>(),
@@ -598,10 +599,11 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i140.ZapConfirmationService>(),
       ),
     );
-    gh.lazySingleton<_i326.HomeDashboardRepository>(
-      () => _i139.HomeDashboardRepositoryImpl(
-        gh<_i265.HomeDashboardDataSource>(),
-      ),
+    gh.factory<_i899.TouchDashboardBookOpened>(
+      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
+    );
+    gh.factory<_i1021.WatchHomeDashboard>(
+      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(gh<_i516.LibraryRepository>()),
@@ -609,20 +611,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
     );
-    gh.factory<_i107.LibraryCubit>(
-      () => _i107.LibraryCubit(gh<_i1024.WatchCircleBooks>()),
-    );
-    gh.factory<_i899.TouchDashboardBookOpened>(
-      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
-    );
-    gh.factory<_i1021.WatchHomeDashboard>(
-      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
-    );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(
         gh<_i1021.WatchHomeDashboard>(),
         gh<_i899.TouchDashboardBookOpened>(),
       ),
+    );
+    gh.factory<_i107.LibraryCubit>(
+      () => _i107.LibraryCubit(gh<_i1024.WatchCircleBooks>()),
     );
     return this;
   }

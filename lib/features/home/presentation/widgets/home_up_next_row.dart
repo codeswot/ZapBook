@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
@@ -16,9 +16,9 @@ class HomeUpNextRow extends StatelessWidget {
     this.onBookLongPress,
   });
 
-  final List<HomeDashboardBook> books;
-  final void Function(BuildContext, HomeDashboardBook) onBookTap;
-  final void Function(BuildContext, HomeDashboardBook)? onBookLongPress;
+  final List<CircleBook> books;
+  final void Function(BuildContext, CircleBook) onBookTap;
+  final void Function(BuildContext, CircleBook)? onBookLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -88,12 +88,12 @@ class HomeUpNextRow extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: (book.isShared ? colors.plum : colors.slate)
+                            color: ((book.memberCount > 1) ? colors.plum : colors.slate)
                                 .withValues(alpha: 0.85),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            book.isShared
+                            book.memberCount > 1
                                 ? LucideIcons.users
                                 : LucideIcons.user,
                             size: 12,

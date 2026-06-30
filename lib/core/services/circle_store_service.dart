@@ -92,7 +92,6 @@ class CircleStoreService {
           } else {
             coverPath = await _fileStore.coverPathIfExists(g.nostrGroupId);
           }
-
           final book = CircleBook(
             id: g.id,
             title: title,
@@ -119,7 +118,6 @@ class CircleStoreService {
             contentHash: contentHash ?? lastBook?.contentHash,
             adminNpubs: g.adminNpubs,
           );
-
           books.add(book);
           _groupHashes[g.id] = currentHash;
           _lastSeenBooks[g.id] = book;
@@ -133,7 +131,6 @@ class CircleStoreService {
       _lastSeenBooks.removeWhere((id, _) => !currentIds.contains(id));
 
       books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
-      _log.info("Me books ${books.first.title}");
       _circlesController.add(books);
     });
   }

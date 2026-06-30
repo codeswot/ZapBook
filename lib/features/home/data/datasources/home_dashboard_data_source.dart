@@ -1,19 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:injectable/injectable.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
-import 'package:zapbook/core/data/library_file_store.dart';
+
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/decoded_message_cache.dart';
-import 'package:zapbook/core/services/message_router_service.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
-import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 
 abstract interface class HomeDashboardDataSource {
   Stream<HomeDashboard> watchDashboard();
@@ -26,56 +24,31 @@ final _log = logging.Logger('HomeDashboardDataSource');
 class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   HomeDashboardDataSourceImpl(
     this._marmot,
-    this._messageRouter,
     this._ndk,
     this._identityLocal,
-    this._fileStore,
     this._stats,
-    this._library,
-    this._milestone,
-    this._cache,
+    this._circleStore,
   );
 
   final Marmot _marmot;
-  final MessageRouterService _messageRouter;
   final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
-  final LibraryFileStore _fileStore;
+
   final ReadingStatsService _stats;
-  final LibraryRepository _library;
-  final MilestoneService _milestone;
-  final DecodedMessageCache _cache;
+  final CircleStoreService _circleStore;
 
   final _changeController = StreamController<void>.broadcast();
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    final controller = StreamController<HomeDashboard>.broadcast();
-
-    void reload() async {
-      try {
-        _messageRouter.onProgress.listen((data) {});
-        final data = await _fetchDashboard();
-        if (!controller.isClosed) {
-          controller.add(data);
-        }
-      } catch (error, stack) {
-        _log.warning('dashboard reload failed', error, stack);
-      }
-    }
-
-    reload();
-
-    final libSub = _library.watchBooks().listen((_) => reload());
-    final changeSub = _changeController.stream.listen((_) => reload());
-
-    controller.onCancel = () {
-      libSub.cancel();
-      changeSub.cancel();
-      controller.close();
-    };
-
-    return controller.stream;
+    return Rx.combineLatest2(
+      _circleStore.watchCircles,
+      _changeController.stream.startWith(null),
+      (circles, _) async {
+        final stats = await _fetchStats();
+        return HomeDashboard(stats: stats, circles: circles);
+      },
+    ).asyncMap((event) => event);
   }
 
   @override
@@ -132,105 +105,12 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     }
   }
 
-  Future<HomeDashboard> _fetchDashboard() async {
-    final books = await _fetchBooks();
-    final stats = await _fetchStats();
-    return HomeDashboard(stats: stats, books: books);
-  }
-
   Future<HomeDashboardStats> _fetchStats() async {
     await _stats.load();
     return HomeDashboardStats(
       dayStreak: _stats.streak,
       satsEarned: _stats.satsEarned,
       booksRead: _stats.booksRead,
-    );
-  }
-
-  Future<List<HomeDashboardBook>> _fetchBooks() async {
-    final myNpub = await _identityLocal.readNpub();
-    final groups = await _marmot.listGroups();
-    final bookGroups = groups
-        .where((group) => BookGroupNaming.matches(group.name))
-        .toList();
-    final results = await Future.wait(
-      bookGroups.map((group) => _bookFromGroup(group, myNpub)),
-    );
-    final books = results.whereType<HomeDashboardBook>().toList();
-
-    books.sort((a, b) {
-      if (a.lastOpenedAt != null && b.lastOpenedAt != null) {
-        return b.lastOpenedAt!.compareTo(a.lastOpenedAt!);
-      }
-      if (a.lastOpenedAt != null) return -1;
-      if (b.lastOpenedAt != null) return 1;
-      return b.id.compareTo(a.id);
-    });
-
-    return books;
-  }
-
-  Future<HomeDashboardBook?> _bookFromGroup(
-    MarmotGroup group,
-    String? myNpub,
-  ) async {
-    final bookId = BookGroupNaming.bookIdOf(group.name);
-    final messages = await _marmot.getMessages(group.id);
-
-    Map<String, dynamic>? latestMeta;
-    var latestMetaTs = -1;
-    var latestProgressMs = -1;
-
-    for (final msg in messages) {
-      final decoded = _cache.get(msg);
-      if (decoded == null) continue;
-      final isMine = myNpub != null && msg.senderNpub == myNpub;
-      final type = decoded['type'];
-      if (type == 'zapbook.book.meta') {
-        final ts = msg.timestampSecs.toInt();
-        if (ts >= latestMetaTs) {
-          latestMetaTs = ts;
-          latestMeta = decoded;
-        }
-        continue;
-      }
-      _milestone.ingestMessage(msg);
-      if (isMine && type == 'zapbook.book.progress') {
-        final lastReadAtMs = decoded['lastReadAtMs'] as num?;
-        if (lastReadAtMs != null && lastReadAtMs.toInt() >= latestProgressMs) {
-          latestProgressMs = lastReadAtMs.toInt();
-        }
-      }
-    }
-
-    if (latestMeta == null) return null;
-
-    final metaBookId = latestMeta['bookId'] as String? ?? bookId;
-    final title = latestMeta['title'] as String? ?? 'Untitled';
-    final author = latestMeta['author'] as String? ?? '';
-    final pageCount = (latestMeta['pageCount'] as num?)?.toInt() ?? 0;
-
-    final zbf = await _fileStore.zbfFile(metaBookId);
-    final coverPath = await _fileStore.coverPathIfExists(metaBookId);
-    final mine = myNpub != null
-        ? _milestone.membersOf(metaBookId)[myNpub]
-        : null;
-
-    return HomeDashboardBook(
-      id: metaBookId,
-      title: title,
-      author: author,
-      coverPath: coverPath,
-      pageCount: pageCount,
-      memberCount: group.memberCount,
-      zbfPath: zbf.path,
-      lastOpenedAt: latestProgressMs == -1
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(latestProgressMs),
-      currentPage: mine?.currentPage ?? 0,
-      totalWords: mine?.totalWordCount ?? 0,
-      currentWordCount: mine?.currentWordCount ?? 0,
-      fraction: mine?.fraction ?? 0,
     );
   }
 }

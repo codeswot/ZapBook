@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/widgets/app_book_cover.dart';
@@ -16,7 +16,7 @@ class HomeContinueReadingCard extends StatelessWidget {
     this.onLongPress,
   });
 
-  final HomeDashboardBook book;
+  final CircleBook book;
   final VoidCallback onTap;
   final VoidCallback onBookOpen;
   final VoidCallback? onLongPress;
@@ -80,12 +80,12 @@ class HomeContinueReadingCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           book.pageCount > 0
-                              ? 'Page ${book.currentPage + 1} of ${book.pageCount}'
+                              ? 'Page 1 of ${book.pageCount}'
                               : 'Not started',
                           style: typography.bodyS.copyWith(color: colors.slate),
                         ),
                         const SizedBox(height: 6),
-                        if (book.isShared)
+                        if (book.memberCount > 1)
                           Row(
                             children: [
                               Icon(
@@ -136,7 +136,7 @@ class HomeContinueReadingCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: AppRadii.br10,
                       child: LinearProgressIndicator(
-                        value: book.progressFraction,
+                        value: 0.0,
                         backgroundColor: context.colors.paper4,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           colors.bitcoin,
