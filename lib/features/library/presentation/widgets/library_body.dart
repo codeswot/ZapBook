@@ -38,6 +38,10 @@ class LibraryBody extends StatelessWidget {
               LibraryLoaded(:final books) => books,
               _ => const <CircleBook>[],
             };
+            final lastOpenedBook = switch (library) {
+              LibraryLoaded(:final lastOpenedBook) => lastOpenedBook,
+              _ => null,
+            };
 
             if (library is LibraryLoading) {
               return const LibraryShimmer();
@@ -105,6 +109,7 @@ class LibraryBody extends StatelessWidget {
             return Shelf(
               jobs: jobs,
               books: filteredBooks,
+              lastOpenedBook: lastOpenedBook,
               allBooks: books,
               searchHits: hasTextHits ? textHits : null,
               searchQuery: searchQuery,

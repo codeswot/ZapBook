@@ -130,6 +130,8 @@ import 'package:zapbook/features/library/data/repositories/marmot_library_reposi
     as _i894;
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart'
     as _i516;
+import 'package:zapbook/features/library/domain/usecases/watch_last_opened_library_book.dart'
+    as _i16;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
     as _i1024;
 import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart'
@@ -608,6 +610,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i16.WatchLastOpenedLibraryBook>(
+      () => _i16.WatchLastOpenedLibraryBook(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
     );
@@ -618,7 +623,10 @@ extension GetItInjectableX on _i174.GetIt {
       ),
     );
     gh.factory<_i107.LibraryCubit>(
-      () => _i107.LibraryCubit(gh<_i1024.WatchCircleBooks>()),
+      () => _i107.LibraryCubit(
+        gh<_i1024.WatchCircleBooks>(),
+        gh<_i16.WatchLastOpenedLibraryBook>(),
+      ),
     );
     return this;
   }

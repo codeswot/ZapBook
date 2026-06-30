@@ -30,17 +30,7 @@ class HomePage extends StatelessWidget {
 class _HomeView extends StatelessWidget {
   const _HomeView();
 
-  CircleBook? _lastOpened(List<CircleBook> books) {
-    if (books.isEmpty) return null;
-    CircleBook? opened;
-    for (final book in books) {
-      if (book.lastOpenedAt == null) continue;
-      if (opened == null || book.lastOpenedAt!.isAfter(opened.lastOpenedAt!)) {
-        opened = book;
-      }
-    }
-    return opened ?? books.first;
-  }
+
 
   void _onCardTap(BuildContext context, CircleBook book) {
     if (book.memberCount > 1) {
@@ -95,7 +85,7 @@ class _HomeView extends StatelessWidget {
             final books = dashboard.circles;
             final stats = dashboard.stats;
             final streakCount = stats.dayStreak;
-            final currentBook = _lastOpened(books);
+            final currentBook = dashboard.lastOpenedCircleBook ?? (books.isNotEmpty ? books.first : null);
             final otherBooks = currentBook == null
                 ? books
                 : books.where((b) => b.id != currentBook.id).toList();

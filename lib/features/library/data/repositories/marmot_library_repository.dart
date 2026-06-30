@@ -16,6 +16,9 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Stream<List<CircleBook>> watchBooks() => _circleStore.watchCircles;
 
   @override
+  Stream<CircleBook?> watchLastOpenedBook() => _circleStore.watchLastOpenedCircleBook;
+
+  @override
   Future<CircleBook?> getBook(String id) async {
     final circles = _circleStore.currentCircles;
     for (final circle in circles) {

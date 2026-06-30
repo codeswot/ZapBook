@@ -41,12 +41,17 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    return Rx.combineLatest2(
+    return Rx.combineLatest3(
       _circleStore.watchCircles,
+      _circleStore.watchLastOpenedCircleBook,
       _changeController.stream.startWith(null),
-      (circles, _) async {
+      (circles, lastOpened, _) async {
         final stats = await _fetchStats();
-        return HomeDashboard(stats: stats, circles: circles);
+        return HomeDashboard(
+          stats: stats,
+          circles: circles.toList(),
+          lastOpenedCircleBook: lastOpened,
+        );
       },
     ).asyncMap((event) => event);
   }

@@ -14,6 +14,7 @@ class Shelf extends StatelessWidget {
     super.key,
     required this.jobs,
     required this.books,
+    this.lastOpenedBook,
     this.allBooks,
     this.searchHits,
     this.searchQuery,
@@ -21,29 +22,15 @@ class Shelf extends StatelessWidget {
 
   final List<IngestionJob> jobs;
   final List<CircleBook> books;
+  final CircleBook? lastOpenedBook;
   final List<CircleBook>? allBooks;
   final List<BookSearchHit>? searchHits;
   final String? searchQuery;
 
-  CircleBook? _lastOpened(List<CircleBook> books) {
-    if (books.isEmpty) {
-      return null;
-    }
-    CircleBook? opened;
-    for (final book in books) {
-      if (book.lastOpenedAt == null) {
-        continue;
-      }
-      if (opened == null || book.lastOpenedAt!.isAfter(opened.lastOpenedAt!)) {
-        opened = book;
-      }
-    }
-    return opened ?? books.first;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final hero = _lastOpened(books);
+    final hero = lastOpenedBook ?? (books.isNotEmpty ? books.first : null);
     final tileCount = jobs.length + books.length;
 
     return CustomScrollView(

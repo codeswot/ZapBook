@@ -25,6 +25,19 @@ class CircleStoreService {
   Stream<List<CircleBook>> get watchCircles => _circlesController.stream;
   List<CircleBook> get currentCircles => _circlesController.value;
 
+  Stream<CircleBook?> get watchLastOpenedCircleBook =>
+      watchCircles.map((circleBooks) {
+        CircleBook? latest;
+        for (final circleBook in circleBooks) {
+          if (circleBook.lastOpenedAt == null) continue;
+          if (latest == null ||
+              circleBook.lastOpenedAt!.isAfter(latest.lastOpenedAt!)) {
+            latest = circleBook;
+          }
+        }
+        return latest;
+      }).distinct();
+
   void _init() {
     _groupStore.watchGroups.listen((groups) async {
       final circles = groups

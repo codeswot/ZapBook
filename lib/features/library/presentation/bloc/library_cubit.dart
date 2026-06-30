@@ -3,25 +3,34 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart';
+import 'package:zapbook/features/library/domain/usecases/watch_last_opened_library_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart';
 
 @injectable
 class LibraryCubit extends Cubit<LibraryState> {
-  LibraryCubit(this._watchCircleBooks) : super(const LibraryLoading()) {
+  LibraryCubit(
+    this._watchCircleBooks,
+    this._watchLastOpenedBook,
+  ) : super(const LibraryLoading()) {
     _init();
   }
 
   final WatchCircleBooks _watchCircleBooks;
-  StreamSubscription<List<CircleBook>>? _booksSubscription;
+  final WatchLastOpenedLibraryBook _watchLastOpenedBook;
+  StreamSubscription<void>? _subscription;
 
   void markOpened(String id) {}
 
   void dismissCirclePrompt() {
     final s = state;
     if (s is LibraryLoaded) {
-      emit(LibraryLoaded(s.books, showCirclePrompt: false));
+      emit(LibraryLoaded(
+        s.books,
+        lastOpenedBook: s.lastOpenedBook,
+        showCirclePrompt: false,
+      ));
     }
   }
 
@@ -36,18 +45,22 @@ class LibraryCubit extends Cubit<LibraryState> {
   Future<void> shareBook(String bookId, String memberNpub) async {}
 
   Future<void> _init() async {
-    _booksSubscription = _watchCircleBooks().listen((books) {
-      if (books.isEmpty) {
-        emit(const LibraryEmpty());
-      } else {
-        emit(LibraryLoaded(books, showCirclePrompt: false));
-      }
-    }, onError: (Object error) => emit(LibraryError('$error')));
+    _subscription = Rx.combineLatest2(
+      _watchCircleBooks(),
+      _watchLastOpenedBook(),
+      (books, lastOpened) {
+        if (books.isEmpty) {
+          emit(const LibraryEmpty());
+        } else {
+          emit(LibraryLoaded(books, lastOpenedBook: lastOpened, showCirclePrompt: false));
+        }
+      },
+    ).listen((_) {}, onError: (Object error) => emit(LibraryError('$error')));
   }
 
   @override
   Future<void> close() async {
-    await _booksSubscription?.cancel();
+    await _subscription?.cancel();
     return super.close();
   }
 }
