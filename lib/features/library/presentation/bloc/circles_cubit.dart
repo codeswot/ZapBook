@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/usecases/watch_circles.dart';
 import 'package:zapbook/features/library/presentation/bloc/circles_state.dart';
 
@@ -18,7 +18,7 @@ class CirclesCubit extends Cubit<CirclesState> {
   }
 
   final WatchCircles _watchCircles;
-  StreamSubscription<List<LibraryBook>>? _subscription;
+  StreamSubscription<List<CircleBook>>? _subscription;
 
   @override
   Future<void> close() async {

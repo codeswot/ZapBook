@@ -32,6 +32,7 @@ import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/nostr_module.dart' as _i96;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
 import 'package:zapbook/core/domain/book_ingestion_repository.dart' as _i379;
+import 'package:zapbook/core/domain/entities/circle_book.dart' as _i560;
 import 'package:zapbook/core/domain/ingest_book.dart' as _i696;
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
@@ -48,6 +49,7 @@ import 'package:zapbook/core/performance/performance_service.dart' as _i399;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/app_info_service.dart' as _i19;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
+import 'package:zapbook/core/services/circle_store_service.dart' as _i821;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
 import 'package:zapbook/core/services/decoded_message_cache.dart' as _i118;
@@ -55,10 +57,15 @@ import 'package:zapbook/core/services/density_service.dart' as _i740;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
+import 'package:zapbook/core/services/group_store_service.dart' as _i40;
+import 'package:zapbook/core/services/group_store_service_impl.dart' as _i78;
 import 'package:zapbook/core/services/group_transfer_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
+import 'package:zapbook/core/services/message_router_service.dart' as _i223;
+import 'package:zapbook/core/services/message_router_service_impl.dart'
+    as _i452;
 import 'package:zapbook/core/services/milestone_service.dart' as _i31;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
 import 'package:zapbook/core/services/nwc_service.dart' as _i507;
@@ -119,22 +126,20 @@ import 'package:zapbook/features/home/domain/usecases/watch_home_dashboard.dart'
     as _i1021;
 import 'package:zapbook/features/home/presentation/bloc/home_cubit.dart'
     as _i602;
-import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart'
-    as _i398;
+import 'package:zapbook/features/library/data/marmot/book_circle_datasource.dart'
+    as _i224;
 import 'package:zapbook/features/library/data/marmot/progressive_book_opener.dart'
     as _i1063;
 import 'package:zapbook/features/library/data/repositories/marmot_library_repository.dart'
     as _i894;
-import 'package:zapbook/features/library/domain/entities/library_book.dart'
-    as _i297;
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart'
     as _i516;
 import 'package:zapbook/features/library/domain/usecases/add_book_to_library.dart'
     as _i1071;
 import 'package:zapbook/features/library/domain/usecases/backfill_library.dart'
     as _i887;
-import 'package:zapbook/features/library/domain/usecases/delete_library_book.dart'
-    as _i1038;
+import 'package:zapbook/features/library/domain/usecases/delete_circle_book.dart'
+    as _i479;
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart'
     as _i210;
 import 'package:zapbook/features/library/domain/usecases/find_book_by_content_hash.dart'
@@ -143,8 +148,8 @@ import 'package:zapbook/features/library/domain/usecases/get_book_members.dart'
     as _i1000;
 import 'package:zapbook/features/library/domain/usecases/get_circle_admins.dart'
     as _i428;
-import 'package:zapbook/features/library/domain/usecases/get_library_book.dart'
-    as _i807;
+import 'package:zapbook/features/library/domain/usecases/get_circle_book.dart'
+    as _i579;
 import 'package:zapbook/features/library/domain/usecases/leave_circle.dart'
     as _i1056;
 import 'package:zapbook/features/library/domain/usecases/remove_book_member.dart'
@@ -273,6 +278,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1.ZbfWriter>(() => ingestionModule.zbfWriter());
     gh.lazySingleton<_i1.ZbfReader>(() => ingestionModule.zbfReader());
     gh.lazySingleton<_i539.HeadsUpCubit>(() => _i539.HeadsUpCubit());
+    gh.lazySingleton<_i224.BookCircleDatasource>(
+      () => _i224.BookCircleDatasource(),
+    );
     gh.lazySingleton<_i803.SessionReloader>(
       () => const _i803.SessionManagerReloader(),
     );
@@ -291,6 +299,9 @@ extension GetItInjectableX on _i174.GetIt {
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
       preResolve: true,
+    );
+    gh.lazySingleton<_i1063.ProgressiveBookOpener>(
+      () => _i1063.ProgressiveBookOpener(gh<_i224.BookCircleDatasource>()),
     );
     gh.lazySingleton<_i240.DocumentsDirectory>(
       () => const _i240.PathProviderDocumentsDirectory(),
@@ -496,18 +507,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i140.MarmotSyncService>(),
       ),
     );
-    gh.lazySingleton<_i398.BookGroupDatasource>(
-      () => _i398.BookGroupDatasource(
-        gh<_i970.Marmot>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i857.Ndk>(),
-        gh<_i397.KeyPackageService>(),
-        gh<_i118.DecodedMessageCache>(),
-        gh<_i860.GroupTransferService>(),
-        gh<_i394.GroupEnvelopeService>(),
-      ),
-    );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
@@ -549,25 +548,26 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i341.CompleteOnboarding>(),
       ),
     );
-    gh.lazySingleton<_i516.LibraryRepository>(
-      () => _i894.MarmotLibraryRepository(
-        gh<_i398.BookGroupDatasource>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i1.ZbfReader>(),
-        gh<_i740.DensityService>(),
-        gh<_i525.BookSearchIndex>(),
-        gh<_i491.BookVectorIndex>(),
-        gh<_i50.PageDao>(),
-      ),
+    gh.lazySingleton<_i223.MessageRouterService>(
+      () => _i452.MessageRouterServiceImpl(gh<_i140.MarmotSyncService>()),
     );
-    gh.lazySingleton<_i1063.ProgressiveBookOpener>(
-      () => _i1063.ProgressiveBookOpener(gh<_i398.BookGroupDatasource>()),
+    gh.lazySingleton<_i40.GroupStoreService>(
+      () => _i78.GroupStoreServiceImpl(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i970.Marmot>(),
+      ),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i63.IdentityRepository>(),
         gh<_i735.ProfileRemoteDataSource>(),
+      ),
+    );
+    gh.lazySingleton<_i821.CircleStoreService>(
+      () => _i821.CircleStoreService(
+        gh<_i40.GroupStoreService>(),
+        gh<_i854.LibraryFileStore>(),
       ),
     );
     gh.lazySingleton<_i140.ZapConfirmationService>(
@@ -595,14 +595,71 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
     );
+    gh.lazySingleton<_i516.LibraryRepository>(
+      () => _i894.MarmotLibraryRepository(
+        gh<_i224.BookCircleDatasource>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i1.ZbfReader>(),
+        gh<_i740.DensityService>(),
+        gh<_i525.BookSearchIndex>(),
+        gh<_i491.BookVectorIndex>(),
+        gh<_i50.PageDao>(),
+        gh<_i40.GroupStoreService>(),
+        gh<_i821.CircleStoreService>(),
+      ),
+    );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i385.LoadProfile>(),
+        gh<_i223.UpdateProfile>(),
+        gh<_i915.SignOut>(),
+        gh<_i1053.ClipboardService>(),
+        gh<_i507.NwcService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1034.FilePickerService>(),
+        gh<_i397.KeyPackageService>(),
+        gh<_i19.AppInfoService>(),
+        gh<_i582.ZapSupportService>(),
+      ),
+    );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i970.Marmot>(),
+        gh<_i223.MessageRouterService>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i118.DecodedMessageCache>(),
+      ),
+    );
+    gh.factory<_i584.CheersCubit>(
+      () => _i584.CheersCubit(
+        gh<_i654.WatchCheersActivities>(),
+        gh<_i636.SendCheersZap>(),
+        gh<_i73.LoadMoreCheersActivities>(),
+        gh<_i362.ZapService>(),
+        gh<_i718.ZapNudgeService>(),
+        gh<_i11.NostrService>(),
+        gh<_i507.NwcService>(),
+        gh<_i140.ZapConfirmationService>(),
+      ),
+    );
+    gh.lazySingleton<_i326.HomeDashboardRepository>(
+      () => _i139.HomeDashboardRepositoryImpl(
+        gh<_i265.HomeDashboardDataSource>(),
+      ),
+    );
     gh.factory<_i1071.AddBookToLibrary>(
       () => _i1071.AddBookToLibrary(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i887.BackfillLibrary>(
       () => _i887.BackfillLibrary(gh<_i516.LibraryRepository>()),
     );
-    gh.factory<_i1038.DeleteLibraryBook>(
-      () => _i1038.DeleteLibraryBook(gh<_i516.LibraryRepository>()),
+    gh.factory<_i479.DeleteCircleBook>(
+      () => _i479.DeleteCircleBook(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i210.DissolveCircle>(
       () => _i210.DissolveCircle(gh<_i516.LibraryRepository>()),
@@ -616,8 +673,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i428.GetCircleAdmins>(
       () => _i428.GetCircleAdmins(gh<_i516.LibraryRepository>()),
     );
-    gh.factory<_i807.GetLibraryBook>(
-      () => _i807.GetLibraryBook(gh<_i516.LibraryRepository>()),
+    gh.factory<_i579.GetCircleBook>(
+      () => _i579.GetCircleBook(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i1056.LeaveCircle>(
       () => _i1056.LeaveCircle(gh<_i516.LibraryRepository>()),
@@ -640,34 +697,37 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i96.WatchCircles>(
       () => _i96.WatchCircles(gh<_i516.LibraryRepository>()),
     );
-    gh.factory<_i1024.WatchLibraryBooks>(
-      () => _i1024.WatchLibraryBooks(gh<_i516.LibraryRepository>()),
+    gh.factory<_i1024.WatchCircleBooks>(
+      () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
     );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i118.DecodedMessageCache>(),
+    gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
+      (book, _) => _i404.BookEditCubit(
+        gh<_i850.GenreDataSource>(),
+        gh<_i1034.FilePickerService>(),
+        gh<_i96.UpdateBookMetadata>(),
+        book,
       ),
     );
-    gh.factory<_i107.LibraryCubit>(
-      () => _i107.LibraryCubit(
-        gh<_i1024.WatchLibraryBooks>(),
-        gh<_i887.BackfillLibrary>(),
+    gh.factory<_i458.CircleDetailCubit>(
+      () => _i458.CircleDetailCubit(
+        gh<_i579.GetCircleBook>(),
+        gh<_i1000.GetBookMembers>(),
+        gh<_i428.GetCircleAdmins>(),
+        gh<_i310.RemoveBookMember>(),
+        gh<_i1056.LeaveCircle>(),
+        gh<_i210.DissolveCircle>(),
         gh<_i296.TouchBookOpened>(),
-        gh<_i555.ShareBook>(),
-        gh<_i1038.DeleteLibraryBook>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i398.BookGroupDatasource>(),
-        gh<_i516.LibraryRepository>(),
         gh<_i244.ContactService>(),
-        gh<_i82.WelcomeInboxService>(),
-        gh<_i342.OnboardingLocalDataSource>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i362.ZapService>(),
+        gh<_i718.ZapNudgeService>(),
+        gh<_i970.Marmot>(),
+        gh<_i64.CheersDataSource>(),
+        gh<_i507.NwcService>(),
+        gh<_i140.ZapConfirmationService>(),
       ),
     );
     gh.factory<_i906.CircleMembersCubit>(
@@ -689,42 +749,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i286.ShareBookWith>(),
       ),
     );
-    gh.factory<_i145.ProfileCubit>(
-      () => _i145.ProfileCubit(
-        gh<_i385.LoadProfile>(),
-        gh<_i223.UpdateProfile>(),
-        gh<_i915.SignOut>(),
-        gh<_i1053.ClipboardService>(),
-        gh<_i507.NwcService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1034.FilePickerService>(),
-        gh<_i397.KeyPackageService>(),
-        gh<_i19.AppInfoService>(),
-        gh<_i582.ZapSupportService>(),
-      ),
-    );
-    gh.factory<_i458.CircleDetailCubit>(
-      () => _i458.CircleDetailCubit(
-        gh<_i807.GetLibraryBook>(),
-        gh<_i1000.GetBookMembers>(),
-        gh<_i428.GetCircleAdmins>(),
-        gh<_i310.RemoveBookMember>(),
-        gh<_i1056.LeaveCircle>(),
-        gh<_i210.DissolveCircle>(),
-        gh<_i296.TouchBookOpened>(),
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i516.LibraryRepository>(),
-        gh<_i362.ZapService>(),
-        gh<_i718.ZapNudgeService>(),
-        gh<_i970.Marmot>(),
-        gh<_i64.CheersDataSource>(),
-        gh<_i507.NwcService>(),
-        gh<_i140.ZapConfirmationService>(),
-      ),
-    );
     gh.factory<_i327.IngestionQueueCubit>(
       () => _i327.IngestionQueueCubit(
         gh<_i696.IngestBook>(),
@@ -733,36 +757,26 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i190.FindBookByContentHash>(),
       ),
     );
-    gh.factory<_i584.CheersCubit>(
-      () => _i584.CheersCubit(
-        gh<_i654.WatchCheersActivities>(),
-        gh<_i636.SendCheersZap>(),
-        gh<_i73.LoadMoreCheersActivities>(),
-        gh<_i362.ZapService>(),
-        gh<_i718.ZapNudgeService>(),
-        gh<_i11.NostrService>(),
-        gh<_i507.NwcService>(),
-        gh<_i140.ZapConfirmationService>(),
-      ),
-    );
-    gh.lazySingleton<_i326.HomeDashboardRepository>(
-      () => _i139.HomeDashboardRepositoryImpl(
-        gh<_i265.HomeDashboardDataSource>(),
-      ),
-    );
-    gh.factoryParam<_i404.BookEditCubit, _i297.LibraryBook, dynamic>(
-      (book, _) => _i404.BookEditCubit(
-        gh<_i850.GenreDataSource>(),
-        gh<_i1034.FilePickerService>(),
-        gh<_i96.UpdateBookMetadata>(),
-        book,
-      ),
-    );
     gh.factory<_i899.TouchDashboardBookOpened>(
       () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
     );
     gh.factory<_i1021.WatchHomeDashboard>(
       () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
+    );
+    gh.factory<_i107.LibraryCubit>(
+      () => _i107.LibraryCubit(
+        gh<_i1024.WatchCircleBooks>(),
+        gh<_i887.BackfillLibrary>(),
+        gh<_i296.TouchBookOpened>(),
+        gh<_i555.ShareBook>(),
+        gh<_i479.DeleteCircleBook>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i224.BookCircleDatasource>(),
+        gh<_i516.LibraryRepository>(),
+        gh<_i244.ContactService>(),
+        gh<_i82.WelcomeInboxService>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+      ),
     );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(

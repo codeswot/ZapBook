@@ -1,25 +1,25 @@
 import 'dart:typed_data';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 abstract interface class LibraryRepository {
-  Stream<List<LibraryBook>> watchBooks();
+  Stream<List<CircleBook>> watchBooks();
 
-  Future<LibraryBook?> getBook(String id);
+  Future<CircleBook?> getBook(String id);
 
-  Future<LibraryBook?> findByContentHash(String contentHash);
+  Future<CircleBook?> findByContentHash(String contentHash);
 
-  Future<LibraryBook> addBookFromIngestion(
+  Future<CircleBook> addBookFromIngestion(
     ZbfBook book,
     String zbfPath, {
     String? contentHash,
   });
 
-  Future<LibraryBook> indexExisting(String zbfPath);
+  Future<CircleBook> indexExisting(String zbfPath);
 
-  Future<LibraryBook> updateBookMetadata(
+  Future<CircleBook> updateBookMetadata(
     String id, {
     required String title,
     String? author,

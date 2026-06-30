@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
@@ -10,7 +10,7 @@ final class AddBookToLibrary {
 
   final LibraryRepository _repository;
 
-  Future<LibraryBook> call(
+  Future<CircleBook> call(
     ZbfBook book,
     String zbfPath, {
     String? contentHash,

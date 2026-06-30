@@ -1,5 +1,5 @@
 import 'package:zapbook/core/domain/milestone_payload.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
@@ -38,7 +38,7 @@ class CircleDetailLoaded extends CircleDetailState {
     this.satsEarned = 0,
   });
 
-  final LibraryBook book;
+  final CircleBook book;
   final List<MemberEntry> members;
   final Set<String> adminNpubs;
   final String? myNpub;
@@ -58,7 +58,7 @@ class CircleDetailLoaded extends CircleDetailState {
   bool isMemberAdmin(String npub) => adminNpubs.contains(npub);
 
   CircleDetailLoaded copyWith({
-    LibraryBook? book,
+    CircleBook? book,
     List<MemberEntry>? members,
     Set<String>? adminNpubs,
     String? busyNpub,

@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 
 @injectable
@@ -9,6 +9,6 @@ final class FindBookByContentHash {
 
   final LibraryRepository _repository;
 
-  Future<LibraryBook?> call(String contentHash) =>
+  Future<CircleBook?> call(String contentHash) =>
       _repository.findByContentHash(contentHash);
 }

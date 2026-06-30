@@ -2,8 +2,8 @@ import 'package:equatable/equatable.dart';
 
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
-final class LibraryBook extends Equatable {
-  const LibraryBook({
+final class CircleBook extends Equatable {
+  const CircleBook({
     required this.id,
     required this.title,
     required this.author,
@@ -20,6 +20,7 @@ final class LibraryBook extends Equatable {
     this.lastOpenedAt,
     this.contentHash,
     this.memberCount = 1,
+    this.adminNpubs = const [],
     this.removedFromCircle = false,
   });
 
@@ -39,20 +40,22 @@ final class LibraryBook extends Equatable {
   final DateTime? lastOpenedAt;
   final String? contentHash;
   final int memberCount;
+  final List<String> adminNpubs;
   final bool removedFromCircle;
 
   bool get isShared => memberCount > 1;
 
-  LibraryBook copyWith({
+  CircleBook copyWith({
     String? title,
     String? author,
     String? genre,
     String? coverPath,
     DateTime? lastOpenedAt,
     int? memberCount,
+    List<String>? adminNpubs,
     bool? removedFromCircle,
   }) {
-    return LibraryBook(
+    return CircleBook(
       id: id,
       title: title ?? this.title,
       author: author ?? this.author,
@@ -69,6 +72,7 @@ final class LibraryBook extends Equatable {
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       contentHash: contentHash,
       memberCount: memberCount ?? this.memberCount,
+      adminNpubs: adminNpubs ?? this.adminNpubs,
       removedFromCircle: removedFromCircle ?? this.removedFromCircle,
     );
   }
@@ -91,6 +95,7 @@ final class LibraryBook extends Equatable {
     lastOpenedAt,
     contentHash,
     memberCount,
+    adminNpubs,
     removedFromCircle,
   ];
 }

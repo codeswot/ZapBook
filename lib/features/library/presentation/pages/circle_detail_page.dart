@@ -7,7 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
@@ -145,7 +145,7 @@ class _Loaded extends StatelessWidget {
   final String bookId;
   final CircleDetailLoaded state;
 
-  LibraryBook get book => state.book;
+  CircleBook get book => state.book;
 
   ImageProvider? get _coverImage {
     final path = book.coverPath;

@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 class BookEditState {
-  final LibraryBook book;
+  final CircleBook book;
   final String title;
   final String author;
   final String? genre;
@@ -24,7 +24,7 @@ class BookEditState {
   });
 
   BookEditState copyWith({
-    LibraryBook? book,
+    CircleBook? book,
     String? title,
     String? author,
     String? genre,

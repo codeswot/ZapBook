@@ -118,7 +118,7 @@ class ZapNudgeService {
   }
 
   Future<String?> _resolveGroupId(String bookId) async {
-    final name = BookGroupNaming.nameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(bookId);
     final groups = await _marmot.listGroups();
     for (final group in groups) {
       if (group.name == name) return group.id;

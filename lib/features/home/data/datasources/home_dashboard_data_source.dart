@@ -8,6 +8,7 @@ import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
+import 'package:zapbook/core/services/message_router_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
@@ -25,6 +26,7 @@ final _log = logging.Logger('HomeDashboardDataSource');
 class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   HomeDashboardDataSourceImpl(
     this._marmot,
+    this._messageRouter,
     this._ndk,
     this._identityLocal,
     this._fileStore,
@@ -35,6 +37,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   );
 
   final Marmot _marmot;
+  final MessageRouterService _messageRouter;
   final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
   final LibraryFileStore _fileStore;
@@ -51,6 +54,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
     void reload() async {
       try {
+        _messageRouter.onProgress.listen((data) {});
         final data = await _fetchDashboard();
         if (!controller.isClosed) {
           controller.add(data);
@@ -79,7 +83,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     final npub = await _identityLocal.readNpub();
     if (npub == null || npub.isEmpty) return;
 
-    final name = BookGroupNaming.nameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(bookId);
     final groups = await _marmot.listGroups();
     MarmotGroup? targetGroup;
     for (final group in groups) {

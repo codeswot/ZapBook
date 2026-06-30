@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/domain/book_segment_source.dart';
-import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
+import 'package:zapbook/features/library/data/marmot/book_circle_datasource.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 class ProgressiveBook {
@@ -15,7 +15,7 @@ class ProgressiveBook {
 class ProgressiveBookOpener {
   ProgressiveBookOpener(this._datasource);
 
-  final BookGroupDatasource _datasource;
+  final BookCircleDatasource _datasource;
 
   Future<ProgressiveBook?> open(String bookId) async {
     final meta = await _datasource.currentMeta(bookId);
@@ -50,12 +50,12 @@ class ProgressiveBookOpener {
       );
     }
 
-    return ProgressiveBook(
-      handle: handle,
-      loader: (pageIndex) => _datasource.loadSegment(
-        bookId,
-        pageIndex ~/ ZbfSegmenter.pagesPerSegment,
-      ),
-    );
+    // return ProgressiveBook(
+    //   handle: handle,
+    //   loader: (pageIndex) => _datasource.loadSegment(
+    //     bookId,
+    //     pageIndex ~/ ZbfSegmenter.pagesPerSegment,
+    //   ),
+    // );
   }
 }

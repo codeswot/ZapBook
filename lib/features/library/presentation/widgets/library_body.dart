@@ -10,7 +10,7 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_prompt_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
@@ -36,7 +36,7 @@ class LibraryBody extends StatelessWidget {
             final jobs = queue.visibleJobs;
             final books = switch (library) {
               LibraryLoaded(:final books) => books,
-              _ => const <LibraryBook>[],
+              _ => const <CircleBook>[],
             };
 
             if (library is LibraryLoading) {

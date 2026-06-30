@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -18,7 +18,7 @@ class CircleMyProgressCard extends StatelessWidget {
     required this.satsEarned,
   });
 
-  final LibraryBook book;
+  final CircleBook book;
   final ImageProvider? cover;
   final String? myNpub;
   final double myProgressFraction;

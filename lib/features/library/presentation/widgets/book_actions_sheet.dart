@@ -7,9 +7,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
+import 'package:zapbook/features/library/data/marmot/book_circle_datasource.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
@@ -30,7 +30,7 @@ class BookActionsSheet extends StatelessWidget {
     required this.onLeave,
   });
 
-  final LibraryBook book;
+  final CircleBook book;
   final bool isAdmin;
   final String ownerLabel;
   final VoidCallback onDelete;
@@ -38,7 +38,7 @@ class BookActionsSheet extends StatelessWidget {
 
   static Future<void> show(
     BuildContext context, {
-    required LibraryBook book,
+    required CircleBook book,
     required bool isAdmin,
     required String ownerLabel,
     required VoidCallback onDelete,
@@ -64,7 +64,7 @@ class BookActionsSheet extends StatelessWidget {
     if (book == null) return;
 
     final identity = getIt<IdentityLocalDataSource>();
-    final datasource = getIt<BookGroupDatasource>();
+    final datasource = getIt<BookCircleDatasource>();
     final contacts = getIt<ContactService>();
 
     final myNpub = await identity.readNpub();

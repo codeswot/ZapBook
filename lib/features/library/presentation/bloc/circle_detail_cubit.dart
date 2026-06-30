@@ -24,7 +24,7 @@ import 'package:zapbook/features/library/domain/repositories/library_repository.
 import 'package:zapbook/features/library/domain/usecases/dissolve_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/get_book_members.dart';
 import 'package:zapbook/features/library/domain/usecases/get_circle_admins.dart';
-import 'package:zapbook/features/library/domain/usecases/get_library_book.dart';
+import 'package:zapbook/features/library/domain/usecases/get_circle_book.dart';
 import 'package:zapbook/features/library/domain/usecases/leave_circle.dart';
 import 'package:zapbook/features/library/domain/usecases/remove_book_member.dart';
 import 'package:zapbook/features/library/domain/usecases/touch_book_opened.dart';
@@ -35,7 +35,7 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
   CircleDetailCubit(
-    this._getLibraryBook,
+    this._getCircleBook,
     this._getBookMembers,
     this._getCircleAdmins,
     this._removeBookMember,
@@ -66,7 +66,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     emit(s.copyWith(satsEarned: _stats.satsEarnedForCircle(_currentBookId)));
   }
 
-  final GetLibraryBook _getLibraryBook;
+  final GetCircleBook _getCircleBook;
   final GetBookMembers _getBookMembers;
   final GetCircleAdmins _getCircleAdmins;
   final RemoveBookMember _removeBookMember;
@@ -101,7 +101,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
   Future<void> load(String bookId) async {
     _currentBookId = bookId;
-    final book = await _getLibraryBook(bookId);
+    final book = await _getCircleBook(bookId);
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
       return;
@@ -354,7 +354,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   }
 
   Future<String?> _resolveGroupId(String bookId) async {
-    final name = BookGroupNaming.nameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(bookId);
     final groups = await _marmot.listGroups();
     for (final g in groups) {
       if (g.name == name) return g.id;

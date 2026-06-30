@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/core/router/app_router.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
 class BookTextSearchResults extends StatelessWidget {
@@ -15,7 +15,7 @@ class BookTextSearchResults extends StatelessWidget {
   });
 
   final List<BookSearchHit> hits;
-  final List<LibraryBook> books;
+  final List<CircleBook> books;
   final String query;
 
   @override
@@ -55,7 +55,7 @@ class _SearchHitTile extends StatelessWidget {
   });
 
   final BookSearchHit hit;
-  final LibraryBook book;
+  final CircleBook book;
   final String query;
 
   @override

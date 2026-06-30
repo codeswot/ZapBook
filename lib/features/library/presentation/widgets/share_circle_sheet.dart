@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/features/library/domain/usecases/share_book_with.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart';
@@ -26,7 +26,7 @@ import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 class ShareCircleSheet extends StatelessWidget {
   const ShareCircleSheet({super.key, required this.book});
 
-  final LibraryBook book;
+  final CircleBook book;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class ShareCircleSheet extends StatelessWidget {
     );
   }
 
-  static Future<void> show(BuildContext context, LibraryBook book) {
+  static Future<void> show(BuildContext context, CircleBook book) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -49,7 +49,7 @@ class ShareCircleSheet extends StatelessWidget {
 
 class _Body extends StatefulWidget {
   const _Body({required this.book});
-  final LibraryBook book;
+  final CircleBook book;
 
   @override
   State<_Body> createState() => _BodyState();

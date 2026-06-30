@@ -12,7 +12,7 @@ import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/ingest_book.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/enums/ingestion_job_status.dart';
 import 'package:zapbook/features/library/domain/usecases/add_book_to_library.dart';
 import 'package:zapbook/features/library/domain/usecases/find_book_by_content_hash.dart';
@@ -38,7 +38,7 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
   final Map<String, StreamSubscription<IngestionProgress>> _running = {};
   final Map<String, String> _hashByJob = {};
 
-  Future<({String hash, LibraryBook? existing})> findDuplicate(
+  Future<({String hash, CircleBook? existing})> findDuplicate(
     File file,
   ) async {
     final hash = await _fileHasher.sha256OfFile(file);

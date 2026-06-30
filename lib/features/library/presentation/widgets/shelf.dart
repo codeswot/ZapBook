@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_book_tile.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_processing_tile.dart';
@@ -20,16 +20,16 @@ class Shelf extends StatelessWidget {
   });
 
   final List<IngestionJob> jobs;
-  final List<LibraryBook> books;
-  final List<LibraryBook>? allBooks;
+  final List<CircleBook> books;
+  final List<CircleBook>? allBooks;
   final List<BookSearchHit>? searchHits;
   final String? searchQuery;
 
-  LibraryBook? _lastOpened(List<LibraryBook> books) {
+  CircleBook? _lastOpened(List<CircleBook> books) {
     if (books.isEmpty) {
       return null;
     }
-    LibraryBook? opened;
+    CircleBook? opened;
     for (final book in books) {
       if (book.lastOpenedAt == null) {
         continue;
@@ -98,7 +98,7 @@ class Shelf extends StatelessWidget {
               if (index < jobs.length) {
                 return LibraryProcessingTile(job: jobs[index]);
               }
-              return LibraryBookTile(book: books[index - jobs.length]);
+              return CircleBookTile(book: books[index - jobs.length]);
             }, childCount: tileCount),
           ),
         ),

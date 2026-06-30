@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 sealed class CirclesState extends Equatable {
   const CirclesState();
@@ -20,7 +20,7 @@ final class CirclesEmpty extends CirclesState {
 final class CirclesLoaded extends CirclesState {
   const CirclesLoaded(this.circles);
 
-  final List<LibraryBook> circles;
+  final List<CircleBook> circles;
 
   @override
   List<Object?> get props => [circles];

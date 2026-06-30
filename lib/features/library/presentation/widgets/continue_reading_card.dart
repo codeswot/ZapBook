@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/open_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -13,7 +13,7 @@ import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 class ContinueReadingCard extends StatelessWidget {
   const ContinueReadingCard({super.key, required this.book});
 
-  final LibraryBook book;
+  final CircleBook book;
 
   @override
   Widget build(BuildContext context) {

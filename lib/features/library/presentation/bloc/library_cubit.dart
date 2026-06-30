@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/welcome_inbox_service.dart';
-import 'package:zapbook/features/library/data/marmot/book_group_datasource.dart';
+import 'package:zapbook/features/library/data/marmot/book_circle_datasource.dart';
 import 'package:zapbook/features/library/domain/usecases/backfill_library.dart';
-import 'package:zapbook/features/library/domain/usecases/delete_library_book.dart';
+import 'package:zapbook/features/library/domain/usecases/delete_circle_book.dart';
 import 'package:zapbook/features/library/domain/usecases/share_book.dart';
 import 'package:zapbook/features/library/domain/usecases/touch_book_opened.dart';
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart';
@@ -20,11 +20,11 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart';
 @injectable
 class LibraryCubit extends Cubit<LibraryState> {
   LibraryCubit(
-    this._watchLibraryBooks,
+    this._watchCircleBooks,
     this._backfillLibrary,
     this._touchBookOpened,
     this._shareBook,
-    this._deleteLibraryBook,
+    this._deleteCircleBook,
     this._identity,
     this._datasource,
     this._libraryRepository,
@@ -36,18 +36,18 @@ class LibraryCubit extends Cubit<LibraryState> {
     _circlePromptShown = _onboarding.circlePromptShown();
   }
 
-  final WatchLibraryBooks _watchLibraryBooks;
+  final WatchCircleBooks _watchCircleBooks;
   final BackfillLibrary _backfillLibrary;
   final TouchBookOpened _touchBookOpened;
   final ShareBook _shareBook;
-  final DeleteLibraryBook _deleteLibraryBook;
+  final DeleteCircleBook _deleteCircleBook;
   final IdentityLocalDataSource _identity;
-  final BookGroupDatasource _datasource;
+  final BookCircleDatasource _datasource;
   final LibraryRepository _libraryRepository;
   final ContactService _contacts;
   final WelcomeInboxService _welcomeInbox;
   final OnboardingLocalDataSource _onboarding;
-  StreamSubscription<List<LibraryBook>>? _booksSubscription;
+  StreamSubscription<List<CircleBook>>? _booksSubscription;
   StreamSubscription<int>? _welcomeSubscription;
   bool _circlePromptShown = false;
 
@@ -60,7 +60,7 @@ class LibraryCubit extends Cubit<LibraryState> {
     }
   }
 
-  Future<void> deleteBook(String id) => _deleteLibraryBook(id);
+  Future<void> deleteBook(String id) => _deleteCircleBook(id);
 
   Future<void> leaveCircle(String id) => _libraryRepository.leaveCircle(id);
 
@@ -82,7 +82,7 @@ class LibraryCubit extends Cubit<LibraryState> {
       _shareBook(bookId, memberNpub.trim());
 
   Future<void> _init() async {
-    _booksSubscription = _watchLibraryBooks().listen((books) {
+    _booksSubscription = _watchCircleBooks().listen((books) {
       if (books.isEmpty) {
         emit(const LibraryEmpty());
       } else {

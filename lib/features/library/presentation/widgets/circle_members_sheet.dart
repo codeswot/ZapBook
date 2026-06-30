@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -19,7 +19,7 @@ class CircleMembersSheet extends StatelessWidget {
     required this.isAdmin,
   });
 
-  final LibraryBook book;
+  final CircleBook book;
   final bool isAdmin;
 
   @override
@@ -36,7 +36,7 @@ class CircleMembersSheet extends StatelessWidget {
 
   static Future<void> show(
     BuildContext context, {
-    required LibraryBook book,
+    required CircleBook book,
     required bool isAdmin,
   }) {
     return showModalBottomSheet(
@@ -51,7 +51,7 @@ class CircleMembersSheet extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   const _Body({required this.book});
-  final LibraryBook book;
+  final CircleBook book;
 
   @override
   Widget build(BuildContext context) {

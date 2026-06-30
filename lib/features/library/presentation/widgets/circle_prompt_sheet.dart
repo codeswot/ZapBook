@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -12,9 +12,9 @@ import 'package:zapbook/widgets/app_sheet.dart';
 class CirclePromptSheet extends StatelessWidget {
   const CirclePromptSheet({super.key, required this.book});
 
-  final LibraryBook book;
+  final CircleBook book;
 
-  static Future<void> show(BuildContext context, LibraryBook book) {
+  static Future<void> show(BuildContext context, CircleBook book) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,

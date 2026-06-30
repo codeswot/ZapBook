@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/book_edit_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -19,7 +19,7 @@ import 'package:zapbook/widgets/app_toast.dart';
 class BookEditSheet extends StatelessWidget {
   const BookEditSheet({super.key, required this.book});
 
-  final LibraryBook book;
+  final CircleBook book;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class BookEditSheet extends StatelessWidget {
     );
   }
 
-  static Future<void> show(BuildContext context, LibraryBook book) {
+  static Future<void> show(BuildContext context, CircleBook book) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,

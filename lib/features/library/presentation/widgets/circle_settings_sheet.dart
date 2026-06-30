@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
@@ -25,13 +25,13 @@ class CircleSettingsSheet extends StatelessWidget {
   });
 
   final CircleDetailCubit cubit;
-  final LibraryBook book;
+  final CircleBook book;
   final bool isAdmin;
 
   static Future<void> show(
     BuildContext context, {
     required CircleDetailCubit cubit,
-    required LibraryBook book,
+    required CircleBook book,
     required bool isAdmin,
   }) {
     return showModalBottomSheet(

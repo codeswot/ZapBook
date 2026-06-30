@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 sealed class LibraryState extends Equatable {
   const LibraryState();
@@ -20,7 +20,7 @@ final class LibraryEmpty extends LibraryState {
 final class LibraryLoaded extends LibraryState {
   const LibraryLoaded(this.books, {this.showCirclePrompt = false});
 
-  final List<LibraryBook> books;
+  final List<CircleBook> books;
   final bool showCirclePrompt;
 
   @override

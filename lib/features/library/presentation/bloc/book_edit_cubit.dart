@@ -3,7 +3,7 @@ import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/data/datasources/genre_datasource.dart';
 import 'package:zapbook/core/services/file_picker_service.dart';
-import 'package:zapbook/features/library/domain/entities/library_book.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/usecases/update_book_metadata.dart';
 import 'package:zapbook/features/library/presentation/bloc/book_edit_state.dart';
 
@@ -13,7 +13,7 @@ class BookEditCubit extends Cubit<BookEditState> {
     GenreDataSource genres,
     this._filePicker,
     this._updateBookMetadata,
-    @factoryParam LibraryBook book,
+    @factoryParam CircleBook book,
   ) : super(
         BookEditState(
           book: book,
@@ -36,7 +36,7 @@ class BookEditCubit extends Cubit<BookEditState> {
     if (bytes != null) emit(state.copyWith(newCover: bytes));
   }
 
-  Future<LibraryBook?> save() async {
+  Future<CircleBook?> save() async {
     emit(state.copyWith(saving: true));
     try {
       final updated = await _updateBookMetadata(

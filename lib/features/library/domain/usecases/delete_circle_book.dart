@@ -3,8 +3,8 @@ import 'package:injectable/injectable.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 
 @injectable
-final class DeleteLibraryBook {
-  const DeleteLibraryBook(this._repository);
+final class DeleteCircleBook {
+  const DeleteCircleBook(this._repository);
 
   final LibraryRepository _repository;
 

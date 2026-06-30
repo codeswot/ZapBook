@@ -503,7 +503,7 @@ class MilestoneService {
     if (cached != null) return cached;
 
     await _primeGroupCache();
-    final name = BookGroupNaming.nameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(bookId);
 
     final id = _groupIdByName[name];
     if (id != null) {
