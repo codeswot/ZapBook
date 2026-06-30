@@ -496,6 +496,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
+    gh.lazySingleton<_i40.GroupStoreService>(
+      () => _i78.GroupStoreServiceImpl(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
@@ -510,12 +517,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i223.MessageRouterService>(
       () => _i452.MessageRouterServiceImpl(gh<_i140.MarmotSyncService>()),
-    );
-    gh.lazySingleton<_i40.GroupStoreService>(
-      () => _i78.GroupStoreServiceImpl(
-        gh<_i140.MarmotSyncService>(),
-        gh<_i970.Marmot>(),
-      ),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(

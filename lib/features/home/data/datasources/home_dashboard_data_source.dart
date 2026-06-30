@@ -5,11 +5,11 @@ import 'package:rxdart/rxdart.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 
@@ -42,7 +42,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   @override
   Stream<HomeDashboard> watchDashboard() {
     return Rx.combineLatest3(
-      _circleStore.watchCircles,
+      _circleStore.watchCircleBooks,
       _circleStore.watchLastOpenedCircleBook,
       _changeController.stream.startWith(null),
       (circles, lastOpened, _) async {
@@ -103,7 +103,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
       _ndk.broadcast.broadcast(
         nostrEvent: nipEvent,
-        specificRelays: NostrService.broadcastRelays,
+        specificRelays: ZapbookConfig.broadcastRelays,
       );
     } catch (error, stack) {
       _log.warning('mark read broadcast failed', error, stack);

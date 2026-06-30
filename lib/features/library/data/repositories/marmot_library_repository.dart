@@ -13,10 +13,11 @@ class LibraryRepositoryImpl implements LibraryRepository {
   final CircleStoreService _circleStore;
 
   @override
-  Stream<List<CircleBook>> watchBooks() => _circleStore.watchCircles;
+  Stream<List<CircleBook>> watchBooks() => _circleStore.watchCircleBooks;
 
   @override
-  Stream<CircleBook?> watchLastOpenedBook() => _circleStore.watchLastOpenedCircleBook;
+  Stream<CircleBook?> watchLastOpenedBook() =>
+      _circleStore.watchLastOpenedCircleBook;
 
   @override
   Future<CircleBook?> getBook(String id) async {

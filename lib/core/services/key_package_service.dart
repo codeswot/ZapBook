@@ -4,10 +4,10 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class KeyPackageService {
@@ -54,7 +54,7 @@ class KeyPackageService {
           authors: [hex],
           limit: 1,
         ),
-        explicitRelays: NostrService.broadcastRelays,
+        explicitRelays: ZapbookConfig.broadcastRelays,
       );
       final events = await response.future;
       if (events.isEmpty) return null;
@@ -133,7 +133,7 @@ class KeyPackageService {
     try {
       final signed = await _marmot.createSignedKeyPackage(
         nsec,
-        NostrService.broadcastRelays,
+        ZapbookConfig.broadcastRelays,
       );
 
       final dTag = _extractDTag(signed);
@@ -159,7 +159,7 @@ class KeyPackageService {
 
       final kp = await _marmot.createKeyPackage(
         npub,
-        NostrService.broadcastRelays,
+        ZapbookConfig.broadcastRelays,
       );
 
       final pubkey = await MarmotIdentity.pubkeyHexFromNpub(npub);
@@ -202,7 +202,7 @@ class KeyPackageService {
           sig: map['sig'] as String?,
           createdAt: (map['created_at'] as num).toInt(),
         ),
-        specificRelays: NostrService.broadcastRelays,
+        specificRelays: ZapbookConfig.broadcastRelays,
       );
     } on Object catch (error, stack) {
       _log.warning('Key package broadcast failed', error, stack);

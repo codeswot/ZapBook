@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
-
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 @lazySingleton
 class GroupEnvelopeService {
@@ -13,7 +12,7 @@ class GroupEnvelopeService {
   final Ndk _ndk;
   final _log = logging.Logger('GroupEnvelopeService');
 
-  static const _relays = NostrService.broadcastRelays;
+  static const _relays = ZapbookConfig.broadcastRelays;
 
   void publish(String eventJson) {
     try {

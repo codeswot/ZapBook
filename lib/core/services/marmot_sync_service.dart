@@ -5,12 +5,12 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class MarmotSyncService {
@@ -67,7 +67,7 @@ class MarmotSyncService {
   void _startWelcomeSub(String hex) {
     final response = _ndk.requests.subscription(
       filter: Filter(kinds: const [_giftWrapKind], pTags: [hex]),
-      explicitRelays: NostrService.broadcastRelays,
+      explicitRelays: ZapbookConfig.broadcastRelays,
     );
     _welcomeSubId = response.requestId;
     _welcomeSub = response.stream.listen(_onWelcome);
@@ -179,7 +179,7 @@ class MarmotSyncService {
         tags: {'#h': ids},
         since: since,
       ),
-      explicitRelays: NostrService.broadcastRelays,
+      explicitRelays: ZapbookConfig.broadcastRelays,
     );
     _groupSubId = response.requestId;
     _groupSub = response.stream.listen(_onGroupEvent);

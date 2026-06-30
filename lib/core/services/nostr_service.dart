@@ -3,6 +3,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:ndk/domain_layer/entities/read_write_marker.dart';
 import 'package:ndk/domain_layer/entities/user_relay_list.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 
@@ -13,12 +14,6 @@ class NostrService {
   final Ndk _ndk;
   final NostrCacheStore _store;
   final _log = logging.Logger('NostrService');
-
-  static const List<String> broadcastRelays = [
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.primal.net',
-  ];
 
   bool get isLoggedIn => _ndk.accounts.isLoggedIn;
   String? get pubkey => _ndk.accounts.getPublicKey();
@@ -52,7 +47,7 @@ class NostrService {
 
     return _ndk.metadata.broadcastMetadata(
       metadata,
-      specificRelays: broadcastRelays,
+      specificRelays: ZapbookConfig.broadcastRelays,
     );
   }
 
@@ -68,7 +63,8 @@ class NostrService {
         UserRelayList(
           pubKey: pubKey,
           relays: {
-            for (final url in broadcastRelays) url: ReadWriteMarker.readWrite,
+            for (final url in ZapbookConfig.broadcastRelays)
+              url: ReadWriteMarker.readWrite,
           },
           createdAt: 0,
           refreshedTimestamp: 0,

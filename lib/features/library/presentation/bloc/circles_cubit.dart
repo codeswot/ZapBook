@@ -12,7 +12,7 @@ part 'circles_state.dart';
 @injectable
 class CirclesCubit extends Cubit<CirclesState> {
   CirclesCubit(this._circleStore) : super(const CirclesLoading()) {
-    _subscription = _circleStore.watchCircles.listen(
+    _subscription = _circleStore.watchCircleBooks.listen(
       (circles) =>
           emit(circles.isEmpty ? const CirclesEmpty() : CirclesLoaded(circles)),
       onError: (Object error) => emit(CirclesError('$error')),

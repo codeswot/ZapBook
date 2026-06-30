@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
@@ -170,7 +170,7 @@ class ReadingStatsService {
     _cache.saveEvent(event);
     _ndk.broadcast.broadcast(
       nostrEvent: event,
-      specificRelays: NostrService.broadcastRelays,
+      specificRelays: ZapbookConfig.broadcastRelays,
     );
   }
 
@@ -204,7 +204,7 @@ class ReadingStatsService {
 
     _ndk.broadcast.broadcast(
       nostrEvent: event,
-      specificRelays: NostrService.broadcastRelays,
+      specificRelays: ZapbookConfig.broadcastRelays,
     );
 
     _lastPublishDate = today;

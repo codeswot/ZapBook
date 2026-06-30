@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 import 'package:reading_progress/reading_progress.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class ReadingProgressRepository {
@@ -53,7 +53,7 @@ class ReadingProgressRepository {
 
     _ndk.broadcast.broadcast(
       nostrEvent: event,
-      specificRelays: NostrService.broadcastRelays,
+      specificRelays: ZapbookConfig.broadcastRelays,
     );
   }
 

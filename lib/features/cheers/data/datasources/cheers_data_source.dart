@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
@@ -11,7 +12,6 @@ import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -77,7 +77,7 @@ class CheersDataSourceImpl implements CheersDataSource {
                 '#h': [group.nostrGroupId],
               },
             ),
-            explicitRelays: NostrService.broadcastRelays,
+            explicitRelays: ZapbookConfig.broadcastRelays,
           )
           .future;
       for (final event in events) {
@@ -238,7 +238,7 @@ class CheersDataSourceImpl implements CheersDataSource {
       );
       _ndk.broadcast.broadcast(
         nostrEvent: nipEvent,
-        specificRelays: NostrService.broadcastRelays,
+        specificRelays: ZapbookConfig.broadcastRelays,
       );
     } catch (error, stack) {
       _log.warning('cheer broadcast failed', error, stack);
@@ -287,7 +287,7 @@ class CheersDataSourceImpl implements CheersDataSource {
       );
       _ndk.broadcast.broadcast(
         nostrEvent: nipEvent,
-        specificRelays: NostrService.broadcastRelays,
+        specificRelays: ZapbookConfig.broadcastRelays,
       );
     } catch (_) {}
   }

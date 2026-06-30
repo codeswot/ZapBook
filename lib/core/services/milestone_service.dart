@@ -5,12 +5,12 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/domain/milestone_payload.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class MilestoneService {
@@ -27,7 +27,7 @@ class MilestoneService {
   final IdentityLocalDataSource _identity;
   final DecodedMessageCache _cache;
 
-  static const _relays = NostrService.broadcastRelays;
+  static const _relays = ZapbookConfig.broadcastRelays;
   final _log = logging.Logger('MilestoneService');
 
   final Map<String, String> _groupIdByBookId = {};

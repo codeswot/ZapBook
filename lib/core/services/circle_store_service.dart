@@ -22,11 +22,11 @@ class CircleStoreService {
   final _groupHashes = <String, int>{};
   final _lastSeenBooks = <String, CircleBook>{};
 
-  Stream<List<CircleBook>> get watchCircles => _circlesController.stream;
+  Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
   List<CircleBook> get currentCircles => _circlesController.value;
 
   Stream<CircleBook?> get watchLastOpenedCircleBook =>
-      watchCircles.map((circleBooks) {
+      watchCircleBooks.map((circleBooks) {
         CircleBook? latest;
         for (final circleBook in circleBooks) {
           if (circleBook.lastOpenedAt == null) continue;
@@ -147,4 +147,8 @@ class CircleStoreService {
       _circlesController.add(books);
     });
   }
+
+  // create
+  // update
+  // delete
 }

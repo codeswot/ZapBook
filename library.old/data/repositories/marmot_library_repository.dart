@@ -44,7 +44,7 @@ class MarmotLibraryRepository implements LibraryRepository {
   final _log = logging.Logger('MarmotLibraryRepository');
 
   @override
-  Stream<List<CircleBook>> watchBooks() => _circleStore.watchCircles;
+  Stream<List<CircleBook>> watchBooks() => _circleStore.watchCircleBooks;
 
   @override
   Future<CircleBook?> getBook(String id) async {
@@ -105,7 +105,9 @@ class MarmotLibraryRepository implements LibraryRepository {
 
   @override
   Future<List<ShareSkip>> shareBookWith(
-      String id, List<String> memberNpubs) async {
+    String id,
+    List<String> memberNpubs,
+  ) async {
     throw UnimplementedError('To be implemented');
   }
 

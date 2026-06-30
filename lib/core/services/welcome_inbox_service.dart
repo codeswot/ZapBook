@@ -3,10 +3,10 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
 
 @lazySingleton
 class WelcomeInboxService {
@@ -62,7 +62,7 @@ class WelcomeInboxService {
       );
 
       final wraps = await _ndk.requests
-          .query(filter: filter, explicitRelays: NostrService.broadcastRelays)
+          .query(filter: filter, explicitRelays: ZapbookConfig.broadcastRelays)
           .future;
 
       for (final wrap in wraps) {
