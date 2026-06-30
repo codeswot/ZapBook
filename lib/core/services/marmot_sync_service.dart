@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
+
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:ndk/ndk.dart';
 

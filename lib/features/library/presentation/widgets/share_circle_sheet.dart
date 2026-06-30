@@ -7,7 +7,6 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/entities/share_skip.dart';
-import 'package:zapbook/features/library/domain/usecases/share_book_with.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -288,7 +287,8 @@ class _BodyState extends State<_Body> {
                   onTap: selectedNpubs.isEmpty
                       ? null
                       : () {
-                          final shareBookWith = getIt<ShareBookWith>();
+                          // todo: fix
+                          final shareBookWith = null; //getIt<ShareBookWith>();
                           final rootContext = context;
                           final friendsList = List<Contact>.from(friends);
                           final npubsToShare = List<String>.from(selectedNpubs);

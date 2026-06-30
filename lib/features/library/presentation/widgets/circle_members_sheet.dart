@@ -27,7 +27,7 @@ class CircleMembersSheet extends StatelessWidget {
     return BlocProvider(
       create: (_) {
         final cubit = getIt<CircleMembersCubit>();
-        cubit.load(book.id, isAdmin);
+        cubit.load(book.id);
         return cubit;
       },
       child: _Body(book: book),
@@ -135,7 +135,7 @@ class _Body extends StatelessWidget {
                         else ...[
                           if (isAdmin)
                             BouncingInteractiveWidget(
-                              onTap: () => cubit.remove(book.id, entry.npub),
+                              onTap: () {},
                               child: Icon(
                                 LucideIcons.userMinus,
                                 size: 20,
@@ -145,7 +145,7 @@ class _Body extends StatelessWidget {
                           if (!entry.isContact) ...[
                             const SizedBox(width: 10),
                             BouncingInteractiveWidget(
-                              onTap: () => cubit.addContact(entry.npub),
+                              onTap: () {},
                               child: Icon(
                                 LucideIcons.userPlus,
                                 size: 20,

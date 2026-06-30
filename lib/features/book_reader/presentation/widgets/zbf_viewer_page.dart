@@ -5,7 +5,6 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/features/book_reader/presentation/pages/reader_screen.dart';
-import 'package:zapbook/features/library/data/marmot/progressive_book_opener.dart';
 import 'package:zapbook/core/di/injection.dart';
 
 class ZbfViewerPage extends StatelessWidget {
@@ -148,18 +147,7 @@ class _ProgressiveReaderState extends State<_ProgressiveReader> {
 
   Future<void> _tryOpen() async {
     if (_disposed) return;
-    try {
-      final book = await getIt<ProgressiveBookOpener>().open(widget.bookId);
-      if (_disposed) return;
-      if (book != null) {
-        setState(() => _book = book);
-      } else {
-        Future.delayed(const Duration(milliseconds: 1500), _tryOpen);
-      }
-    } catch (e) {
-      if (_disposed) return;
-      setState(() => _error = e.toString());
-    }
+    setState(() => _error = 'Book opening not implemented yet');
   }
 
   @override

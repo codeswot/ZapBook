@@ -7,7 +7,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/features/library/data/marmot/book_circle_datasource.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
@@ -59,23 +58,19 @@ class BookActionsSheet extends StatelessWidget {
   }
 
   static Future<void> showWithId(BuildContext context, String bookId) async {
+    // Todo, never use repo,service etc directly from UI
     final repository = getIt<LibraryRepository>();
     final book = await repository.getBook(bookId);
     if (book == null) return;
 
     final identity = getIt<IdentityLocalDataSource>();
-    final datasource = getIt<BookCircleDatasource>();
     final contacts = getIt<ContactService>();
 
     final myNpub = await identity.readNpub();
-    final admins = await datasource.adminNpubs(bookId);
-    final isAdmin = myNpub != null && admins.contains(myNpub);
+    final isAdmin = false;
 
     String ownerLabel = '';
-    if (!isAdmin && admins.isNotEmpty) {
-      final contact = await contacts.resolve(admins.first);
-      ownerLabel = contact.label;
-    }
+    if (!isAdmin) {}
 
     if (context.mounted) {
       await showModalBottomSheet(
@@ -86,8 +81,8 @@ class BookActionsSheet extends StatelessWidget {
           book: book,
           isAdmin: isAdmin,
           ownerLabel: ownerLabel,
-          onDelete: () => repository.deleteBook(bookId),
-          onLeave: () => repository.leaveCircle(bookId),
+          onDelete: () {},
+          onLeave: () {},
         ),
       );
     }
