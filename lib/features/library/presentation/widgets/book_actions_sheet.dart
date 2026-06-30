@@ -63,14 +63,9 @@ class BookActionsSheet extends StatelessWidget {
     final book = await repository.getBook(bookId);
     if (book == null) return;
 
-    final identity = getIt<IdentityLocalDataSource>();
-    final contacts = getIt<ContactService>();
-
-    final myNpub = await identity.readNpub();
     final isAdmin = false;
 
     String ownerLabel = '';
-    if (!isAdmin) {}
 
     if (context.mounted) {
       await showModalBottomSheet(

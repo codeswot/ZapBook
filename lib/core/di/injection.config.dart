@@ -202,7 +202,6 @@ extension GetItInjectableX on _i174.GetIt {
       preResolve: true,
     );
     gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
-    gh.factory<_i906.CircleMembersCubit>(() => _i906.CircleMembersCubit());
     gh.factory<_i327.IngestionQueueCubit>(() => _i327.IngestionQueueCubit());
     gh.factory<_i659.ShareCircleCubit>(() => _i659.ShareCircleCubit());
     gh.singleton<_i708.AppDatabase>(() => _i708.AppDatabase());
@@ -252,7 +251,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
       (book, _) => _i404.BookEditCubit(book),
     );
-    gh.factory<_i668.CirclesCubit>(() => _i668.CirclesCubit(gh<InvalidType>()));
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -449,6 +447,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i803.SessionReloader>(),
       ),
     );
+    gh.factory<_i906.CircleMembersCubit>(
+      () => _i906.CircleMembersCubit(
+        gh<_i970.Marmot>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
@@ -547,6 +552,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
+    );
+    gh.factory<_i668.CirclesCubit>(
+      () => _i668.CirclesCubit(gh<_i821.CircleStoreService>()),
     );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i821.CircleStoreService>()),

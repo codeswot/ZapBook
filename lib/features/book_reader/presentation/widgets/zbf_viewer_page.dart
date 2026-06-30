@@ -129,7 +129,8 @@ class _ProgressiveReader extends StatefulWidget {
 }
 
 class _ProgressiveReaderState extends State<_ProgressiveReader> {
-  ProgressiveBook? _book;
+  // todo: fix "ProgressiveBook"
+  dynamic _book;
   String? _error;
   bool _disposed = false;
 

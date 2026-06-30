@@ -40,6 +40,9 @@ class CircleStoreService {
           g.description,
           g.memberCount,
           g.adminNpubs.join(','),
+          g.imageHash != null ? String.fromCharCodes(g.imageHash!) : null,
+          g.imageKey != null ? String.fromCharCodes(g.imageKey!) : null,
+          g.imageNonce != null ? String.fromCharCodes(g.imageNonce!) : null,
         );
         final lastHash = _groupHashes[g.id];
         final lastBook = _lastSeenBooks[g.id];
@@ -76,13 +79,19 @@ class CircleStoreService {
               createdAtMs = (map['createdAtMs'] as num?)?.toInt();
               addedAtMs = (map['addedAtMs'] as num?)?.toInt();
               contentHash = map['contentHash'] as String?;
-            } catch (error, stack) {
-              _log.info('Error parsing description', error, stack);
+            } catch (error, _) {
+              _log.info('Error parsing description (legacy)');
             }
           }
 
-          final zbf = await _fileStore.zbfFile(g.id);
-          final coverPath = await _fileStore.coverPathIfExists(g.id);
+          final zbf = await _fileStore.zbfFile(g.nostrGroupId);
+
+          String? coverPath;
+          if (g.imageHash != null) {
+            coverPath = (await _fileStore.coverFile(g.nostrGroupId)).path;
+          } else {
+            coverPath = await _fileStore.coverPathIfExists(g.nostrGroupId);
+          }
 
           final book = CircleBook(
             id: g.id,
@@ -96,7 +105,7 @@ class CircleStoreService {
             lastOpenedAt: lastBook?.lastOpenedAt,
             coverPath: coverPath ?? lastBook?.coverPath,
             sourceFormat: BookSourceFormat.fromWire(
-              sourceFormat ?? lastBook?.sourceFormat.wireValue ?? 'unknown',
+              sourceFormat ?? lastBook?.sourceFormat.wireValue ?? 'pdf',
             ),
             pageCount: pageCount ?? lastBook?.pageCount ?? 0,
             chapterCount: chapterCount ?? lastBook?.chapterCount ?? 0,
@@ -124,6 +133,7 @@ class CircleStoreService {
       _lastSeenBooks.removeWhere((id, _) => !currentIds.contains(id));
 
       books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+      _log.info("Me books ${books.first.title}");
       _circlesController.add(books);
     });
   }

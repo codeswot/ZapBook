@@ -27,7 +27,7 @@ class CircleMembersSheet extends StatelessWidget {
     return BlocProvider(
       create: (_) {
         final cubit = getIt<CircleMembersCubit>();
-        cubit.load(book.id);
+        cubit.load(book.id, isAdmin);
         return cubit;
       },
       child: _Body(book: book),
@@ -59,7 +59,6 @@ class _Body extends StatelessWidget {
       builder: (context, state) {
         final colors = context.colors;
         final typography = context.typography;
-        final cubit = context.read<CircleMembersCubit>();
 
         final entries = state is CircleMembersLoaded
             ? state.entries
