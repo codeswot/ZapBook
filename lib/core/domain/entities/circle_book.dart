@@ -6,6 +6,7 @@ final class CircleBook extends Equatable {
   const CircleBook({
     required this.id,
     required this.nostrGroudId,
+    required this.circleDirId,
     required this.title,
     required this.author,
     this.genre,
@@ -27,6 +28,7 @@ final class CircleBook extends Equatable {
 
   final String id;
   final String nostrGroudId;
+  final String circleDirId;
   final String title;
   final String author;
   final String? genre;
@@ -60,6 +62,7 @@ final class CircleBook extends Equatable {
     return CircleBook(
       id: id,
       nostrGroudId: nostrGroudId,
+      circleDirId: circleDirId,
       title: title ?? this.title,
       author: author ?? this.author,
       genre: genre ?? this.genre,

@@ -12,9 +12,9 @@ final class BookGroupNaming {
 
   static String legacyNameFor(String bookId) => '$legacyPrefix$bookId';
 
-  static String bookIdOf(String groupName) => circleIdOf(groupName);
+  static String bookIdOf(String groupName) => circleDirIdOf(groupName);
 
-  static String circleIdOf(String groupName) {
+  static String circleDirIdOf(String groupName) {
     if (groupName.startsWith(prefix)) {
       final withoutPrefix = groupName.substring(prefix.length);
       final colonIndex = withoutPrefix.indexOf(':');

@@ -67,6 +67,7 @@ class CircleStoreService {
 
         futures.add(() async {
           final title = BookGroupNaming.titleOf(g.name);
+          final dirId = BookGroupNaming.circleDirIdOf(g.name);
 
           String? author;
           String? genre;
@@ -108,6 +109,7 @@ class CircleStoreService {
           final book = CircleBook(
             id: g.id,
             nostrGroudId: g.nostrGroupId,
+            circleDirId: dirId,
             title: title,
             author: author ?? lastBook?.author ?? '',
             genre: genre ?? lastBook?.genre,
