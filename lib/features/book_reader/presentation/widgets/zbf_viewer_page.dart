@@ -148,7 +148,7 @@ class _ProgressiveReaderState extends State<_ProgressiveReader> {
 
   Future<void> _tryOpen() async {
     if (_disposed) return;
-    setState(() => _error = 'Book opening not implemented yet');
+    setState(() => _error = 'Failed to open book');
   }
 
   @override

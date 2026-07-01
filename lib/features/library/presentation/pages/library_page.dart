@@ -7,7 +7,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_wizard_sheet.dart';
-import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
+import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_body.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_header.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
@@ -75,24 +75,14 @@ class _LibraryViewState extends State<_LibraryView> {
       return;
     }
 
-    final queue = context.read<IngestionQueueCubit>();
-    final duplicate = await queue.findDuplicate(state.file);
+    final orchestrator = getIt<IngestionOrchestratorCubit>();
     if (!context.mounted) {
-      return;
-    }
-    if (duplicate.existing != null) {
-      context.toast.showInfo(
-        '“${duplicate.existing!.title}” is already in your library',
-      );
       return;
     }
 
     final completer = Completer<WizardData>();
-    queue.enqueue(
-      state.file,
-      wizardDataFuture: completer.future,
-      contentHash: duplicate.hash,
-    );
+    orchestrator.startIngestion(state.file, completer.future, state.contentHash);
+
     BookWizardSheet.show(
       context,
       completer: completer,

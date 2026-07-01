@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';

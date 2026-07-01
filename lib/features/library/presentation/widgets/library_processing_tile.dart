@@ -1,19 +1,24 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/ingestion_stage.dart';
-import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
-import 'package:zapbook/features/library/domain/enums/ingestion_job_status.dart';
-import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
+import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
 
 class LibraryProcessingTile extends StatefulWidget {
-  const LibraryProcessingTile({super.key, required this.job});
+  const LibraryProcessingTile({
+    super.key,
+    required this.circleBookId,
+    required this.task,
+  });
 
-  final IngestionJob job;
+  final String circleBookId;
+  final IngestionTaskState task;
 
   @override
   State<LibraryProcessingTile> createState() => _LibraryProcessingTileState();
@@ -35,12 +40,14 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final job = widget.job;
-    final failed = job.status == IngestionJobStatus.failed;
+    final task = widget.task;
+    final failed = task.progress.stage == IngestionStage.error;
 
     return BouncingInteractiveWidget(
       onTap: failed
-          ? () => context.read<IngestionQueueCubit>().dismiss(job.id)
+          ? () => context.read<IngestionOrchestratorCubit>().cancelIngestion(
+              widget.circleBookId,
+            )
           : null,
       child: AspectRatio(
         aspectRatio: 0.727,
@@ -54,8 +61,8 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
             ),
           ),
           child: failed
-              ? _FailedContent(colors: colors, job: job)
-              : _RunningContent(colors: colors, job: job, pulse: _pulse),
+              ? _FailedContent(colors: colors, task: task)
+              : _RunningContent(colors: colors, task: task, pulse: _pulse),
         ),
       ),
     );
@@ -64,12 +71,12 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
 
 class _RunningContent extends StatelessWidget {
   final SemanticColors colors;
-  final IngestionJob job;
+  final IngestionTaskState task;
   final AnimationController pulse;
 
   const _RunningContent({
     required this.colors,
-    required this.job,
+    required this.task,
     required this.pulse,
   });
 
@@ -84,7 +91,7 @@ class _RunningContent extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          job.fileName,
+          task.file.path.split(Platform.pathSeparator).last,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.typography.caption.copyWith(
@@ -94,14 +101,13 @@ class _RunningContent extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          _stageLabel(job.stage),
+          _stageLabel(task.progress.stage),
           style: context.typography.caption.copyWith(color: colors.slate),
         ),
         const SizedBox(height: 8),
-        _Progress(
-          value: job.progress,
+        LinearProgressIndicator(
+          value: task.progress.progress,
           color: colors.bitcoin,
-          track: colors.paper4,
         ),
       ],
     );
@@ -110,9 +116,9 @@ class _RunningContent extends StatelessWidget {
 
 class _FailedContent extends StatelessWidget {
   final SemanticColors colors;
-  final IngestionJob job;
+  final IngestionTaskState task;
 
-  const _FailedContent({required this.colors, required this.job});
+  const _FailedContent({required this.colors, required this.task});
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +128,7 @@ class _FailedContent extends StatelessWidget {
         Icon(LucideIcons.triangleAlert, size: 16, color: colors.tomato),
         const Spacer(),
         Text(
-          job.fileName,
+          task.file.path.split(Platform.pathSeparator).last,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.typography.caption.copyWith(
@@ -132,35 +138,11 @@ class _FailedContent extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Failed · tap to dismiss',
+          task.progress.error ?? 'Unknown Error',
+          maxLines: 2,
           style: context.typography.caption.copyWith(color: colors.tomato),
         ),
       ],
-    );
-  }
-}
-
-class _Progress extends StatelessWidget {
-  const _Progress({
-    required this.value,
-    required this.color,
-    required this.track,
-  });
-
-  final double value;
-  final Color color;
-  final Color track;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: AppRadii.br999,
-      child: LinearProgressIndicator(
-        value: value <= 0 ? null : value.clamp(0.0, 1.0),
-        minHeight: 5,
-        backgroundColor: track,
-        valueColor: AlwaysStoppedAnimation<Color>(color),
-      ),
     );
   }
 }

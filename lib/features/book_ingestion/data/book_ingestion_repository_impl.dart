@@ -72,7 +72,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
         yield progress;
       }
       if (book == null) {
-        yield IngestionProgress.failed('Extraction produced no book');
+        yield IngestionProgress.failed('Extraction produced no book circle');
         return;
       }
       book = await _stashSourceForAi(book, file);

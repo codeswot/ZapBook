@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
-import 'package:zapbook/features/library/domain/entities/ingestion_job.dart';
+import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_book_tile.dart';
@@ -12,7 +12,7 @@ import 'package:zapbook/theme/app_theme.dart';
 class Shelf extends StatelessWidget {
   const Shelf({
     super.key,
-    required this.jobs,
+    required this.tasks,
     required this.books,
     this.lastOpenedBook,
     this.allBooks,
@@ -20,7 +20,7 @@ class Shelf extends StatelessWidget {
     this.searchQuery,
   });
 
-  final List<IngestionJob> jobs;
+  final Map<String, IngestionTaskState> tasks;
   final List<CircleBook> books;
   final CircleBook? lastOpenedBook;
   final List<CircleBook>? allBooks;
@@ -30,7 +30,7 @@ class Shelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hero = lastOpenedBook ?? (books.isNotEmpty ? books.first : null);
-    final tileCount = jobs.length + books.length;
+    final tileCount = tasks.length + books.length;
 
     return CustomScrollView(
       scrollCacheExtent: const ScrollCacheExtent.pixels(600),
@@ -81,10 +81,14 @@ class Shelf extends StatelessWidget {
               childAspectRatio: 0.727,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
-              if (index < jobs.length) {
-                return LibraryProcessingTile(job: jobs[index]);
+              if (index < tasks.length) {
+                final entry = tasks.entries.elementAt(index);
+                return LibraryProcessingTile(
+                  circleBookId: entry.key,
+                  task: entry.value,
+                );
               }
-              return CircleBookTile(book: books[index - jobs.length]);
+              return CircleBookTile(book: books[index - tasks.length]);
             }, childCount: tileCount),
           ),
         ),

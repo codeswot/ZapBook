@@ -66,7 +66,7 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) cubit.cancel();
+        if (didPop) cubit.submit();
       },
       child: AppSheet(
         child: BlocBuilder<BookWizardCubit, BookWizardState>(
@@ -154,6 +154,18 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
                     fullWidth: true,
                     onTap: () {
                       cubit.submit();
+                      if (context.mounted) {
+                        context.pop();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  AppButton(
+                    label: 'Cancel',
+                    fullWidth: true,
+                    variant: AppButtonVariant.ghost,
+                    onTap: () {
+                      cubit.cancel();
                       if (context.mounted) {
                         context.pop();
                       }

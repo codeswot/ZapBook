@@ -18,13 +18,14 @@ class IngestionPagePicking extends IngestionPageState {
 }
 
 class IngestionPageFilePicked extends IngestionPageState {
-  const IngestionPageFilePicked(this.file, this.rawTitle);
+  const IngestionPageFilePicked(this.file, this.rawTitle, this.contentHash);
 
   final File file;
   final String rawTitle;
+  final String contentHash;
 
   @override
-  List<Object?> get props => [file.path, rawTitle];
+  List<Object?> get props => [file.path, rawTitle, contentHash];
 }
 
 class IngestionPageError extends IngestionPageState {

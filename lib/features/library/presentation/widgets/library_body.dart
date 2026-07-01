@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart';
-import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
-import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_state.dart';
+import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
     hide LibraryEmpty;
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_prompt_sheet.dart';
+import 'package:zapbook/features/library/presentation/widgets/library_processing_tile.dart';
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
@@ -21,8 +21,8 @@ class LibraryBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<IngestionQueueCubit, IngestionQueueState>(
-      builder: (context, queue) {
+    return BlocBuilder<IngestionOrchestratorCubit, IngestionOrchestratorState>(
+      builder: (context, orchestratorState) {
         return BlocConsumer<LibraryCubit, LibraryState>(
           listener: (context, library) {
             if (library is LibraryLoaded &&
@@ -33,7 +33,7 @@ class LibraryBody extends StatelessWidget {
             }
           },
           builder: (context, library) {
-            final jobs = queue.visibleJobs;
+            final tasks = orchestratorState.tasks;
             final books = switch (library) {
               LibraryLoaded(:final books) => books,
               _ => const <CircleBook>[],
@@ -77,6 +77,24 @@ class LibraryBody extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      if (tasks.isNotEmpty)
+                        SizedBox(
+                          height: 120,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: tasks.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final entry = tasks.entries.elementAt(index);
+                              return LibraryProcessingTile(
+                                circleBookId: entry.key,
+                                task: entry.value,
+                              );
+                            },
+                          ),
+                        ),
                       Icon(
                         LucideIcons.searchX,
                         size: 48,
@@ -104,12 +122,12 @@ class LibraryBody extends StatelessWidget {
               );
             }
 
-            if (filteredBooks.isEmpty && jobs.isEmpty && !hasTextHits) {
+            if (filteredBooks.isEmpty && tasks.isEmpty && !hasTextHits) {
               return const SingleChildScrollView(child: LibraryEmpty());
             }
 
             return Shelf(
-              jobs: jobs,
+              tasks: tasks,
               books: filteredBooks,
               lastOpenedBook: lastOpenedBook,
               allBooks: books,

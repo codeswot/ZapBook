@@ -90,6 +90,8 @@ import 'package:zapbook/features/book_ingestion/data/di/ingestion_module.dart'
     as _i627;
 import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.dart'
     as _i751;
+import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart'
+    as _i1043;
 import 'package:zapbook/features/book_reader/data/quiz_repository.dart'
     as _i246;
 import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart'
@@ -144,8 +146,6 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.
     as _i906;
 import 'package:zapbook/features/library/presentation/bloc/circles_cubit.dart'
     as _i668;
-import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart'
-    as _i327;
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart'
@@ -204,7 +204,6 @@ extension GetItInjectableX on _i174.GetIt {
       preResolve: true,
     );
     gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
-    gh.factory<_i327.IngestionQueueCubit>(() => _i327.IngestionQueueCubit());
     gh.factory<_i659.ShareCircleCubit>(() => _i659.ShareCircleCubit());
     gh.singleton<_i708.AppDatabase>(() => _i708.AppDatabase());
     await gh.singletonAsync<_i19.AppInfoService>(
@@ -323,9 +322,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i118.DecodedMessageCache>(),
       ),
-    );
-    gh.factory<_i696.IngestionPageCubit>(
-      () => _i696.IngestionPageCubit(gh<_i1034.FilePickerService>()),
     );
     gh.lazySingleton<_i148.NostrSignerSource>(
       () => _i429.LocalKeySignerSource(gh<_i603.IdentityLocalDataSource>()),
@@ -531,6 +527,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.LibraryFileStore>(),
       ),
     );
+    gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
+      () => _i1043.IngestionOrchestratorCubit(
+        gh<_i379.BookIngestionRepository>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i860.GroupTransferService>(),
+        gh<_i854.LibraryFileStore>(),
+      ),
+    );
     gh.lazySingleton<_i265.HomeDashboardDataSource>(
       () => _i265.HomeDashboardDataSourceImpl(
         gh<_i970.Marmot>(),
@@ -550,6 +554,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
         gh<_i857.Ndk>(),
         gh<_i64.CheersDataSource>(),
+      ),
+    );
+    gh.factory<_i696.IngestionPageCubit>(
+      () => _i696.IngestionPageCubit(
+        gh<_i1034.FilePickerService>(),
+        gh<_i917.FileHasher>(),
+        gh<_i821.CircleStoreService>(),
       ),
     );
     gh.factory<_i385.LoadProfile>(

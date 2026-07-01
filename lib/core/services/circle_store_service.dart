@@ -98,13 +98,13 @@ class CircleStoreService {
             }
           }
 
-          final zbf = await _fileStore.zbfFile(g.nostrGroupId);
+          final zbf = await _fileStore.zbfFile(dirId);
 
           String? coverPath;
           if (g.imageHash != null) {
-            coverPath = (await _fileStore.coverFile(g.nostrGroupId)).path;
+            coverPath = (await _fileStore.coverFile(dirId)).path;
           } else {
-            coverPath = await _fileStore.coverPathIfExists(g.nostrGroupId);
+            coverPath = await _fileStore.coverPathIfExists(dirId);
           }
           final book = CircleBook(
             id: g.id,
@@ -151,7 +151,7 @@ class CircleStoreService {
     });
   }
 
-  Future<void> createCircleBook({
+  Future<String> createCircleBook({
     required String circleDirId,
     required String humanTitle,
     required Map<String, dynamic> metadata,
@@ -160,11 +160,12 @@ class CircleStoreService {
     final groupName = BookGroupNaming.nameFor(circleDirId, humanTitle);
     final groupDescription = jsonEncode(metadata);
 
-    await _groupStore.createGroup(
+    final cirlceGroup = await _groupStore.createGroup(
       name: groupName,
       description: groupDescription,
       memberKeyPackageEventJsons: memberKeyPackageEventJsons,
     );
+    return cirlceGroup.id;
   }
 
   // update
