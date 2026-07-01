@@ -126,6 +126,14 @@ class GroupStoreServiceImpl implements GroupStoreService {
     return res;
   }
 
+  @override
+  Future<void> deleteGroup(String groupId) async {
+    await _marmot.deleteGroup(groupId);
+    _groupsMap.remove(groupId);
+    _currentGroups = _groupsMap.values.toList();
+    _groupsController.add(_currentGroups);
+  }
+
   Future<void> _optimisticUpdate(String groupId) async {
     final updated = await _marmot.getGroup(groupId);
     if (updated == null) return;
@@ -134,14 +142,6 @@ class GroupStoreServiceImpl implements GroupStoreService {
     _currentGroups = _groupsMap.values.toList();
     _groupsController.add(_currentGroups);
     _groupUpdatedController.add(updated);
-  }
-
-  @override
-  Future<void> deleteGroup(String groupId) async {
-    await _marmot.deleteGroup(groupId);
-    _groupsMap.remove(groupId);
-    _currentGroups = _groupsMap.values.toList();
-    _groupsController.add(_currentGroups);
   }
 
   @override

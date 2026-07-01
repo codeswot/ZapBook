@@ -107,6 +107,7 @@ class CircleStoreService {
           }
           final book = CircleBook(
             id: g.id,
+            nostrGroudId: g.nostrGroupId,
             title: title,
             author: author ?? lastBook?.author ?? '',
             genre: genre ?? lastBook?.genre,
@@ -150,5 +151,9 @@ class CircleStoreService {
 
   // create
   // update
-  // delete
+
+  Future<void> deleteCircleBook(CircleBook circleBook) async {
+    await _groupStore.deleteGroup(circleBook.id);
+    await _fileStore.deleteBook(circleBook.nostrGroudId);
+  }
 }
