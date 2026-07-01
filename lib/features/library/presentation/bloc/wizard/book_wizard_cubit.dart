@@ -11,7 +11,9 @@ class BookWizardCubit extends Cubit<BookWizardState> {
   BookWizardCubit(
     @factoryParam this._completer,
     @factoryParam String? initialTitle,
-  ) : super(BookWizardState(title: initialTitle ?? 'Untitled', availableGenres: []));
+  ) : super(
+        BookWizardState(title: initialTitle ?? 'Untitled', availableGenres: []),
+      );
 
   final Completer<WizardData> _completer;
 

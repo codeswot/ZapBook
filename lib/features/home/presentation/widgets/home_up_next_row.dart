@@ -88,8 +88,11 @@ class HomeUpNextRow extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: ((book.memberCount > 1) ? colors.plum : colors.slate)
-                                .withValues(alpha: 0.85),
+                            color:
+                                ((book.memberCount > 1)
+                                        ? colors.plum
+                                        : colors.slate)
+                                    .withValues(alpha: 0.85),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

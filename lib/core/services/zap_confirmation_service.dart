@@ -10,12 +10,12 @@ import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart
 /// receipt has not yet been confirmed on relays.
 class PendingZapRecord {
   final String zapRequestId; // kind-9734 event ID
-  final String invoice;       // bolt11 invoice
+  final String invoice; // bolt11 invoice
   final String recipientPubkey; // hex pubkey of receiver
-  final String activityId;   // Marmot activity to record on confirmation
+  final String activityId; // Marmot activity to record on confirmation
   final int amount;
   final String reactionType;
-  final int createdAtMs;     // wall-clock epoch ms, used for TTL pruning
+  final int createdAtMs; // wall-clock epoch ms, used for TTL pruning
 
   const PendingZapRecord({
     required this.zapRequestId,
@@ -97,7 +97,9 @@ class ZapConfirmationService {
   void _subscribe(PendingZapRecord record) {
     if (_activeSubs.containsKey(record.zapRequestId)) return;
     if (record.recipientPubkey.isEmpty) {
-      _log.warning('Cannot subscribe to pending zap with empty recipient pubkey');
+      _log.warning(
+        'Cannot subscribe to pending zap with empty recipient pubkey',
+      );
       return;
     }
 
@@ -119,12 +121,16 @@ class ZapConfirmationService {
 
     final matchingEventFuture = sub.stream.firstWhere((event) {
       // Check for bolt11 tag matching the invoice
-      final hasMatchingInvoice = event.tags.any((t) => t.length >= 2 && t[0] == 'bolt11' && t[1] == record.invoice);
+      final hasMatchingInvoice = event.tags.any(
+        (t) => t.length >= 2 && t[0] == 'bolt11' && t[1] == record.invoice,
+      );
       if (hasMatchingInvoice) return true;
 
       // Fallback: parse description tag
       try {
-        final descTag = event.tags.firstWhere((t) => t.isNotEmpty && t[0] == 'description');
+        final descTag = event.tags.firstWhere(
+          (t) => t.isNotEmpty && t[0] == 'description',
+        );
         if (descTag.length >= 2) {
           final descJson = jsonDecode(descTag[1]) as Map<String, dynamic>;
           if (descJson['id'] == record.zapRequestId) {
@@ -136,39 +142,41 @@ class ZapConfirmationService {
       return false;
     });
 
-    matchingEventFuture.then((_) async {
-      _log.info('Zap receipt confirmed for ${record.zapRequestId}');
-      try {
-        if (record.activityId.startsWith('direct:')) {
-          final parts = record.activityId.split(':');
-          if (parts.length >= 3) {
-            final groupId = parts[1];
-            final recipientNpub = parts[2];
-            await _cheersDataSource.sendDirectZap(
-              groupId,
-              recipientNpub,
-              record.amount,
-              record.reactionType,
-            );
+    matchingEventFuture
+        .then((_) async {
+          _log.info('Zap receipt confirmed for ${record.zapRequestId}');
+          try {
+            if (record.activityId.startsWith('direct:')) {
+              final parts = record.activityId.split(':');
+              if (parts.length >= 3) {
+                final groupId = parts[1];
+                final recipientNpub = parts[2];
+                await _cheersDataSource.sendDirectZap(
+                  groupId,
+                  recipientNpub,
+                  record.amount,
+                  record.reactionType,
+                );
+              }
+            } else {
+              await _cheersDataSource.sendZap(
+                record.activityId,
+                record.amount,
+                record.reactionType,
+              );
+            }
+          } on Object catch (e, s) {
+            _log.warning('sendZap after receipt failed', e, s);
+          } finally {
+            final subId = _activeSubs.remove(record.zapRequestId);
+            if (subId != null) _ndk.requests.closeSubscription(subId);
+            _removePersisted(record.zapRequestId);
           }
-        } else {
-          await _cheersDataSource.sendZap(
-            record.activityId,
-            record.amount,
-            record.reactionType,
-          );
-        }
-      } on Object catch (e, s) {
-        _log.warning('sendZap after receipt failed', e, s);
-      } finally {
-        final subId = _activeSubs.remove(record.zapRequestId);
-        if (subId != null) _ndk.requests.closeSubscription(subId);
-        _removePersisted(record.zapRequestId);
-      }
-    }).catchError((Object e) {
-      // stream closed without matching event, or cancelled
-      _activeSubs.remove(record.zapRequestId);
-    });
+        })
+        .catchError((Object e) {
+          // stream closed without matching event, or cancelled
+          _activeSubs.remove(record.zapRequestId);
+        });
   }
 
   // ── Persistence helpers ─────────────────────────────────────────────────
@@ -190,13 +198,19 @@ class ZapConfirmationService {
     final existing = _load()
       ..removeWhere((r) => r.zapRequestId == record.zapRequestId);
     existing.add(record);
-    _prefs.setString(_prefsKey, jsonEncode(existing.map((r) => r.toJson()).toList()));
+    _prefs.setString(
+      _prefsKey,
+      jsonEncode(existing.map((r) => r.toJson()).toList()),
+    );
   }
 
   void _removePersisted(String zapRequestId) {
     final existing = _load()
       ..removeWhere((r) => r.zapRequestId == zapRequestId);
-    _prefs.setString(_prefsKey, jsonEncode(existing.map((r) => r.toJson()).toList()));
+    _prefs.setString(
+      _prefsKey,
+      jsonEncode(existing.map((r) => r.toJson()).toList()),
+    );
   }
 
   void _prune() {
@@ -204,7 +218,10 @@ class ZapConfirmationService {
         .subtract(const Duration(days: _ttlDays))
         .millisecondsSinceEpoch;
     final surviving = _load().where((r) => r.createdAtMs > cutoff).toList();
-    _prefs.setString(_prefsKey, jsonEncode(surviving.map((r) => r.toJson()).toList()));
+    _prefs.setString(
+      _prefsKey,
+      jsonEncode(surviving.map((r) => r.toJson()).toList()),
+    );
     _log.fine('Pruned ${_load().length - surviving.length} stale pending zaps');
   }
 }

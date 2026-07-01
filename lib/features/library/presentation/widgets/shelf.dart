@@ -27,7 +27,6 @@ class Shelf extends StatelessWidget {
   final List<BookSearchHit>? searchHits;
   final String? searchQuery;
 
-
   @override
   Widget build(BuildContext context) {
     final hero = lastOpenedBook ?? (books.isNotEmpty ? books.first : null);

@@ -10,10 +10,8 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart';
 
 @injectable
 class LibraryCubit extends Cubit<LibraryState> {
-  LibraryCubit(
-    this._watchCircleBooks,
-    this._watchLastOpenedBook,
-  ) : super(const LibraryLoading()) {
+  LibraryCubit(this._watchCircleBooks, this._watchLastOpenedBook)
+    : super(const LibraryLoading()) {
     _init();
   }
 
@@ -26,11 +24,13 @@ class LibraryCubit extends Cubit<LibraryState> {
   void dismissCirclePrompt() {
     final s = state;
     if (s is LibraryLoaded) {
-      emit(LibraryLoaded(
-        s.books,
-        lastOpenedBook: s.lastOpenedBook,
-        showCirclePrompt: false,
-      ));
+      emit(
+        LibraryLoaded(
+          s.books,
+          lastOpenedBook: s.lastOpenedBook,
+          showCirclePrompt: false,
+        ),
+      );
     }
   }
 
@@ -52,7 +52,13 @@ class LibraryCubit extends Cubit<LibraryState> {
         if (books.isEmpty) {
           emit(const LibraryEmpty());
         } else {
-          emit(LibraryLoaded(books, lastOpenedBook: lastOpened, showCirclePrompt: false));
+          emit(
+            LibraryLoaded(
+              books,
+              lastOpenedBook: lastOpened,
+              showCirclePrompt: false,
+            ),
+          );
         }
       },
     ).listen((_) {}, onError: (Object error) => emit(LibraryError('$error')));

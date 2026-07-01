@@ -11,7 +11,13 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   bool isValidNpub(String value) => false;
 
   Future<void> load(String bookId) async {
-    emit(const ShareCircleLoaded(friends: [], selectedNpubs: [], existingMembers: {}));
+    emit(
+      const ShareCircleLoaded(
+        friends: [],
+        selectedNpubs: [],
+        existingMembers: {},
+      ),
+    );
   }
 
   void toggleNpub(String npub) {}

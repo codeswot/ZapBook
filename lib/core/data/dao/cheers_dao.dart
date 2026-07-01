@@ -12,12 +12,12 @@ class CheersDao {
 
   final AppDatabase _appDatabase;
   final _log = logging.Logger('CheersDao');
-  
+
   final _changeController = StreamController<void>.broadcast();
 
   Stream<List<CheersActivity>> watchActivities() {
     late StreamController<List<CheersActivity>> controller;
-    
+
     Future<void> emit() async {
       final activities = await loadActivities();
       if (!controller.isClosed) {
@@ -30,7 +30,7 @@ class CheersDao {
     );
 
     final sub = _changeController.stream.listen((_) => emit());
-    
+
     controller.onCancel = () {
       sub.cancel();
       controller.close();
@@ -46,7 +46,7 @@ class CheersDao {
         'SELECT * FROM cheers_feed ORDER BY timestamp DESC LIMIT ?',
         [limit],
       );
-      
+
       return rows.map((row) {
         return CheersActivity(
           id: row['id'] as String,
@@ -56,7 +56,9 @@ class CheersDao {
           bookTitle: row['book_title'] as String,
           bookId: row['book_id'] as String?,
           activityDescription: row['activity_description'] as String,
-          timestamp: DateTime.fromMillisecondsSinceEpoch(row['timestamp'] as int),
+          timestamp: DateTime.fromMillisecondsSinceEpoch(
+            row['timestamp'] as int,
+          ),
           type: row['type'] as String,
           isUnread: (row['is_unread'] as int) == 1,
           nudgeId: row['nudge_id'] as String?,

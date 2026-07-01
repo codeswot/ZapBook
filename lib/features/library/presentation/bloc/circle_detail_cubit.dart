@@ -12,9 +12,8 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
 
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
-  CircleDetailCubit(
-    this._libraryRepository,
-  ) : super(const CircleDetailLoading());
+  CircleDetailCubit(this._libraryRepository)
+    : super(const CircleDetailLoading());
 
   final LibraryRepository _libraryRepository;
 
@@ -67,7 +66,10 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     required String reactionType,
   }) async {}
 
-  Future<void> nudgeReader({required String bookId, required String toNpub}) async {}
+  Future<void> nudgeReader({
+    required String bookId,
+    required String toNpub,
+  }) async {}
 
   void toggleContact(String npub, bool isContact) {}
 

@@ -11,11 +11,8 @@ import 'package:zapbook/features/library/presentation/bloc/circle_members_state.
 
 @injectable
 class CircleMembersCubit extends Cubit<CircleMembersState> {
-  CircleMembersCubit(
-    this._marmot,
-    this._contacts,
-    this._identity,
-  ) : super(const CircleMembersLoading());
+  CircleMembersCubit(this._marmot, this._contacts, this._identity)
+    : super(const CircleMembersLoading());
 
   final Marmot _marmot;
   final ContactService _contacts;
@@ -31,7 +28,7 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
 
   Future<void> load(String bookId, bool isAdmin) async {
     emit(const CircleMembersLoading());
-    
+
     final myNpub = await _identity.readNpub();
     final members = await _marmot.getMembers(bookId);
     final memberNpubs = members.map((m) => m.npub).toList();
@@ -40,10 +37,10 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
 
     _sub = _contacts.watch(memberNpubs).listen((contacts) {
       if (isClosed || state is CircleMembersBusy) return;
-      
+
       final byNpub = {for (final c in contacts) c.npub: c};
       final contactNpubs = _contacts.stored.toSet();
-      
+
       final entries = [
         for (final npub in memberNpubs)
           MemberEntry(
@@ -58,22 +55,22 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
   }
 
   Future<void> refresh(String bookId) async {
-     final currentState = state;
-     if (currentState is CircleMembersLoaded) {
-       await load(bookId, currentState.isAdmin);
-     } else if (currentState is CircleMembersBusy) {
-       await load(bookId, currentState.isAdmin);
-     } else {
-       await load(bookId, false);
-     }
+    final currentState = state;
+    if (currentState is CircleMembersLoaded) {
+      await load(bookId, currentState.isAdmin);
+    } else if (currentState is CircleMembersBusy) {
+      await load(bookId, currentState.isAdmin);
+    } else {
+      await load(bookId, false);
+    }
   }
 
   void toggleContact(String npub, bool isContact) async {
-     if (isContact) {
-         await _contacts.add(npub);
-     } else {
-         await _contacts.remove(npub);
-     }
+    if (isContact) {
+      await _contacts.add(npub);
+    } else {
+      await _contacts.remove(npub);
+    }
   }
 
   Future<void> removeMember(String bookId, String npub) async {

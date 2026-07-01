@@ -6,7 +6,8 @@ import 'package:zapbook/features/library/presentation/bloc/book_edit_state.dart'
 
 @injectable
 class BookEditCubit extends Cubit<BookEditState> {
-  BookEditCubit(@factoryParam CircleBook book) : super(
+  BookEditCubit(@factoryParam CircleBook book)
+    : super(
         BookEditState(
           book: book,
           title: book.title,
