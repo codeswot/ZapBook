@@ -151,7 +151,21 @@ class CircleStoreService {
     });
   }
 
-  // create ~ here
+  Future<void> createCircleBook({
+    required String circleDirId,
+    required String humanTitle,
+    required Map<String, dynamic> metadata,
+    List<String> memberKeyPackageEventJsons = const [],
+  }) async {
+    final groupName = BookGroupNaming.nameFor(circleDirId, humanTitle);
+    final groupDescription = jsonEncode(metadata);
+
+    await _groupStore.createGroup(
+      name: groupName,
+      description: groupDescription,
+      memberKeyPackageEventJsons: memberKeyPackageEventJsons,
+    );
+  }
 
   // update
 

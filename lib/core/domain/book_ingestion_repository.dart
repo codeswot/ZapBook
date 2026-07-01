@@ -8,5 +8,6 @@ abstract interface class BookIngestionRepository {
   Stream<IngestionProgress> ingest(
     File file, {
     Future<WizardData>? wizardDataFuture,
+    String? circleDirId,
   });
 }

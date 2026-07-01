@@ -41,6 +41,7 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
   Stream<IngestionProgress> ingest(
     File file, {
     Future<WizardData>? wizardDataFuture,
+    String? circleDirId,
   }) async* {
     final extractor = _extractorFor(file);
     if (extractor == null) {
@@ -49,13 +50,13 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     }
 
     try {
-      final circleBookId = Ulid().toString();
-      final zbfDir = await _fileStore.bookDir(circleBookId);
+      final finalCircleBookId = circleDirId ?? Ulid().toString();
+      final zbfDir = await _fileStore.bookDir(finalCircleBookId);
 
       ZbfBook? book;
       await for (final progress in extractor.extract(
         file,
-        circleBookId: circleBookId,
+        circleBookId: finalCircleBookId,
         outputDirectory: zbfDir.path,
         wizardDataFuture: wizardDataFuture,
       )) {
