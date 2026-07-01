@@ -17,7 +17,7 @@ class RecognitionQuizBuilder {
   static const _trimWords = 28;
 
   Future<QuizSet?> build(
-    String bookId,
+    String circleBookId,
     int milestoneIdx,
     String sectionText, {
     Random? random,

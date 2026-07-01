@@ -26,11 +26,11 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     return super.close();
   }
 
-  Future<void> load(String bookId, bool isAdmin) async {
+  Future<void> load(String circleBookId, bool isAdmin) async {
     emit(const CircleMembersLoading());
 
     final myNpub = await _identity.readNpub();
-    final members = await _marmot.getMembers(bookId);
+    final members = await _marmot.getMembers(circleBookId);
     final memberNpubs = members.map((m) => m.npub).toList();
 
     await _sub?.cancel();
@@ -54,14 +54,14 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     });
   }
 
-  Future<void> refresh(String bookId) async {
+  Future<void> refresh(String circleBookId) async {
     final currentState = state;
     if (currentState is CircleMembersLoaded) {
-      await load(bookId, currentState.isAdmin);
+      await load(circleBookId, currentState.isAdmin);
     } else if (currentState is CircleMembersBusy) {
-      await load(bookId, currentState.isAdmin);
+      await load(circleBookId, currentState.isAdmin);
     } else {
-      await load(bookId, false);
+      await load(circleBookId, false);
     }
   }
 
@@ -73,7 +73,7 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     }
   }
 
-  Future<void> removeMember(String bookId, String npub) async {
+  Future<void> removeMember(String circleBookId, String npub) async {
     // Stub
   }
 }

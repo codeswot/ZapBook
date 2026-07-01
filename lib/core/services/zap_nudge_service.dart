@@ -25,10 +25,10 @@ class ZapNudgeService {
   final _log = logging.Logger('ZapNudgeService');
 
   Future<void> nudgeForBook({
-    required String bookId,
+    required String circleBookId,
     required String toNpub,
   }) async {
-    final groupId = await _resolveGroupId(bookId);
+    final groupId = await _resolveGroupId(circleBookId);
     if (groupId == null) return;
     await nudge(groupId: groupId, toNpub: toNpub);
   }
@@ -117,8 +117,8 @@ class ZapNudgeService {
     }
   }
 
-  Future<String?> _resolveGroupId(String bookId) async {
-    final name = BookGroupNaming.legacyNameFor(bookId);
+  Future<String?> _resolveGroupId(String circleBookId) async {
+    final name = BookGroupNaming.legacyNameFor(circleBookId);
     final groups = await _marmot.listGroups();
     for (final group in groups) {
       if (group.name == name) return group.id;

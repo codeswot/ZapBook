@@ -14,13 +14,13 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class SemanticHit {
   const SemanticHit({
-    required this.bookId,
+    required this.circleBookId,
     required this.pageNumber,
     required this.text,
     required this.score,
   });
 
-  final String bookId;
+  final String circleBookId;
   final int pageNumber;
   final String text;
   final double score;
@@ -92,18 +92,20 @@ class BookVectorIndex {
     return _db = db;
   }
 
-  Future<void> ensureEmbedded(String bookId, String zbfPath) {
-    final task = _writeQueue.then((_) => _ensureEmbedded(bookId, zbfPath));
+  Future<void> ensureEmbedded(String circleBookId, String zbfPath) {
+    final task = _writeQueue.then(
+      (_) => _ensureEmbedded(circleBookId, zbfPath),
+    );
     _writeQueue = task.catchError((Object error, StackTrace stack) {
-      _log.warning('Embedding failed for $bookId', error, stack);
+      _log.warning('Embedding failed for $circleBookId', error, stack);
     });
     return _writeQueue;
   }
 
-  Future<void> _ensureEmbedded(String bookId, String zbfPath) async {
+  Future<void> _ensureEmbedded(String circleBookId, String zbfPath) async {
     final db = await _open();
     final done = db.select('SELECT 1 FROM embedded_books WHERE book_id = ?', [
-      bookId,
+      circleBookId,
     ]);
     if (done.isNotEmpty) return;
 
@@ -127,8 +129,8 @@ class BookVectorIndex {
 
     db.execute('BEGIN');
     try {
-      db.execute('DELETE FROM chunks WHERE book_id = ?', [bookId]);
-      db.execute('DELETE FROM centroids WHERE book_id = ?', [bookId]);
+      db.execute('DELETE FROM chunks WHERE book_id = ?', [circleBookId]);
+      db.execute('DELETE FROM centroids WHERE book_id = ?', [circleBookId]);
       final insert = db.prepare(
         'INSERT INTO chunks (book_id, page_number, seq, text, embedding, cluster_id) '
         'VALUES (?, ?, ?, ?, ?, ?)',
@@ -137,7 +139,7 @@ class BookVectorIndex {
         final chunk = inputs[i].chunk;
         final embedding = vectors[i];
         insert.execute([
-          bookId,
+          circleBookId,
           chunk.pageNumber,
           chunk.seq,
           chunk.text,
@@ -156,7 +158,7 @@ class BookVectorIndex {
         for (var i = 0; i < centroids.length; i++) {
           final c = centroids[i];
           insertCentroid.execute([
-            bookId,
+            circleBookId,
             i,
             c.buffer.asUint8List(c.offsetInBytes, c.lengthInBytes),
           ]);
@@ -166,14 +168,14 @@ class BookVectorIndex {
       db.execute(
         'INSERT OR REPLACE INTO embedded_books (book_id, chunk_count, embedded_at) '
         'VALUES (?, ?, ?)',
-        [bookId, inputs.length, DateTime.now().millisecondsSinceEpoch],
+        [circleBookId, inputs.length, DateTime.now().millisecondsSinceEpoch],
       );
       db.execute('COMMIT');
     } catch (_) {
       db.execute('ROLLBACK');
       rethrow;
     }
-    _log.info('Embedded $bookId (${inputs.length} chunks)');
+    _log.info('Embedded $circleBookId (${inputs.length} chunks)');
   }
 
   static Future<List<_EmbedInput>> _chunkAndTokenize(String zbfPath) async {
@@ -270,7 +272,7 @@ class BookVectorIndex {
 
   Future<List<SemanticHit>> search(
     String query, {
-    String? bookId,
+    String? circleBookId,
     int limit = 10,
     double minScore = 0.35,
   }) async {
@@ -283,7 +285,7 @@ class BookVectorIndex {
       () => _scoreChunks(
         dbPath: dbPath,
         queryVector: queryVector,
-        bookId: bookId,
+        circleBookId: circleBookId,
         limit: limit,
         minScore: minScore,
       ),
@@ -293,24 +295,24 @@ class BookVectorIndex {
   static List<SemanticHit> _scoreChunks({
     required String dbPath,
     required Float32List queryVector,
-    required String? bookId,
+    required String? circleBookId,
     required int limit,
     required double minScore,
   }) {
     final db = sqlite3.open(dbPath);
     try {
-      final probedClusters = _probeClusters(db, queryVector, bookId);
+      final probedClusters = _probeClusters(db, queryVector, circleBookId);
 
       final rows = probedClusters == null
-          ? (bookId == null
+          ? (circleBookId == null
                 ? db.select('SELECT rowid, embedding FROM chunks')
                 : db.select(
                     'SELECT rowid, embedding FROM chunks WHERE book_id = ?',
-                    [bookId],
+                    [circleBookId],
                   ))
           : () {
               final placeholders = probedClusters.map((_) => '?').join(',');
-              if (bookId == null) {
+              if (circleBookId == null) {
                 return db.select(
                   'SELECT rowid, embedding FROM chunks WHERE cluster_id IN ($placeholders)',
                   probedClusters,
@@ -319,7 +321,7 @@ class BookVectorIndex {
               return db.select(
                 'SELECT rowid, embedding FROM chunks '
                 'WHERE book_id = ? AND (cluster_id IS NULL OR cluster_id IN ($placeholders))',
-                [bookId, ...probedClusters],
+                [circleBookId, ...probedClusters],
               );
             }();
 
@@ -372,7 +374,7 @@ class BookVectorIndex {
       return topHits.map((hit) {
         final r = rowIdToRow[hit.rowid]!;
         return SemanticHit(
-          bookId: r['book_id'] as String,
+          circleBookId: r['book_id'] as String,
           pageNumber: (r['page_number'] as num).toInt(),
           text: r['text'] as String,
           score: hit.score,
@@ -386,13 +388,13 @@ class BookVectorIndex {
   static List<int>? _probeClusters(
     Database db,
     Float32List queryVector,
-    String? bookId,
+    String? circleBookId,
   ) {
-    final centroidRows = bookId == null
+    final centroidRows = circleBookId == null
         ? db.select('SELECT cluster_id, embedding FROM centroids')
         : db.select(
             'SELECT cluster_id, embedding FROM centroids WHERE book_id = ?',
-            [bookId],
+            [circleBookId],
           );
     if (centroidRows.isEmpty) return null;
 
@@ -416,17 +418,17 @@ class BookVectorIndex {
     return scored.take(probes).map((c) => c.rowid).toList();
   }
 
-  Future<bool> isEmbedded(String bookId) async {
+  Future<bool> isEmbedded(String circleBookId) async {
     final db = await _open();
     return db.select('SELECT 1 FROM embedded_books WHERE book_id = ?', [
-      bookId,
+      circleBookId,
     ]).isNotEmpty;
   }
 
-  Future<void> remove(String bookId) async {
+  Future<void> remove(String circleBookId) async {
     final db = await _open();
-    db.execute('DELETE FROM chunks WHERE book_id = ?', [bookId]);
-    db.execute('DELETE FROM embedded_books WHERE book_id = ?', [bookId]);
+    db.execute('DELETE FROM chunks WHERE book_id = ?', [circleBookId]);
+    db.execute('DELETE FROM embedded_books WHERE book_id = ?', [circleBookId]);
   }
 }
 

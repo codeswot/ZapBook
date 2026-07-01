@@ -17,7 +17,7 @@ class ReadingProgressRepository {
   static const _kind = 30078;
 
   Future<void> saveSnapshot(
-    String bookId,
+    String circleBookId,
     ReadingState state, {
     double? scrollOffset,
   }) async {
@@ -42,7 +42,7 @@ class ReadingProgressRepository {
       pubKey: pubkey,
       kind: _kind,
       tags: [
-        ['d', bookId],
+        ['d', circleBookId],
       ],
       content: encrypted,
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -58,7 +58,7 @@ class ReadingProgressRepository {
   }
 
   Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(
-    String bookId,
+    String circleBookId,
   ) async {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return null;
@@ -67,7 +67,7 @@ class ReadingProgressRepository {
 
     final match = events.where((e) {
       final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
-      return dTag.isNotEmpty && dTag.first[1] == bookId;
+      return dTag.isNotEmpty && dTag.first[1] == circleBookId;
     });
 
     if (match.isEmpty) return null;

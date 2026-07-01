@@ -23,10 +23,12 @@ class DensityService {
     return dir.path;
   }
 
-  Future<void> precalc(String bookId, ZbfBook book) async {
+  Future<void> precalc(String circleBookId, ZbfBook book) async {
     final density = _fromManifest(book.manifest);
     final dir = await _dir();
-    await File('$dir/$bookId.json').writeAsString(jsonEncode(_toJson(density)));
+    await File(
+      '$dir/$circleBookId.json',
+    ).writeAsString(jsonEncode(_toJson(density)));
   }
 
   ZbfBook enrich(ZbfBook book) {
@@ -46,10 +48,10 @@ class DensityService {
     genre: genreFromLabel(m.genre),
   );
 
-  BookDensity? load(String bookId) {
+  BookDensity? load(String circleBookId) {
     final dir = _dirPath;
     if (dir == null) return null;
-    final file = File('$dir/$bookId.json');
+    final file = File('$dir/$circleBookId.json');
     if (!file.existsSync()) return null;
     try {
       final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;

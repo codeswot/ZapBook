@@ -44,7 +44,7 @@ const defaultHeartbeat = Duration(seconds: 10);
 class ReadingProgressCubit extends Cubit<ReadingState> {
   factory ReadingProgressCubit.forBook(
     ZbfBookHandle handle, {
-    required String bookId,
+    required String circleBookId,
     int Function()? clock,
     Duration heartbeat = defaultHeartbeat,
     ReadingProgressRepository? repository,
@@ -57,7 +57,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     final config = _configFor(density.totalWords, handle.manifest.sourceFormat);
     return ReadingProgressCubit._(
       deps: ReadingDeps(density: density, config: config),
-      bookId: bookId,
+      circleBookId: circleBookId,
       clock: clock,
       heartbeat: heartbeat,
       repository: repository,
@@ -70,14 +70,14 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   factory ReadingProgressCubit.forDeps({
     required ReadingDeps deps,
-    String bookId = '',
+    String circleBookId = '',
     int Function()? clock,
     Duration heartbeat = defaultHeartbeat,
     ReadingProgressRepository? repository,
   }) {
     return ReadingProgressCubit._(
       deps: deps,
-      bookId: bookId,
+      circleBookId: circleBookId,
       clock: clock,
       heartbeat: heartbeat,
       repository: repository,
@@ -86,7 +86,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
 
   ReadingProgressCubit._({
     required ReadingDeps deps,
-    required this.bookId,
+    required this.circleBookId,
     int Function()? clock,
     this.heartbeat = defaultHeartbeat,
     this.repository,
@@ -103,7 +103,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   }
 
   final ReadingDeps _deps;
-  final String bookId;
+  final String circleBookId;
   final int Function() _now;
   final Duration heartbeat;
   final ReadingProgressRepository? repository;
@@ -133,7 +133,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   Future<({int? page, double? scrollOffset})> restore() async {
     final repo = repository;
     if (repo == null) return (page: null, scrollOffset: null);
-    final saved = await repo.loadSnapshot(bookId);
+    final saved = await repo.loadSnapshot(circleBookId);
     if (saved == null) return (page: null, scrollOffset: null);
     emit(
       state.copyWith(
@@ -155,7 +155,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   void start({int initialPage = 0}) {
     _dispatch(PageOpened(page: initialPage, atMs: _now()));
     milestoneService?.updateProgress(
-      bookId: bookId,
+      circleBookId: circleBookId,
       currentPage: initialPage,
       currentWordCount: state.wordsRead,
       totalWords: totalWords,
@@ -167,7 +167,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
   void openPage(int page) {
     _dispatch(PageOpened(page: page, atMs: _now()));
     milestoneService?.updateProgress(
-      bookId: bookId,
+      circleBookId: circleBookId,
       currentPage: page,
       currentWordCount: state.wordsRead,
       totalWords: totalWords,
@@ -218,7 +218,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
         PageExited(page: page, direction: ExitDirection.forward, atMs: _now()),
       );
     }
-    milestoneService?.flushProgress(bookId);
+    milestoneService?.flushProgress(circleBookId);
     _save();
     quizService?.onPause();
   }
@@ -238,11 +238,11 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
       }
       if (effect is BookCompleted) {
         _save();
-        milestoneService?.recordBookCompleted(bookId);
+        milestoneService?.recordBookCompleted(circleBookId);
         unawaited(
-          milestoneService?.markCompleted(bookId, totalWords: totalWords),
+          milestoneService?.markCompleted(circleBookId, totalWords: totalWords),
         );
-        unawaited(milestoneService?.publishBookCompleted(bookId));
+        unawaited(milestoneService?.publishBookCompleted(circleBookId));
       }
     }
   }
@@ -251,7 +251,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     if (_publishedMilestones.contains(effect.index)) return;
     _publishedMilestones.add(effect.index);
     milestoneService?.publishMilestone(
-      bookId: bookId,
+      circleBookId: circleBookId,
       milestoneIdx: effect.index,
       currentWordCount: effect.wordsRead,
       totalWordCount: totalWords,
@@ -293,7 +293,7 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     if (repo == null || !_dirty) return;
     _dirty = false;
     unawaited(
-      repo.saveSnapshot(bookId, state, scrollOffset: _lastScrollOffset),
+      repo.saveSnapshot(circleBookId, state, scrollOffset: _lastScrollOffset),
     );
   }
 

@@ -5,8 +5,8 @@ import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/widgets/app_shimmer.dart';
 
 class CircleDetailShimmer extends StatelessWidget {
-  const CircleDetailShimmer({super.key, required this.bookId});
-  final String bookId;
+  const CircleDetailShimmer({super.key, required this.circleBookId});
+  final String circleBookId;
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -16,7 +16,7 @@ class CircleDetailShimmer extends StatelessWidget {
         children: [
           CircleDetailTopBar(
             readersCount: 0,
-            bookId: bookId,
+            circleBookId: circleBookId,
             bookTitle: 'Loading circle...',
           ),
           Expanded(

@@ -13,6 +13,6 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   Stream<HomeDashboard> watchDashboard() => _dataSource.watchDashboard();
 
   @override
-  Future<void> touchBookOpened(String bookId) =>
-      _dataSource.touchBookOpened(bookId);
+  Future<void> touchBookOpened(String circleBookId) =>
+      _dataSource.touchBookOpened(circleBookId);
 }

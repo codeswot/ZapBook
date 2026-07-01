@@ -32,7 +32,7 @@ class _HomeView extends StatelessWidget {
 
   void _onCardTap(BuildContext context, CircleBook book) {
     if (book.memberCount > 1) {
-      CircleDetailRoute(bookId: book.id).push(context);
+      CircleDetailRoute(circleBookId: book.id).push(context);
     } else {
       context.read<HomeCubit>().touchBookOpened(book.id);
       ZbfViewerRoute(zbfPath: book.zbfPath).push(context);

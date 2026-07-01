@@ -23,7 +23,9 @@ class BookTextSearchResults extends StatelessWidget {
     final colors = context.colors;
     final typography = context.typography;
     final byId = {for (final book in books) book.id: book};
-    final visible = hits.where((hit) => byId.containsKey(hit.bookId)).toList();
+    final visible = hits
+        .where((hit) => byId.containsKey(hit.circleBookId))
+        .toList();
     if (visible.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -41,7 +43,7 @@ class BookTextSearchResults extends StatelessWidget {
           ),
         ),
         for (final hit in visible)
-          _SearchHitTile(hit: hit, book: byId[hit.bookId]!, query: query),
+          _SearchHitTile(hit: hit, book: byId[hit.circleBookId]!, query: query),
       ],
     );
   }

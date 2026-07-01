@@ -78,9 +78,9 @@ class _ReaderScreenState extends State<ReaderScreen>
     final quiz = getIt<QuizService>();
     quiz.clear();
     final builder = getIt<RecognitionQuizBuilder>();
-    final bookId = widget.handle.manifest.id;
+    final circleBookId = widget.handle.manifest.id;
     quiz.setGenerator(
-      (milestoneIdx, text) => builder.build(bookId, milestoneIdx, text),
+      (milestoneIdx, text) => builder.build(circleBookId, milestoneIdx, text),
     );
     quiz.aiAvailable = true;
   }
@@ -102,7 +102,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _configureQuiz();
     _progress = ReadingProgressCubit.forBook(
       widget.handle,
-      bookId: widget.handle.manifest.id,
+      circleBookId: widget.handle.manifest.id,
       repository: getIt<ReadingProgressRepository>(),
       densityService: getIt<DensityService>(),
       milestoneService: getIt<MilestoneService>(),
@@ -393,7 +393,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                       onBack: widget.onExit ?? () => context.pop(),
                       onSearch: () => ReaderSearchSheet.show(
                         context,
-                        bookId: widget.handle.manifest.id,
+                        circleBookId: widget.handle.manifest.id,
                         onSelect: (hitPage, query) =>
                             _jumpToHit(cubit, hitPage, query),
                       ),

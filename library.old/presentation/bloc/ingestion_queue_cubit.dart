@@ -38,9 +38,7 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
   final Map<String, StreamSubscription<IngestionProgress>> _running = {};
   final Map<String, String> _hashByJob = {};
 
-  Future<({String hash, CircleBook? existing})> findDuplicate(
-    File file,
-  ) async {
+  Future<({String hash, CircleBook? existing})> findDuplicate(File file) async {
     final hash = await _fileHasher.sha256OfFile(file);
     final existing = await _findByContentHash(hash);
     return (hash: hash, existing: existing);
@@ -141,7 +139,7 @@ class IngestionQueueCubit extends Cubit<IngestionQueueState> {
             status: IngestionJobStatus.success,
             stage: progress.stage,
             progress: 1,
-            bookId: added.id,
+            circleBookId: added.id,
           ),
         ),
       );

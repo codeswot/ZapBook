@@ -7,5 +7,6 @@ final class TouchDashboardBookOpened {
 
   final HomeDashboardRepository _repository;
 
-  Future<void> call(String bookId) => _repository.touchBookOpened(bookId);
+  Future<void> call(String circleBookId) =>
+      _repository.touchBookOpened(circleBookId);
 }

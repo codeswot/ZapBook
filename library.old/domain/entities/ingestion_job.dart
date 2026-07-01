@@ -11,7 +11,7 @@ final class IngestionJob extends Equatable {
     this.stage = IngestionStage.fileSelected,
     this.progress = 0,
     this.currentItem = '',
-    this.bookId,
+    this.circleBookId,
     this.error,
   });
 
@@ -21,7 +21,7 @@ final class IngestionJob extends Equatable {
   final IngestionStage stage;
   final double progress;
   final String currentItem;
-  final String? bookId;
+  final String? circleBookId;
   final String? error;
 
   IngestionJob copyWith({
@@ -29,7 +29,7 @@ final class IngestionJob extends Equatable {
     IngestionStage? stage,
     double? progress,
     String? currentItem,
-    String? bookId,
+    String? circleBookId,
     String? error,
   }) {
     return IngestionJob(
@@ -39,7 +39,7 @@ final class IngestionJob extends Equatable {
       stage: stage ?? this.stage,
       progress: progress ?? this.progress,
       currentItem: currentItem ?? this.currentItem,
-      bookId: bookId ?? this.bookId,
+      circleBookId: circleBookId ?? this.circleBookId,
       error: error ?? this.error,
     );
   }
@@ -52,7 +52,7 @@ final class IngestionJob extends Equatable {
     stage,
     progress,
     currentItem,
-    bookId,
+    circleBookId,
     error,
   ];
 }

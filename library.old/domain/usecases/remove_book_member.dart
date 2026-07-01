@@ -8,6 +8,6 @@ final class RemoveBookMember {
 
   final LibraryRepository _repository;
 
-  Future<void> call(String bookId, String memberNpub) =>
-      _repository.removeBookMember(bookId, memberNpub);
+  Future<void> call(String circleBookId, String memberNpub) =>
+      _repository.removeBookMember(circleBookId, memberNpub);
 }

@@ -57,7 +57,9 @@ class LibraryBody extends StatelessWidget {
             final textHits = context.watch<BookTextSearchCubit>().state;
             final hasTextHits =
                 searchQuery.isNotEmpty &&
-                textHits.any((hit) => books.any((b) => b.id == hit.bookId));
+                textHits.any(
+                  (hit) => books.any((b) => b.id == hit.circleBookId),
+                );
 
             if (filteredBooks.isEmpty &&
                 searchQuery.isNotEmpty &&

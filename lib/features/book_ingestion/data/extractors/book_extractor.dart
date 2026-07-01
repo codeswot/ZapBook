@@ -11,7 +11,7 @@ abstract interface class BookExtractor {
 
   Stream<IngestionProgress> extract(
     File file, {
-    required String bookId,
+    required String circleBookId,
     required String outputDirectory,
     Future<WizardData>? wizardDataFuture,
   });

@@ -58,9 +58,12 @@ class BookActionsSheet extends StatelessWidget {
     );
   }
 
-  static Future<void> showWithId(BuildContext context, String bookId) async {
+  static Future<void> showWithId(
+    BuildContext context,
+    String circleBookId,
+  ) async {
     final repository = getIt<LibraryRepository>();
-    final book = await repository.getBook(bookId);
+    final book = await repository.getBook(circleBookId);
     if (book == null) return;
 
     final identity = getIt<IdentityLocalDataSource>();
@@ -68,7 +71,7 @@ class BookActionsSheet extends StatelessWidget {
     final contacts = getIt<ContactService>();
 
     final myNpub = await identity.readNpub();
-    final admins = await datasource.adminNpubs(bookId);
+    final admins = await datasource.adminNpubs(circleBookId);
     final isAdmin = myNpub != null && admins.contains(myNpub);
 
     String ownerLabel = '';
@@ -86,8 +89,8 @@ class BookActionsSheet extends StatelessWidget {
           book: book,
           isAdmin: isAdmin,
           ownerLabel: ownerLabel,
-          onDelete: () => repository.deleteBook(bookId),
-          onLeave: () => repository.leaveCircle(bookId),
+          onDelete: () => repository.deleteBook(circleBookId),
+          onLeave: () => repository.leaveCircle(circleBookId),
         ),
       );
     }

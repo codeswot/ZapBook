@@ -57,10 +57,13 @@ class BookActionsSheet extends StatelessWidget {
     );
   }
 
-  static Future<void> showWithId(BuildContext context, String bookId) async {
+  static Future<void> showWithId(
+    BuildContext context,
+    String circleBookId,
+  ) async {
     // Todo, never use repo,service etc directly from UI
     final repository = getIt<LibraryRepository>();
-    final book = await repository.getBook(bookId);
+    final book = await repository.getBook(circleBookId);
     if (book == null) return;
 
     final isAdmin = false;

@@ -10,13 +10,13 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class BookSearchHit {
   const BookSearchHit({
-    required this.bookId,
+    required this.circleBookId,
     required this.pageNumber,
     required this.chapterTitle,
     required this.snippet,
   });
 
-  final String bookId;
+  final String circleBookId;
   final int pageNumber;
   final String chapterTitle;
   final String snippet;
@@ -78,29 +78,29 @@ class BookSearchIndex {
     ''');
   }
 
-  Future<void> ensureIndexed(String bookId, String zbfPath) {
-    final task = _writeQueue.then((_) => _ensureIndexed(bookId, zbfPath));
+  Future<void> ensureIndexed(String circleBookId, String zbfPath) {
+    final task = _writeQueue.then((_) => _ensureIndexed(circleBookId, zbfPath));
     _writeQueue = task.catchError((Object error, StackTrace stack) {
-      _log.warning('Indexing failed for $bookId', error, stack);
+      _log.warning('Indexing failed for $circleBookId', error, stack);
     });
     return _writeQueue;
   }
 
-  Future<void> _ensureIndexed(String bookId, String zbfPath) async {
+  Future<void> _ensureIndexed(String circleBookId, String zbfPath) async {
     final db = await _open();
     final done = db.select('SELECT 1 FROM indexed_books WHERE book_id = ?', [
-      bookId,
+      circleBookId,
     ]);
     if (done.isNotEmpty) return;
 
     final dbPath = await _path();
-    await Isolate.run(() => _indexBook(dbPath, bookId, zbfPath));
-    _log.info('Indexed $bookId for search');
+    await Isolate.run(() => _indexBook(dbPath, circleBookId, zbfPath));
+    _log.info('Indexed $circleBookId for search');
   }
 
   static Future<void> _indexBook(
     String dbPath,
-    String bookId,
+    String circleBookId,
     String zbfPath,
   ) async {
     final handle = await const ZbfReader().open(zbfPath);
@@ -112,7 +112,9 @@ class BookSearchIndex {
         _initSchema(db);
         db.execute('BEGIN');
         try {
-          db.execute('DELETE FROM page_index WHERE book_id = ?', [bookId]);
+          db.execute('DELETE FROM page_index WHERE book_id = ?', [
+            circleBookId,
+          ]);
           final insert = db.prepare(
             'INSERT INTO page_index (book_id, page_number, chapter_title, body) '
             'VALUES (?, ?, ?, ?)',
@@ -125,14 +127,19 @@ class BookSearchIndex {
             }
             final body = _pageText(page);
             if (body.isEmpty) continue;
-            insert.execute([bookId, page.pageNumber, page.chapterTitle, body]);
+            insert.execute([
+              circleBookId,
+              page.pageNumber,
+              page.chapterTitle,
+              body,
+            ]);
             indexedPages++;
           }
           insert.close();
           db.execute(
             'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
             'VALUES (?, ?, ?)',
-            [bookId, indexedPages, DateTime.now().millisecondsSinceEpoch],
+            [circleBookId, indexedPages, DateTime.now().millisecondsSinceEpoch],
           );
           db.execute('COMMIT');
         } catch (_) {
@@ -170,13 +177,13 @@ class BookSearchIndex {
 
   Future<List<BookSearchHit>> search(
     String query, {
-    String? bookId,
+    String? circleBookId,
     int limit = 30,
   }) async {
     final match = _toMatchQuery(query);
     if (match == null) return const [];
     final db = await _open();
-    final filter = bookId == null ? '' : 'AND book_id = ?';
+    final filter = circleBookId == null ? '' : 'AND book_id = ?';
     try {
       final rows = db.select(
         '''
@@ -187,12 +194,12 @@ class BookSearchIndex {
         ORDER BY rank
         LIMIT ?
         ''',
-        [match, ?bookId, limit],
+        [match, ?circleBookId, limit],
       );
       return [
         for (final row in rows)
           BookSearchHit(
-            bookId: row['book_id'] as String,
+            circleBookId: row['book_id'] as String,
             pageNumber: (row['page_number'] as num).toInt(),
             chapterTitle: row['chapter_title'] as String? ?? '',
             snippet: row['excerpt'] as String? ?? '',
@@ -219,17 +226,17 @@ class BookSearchIndex {
     return quoted.join(' ');
   }
 
-  Future<bool> isIndexed(String bookId) async {
+  Future<bool> isIndexed(String circleBookId) async {
     final db = await _open();
     final rows = db.select('SELECT 1 FROM indexed_books WHERE book_id = ?', [
-      bookId,
+      circleBookId,
     ]);
     return rows.isNotEmpty;
   }
 
-  Future<void> remove(String bookId) async {
+  Future<void> remove(String circleBookId) async {
     final db = await _open();
-    db.execute('DELETE FROM page_index WHERE book_id = ?', [bookId]);
-    db.execute('DELETE FROM indexed_books WHERE book_id = ?', [bookId]);
+    db.execute('DELETE FROM page_index WHERE book_id = ?', [circleBookId]);
+    db.execute('DELETE FROM indexed_books WHERE book_id = ?', [circleBookId]);
   }
 }

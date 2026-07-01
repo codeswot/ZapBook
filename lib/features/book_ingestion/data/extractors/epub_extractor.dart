@@ -29,7 +29,7 @@ final class EpubExtractor extends IsolateBookExtractor {
   Future<ParsedContent> parse(
     String filePath,
     String title,
-    String bookId,
+    String circleBookId,
     String outputDirectory,
   ) => Isolate.run(() {
     final bytes = File(filePath).readAsBytesSync();

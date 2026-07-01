@@ -173,15 +173,19 @@ void main() {
 
       final scoped = await index.search(
         'aurora borealis',
-        bookId: 'v3',
+        circleBookId: 'v3',
         minScore: 0.1,
       );
-      expect(scoped.every((h) => h.bookId == 'v3'), isTrue);
+      expect(scoped.every((h) => h.circleBookId == 'v3'), isTrue);
 
       await index.remove('v3');
       expect(await index.isEmbedded('v3'), isFalse);
       expect(
-        await index.search('aurora borealis', bookId: 'v3', minScore: 0.1),
+        await index.search(
+          'aurora borealis',
+          circleBookId: 'v3',
+          minScore: 0.1,
+        ),
         isEmpty,
       );
     });

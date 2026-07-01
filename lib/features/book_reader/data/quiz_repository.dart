@@ -18,9 +18,9 @@ class QuizRepository {
 
   static const _kind = 30078;
 
-  Future<void> saveQuizBank(String bookId, List<QuizSet> quizzes) async {
+  Future<void> saveQuizBank(String circleBookId, List<QuizSet> quizzes) async {
     _log.info(
-      'saveQuizBank: saving ${quizzes.length} quizzes for book $bookId',
+      'saveQuizBank: saving ${quizzes.length} quizzes for book $circleBookId',
     );
     for (final q in quizzes) {
       _log.info(
@@ -45,7 +45,7 @@ class QuizRepository {
       pubKey: pubkey,
       kind: _kind,
       tags: [
-        ['d', 'quizbank_$bookId'],
+        ['d', 'quizbank_$circleBookId'],
       ],
       content: encrypted,
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -57,7 +57,7 @@ class QuizRepository {
     );
   }
 
-  Future<List<QuizSet>> loadQuizBank(String bookId) async {
+  Future<List<QuizSet>> loadQuizBank(String circleBookId) async {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return const [];
 
@@ -65,11 +65,11 @@ class QuizRepository {
 
     final match = events.where((e) {
       final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
-      return dTag.isNotEmpty && dTag.first[1] == 'quizbank_$bookId';
+      return dTag.isNotEmpty && dTag.first[1] == 'quizbank_$circleBookId';
     });
 
     if (match.isEmpty) {
-      _log.info('loadQuizBank: no quiz bank found for book $bookId');
+      _log.info('loadQuizBank: no quiz bank found for book $circleBookId');
       return const [];
     }
 
@@ -88,7 +88,7 @@ class QuizRepository {
           .map((e) => _quizFromJson(e as Map<String, dynamic>))
           .toList();
       _log.info(
-        'loadQuizBank: loaded ${result.length} quizzes for book $bookId',
+        'loadQuizBank: loaded ${result.length} quizzes for book $circleBookId',
       );
       return result;
     } catch (e) {

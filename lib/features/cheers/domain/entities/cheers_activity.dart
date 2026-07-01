@@ -7,7 +7,7 @@ final class CheersActivity extends Equatable {
     required this.actorName,
     this.actorAvatar,
     required this.bookTitle,
-    this.bookId,
+    this.circleBookId,
     required this.activityDescription,
     required this.timestamp,
     required this.type,
@@ -30,7 +30,7 @@ final class CheersActivity extends Equatable {
   final String actorName;
   final String? actorAvatar;
   final String bookTitle;
-  final String? bookId;
+  final String? circleBookId;
   final String activityDescription;
   final DateTime timestamp;
   final String type;
@@ -54,7 +54,7 @@ final class CheersActivity extends Equatable {
         actorName: actorName ?? this.actorName,
         actorAvatar: actorAvatar ?? this.actorAvatar,
         bookTitle: bookTitle,
-        bookId: bookId,
+        circleBookId: circleBookId,
         activityDescription: activityDescription,
         timestamp: timestamp,
         type: type,
@@ -79,7 +79,7 @@ final class CheersActivity extends Equatable {
     actorName,
     actorAvatar,
     bookTitle,
-    bookId,
+    circleBookId,
     activityDescription,
     timestamp,
     type,

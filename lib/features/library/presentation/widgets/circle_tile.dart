@@ -38,7 +38,7 @@ class CircleTile extends StatelessWidget {
     final image = cover != null ? FileImage(File(cover)) : null;
 
     return BouncingInteractiveWidget(
-      onTap: () => CircleDetailRoute(bookId: circle.id).push(context),
+      onTap: () => CircleDetailRoute(circleBookId: circle.id).push(context),
       onLongPress: () => BookActionsSheet.showWithId(context, circle.id),
       child: Container(
         padding: const EdgeInsets.all(12),

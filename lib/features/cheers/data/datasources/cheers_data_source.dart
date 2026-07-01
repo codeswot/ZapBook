@@ -385,7 +385,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorName: isMine ? 'You' : fallback.displayName,
             actorAvatar: fallback.avatar,
             bookTitle: bookTitle,
-            bookId: event.bookId,
+            circleBookId: event.circleBookId,
             activityDescription: description,
             timestamp: event.timestamp,
             type: isMine ? 'mine' : 'milestone',
@@ -436,7 +436,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorName: senderName,
             actorAvatar: isFromMe ? null : gen.avatar,
             bookTitle: bookTitle,
-            bookId: group.id,
+            circleBookId: group.id,
             activityDescription: description,
             timestamp: DateTime.fromMillisecondsSinceEpoch(
               (cheer['timestampSecs'] as int) * 1000,

@@ -21,7 +21,7 @@ class ZbfViewerPage extends StatelessWidget {
   final String? highlightQuery;
   final ZbfReader? reader;
 
-  String get _bookId {
+  String get _circleBookId {
     final type = FileSystemEntity.typeSync(zbfPath);
     if (type == FileSystemEntityType.directory) {
       return Uri.parse(zbfPath).pathSegments.where((s) => s.isNotEmpty).last;
@@ -42,7 +42,7 @@ class ZbfViewerPage extends StatelessWidget {
       );
     }
     return _ProgressiveReader(
-      bookId: _bookId,
+      circleBookId: _circleBookId,
       initialPage: initialPage,
       highlightQuery: highlightQuery,
     );
@@ -115,12 +115,12 @@ class _LocalReaderState extends State<_LocalReader> {
 
 class _ProgressiveReader extends StatefulWidget {
   const _ProgressiveReader({
-    required this.bookId,
+    required this.circleBookId,
     required this.initialPage,
     required this.highlightQuery,
   });
 
-  final String bookId;
+  final String circleBookId;
   final int? initialPage;
   final String? highlightQuery;
 

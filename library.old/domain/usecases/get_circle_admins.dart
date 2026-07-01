@@ -8,5 +8,6 @@ final class GetCircleAdmins {
 
   final LibraryRepository _repository;
 
-  Future<List<String>> call(String bookId) => _repository.bookAdmins(bookId);
+  Future<List<String>> call(String circleBookId) =>
+      _repository.bookAdmins(circleBookId);
 }

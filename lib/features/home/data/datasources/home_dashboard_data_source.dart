@@ -15,7 +15,7 @@ import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 
 abstract interface class HomeDashboardDataSource {
   Stream<HomeDashboard> watchDashboard();
-  Future<void> touchBookOpened(String bookId);
+  Future<void> touchBookOpened(String circleBookId);
 }
 
 final _log = logging.Logger('HomeDashboardDataSource');
@@ -57,11 +57,11 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   }
 
   @override
-  Future<void> touchBookOpened(String bookId) async {
+  Future<void> touchBookOpened(String circleBookId) async {
     final npub = await _identityLocal.readNpub();
     if (npub == null || npub.isEmpty) return;
 
-    final name = BookGroupNaming.legacyNameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(circleBookId);
     final groups = await _marmot.listGroups();
     MarmotGroup? targetGroup;
     for (final group in groups) {
@@ -75,7 +75,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
     final payload = {
       'type': 'zapbook.book.progress',
-      'bookId': bookId,
+      'circleBookId': circleBookId,
       'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
     };
     final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);

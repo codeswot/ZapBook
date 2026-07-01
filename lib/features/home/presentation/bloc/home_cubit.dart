@@ -24,8 +24,8 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void touchBookOpened(String bookId) {
-    _touchDashboardBookOpened(bookId);
+  void touchBookOpened(String circleBookId) {
+    _touchDashboardBookOpened(circleBookId);
   }
 
   @override

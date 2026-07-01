@@ -40,15 +40,15 @@ class BookTextSearchCubit extends Cubit<List<BookSearchHit>> {
     }
 
     final seen = <String>{
-      for (final hit in keyword) '${hit.bookId}:${hit.pageNumber}',
+      for (final hit in keyword) '${hit.circleBookId}:${hit.pageNumber}',
     };
     final blended = [...keyword];
     for (final hit in semantic) {
       if (blended.length >= maxResults) break;
-      if (!seen.add('${hit.bookId}:${hit.pageNumber}')) continue;
+      if (!seen.add('${hit.circleBookId}:${hit.pageNumber}')) continue;
       blended.add(
         BookSearchHit(
-          bookId: hit.bookId,
+          circleBookId: hit.circleBookId,
           pageNumber: hit.pageNumber,
           chapterTitle: '',
           snippet: hit.text,

@@ -128,7 +128,7 @@ class CheersCubit extends Cubit<CheersState> {
         gesture: gesture,
         amount: amount,
         comment: comment,
-        circleId: activity.bookId,
+        circleId: activity.circleBookId,
       );
 
       final supportMsg = result.hasSupportZap

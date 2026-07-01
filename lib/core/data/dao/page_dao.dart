@@ -13,12 +13,12 @@ class PageDao {
   final AppDatabase _appDatabase;
   final _log = logging.Logger('PageDao');
 
-  Future<Map<int, BookPage>> load(String bookId) async {
+  Future<Map<int, BookPage>> load(String circleBookId) async {
     try {
       final db = await _appDatabase.open();
       final rows = db.select(
         'SELECT page_index, json FROM book_pages WHERE book_id = ?',
-        [bookId],
+        [circleBookId],
       );
       final result = <int, BookPage>{};
       for (final row in rows) {
@@ -31,12 +31,12 @@ class PageDao {
       }
       return result;
     } on Object catch (error, stack) {
-      _log.warning('Page cache load failed for $bookId', error, stack);
+      _log.warning('Page cache load failed for $circleBookId', error, stack);
       return const {};
     }
   }
 
-  Future<void> saveAll(String bookId, Map<int, BookPage> pages) async {
+  Future<void> saveAll(String circleBookId, Map<int, BookPage> pages) async {
     if (pages.isEmpty) return;
     try {
       final db = await _appDatabase.open();
@@ -56,7 +56,7 @@ class PageDao {
       db.execute('BEGIN');
       try {
         encodedPages.forEach((index, jsonStr) {
-          statement.execute([bookId, index, jsonStr]);
+          statement.execute([circleBookId, index, jsonStr]);
         });
         db.execute('COMMIT');
       } catch (_) {
@@ -66,16 +66,16 @@ class PageDao {
         statement.close();
       }
     } on Object catch (error, stack) {
-      _log.warning('Page cache save failed for $bookId', error, stack);
+      _log.warning('Page cache save failed for $circleBookId', error, stack);
     }
   }
 
-  Future<void> remove(String bookId) async {
+  Future<void> remove(String circleBookId) async {
     try {
       final db = await _appDatabase.open();
-      db.execute('DELETE FROM book_pages WHERE book_id = ?', [bookId]);
+      db.execute('DELETE FROM book_pages WHERE book_id = ?', [circleBookId]);
     } on Object catch (error, stack) {
-      _log.warning('Page cache remove failed for $bookId', error, stack);
+      _log.warning('Page cache remove failed for $circleBookId', error, stack);
     }
   }
 }

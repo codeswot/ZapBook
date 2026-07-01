@@ -8,5 +8,6 @@ final class LeaveCircle {
 
   final LibraryRepository _repository;
 
-  Future<void> call(String bookId) => _repository.leaveCircle(bookId);
+  Future<void> call(String circleBookId) =>
+      _repository.leaveCircle(circleBookId);
 }

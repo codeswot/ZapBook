@@ -17,12 +17,12 @@ class ProgressiveBookOpener {
 
   final BookCircleDatasource _datasource;
 
-  Future<ProgressiveBook?> open(String bookId) async {
-    final meta = await _datasource.currentMeta(bookId);
+  Future<ProgressiveBook?> open(String circleBookId) async {
+    final meta = await _datasource.currentMeta(circleBookId);
     if (meta == null || meta.pageCount <= 0) return null;
 
     final manifest = BookManifest(
-      id: meta.bookId,
+      id: meta.circleBookId,
       title: meta.title,
       author: meta.author,
       genre: meta.genre,
@@ -53,7 +53,7 @@ class ProgressiveBookOpener {
     // return ProgressiveBook(
     //   handle: handle,
     //   loader: (pageIndex) => _datasource.loadSegment(
-    //     bookId,
+    //     circleBookId,
     //     pageIndex ~/ ZbfSegmenter.pagesPerSegment,
     //   ),
     // );

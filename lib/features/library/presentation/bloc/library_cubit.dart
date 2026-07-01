@@ -38,11 +38,11 @@ class LibraryCubit extends Cubit<LibraryState> {
 
   Future<void> leaveCircle(String id) async {}
 
-  Future<bool> isAdminOf(String bookId) async => false;
+  Future<bool> isAdminOf(String circleBookId) async => false;
 
-  Future<String> ownerLabelFor(String bookId) async => '';
+  Future<String> ownerLabelFor(String circleBookId) async => '';
 
-  Future<void> shareBook(String bookId, String memberNpub) async {}
+  Future<void> shareBook(String circleBookId, String memberNpub) async {}
 
   Future<void> _init() async {
     _subscription = Rx.combineLatest2(

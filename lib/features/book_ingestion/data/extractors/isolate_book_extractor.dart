@@ -24,7 +24,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
   Future<ParsedContent> parse(
     String filePath,
     String title,
-    String bookId,
+    String circleBookId,
     String outputDirectory,
   );
 
@@ -34,7 +34,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
   @override
   Stream<IngestionProgress> extract(
     File file, {
-    required String bookId,
+    required String circleBookId,
     required String outputDirectory,
     Future<WizardData>? wizardDataFuture,
   }) async* {
@@ -46,7 +46,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
       currentItem: 'Reading $title',
     );
 
-    final parsed = await parse(file.path, title, bookId, outputDirectory);
+    final parsed = await parse(file.path, title, circleBookId, outputDirectory);
     yield IngestionProgress.extracting(
       progress: 0.85,
       currentItem: 'Parsed ${parsed.chapters.length} chapters',
@@ -72,7 +72,7 @@ abstract base class IsolateBookExtractor implements BookExtractor {
     final finalGenre = customData?.genre;
 
     final book = _assembler.assemble(
-      id: bookId,
+      id: circleBookId,
       title: finalTitle,
       author: finalAuthor,
       genre: finalGenre,

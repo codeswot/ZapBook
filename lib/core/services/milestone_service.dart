@@ -30,7 +30,7 @@ class MilestoneService {
   static const _relays = ZapbookConfig.broadcastRelays;
   final _log = logging.Logger('MilestoneService');
 
-  final Map<String, String> _groupIdByBookId = {};
+  final Map<String, String> _groupIdBycircleBookId = {};
   final Map<String, String> _groupIdByName = {};
   bool _groupsCached = false;
 
@@ -45,27 +45,31 @@ class MilestoneService {
   final _tick = StreamController<String>.broadcast();
   String? _selfNpub;
 
-  Stream<BookProgress> watchProgress(String bookId) => _tick.stream
-      .where((id) => id == bookId)
-      .map((_) => _selfByBook[bookId])
+  Stream<BookProgress> watchProgress(String circleBookId) => _tick.stream
+      .where((id) => id == circleBookId)
+      .map((_) => _selfByBook[circleBookId])
       .where((p) => p != null)
       .cast<BookProgress>();
 
-  BookProgress? progressOf(String bookId) => _selfByBook[bookId];
+  BookProgress? progressOf(String circleBookId) => _selfByBook[circleBookId];
 
-  Stream<Map<String, BookProgress>> watchMembers(String bookId) =>
-      _tick.stream.where((id) => id == bookId).map((_) => membersOf(bookId));
+  Stream<Map<String, BookProgress>> watchMembers(String circleBookId) => _tick
+      .stream
+      .where((id) => id == circleBookId)
+      .map((_) => membersOf(circleBookId));
 
-  Map<String, BookProgress> membersOf(String bookId) {
-    final merged = Map<String, BookProgress>.from(_membersByBook[bookId] ?? {});
-    final self = _selfByBook[bookId];
+  Map<String, BookProgress> membersOf(String circleBookId) {
+    final merged = Map<String, BookProgress>.from(
+      _membersByBook[circleBookId] ?? {},
+    );
+    final self = _selfByBook[circleBookId];
     final me = _selfNpub;
     if (self != null && me != null) merged[me] = self;
     return merged;
   }
 
-  Future<Map<String, BookProgress>> loadMembers(String bookId) async {
-    final groupId = await _resolveGroupId(bookId);
+  Future<Map<String, BookProgress>> loadMembers(String circleBookId) async {
+    final groupId = await _resolveGroupId(circleBookId);
     if (groupId != null) {
       try {
         final messages = await _marmot.getMessages(groupId);
@@ -76,7 +80,7 @@ class MilestoneService {
         _log.warning('Load members failed', error, stack);
       }
     }
-    return membersOf(bookId);
+    return membersOf(circleBookId);
   }
 
   void ingestMessage(MarmotMessage message) {
@@ -85,26 +89,31 @@ class MilestoneService {
     final payload = _cache.get(message);
     if (payload == null) return;
 
-    final bookId = (payload['bookId'] ?? payload['book_id']) as String?;
-    if (bookId == null) return;
+    final circleBookId =
+        (payload['circleBookId'] ?? payload['book_id']) as String?;
+    if (circleBookId == null) return;
 
     final type = payload['type'];
     final isMilestone = type == 'zapbook.book.milestone';
     final isCompleted = type == 'zapbook.book.completed';
 
     if (isMilestone || isCompleted) {
-      _storeMilestoneEvent(message, bookId, type, payload, isCompleted);
+      _storeMilestoneEvent(message, circleBookId, type, payload, isCompleted);
     }
 
-    final progress = _progressFromPayload(payload, bookId, message.senderNpub);
+    final progress = _progressFromPayload(
+      payload,
+      circleBookId,
+      message.senderNpub,
+    );
     if (progress != null) {
-      _storeProgress(bookId, message.senderNpub, progress);
+      _storeProgress(circleBookId, message.senderNpub, progress);
     }
   }
 
   void _storeMilestoneEvent(
     MarmotMessage message,
-    String bookId,
+    String circleBookId,
     dynamic type,
     Map<String, dynamic> payload,
     bool isCompleted,
@@ -116,7 +125,7 @@ class MilestoneService {
     _events[message.id] = MilestoneEvent(
       id: message.id,
       groupId: message.groupId,
-      bookId: bookId,
+      circleBookId: circleBookId,
       npub: message.senderNpub,
       milestoneIdx: milestoneIdx,
       currentPage: currentPage,
@@ -129,7 +138,7 @@ class MilestoneService {
 
     if (type == 'zapbook.book.milestone') {
       _storeLocalMilestonePayload(
-        bookId: bookId,
+        circleBookId: circleBookId,
         milestoneIdx: milestoneIdx,
         currentWordCount: (payload['current_word_count'] as num?)?.toInt() ?? 0,
         totalWordCount: (payload['total_word_count'] as num?)?.toInt() ?? 0,
@@ -149,7 +158,7 @@ class MilestoneService {
   }
 
   void _storeLocalMilestonePayload({
-    required String bookId,
+    required String circleBookId,
     required int milestoneIdx,
     required int currentWordCount,
     required int totalWordCount,
@@ -160,7 +169,7 @@ class MilestoneService {
     required int sessionReadingSeconds,
   }) {
     final payload = MilestonePayload(
-      bookId: bookId,
+      circleBookId: circleBookId,
       milestoneIdx: milestoneIdx,
       currentWordCount: currentWordCount,
       totalWordCount: totalWordCount,
@@ -170,14 +179,14 @@ class MilestoneService {
       quizOutlook: quizOutlook,
       reachedAt: reachedAt,
     );
-    final list = _milestonesByBook.putIfAbsent(bookId, () => []);
+    final list = _milestonesByBook.putIfAbsent(circleBookId, () => []);
     if (!list.any((m) => m.milestoneIdx == milestoneIdx)) {
       list.add(payload);
     }
   }
 
-  void _storeProgress(String bookId, String npub, BookProgress progress) {
-    final members = _membersByBook.putIfAbsent(bookId, () => {});
+  void _storeProgress(String circleBookId, String npub, BookProgress progress) {
+    final members = _membersByBook.putIfAbsent(circleBookId, () => {});
     final existing = members[npub];
     if (existing != null) {
       if (progress.updatedAtMs > 0 && existing.updatedAtMs > 0) {
@@ -187,12 +196,12 @@ class MilestoneService {
       }
     }
     members[npub] = progress;
-    _tick.add(bookId);
+    _tick.add(circleBookId);
   }
 
   BookProgress? _progressFromPayload(
     Map<String, dynamic> payload,
-    String bookId,
+    String circleBookId,
     String npub,
   ) {
     final type = payload['type'];
@@ -223,7 +232,7 @@ class MilestoneService {
     }
 
     if (type == 'zapbook.book.completed') {
-      final prev = _membersByBook[bookId]?[npub];
+      final prev = _membersByBook[circleBookId]?[npub];
       return BookProgress(
         fraction: 1,
         currentPage: prev?.currentPage ?? 0,
@@ -241,8 +250,8 @@ class MilestoneService {
     return total > 0 ? (words / total).clamp(0.0, 1.0) : 0;
   }
 
-  List<MilestonePayload> getMilestones(String bookId) {
-    final list = _milestonesByBook[bookId] ?? [];
+  List<MilestonePayload> getMilestones(String circleBookId) {
+    final list = _milestonesByBook[circleBookId] ?? [];
     list.sort((a, b) => a.milestoneIdx.compareTo(b.milestoneIdx));
     return List.unmodifiable(list);
   }
@@ -286,9 +295,9 @@ class MilestoneService {
   int get completedBooksCount {
     final me = _selfNpub;
     final done = <String>{};
-    for (final bookId in {..._selfByBook.keys, ..._membersByBook.keys}) {
-      final mine = membersOf(bookId)[me];
-      if (mine != null && mine.fraction >= 1) done.add(bookId);
+    for (final circleBookId in {..._selfByBook.keys, ..._membersByBook.keys}) {
+      final mine = membersOf(circleBookId)[me];
+      if (mine != null && mine.fraction >= 1) done.add(circleBookId);
     }
     return done.length;
   }
@@ -301,9 +310,9 @@ class MilestoneService {
         .toSet();
   }
 
-  void recordBookCompleted(String bookId) {
+  void recordBookCompleted(String circleBookId) {
     _storeProgress(
-      bookId,
+      circleBookId,
       _selfNpub ?? '',
       const BookProgress(
         fraction: 1,
@@ -314,29 +323,29 @@ class MilestoneService {
     );
   }
 
-  Future<void> publishBookCompleted(String bookId) async {
-    final groupId = await _resolveGroupId(bookId);
+  Future<void> publishBookCompleted(String circleBookId) async {
+    final groupId = await _resolveGroupId(circleBookId);
     if (groupId == null) return;
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
 
     final payload = {
       'type': 'zapbook.book.completed',
-      'book_id': bookId,
+      'book_id': circleBookId,
       'reached_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     try {
       final event = await _marmot.sendStructured(npub, groupId, payload);
       _publish(event);
-      recordBookCompleted(bookId);
+      recordBookCompleted(circleBookId);
     } on Object catch (error, stack) {
       _log.warning('Publish book completed failed', error, stack);
     }
   }
 
   void updateProgress({
-    required String bookId,
+    required String circleBookId,
     required int currentPage,
     required int currentWordCount,
     required int totalWords,
@@ -348,43 +357,43 @@ class MilestoneService {
       currentWordCount: currentWordCount,
       totalWordCount: totalWords,
     );
-    _selfByBook[bookId] = progress;
-    _tick.add(bookId);
+    _selfByBook[circleBookId] = progress;
+    _tick.add(circleBookId);
 
-    _publishDebouncers[bookId]?.cancel();
-    _publishDebouncers[bookId] = Timer(const Duration(seconds: 5), () {
-      final last = _lastPublished[bookId];
+    _publishDebouncers[circleBookId]?.cancel();
+    _publishDebouncers[circleBookId] = Timer(const Duration(seconds: 5), () {
+      final last = _lastPublished[circleBookId];
       if (last != null &&
           last.currentPage == currentPage &&
           last.currentWordCount == currentWordCount) {
         return;
       }
-      _lastPublished[bookId] = progress;
-      unawaited(_publishProgress(bookId));
+      _lastPublished[circleBookId] = progress;
+      unawaited(_publishProgress(circleBookId));
     });
   }
 
-  void flushProgress(String bookId) {
-    final debouncer = _publishDebouncers[bookId];
+  void flushProgress(String circleBookId) {
+    final debouncer = _publishDebouncers[circleBookId];
     if (debouncer != null && debouncer.isActive) {
       debouncer.cancel();
-      final progress = _selfByBook[bookId];
+      final progress = _selfByBook[circleBookId];
       if (progress != null) {
-        final last = _lastPublished[bookId];
+        final last = _lastPublished[circleBookId];
         if (last != null &&
             last.currentPage == progress.currentPage &&
             last.currentWordCount == progress.currentWordCount) {
           return;
         }
-        _lastPublished[bookId] = progress;
-        unawaited(_publishProgress(bookId));
+        _lastPublished[circleBookId] = progress;
+        unawaited(_publishProgress(circleBookId));
       }
     }
   }
 
-  Future<void> markCompleted(String bookId, {int? totalWords}) async {
-    _publishDebouncers[bookId]?.cancel();
-    final current = _selfByBook[bookId];
+  Future<void> markCompleted(String circleBookId, {int? totalWords}) async {
+    _publishDebouncers[circleBookId]?.cancel();
+    final current = _selfByBook[circleBookId];
     final total = totalWords ?? current?.totalWordCount ?? 0;
     final completed = BookProgress(
       fraction: 1,
@@ -392,24 +401,24 @@ class MilestoneService {
       currentWordCount: total,
       totalWordCount: total,
     );
-    _selfByBook[bookId] = completed;
-    _lastPublished[bookId] = completed;
-    _tick.add(bookId);
-    await _publishProgress(bookId);
+    _selfByBook[circleBookId] = completed;
+    _lastPublished[circleBookId] = completed;
+    _tick.add(circleBookId);
+    await _publishProgress(circleBookId);
   }
 
-  Future<void> _publishProgress(String bookId) async {
-    final groupId = await _resolveGroupId(bookId);
+  Future<void> _publishProgress(String circleBookId) async {
+    final groupId = await _resolveGroupId(circleBookId);
     if (groupId == null) return;
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
     _selfNpub ??= npub;
-    final progress = _selfByBook[bookId];
+    final progress = _selfByBook[circleBookId];
     if (progress == null) return;
 
     final payload = {
       'type': 'zapbook.book.progress',
-      'bookId': bookId,
+      'circleBookId': circleBookId,
       'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
       'fraction': progress.fraction,
       'currentPage': progress.currentPage,
@@ -426,7 +435,7 @@ class MilestoneService {
   }
 
   Future<void> publishMilestone({
-    required String bookId,
+    required String circleBookId,
     required int milestoneIdx,
     required int currentWordCount,
     required int totalWordCount,
@@ -435,14 +444,14 @@ class MilestoneService {
     required int sessionEngagedMs,
     String quizOutlook = 'unavailable',
   }) async {
-    final groupId = await _resolveGroupId(bookId);
+    final groupId = await _resolveGroupId(circleBookId);
     if (groupId == null) return;
 
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
 
     final payload = MilestonePayload(
-      bookId: bookId,
+      circleBookId: circleBookId,
       milestoneIdx: milestoneIdx,
       currentWordCount: currentWordCount,
       totalWordCount: totalWordCount,
@@ -454,7 +463,7 @@ class MilestoneService {
     );
 
     _storeLocalMilestonePayload(
-      bookId: payload.bookId,
+      circleBookId: payload.circleBookId,
       milestoneIdx: payload.milestoneIdx,
       currentWordCount: payload.currentWordCount,
       totalWordCount: payload.totalWordCount,
@@ -465,8 +474,8 @@ class MilestoneService {
       sessionReadingSeconds: payload.sessionReadingSeconds,
     );
 
-    _publishDebouncers[bookId]?.cancel();
-    _lastPublished[bookId] = BookProgress(
+    _publishDebouncers[circleBookId]?.cancel();
+    _lastPublished[circleBookId] = BookProgress(
       fraction: (progressPct / 100).clamp(0.0, 1.0),
       currentPage: currentPage,
       currentWordCount: currentWordCount,
@@ -498,23 +507,23 @@ class MilestoneService {
     }
   }
 
-  Future<String?> _resolveGroupId(String bookId) async {
-    final cached = _groupIdByBookId[bookId];
+  Future<String?> _resolveGroupId(String circleBookId) async {
+    final cached = _groupIdBycircleBookId[circleBookId];
     if (cached != null) return cached;
 
     await _primeGroupCache();
-    final name = BookGroupNaming.legacyNameFor(bookId);
+    final name = BookGroupNaming.legacyNameFor(circleBookId);
 
     final id = _groupIdByName[name];
     if (id != null) {
-      _groupIdByBookId[bookId] = id;
+      _groupIdBycircleBookId[circleBookId] = id;
       return id;
     }
 
     final groups = await _marmot.listGroups();
     for (final group in groups) {
       if (group.name == name) {
-        _groupIdByBookId[bookId] = group.id;
+        _groupIdBycircleBookId[circleBookId] = group.id;
         _groupIdByName[name] = group.id;
         return group.id;
       }
@@ -552,7 +561,7 @@ class MilestoneEvent {
   const MilestoneEvent({
     required this.id,
     required this.groupId,
-    required this.bookId,
+    required this.circleBookId,
     required this.npub,
     required this.milestoneIdx,
     required this.currentPage,
@@ -563,7 +572,7 @@ class MilestoneEvent {
 
   final String id;
   final String groupId;
-  final String bookId;
+  final String circleBookId;
   final String npub;
   final int milestoneIdx;
   final int currentPage;

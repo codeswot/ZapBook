@@ -1,6 +1,6 @@
 class MilestonePayload {
   const MilestonePayload({
-    required this.bookId,
+    required this.circleBookId,
     required this.milestoneIdx,
     required this.currentWordCount,
     required this.totalWordCount,
@@ -11,7 +11,7 @@ class MilestonePayload {
     required this.reachedAt,
   });
 
-  final String bookId;
+  final String circleBookId;
   final int milestoneIdx;
   final int currentWordCount;
   final int totalWordCount;
@@ -25,7 +25,7 @@ class MilestonePayload {
 
   Map<String, dynamic> toJson() => {
     'type': messageType,
-    'book_id': bookId,
+    'book_id': circleBookId,
     'milestone_idx': milestoneIdx,
     'current_word_count': currentWordCount,
     'total_word_count': totalWordCount,

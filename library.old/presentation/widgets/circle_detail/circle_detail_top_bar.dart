@@ -10,13 +10,13 @@ class CircleDetailTopBar extends StatelessWidget {
   const CircleDetailTopBar({
     super.key,
     required this.readersCount,
-    required this.bookId,
+    required this.circleBookId,
     required this.bookTitle,
     this.onSettings,
   });
 
   final int readersCount;
-  final String bookId;
+  final String circleBookId;
   final String bookTitle;
   final VoidCallback? onSettings;
 
@@ -45,7 +45,7 @@ class CircleDetailTopBar extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Hero(
-                tag: 'circle-title-$bookId',
+                tag: 'circle-title-$circleBookId',
                 child: Material(
                   type: MaterialType.transparency,
                   child: ConstrainedBox(

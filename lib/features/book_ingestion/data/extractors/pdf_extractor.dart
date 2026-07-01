@@ -36,7 +36,7 @@ final class PdfExtractor extends IsolateBookExtractor
   Future<ParsedContent> parse(
     String filePath,
     String title,
-    String bookId,
+    String circleBookId,
     String outputDirectory,
   ) async {
     final coverSource = await rasterizer.render(filePath, 0);

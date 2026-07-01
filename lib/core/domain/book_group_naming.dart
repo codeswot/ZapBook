@@ -4,15 +4,16 @@ final class BookGroupNaming {
   static const prefix = 'zapbook-circle-';
   static const legacyPrefix = 'zapbook-book-';
 
-  static String nameFor(String circleId, String title) =>
-      '$prefix$circleId:$title';
+  static String nameFor(String circleDirId, String title) =>
+      '$prefix$circleDirId:$title';
 
   static bool matches(String groupName) =>
       groupName.startsWith(prefix) || groupName.startsWith(legacyPrefix);
 
-  static String legacyNameFor(String bookId) => '$legacyPrefix$bookId';
+  static String legacyNameFor(String circleBookId) =>
+      '$legacyPrefix$circleBookId';
 
-  static String bookIdOf(String groupName) => circleDirIdOf(groupName);
+  static String circleBookIdOf(String groupName) => circleDirIdOf(groupName);
 
   static String circleDirIdOf(String groupName) {
     if (groupName.startsWith(prefix)) {

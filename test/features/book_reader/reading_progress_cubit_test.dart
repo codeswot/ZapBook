@@ -77,7 +77,7 @@ void main() {
     var now = 0;
     final epubCubit = ReadingProgressCubit.forBook(
       epubHandle,
-      bookId: 'epub1',
+      circleBookId: 'epub1',
       clock: () => now,
       heartbeat: const Duration(hours: 1),
     );
@@ -106,7 +106,7 @@ void main() {
     now = 0;
     final pdfCubit = ReadingProgressCubit.forBook(
       pdfHandle,
-      bookId: 'pdf1',
+      circleBookId: 'pdf1',
       clock: () => now,
       heartbeat: const Duration(hours: 1),
     );

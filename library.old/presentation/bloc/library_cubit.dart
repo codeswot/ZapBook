@@ -64,22 +64,22 @@ class LibraryCubit extends Cubit<LibraryState> {
 
   Future<void> leaveCircle(String id) => _libraryRepository.leaveCircle(id);
 
-  Future<bool> isAdminOf(String bookId) async {
+  Future<bool> isAdminOf(String circleBookId) async {
     final myNpub = await _identity.readNpub();
     if (myNpub == null) return false;
-    final admins = await _datasource.adminNpubs(bookId);
+    final admins = await _datasource.adminNpubs(circleBookId);
     return admins.contains(myNpub);
   }
 
-  Future<String> ownerLabelFor(String bookId) async {
-    final admins = await _datasource.adminNpubs(bookId);
+  Future<String> ownerLabelFor(String circleBookId) async {
+    final admins = await _datasource.adminNpubs(circleBookId);
     if (admins.isEmpty) return '';
     final contact = await _contacts.resolve(admins.first);
     return contact.label;
   }
 
-  Future<void> shareBook(String bookId, String memberNpub) =>
-      _shareBook(bookId, memberNpub.trim());
+  Future<void> shareBook(String circleBookId, String memberNpub) =>
+      _shareBook(circleBookId, memberNpub.trim());
 
   Future<void> _init() async {
     _booksSubscription = _watchCircleBooks().listen((books) {

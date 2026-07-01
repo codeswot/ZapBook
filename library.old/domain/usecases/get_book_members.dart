@@ -8,5 +8,6 @@ final class GetBookMembers {
 
   final LibraryRepository _repository;
 
-  Future<List<String>> call(String bookId) => _repository.bookMembers(bookId);
+  Future<List<String>> call(String circleBookId) =>
+      _repository.bookMembers(circleBookId);
 }

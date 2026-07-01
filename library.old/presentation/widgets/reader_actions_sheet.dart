@@ -21,14 +21,14 @@ class ReaderActionsSheet extends StatelessWidget {
     super.key,
     required this.cubit,
     required this.entry,
-    required this.bookId,
+    required this.circleBookId,
     required this.bookTitle,
     required this.canRemove,
   });
 
   final CircleDetailCubit cubit;
   final MemberEntry entry;
-  final String bookId;
+  final String circleBookId;
   final String bookTitle;
   final bool canRemove;
 
@@ -36,7 +36,7 @@ class ReaderActionsSheet extends StatelessWidget {
     BuildContext context, {
     required CircleDetailCubit cubit,
     required MemberEntry entry,
-    required String bookId,
+    required String circleBookId,
     required String bookTitle,
     required bool canRemove,
   }) {
@@ -47,7 +47,7 @@ class ReaderActionsSheet extends StatelessWidget {
       builder: (_) => ReaderActionsSheet(
         cubit: cubit,
         entry: entry,
-        bookId: bookId,
+        circleBookId: circleBookId,
         bookTitle: bookTitle,
         canRemove: canRemove,
       ),
@@ -64,7 +64,7 @@ class ReaderActionsSheet extends StatelessWidget {
           'device. You can add them back later.',
       action: 'Remove reader',
     );
-    if (ok) await cubit.removeMember(bookId, entry.npub);
+    if (ok) await cubit.removeMember(circleBookId, entry.npub);
   }
 
   void _showZapSheet(BuildContext context) {

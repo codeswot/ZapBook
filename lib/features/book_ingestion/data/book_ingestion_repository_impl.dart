@@ -49,13 +49,13 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
     }
 
     try {
-      final bookId = Ulid().toString();
-      final zbfDir = await _fileStore.bookDir(bookId);
+      final circleBookId = Ulid().toString();
+      final zbfDir = await _fileStore.bookDir(circleBookId);
 
       ZbfBook? book;
       await for (final progress in extractor.extract(
         file,
-        bookId: bookId,
+        circleBookId: circleBookId,
         outputDirectory: zbfDir.path,
         wizardDataFuture: wizardDataFuture,
       )) {

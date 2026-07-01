@@ -5,7 +5,7 @@ abstract final class BookMessageType {
 
 class BookMetaPayload {
   const BookMetaPayload({
-    required this.bookId,
+    required this.circleBookId,
     required this.title,
     required this.author,
     this.genre,
@@ -21,7 +21,7 @@ class BookMetaPayload {
     this.skippablePages,
   });
 
-  final String bookId;
+  final String circleBookId;
   final String title;
   final String author;
   final String? genre;
@@ -38,7 +38,7 @@ class BookMetaPayload {
 
   Map<String, dynamic> toJson() => {
     'type': BookMessageType.meta,
-    'bookId': bookId,
+    'circleBookId': circleBookId,
     'title': title,
     'author': author,
     'genre': genre,
@@ -56,7 +56,7 @@ class BookMetaPayload {
 
   BookMetaPayload copyWith({String? title, String? author, String? genre}) {
     return BookMetaPayload(
-      bookId: bookId,
+      circleBookId: circleBookId,
       title: title ?? this.title,
       author: author ?? this.author,
       genre: genre ?? this.genre,
@@ -75,7 +75,7 @@ class BookMetaPayload {
 
   factory BookMetaPayload.fromJson(Map<String, dynamic> json) =>
       BookMetaPayload(
-        bookId: json['bookId'] as String,
+        circleBookId: json['circleBookId'] as String,
         title: json['title'] as String? ?? 'Untitled',
         author: json['author'] as String? ?? '',
         genre: json['genre'] as String?,
@@ -98,14 +98,14 @@ class BookMetaPayload {
 
 class BookProgressPayload {
   const BookProgressPayload({
-    required this.bookId,
+    required this.circleBookId,
     required this.lastReadAtMs,
     this.currentPage,
     this.currentWordCount,
     this.totalWordCount,
   });
 
-  final String bookId;
+  final String circleBookId;
   final int lastReadAtMs;
   final int? currentPage;
   final int? currentWordCount;
@@ -113,7 +113,7 @@ class BookProgressPayload {
 
   Map<String, dynamic> toJson() => {
     'type': BookMessageType.progress,
-    'bookId': bookId,
+    'circleBookId': circleBookId,
     'lastReadAtMs': lastReadAtMs,
     if (currentPage != null) 'currentPage': currentPage,
     if (currentWordCount != null) 'currentWordCount': currentWordCount,
@@ -122,7 +122,7 @@ class BookProgressPayload {
 
   factory BookProgressPayload.fromJson(Map<String, dynamic> json) =>
       BookProgressPayload(
-        bookId: json['bookId'] as String,
+        circleBookId: json['circleBookId'] as String,
         lastReadAtMs: (json['lastReadAtMs'] as num?)?.toInt() ?? 0,
         currentPage: (json['currentPage'] as num?)?.toInt(),
         currentWordCount: (json['currentWordCount'] as num?)?.toInt(),

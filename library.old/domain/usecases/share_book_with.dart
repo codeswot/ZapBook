@@ -9,6 +9,6 @@ final class ShareBookWith {
 
   final LibraryRepository _repository;
 
-  Future<List<ShareSkip>> call(String bookId, List<String> memberNpubs) =>
-      _repository.shareBookWith(bookId, memberNpubs);
+  Future<List<ShareSkip>> call(String circleBookId, List<String> memberNpubs) =>
+      _repository.shareBookWith(circleBookId, memberNpubs);
 }

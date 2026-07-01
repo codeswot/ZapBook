@@ -204,13 +204,15 @@ RouteBase get $circleDetailRoute =>
 
 mixin $CircleDetailRoute on GoRouteData {
   static CircleDetailRoute _fromState(GoRouterState state) =>
-      CircleDetailRoute(bookId: state.uri.queryParameters['book-id']!);
+      CircleDetailRoute(circleBookId: state.uri.queryParameters['book-id']!);
 
   CircleDetailRoute get _self => this as CircleDetailRoute;
 
   @override
-  String get location =>
-      GoRouteData.$location('/circle', queryParams: {'book-id': _self.bookId});
+  String get location => GoRouteData.$location(
+    '/circle',
+    queryParams: {'book-id': _self.circleBookId},
+  );
 
   @override
   void go(BuildContext context) => context.go(location);

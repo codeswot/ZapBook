@@ -10,7 +10,7 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
 
   bool isValidNpub(String value) => false;
 
-  Future<void> load(String bookId) async {
+  Future<void> load(String circleBookId) async {
     emit(
       const ShareCircleLoaded(
         friends: [],
@@ -22,5 +22,5 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
 
   void toggleNpub(String npub) {}
   Future<void> addNpub(String npub) async {}
-  Future<List<ShareSkip>> share(String bookId) async => [];
+  Future<List<ShareSkip>> share(String circleBookId) async => [];
 }

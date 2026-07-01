@@ -54,7 +54,7 @@ class CheersDao {
           actorName: row['actor_name'] as String,
           actorAvatar: row['actor_avatar'] as String?,
           bookTitle: row['book_title'] as String,
-          bookId: row['book_id'] as String?,
+          circleBookId: row['book_id'] as String?,
           activityDescription: row['activity_description'] as String,
           timestamp: DateTime.fromMillisecondsSinceEpoch(
             row['timestamp'] as int,
@@ -98,7 +98,7 @@ class CheersDao {
           activity.actorName,
           activity.actorAvatar,
           activity.bookTitle,
-          activity.bookId,
+          activity.circleBookId,
           activity.activityDescription,
           activity.timestamp.millisecondsSinceEpoch,
           activity.type,

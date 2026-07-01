@@ -26,7 +26,7 @@ class CircleReaderTile extends StatelessWidget {
     required this.isYou,
     required this.pageCount,
     required this.bookTitle,
-    required this.bookId,
+    required this.circleBookId,
     this.onLongPress,
     required this.memberProgress,
   });
@@ -36,7 +36,7 @@ class CircleReaderTile extends StatelessWidget {
   final bool isYou;
   final int pageCount;
   final String bookTitle;
-  final String bookId;
+  final String circleBookId;
   final VoidCallback? onLongPress;
   final Map<String, MemberProgress> memberProgress;
 
@@ -91,7 +91,7 @@ class CircleReaderTile extends StatelessWidget {
     final cubit = context.read<CircleDetailCubit>();
     final lud16 = entry.contact.lud16;
     if (lud16 == null || lud16.isEmpty) {
-      await cubit.nudgeReader(bookId: bookId, toNpub: entry.npub);
+      await cubit.nudgeReader(circleBookId: circleBookId, toNpub: entry.npub);
       if (!context.mounted) return;
       await ZapNudgeSheet.show(
         context,

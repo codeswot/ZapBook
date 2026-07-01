@@ -155,11 +155,11 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
 
 @TypedGoRoute<CircleDetailRoute>(path: '/circle')
 class CircleDetailRoute extends GoRouteData with $CircleDetailRoute {
-  final String bookId;
+  final String circleBookId;
 
-  const CircleDetailRoute({required this.bookId});
+  const CircleDetailRoute({required this.circleBookId});
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      CircleDetailPage(bookId: bookId);
+      CircleDetailPage(circleBookId: circleBookId);
 }

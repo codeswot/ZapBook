@@ -17,8 +17,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
   final LibraryRepository _libraryRepository;
 
-  Future<void> load(String bookId) async {
-    final book = await _libraryRepository.getBook(bookId);
+  Future<void> load(String circleBookId) async {
+    final book = await _libraryRepository.getBook(circleBookId);
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
       return;
@@ -37,9 +37,9 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     );
   }
 
-  Future<void> refresh(String bookId) => load(bookId);
+  Future<void> refresh(String circleBookId) => load(circleBookId);
 
-  void open(String bookId) {}
+  void open(String circleBookId) {}
 
   Future<ZapResult> sendReaderZap({
     required String recipientLud16,
@@ -67,15 +67,15 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   }) async {}
 
   Future<void> nudgeReader({
-    required String bookId,
+    required String circleBookId,
     required String toNpub,
   }) async {}
 
   void toggleContact(String npub, bool isContact) {}
 
-  Future<void> removeMember(String bookId, String npub) async {}
+  Future<void> removeMember(String circleBookId, String npub) async {}
 
-  Future<void> leave(String bookId) async {}
+  Future<void> leave(String circleBookId) async {}
 
-  Future<void> dissolve(String bookId) async {}
+  Future<void> dissolve(String circleBookId) async {}
 }

@@ -24,11 +24,11 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
 
   bool isValidNpub(String value) => _contacts.isValidNpub(value);
 
-  Future<void> load(String bookId) async {
+  Future<void> load(String circleBookId) async {
     emit(const ShareCircleLoading());
     final friends = await _contacts.friends();
     final myNpub = await _identity.readNpub();
-    final members = await _getBookMembers(bookId);
+    final members = await _getBookMembers(circleBookId);
     final existing = members.toSet();
 
     emit(
@@ -89,7 +89,7 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     }
   }
 
-  Future<List<ShareSkip>> share(String bookId) async {
+  Future<List<ShareSkip>> share(String circleBookId) async {
     final s = _currentLoaded;
     emit(
       ShareCircleBusy(
@@ -101,7 +101,7 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     );
     try {
       final skipped = await _shareBookWith(
-        bookId,
+        circleBookId,
         List<String>.from(s.selectedNpubs),
       );
       emit(

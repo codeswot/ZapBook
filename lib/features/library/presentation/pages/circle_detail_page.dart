@@ -23,23 +23,23 @@ import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/widgets/app_button.dart';
 
 class CircleDetailPage extends StatelessWidget {
-  const CircleDetailPage({super.key, required this.bookId});
+  const CircleDetailPage({super.key, required this.circleBookId});
 
-  final String bookId;
+  final String circleBookId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<CircleDetailCubit>()..load(bookId),
-      child: _CircleDetailView(bookId: bookId),
+      create: (_) => getIt<CircleDetailCubit>()..load(circleBookId),
+      child: _CircleDetailView(circleBookId: circleBookId),
     );
   }
 }
 
 class _CircleDetailView extends StatelessWidget {
-  const _CircleDetailView({required this.bookId});
+  const _CircleDetailView({required this.circleBookId});
 
-  final String bookId;
+  final String circleBookId;
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +53,12 @@ class _CircleDetailView extends StatelessWidget {
           },
           builder: (context, state) {
             return switch (state) {
-              CircleDetailLoaded() => _Loaded(bookId: bookId, state: state),
+              CircleDetailLoaded() => _Loaded(
+                circleBookId: circleBookId,
+                state: state,
+              ),
               CircleDetailError(:final message) => _Error(message: message),
-              _ => CircleDetailShimmer(bookId: bookId),
+              _ => CircleDetailShimmer(circleBookId: circleBookId),
             };
           },
         ),
@@ -117,7 +120,7 @@ class _Error extends StatelessWidget {
       children: [
         const CircleDetailTopBar(
           readersCount: 0,
-          bookId: '',
+          circleBookId: '',
           bookTitle: 'Circle',
         ),
         Expanded(
@@ -140,9 +143,9 @@ class _Error extends StatelessWidget {
 }
 
 class _Loaded extends StatelessWidget {
-  const _Loaded({required this.bookId, required this.state});
+  const _Loaded({required this.circleBookId, required this.state});
 
-  final String bookId;
+  final String circleBookId;
   final CircleDetailLoaded state;
 
   CircleBook get book => state.book;
@@ -153,7 +156,7 @@ class _Loaded extends StatelessWidget {
   }
 
   void _openBook(BuildContext context) {
-    context.read<CircleDetailCubit>().open(bookId);
+    context.read<CircleDetailCubit>().open(circleBookId);
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
   }
 
@@ -171,7 +174,7 @@ class _Loaded extends StatelessWidget {
       context,
       cubit: context.read<CircleDetailCubit>(),
       entry: entry,
-      bookId: bookId,
+      circleBookId: circleBookId,
       bookTitle: book.title,
       canRemove: state.isAdmin,
     );
@@ -187,7 +190,7 @@ class _Loaded extends StatelessWidget {
       children: [
         CircleDetailTopBar(
           readersCount: state.members.length,
-          bookId: bookId,
+          circleBookId: circleBookId,
           bookTitle: book.title,
           onSettings: book.removedFromCircle
               ? null
@@ -237,7 +240,7 @@ class _Loaded extends StatelessWidget {
                   isYou: entry.isSelf,
                   pageCount: book.pageCount,
                   bookTitle: book.title,
-                  bookId: book.id,
+                  circleBookId: book.id,
                   memberProgress: state.memberProgress,
                   onLongPress: entry.isSelf
                       ? null

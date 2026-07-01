@@ -55,15 +55,17 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     this._zapConfirmation,
   ) : super(const CircleDetailLoading()) {
     _library.watchBooks().listen((_) {
-      if (!isClosed) refresh(_currentBookId);
+      if (!isClosed) refresh(_currentcircleBookId);
     });
     _stats.satsEarnedListenable.addListener(_onEarningsChanged);
   }
 
   void _onEarningsChanged() {
     final s = state;
-    if (s is! CircleDetailLoaded || _currentBookId.isEmpty) return;
-    emit(s.copyWith(satsEarned: _stats.satsEarnedForCircle(_currentBookId)));
+    if (s is! CircleDetailLoaded || _currentcircleBookId.isEmpty) return;
+    emit(
+      s.copyWith(satsEarned: _stats.satsEarnedForCircle(_currentcircleBookId)),
+    );
   }
 
   final GetCircleBook _getCircleBook;
@@ -86,30 +88,30 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   final ZapConfirmationService _zapConfirmation;
 
   final _log = logging.Logger('CircleDetailCubit');
-  String _currentBookId = '';
+  String _currentcircleBookId = '';
   StreamSubscription<Map<String, BookProgress>>? _progressSub;
   StreamSubscription<List<Contact>>? _contactsSub;
 
   @override
   Future<void> close() {
-    _currentBookId = '';
+    _currentcircleBookId = '';
     _progressSub?.cancel();
     _contactsSub?.cancel();
     _stats.satsEarnedListenable.removeListener(_onEarningsChanged);
     return super.close();
   }
 
-  Future<void> load(String bookId) async {
-    _currentBookId = bookId;
-    final book = await _getCircleBook(bookId);
+  Future<void> load(String circleBookId) async {
+    _currentcircleBookId = circleBookId;
+    final book = await _getCircleBook(circleBookId);
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
       return;
     }
 
     final myNpub = await _identity.readNpub();
-    final memberNpubs = await _getBookMembers(bookId);
-    final admins = (await _getCircleAdmins(bookId)).toSet();
+    final memberNpubs = await _getBookMembers(circleBookId);
+    final admins = (await _getCircleAdmins(circleBookId)).toSet();
     final contactNpubs = _contacts.stored.toSet();
 
     final contacts = await Future.wait(memberNpubs.map(_contacts.resolve));
@@ -123,11 +125,11 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         ),
     ];
 
-    final milestones = _milestoneService.getMilestones(bookId);
+    final milestones = _milestoneService.getMilestones(circleBookId);
     final progress = _toMemberProgress(
-      await _milestoneService.loadMembers(bookId),
+      await _milestoneService.loadMembers(circleBookId),
     );
-    _watchMembers(bookId);
+    _watchMembers(circleBookId);
     _watchContacts(memberNpubs, myNpub, contactNpubs);
     emit(
       CircleDetailLoaded(
@@ -137,7 +139,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         myNpub: myNpub,
         milestones: milestones,
         memberProgress: progress,
-        satsEarned: _stats.satsEarnedForCircle(bookId),
+        satsEarned: _stats.satsEarnedForCircle(circleBookId),
       ),
     );
   }
@@ -185,9 +187,11 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     return list;
   }
 
-  void _watchMembers(String bookId) {
+  void _watchMembers(String circleBookId) {
     _progressSub?.cancel();
-    _progressSub = _milestoneService.watchMembers(bookId).listen((members) {
+    _progressSub = _milestoneService.watchMembers(circleBookId).listen((
+      members,
+    ) {
       final s = state;
       if (s is! CircleDetailLoaded) return;
       final progress = _toMemberProgress(members);
@@ -214,9 +218,9 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     ),
   );
 
-  Future<void> refresh(String bookId) => load(bookId);
+  Future<void> refresh(String circleBookId) => load(circleBookId);
 
-  void open(String bookId) => _touchBookOpened(bookId);
+  void open(String circleBookId) => _touchBookOpened(circleBookId);
 
   Future<ZapResult> sendReaderZap({
     required String recipientLud16,
@@ -231,7 +235,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     gesture: gesture,
     customSats: amount,
     comment: comment,
-    circleId: _currentBookId,
+    circleId: _currentcircleBookId,
   );
 
   Future<bool> payZap(ZapResult result) => _zapService.payZap(result);
@@ -284,7 +288,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         }
 
         if (result.zapRequestId.isNotEmpty) {
-          final groupId = await _resolveGroupId(_currentBookId);
+          final groupId = await _resolveGroupId(_currentcircleBookId);
           if (groupId != null) {
             _zapConfirmation.watch(
               PendingZapRecord(
@@ -318,7 +322,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   }) async {
     final npub = await _identity.readNpub();
     if (npub == null) return;
-    final groupId = await _resolveGroupId(_currentBookId);
+    final groupId = await _resolveGroupId(_currentcircleBookId);
     if (groupId == null) return;
 
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -332,14 +336,14 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     final recName = (contact.displayName?.trim().isNotEmpty ?? false)
         ? contact.displayName!.trim()
         : recipientNpub.toNpubShort();
-    final bookTitle = _currentBookId;
+    final bookTitle = _currentcircleBookId;
     CheersDataSourceImpl.addDirectZap(
       CheersActivity(
         id: '$groupId:${npub}_${recipientNpub}_$now',
         actorNpub: npub,
         actorName: 'You',
         bookTitle: bookTitle,
-        bookId: groupId,
+        circleBookId: groupId,
         activityDescription: 'You zapped $recName $amount sats in $bookTitle',
         timestamp: DateTime.fromMillisecondsSinceEpoch(now),
         type: 'zap',
@@ -353,8 +357,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     );
   }
 
-  Future<String?> _resolveGroupId(String bookId) async {
-    final name = BookGroupNaming.legacyNameFor(bookId);
+  Future<String?> _resolveGroupId(String circleBookId) async {
+    final name = BookGroupNaming.legacyNameFor(circleBookId);
     final groups = await _marmot.listGroups();
     for (final g in groups) {
       if (g.name == name) return g.id;
@@ -362,8 +366,10 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     return null;
   }
 
-  Future<void> nudgeReader({required String bookId, required String toNpub}) =>
-      _nudgeService.nudgeForBook(bookId: bookId, toNpub: toNpub);
+  Future<void> nudgeReader({
+    required String circleBookId,
+    required String toNpub,
+  }) => _nudgeService.nudgeForBook(circleBookId: circleBookId, toNpub: toNpub);
 
   void toggleContact(String npub, bool isContact) {
     if (isContact) {
@@ -388,25 +394,25 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     }
   }
 
-  Future<void> removeMember(String bookId, String npub) async {
+  Future<void> removeMember(String circleBookId, String npub) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
     emit(s.copyWith(busyNpub: npub));
     try {
-      await _removeBookMember(bookId, npub);
-      await load(bookId);
+      await _removeBookMember(circleBookId, npub);
+      await load(circleBookId);
     } on Object catch (error, stack) {
       _log.warning('Remove member failed', error, stack);
       emit(s.copyWith(clearBusy: true));
     }
   }
 
-  Future<void> leave(String bookId) async {
+  Future<void> leave(String circleBookId) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
     emit(s.copyWith(processing: true));
     try {
-      await _leaveCircle(bookId);
+      await _leaveCircle(circleBookId);
       emit(const CircleDetailClosed());
     } on Object catch (error, stack) {
       _log.warning('Leave circle failed', error, stack);
@@ -414,12 +420,12 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     }
   }
 
-  Future<void> dissolve(String bookId) async {
+  Future<void> dissolve(String circleBookId) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
     emit(s.copyWith(processing: true));
     try {
-      await _dissolveCircle(bookId);
+      await _dissolveCircle(circleBookId);
       emit(const CircleDetailClosed());
     } on Object catch (error, stack) {
       _log.warning('Dissolve circle failed', error, stack);

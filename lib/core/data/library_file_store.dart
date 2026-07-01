@@ -24,77 +24,77 @@ class LibraryFileStore {
   Future<Directory> _cacheRoot() async =>
       _cache ??= await AccountPaths.cacheRoot();
 
-  Future<Directory> bookDir(String bookId) async {
+  Future<Directory> bookDir(String circleBookId) async {
     final root = await _supportRoot();
-    return _ensure('${root.path}/$_libraryDir/$bookId');
+    return _ensure('${root.path}/$_libraryDir/$circleBookId');
   }
 
-  Future<String> _bookPath(String bookId) async {
+  Future<String> _bookPath(String circleBookId) async {
     final root = await _supportRoot();
-    return '${root.path}/$_libraryDir/$bookId';
+    return '${root.path}/$_libraryDir/$circleBookId';
   }
 
-  Future<Directory> zbfFile(String bookId) async =>
-      Directory(await _bookPath(bookId));
+  Future<Directory> zbfFile(String circleBookId) async =>
+      Directory(await _bookPath(circleBookId));
 
-  Future<File> coverFile(String bookId) async =>
-      File('${await _bookPath(bookId)}/$_coverName');
+  Future<File> coverFile(String circleBookId) async =>
+      File('${await _bookPath(circleBookId)}/$_coverName');
 
-  Future<File> manifestFile(String bookId) async =>
-      File('${await _bookPath(bookId)}/manifest.json');
+  Future<File> manifestFile(String circleBookId) async =>
+      File('${await _bookPath(circleBookId)}/manifest.json');
 
-  Future<File> originalFile(String bookId, String extension) async =>
-      File('${await _bookPath(bookId)}/original.$extension');
+  Future<File> originalFile(String circleBookId, String extension) async =>
+      File('${await _bookPath(circleBookId)}/original.$extension');
 
-  Future<File> segmentCacheFile(String bookId, int index) async {
+  Future<File> segmentCacheFile(String circleBookId, int index) async {
     final root = await _cacheRoot();
-    final path = '${root.path}/$_libraryDir/$bookId/$_segmentDir';
+    final path = '${root.path}/$_libraryDir/$circleBookId/$_segmentDir';
     return File('$path/${index.toString().padLeft(4, '0')}.zbfpart');
   }
 
-  Future<String> writeZbf(String bookId, Uint8List bytes) async {
+  Future<String> writeZbf(String circleBookId, Uint8List bytes) async {
     throw UnsupportedError(
       'writeZbf is no longer supported as books are now directories.',
     );
   }
 
-  Future<String?> writeCover(String bookId, Uint8List? bytes) async {
+  Future<String?> writeCover(String circleBookId, Uint8List? bytes) async {
     if (bytes == null || bytes.isEmpty) return null;
-    await bookDir(bookId);
-    final file = await coverFile(bookId);
+    await bookDir(circleBookId);
+    final file = await coverFile(circleBookId);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
   }
 
-  Future<bool> hasZbf(String bookId) async {
-    final zbf = await zbfFile(bookId);
+  Future<bool> hasZbf(String circleBookId) async {
+    final zbf = await zbfFile(circleBookId);
     return File('${zbf.path}/manifest.json').existsSync();
   }
 
-  Future<String?> zbfPathIfExists(String bookId) async {
-    if (await hasZbf(bookId)) {
-      final file = await zbfFile(bookId);
+  Future<String?> zbfPathIfExists(String circleBookId) async {
+    if (await hasZbf(circleBookId)) {
+      final file = await zbfFile(circleBookId);
       return file.path;
     }
     return null;
   }
 
-  Future<String?> coverPathIfExists(String bookId) async {
-    final file = await coverFile(bookId);
+  Future<String?> coverPathIfExists(String circleBookId) async {
+    final file = await coverFile(circleBookId);
     return file.existsSync() ? file.path : null;
   }
 
-  Future<void> deleteBook(String bookId) async {
+  Future<void> deleteBook(String circleBookId) async {
     final support = await _supportRoot();
-    final durable = Directory('${support.path}/$_libraryDir/$bookId');
+    final durable = Directory('${support.path}/$_libraryDir/$circleBookId');
     if (durable.existsSync()) await durable.delete(recursive: true);
 
     final cache = await _cacheRoot();
-    final evictable = Directory('${cache.path}/$_libraryDir/$bookId');
+    final evictable = Directory('${cache.path}/$_libraryDir/$circleBookId');
     if (evictable.existsSync()) await evictable.delete(recursive: true);
   }
 
-  Future<List<String>> listBookIds() async {
+  Future<List<String>> listcircleBookIds() async {
     final root = await _supportRoot();
     final dir = Directory('${root.path}/$_libraryDir');
     if (!dir.existsSync()) return const [];

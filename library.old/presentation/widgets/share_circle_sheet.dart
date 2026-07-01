@@ -292,13 +292,13 @@ class _BodyState extends State<_Body> {
                           final rootContext = context;
                           final friendsList = List<Contact>.from(friends);
                           final npubsToShare = List<String>.from(selectedNpubs);
-                          final bookId = widget.book.id;
+                          final circleBookId = widget.book.id;
 
                           context.toast.showInfo('Sharing book');
 
                           rootContext.pop();
 
-                          shareBookWith(bookId, npubsToShare)
+                          shareBookWith(circleBookId, npubsToShare)
                               .then((skipped) {
                                 if (rootContext.mounted) {
                                   if (skipped.isNotEmpty) {

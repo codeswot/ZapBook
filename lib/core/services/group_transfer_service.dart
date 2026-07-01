@@ -33,9 +33,9 @@ class GroupTransferService {
   Future<void> uploadBookContent(
     String npub,
     String groupId,
-    String bookId,
+    String circleBookId,
   ) async {
-    final zbf = await _fileStore.zbfFile(bookId);
+    final zbf = await _fileStore.zbfFile(circleBookId);
     if (!zbf.existsSync()) return;
 
     final handle = await _reader.open(zbf.path);
@@ -48,7 +48,7 @@ class GroupTransferService {
           groupId,
           sourceBytes,
           'application/octet-stream',
-          '$bookId.source',
+          '$circleBookId.source',
         );
       }
 
@@ -59,7 +59,7 @@ class GroupTransferService {
           groupId,
           segment.bytes,
           'application/octet-stream',
-          '$bookId.seg$index.zbfseg',
+          '$circleBookId.seg$index.zbfseg',
         );
       }
     } finally {
@@ -81,13 +81,13 @@ class GroupTransferService {
   }
 
   Future<String?> hydrateCover(
-    String bookId,
+    String circleBookId,
     MarmotGroup? group, {
     List<int>? imageHash,
     List<int>? imageKey,
     List<int>? imageNonce,
   }) async {
-    final existing = await _fileStore.coverPathIfExists(bookId);
+    final existing = await _fileStore.coverPathIfExists(circleBookId);
     if (existing != null) return existing;
 
     if (group == null) return null;
@@ -105,11 +105,11 @@ class GroupTransferService {
       imageKey: key as Uint8List,
       imageNonce: nonce as Uint8List,
     );
-    return _fileStore.writeCover(bookId, bytes);
+    return _fileStore.writeCover(circleBookId, bytes);
   }
 
   Future<bool> downloadBookContent(
-    String bookId,
+    String circleBookId,
     String groupId,
     List<MarmotMediaRef> segmentRefs,
     MarmotMediaRef? sourceRef,
@@ -120,7 +120,7 @@ class GroupTransferService {
         sourceBytes = await downloadAndDecrypt(groupId, sourceRef);
       }
 
-      final zbf = await _fileStore.zbfFile(bookId);
+      final zbf = await _fileStore.zbfFile(circleBookId);
       await _segmenter.reassembleToDirectory(
         _downloadSegments(groupId, segmentRefs),
         zbf.path,
@@ -128,13 +128,17 @@ class GroupTransferService {
       );
       return true;
     } on Object catch (error, stack) {
-      _log.warning('Download book content failed for $bookId', error, stack);
+      _log.warning(
+        'Download book content failed for $circleBookId',
+        error,
+        stack,
+      );
       return false;
     }
   }
 
   Future<SegmentData?> loadSegment(
-    String bookId,
+    String circleBookId,
     String groupId,
     int segmentIndex,
     MarmotMediaRef ref,
@@ -150,7 +154,7 @@ class GroupTransferService {
       );
     } on Object catch (error, stack) {
       _log.warning(
-        'Load segment $segmentIndex for $bookId failed',
+        'Load segment $segmentIndex for $circleBookId failed',
         error,
         stack,
       );

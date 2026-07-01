@@ -8,5 +8,6 @@ final class DissolveCircle {
 
   final LibraryRepository _repository;
 
-  Future<void> call(String bookId) => _repository.dissolveCircle(bookId);
+  Future<void> call(String circleBookId) =>
+      _repository.dissolveCircle(circleBookId);
 }
