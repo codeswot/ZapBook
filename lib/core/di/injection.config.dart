@@ -252,14 +252,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
       (book, _) => _i404.BookEditCubit(book),
     );
-    gh.factoryParam<
-      _i405.BookWizardCubit,
-      _i687.Completer<_i230.WizardData>,
-      String?
-    >(
-      (_completer, initialTitle) =>
-          _i405.BookWizardCubit(_completer, initialTitle),
-    );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
       preResolve: true,
@@ -272,6 +264,17 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
+    );
+    gh.factoryParam<
+      _i405.BookWizardCubit,
+      _i687.Completer<_i230.WizardData>,
+      String?
+    >(
+      (_completer, initialTitle) => _i405.BookWizardCubit(
+        _completer,
+        initialTitle,
+        gh<_i1034.FilePickerService>(),
+      ),
     );
     gh.singleton<_i399.PerformanceService>(
       () => _i399.PerformanceService(gh<_i460.SharedPreferences>()),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 
@@ -11,11 +12,32 @@ class BookWizardCubit extends Cubit<BookWizardState> {
   BookWizardCubit(
     @factoryParam this._completer,
     @factoryParam String? initialTitle,
+    this._filePickerService,
   ) : super(
-        BookWizardState(title: initialTitle ?? 'Untitled', availableGenres: []),
+        BookWizardState(
+          title: initialTitle ?? 'Untitled',
+          availableGenres: const [
+            'Fiction',
+            'Non-Fiction',
+            'Sci-Fi',
+            'Fantasy',
+            'Mystery',
+            'Biography',
+            'History',
+            'Technology',
+            'Science',
+            'Romance',
+            'Thriller',
+            'Self-Help',
+            'Business',
+            'Philosophy',
+            'Art',
+          ],
+        ),
       );
 
   final Completer<WizardData> _completer;
+  final FilePickerService _filePickerService;
 
   void updateTitle(String title) {
     emit(state.copyWith(title: title));
@@ -30,11 +52,14 @@ class BookWizardCubit extends Cubit<BookWizardState> {
   }
 
   Future<void> pickCoverImage() async {
-    // Picking logic isn't implemented here yet, but we'll leave it ready
+    final image = await _filePickerService.pickImage();
+    if (image != null) {
+      emit(state.copyWith(coverImage: image));
+    }
   }
 
   void removeCoverImage() {
-    emit(state.copyWith(coverImage: null));
+    emit(state.copyWith(clearCover: true));
   }
 
   void submit() {
