@@ -7,6 +7,7 @@ class IngestionTaskState {
     this.isGroupCreated = false,
     this.isExtractComplete = false,
     this.marmotGroupId,
+    this.wizardData,
   });
 
   final File file;
@@ -14,6 +15,7 @@ class IngestionTaskState {
   final bool isGroupCreated;
   final bool isExtractComplete;
   final String? marmotGroupId;
+  final WizardData? wizardData;
 
   IngestionTaskState copyWith({
     File? file,
@@ -21,6 +23,7 @@ class IngestionTaskState {
     bool? isGroupCreated,
     bool? isExtractComplete,
     String? marmotGroupId,
+    WizardData? wizardData,
   }) {
     return IngestionTaskState(
       file: file ?? this.file,
@@ -28,6 +31,7 @@ class IngestionTaskState {
       isGroupCreated: isGroupCreated ?? this.isGroupCreated,
       isExtractComplete: isExtractComplete ?? this.isExtractComplete,
       marmotGroupId: marmotGroupId ?? this.marmotGroupId,
+      wizardData: wizardData ?? this.wizardData,
     );
   }
 }

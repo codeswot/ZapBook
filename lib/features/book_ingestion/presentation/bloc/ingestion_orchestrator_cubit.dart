@@ -43,6 +43,13 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     wizardDataFuture
         .then((data) {
           _saveCircleBook(circleBookId, data, contentHash);
+          
+          final task = state.tasks[circleBookId];
+          if (task != null) {
+            final newTasks = Map<String, IngestionTaskState>.from(state.tasks);
+            newTasks[circleBookId] = task.copyWith(wizardData: data);
+            emit(state.copyWith(tasks: newTasks));
+          }
         })
         .catchError((_) {
           cancelIngestion(circleBookId);
@@ -141,6 +148,8 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     if (task == null) return;
 
     if (task.isGroupCreated && task.isExtractComplete) {
+      _circleStore.refreshBookCover(circleBookId);
+      
       final npub = ActiveAccount.currentNpub;
       final marmotGroupId = task.marmotGroupId;
       if (npub != null && marmotGroupId != null) {

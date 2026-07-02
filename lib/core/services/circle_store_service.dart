@@ -170,6 +170,26 @@ class CircleStoreService {
 
   // update
 
+  Future<void> refreshBookCover(String circleDirId) async {
+    final bookEntry = _lastSeenBooks.entries
+        .where((e) => e.value.circleDirId == circleDirId)
+        .firstOrNull;
+    if (bookEntry != null) {
+      final book = bookEntry.value;
+      if (book.coverPath == null) {
+        final coverPath = await _fileStore.coverPathIfExists(circleDirId);
+        if (coverPath != null) {
+          final updatedBook = book.copyWith(coverPath: coverPath);
+          _lastSeenBooks[book.id] = updatedBook;
+
+          final books = _lastSeenBooks.values.toList();
+          books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+          _circlesController.add(books);
+        }
+      }
+    }
+  }
+
   Future<void> deleteCircleBook(CircleBook circleBook) async {
     await _groupStore.deleteGroup(circleBook.id);
     await _fileStore.deleteBook(circleBook.nostrGroudId);

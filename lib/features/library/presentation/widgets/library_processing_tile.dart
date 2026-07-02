@@ -59,6 +59,16 @@ class _LibraryProcessingTileState extends State<LibraryProcessingTile>
             border: Border.all(
               color: failed ? colors.tomato : colors.hairline2,
             ),
+            image: task.wizardData?.coverImage != null
+                ? DecorationImage(
+                    image: MemoryImage(task.wizardData!.coverImage!),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withValues(alpha: 0.6),
+                      BlendMode.darken,
+                    ),
+                  )
+                : null,
           ),
           child: failed
               ? _FailedContent(colors: colors, task: task)
@@ -91,11 +101,14 @@ class _RunningContent extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          task.file.path.split(Platform.pathSeparator).last,
+          task.wizardData?.title ??
+              task.file.path.split(Platform.pathSeparator).last,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.typography.caption.copyWith(
-            color: colors.ink,
+            color: task.wizardData?.coverImage != null
+                ? Colors.white
+                : colors.ink,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -128,11 +141,14 @@ class _FailedContent extends StatelessWidget {
         Icon(LucideIcons.triangleAlert, size: 16, color: colors.tomato),
         const Spacer(),
         Text(
-          task.file.path.split(Platform.pathSeparator).last,
+          task.wizardData?.title ??
+              task.file.path.split(Platform.pathSeparator).last,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.typography.caption.copyWith(
-            color: colors.ink,
+            color: task.wizardData?.coverImage != null
+                ? Colors.white
+                : colors.ink,
             fontWeight: FontWeight.w600,
           ),
         ),
