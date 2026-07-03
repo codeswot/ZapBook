@@ -21,10 +21,10 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   @override
   Future<CircleBook?> getBook(String id) async {
-    final circles = _circleStore.currentCircles;
-    for (final circle in circles) {
-      if (circle.id == id) return circle;
-    }
-    return null;
+    return _circleStore.currentCircles.where((c) => c.id == id).firstOrNull;
   }
+
+  @override
+  Future<void> deleteBook(CircleBook book) =>
+      _circleStore.deleteCircleBook(book);
 }

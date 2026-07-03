@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_shimmer.dart';
+import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 
 class ProfileShimmer extends StatelessWidget {
   const ProfileShimmer({super.key});

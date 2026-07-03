@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class DonateGiftChip extends StatelessWidget {
   const DonateGiftChip({super.key, required this.active, this.onTap});

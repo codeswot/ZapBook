@@ -7,9 +7,9 @@ import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 
 class CheersLongPressSheet extends StatelessWidget {

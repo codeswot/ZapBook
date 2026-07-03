@@ -8,13 +8,13 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_input.dart';
-import 'package:zapbook/widgets/app_loading_list.dart';
-import 'package:zapbook/widgets/app_paste_button.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_input.dart';
+import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
+import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class FriendsSheet extends StatelessWidget {
   const FriendsSheet({super.key});

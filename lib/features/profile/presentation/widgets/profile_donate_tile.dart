@@ -6,9 +6,9 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/widgets/zap_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
 import 'package:zapbook/theme/app_theme.dart';
 

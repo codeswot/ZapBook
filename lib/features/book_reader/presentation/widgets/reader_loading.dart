@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/widgets/zb_shimmer.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/zb_shimmer.dart';
 
 class ReaderPageLoading extends StatelessWidget {
   const ReaderPageLoading({required this.message, super.key});

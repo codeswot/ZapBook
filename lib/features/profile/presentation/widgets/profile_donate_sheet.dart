@@ -13,9 +13,9 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_donate_gif
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_gift_form.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_zap_chip.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class ProfileDonateSheet extends StatelessWidget {
   const ProfileDonateSheet({super.key});

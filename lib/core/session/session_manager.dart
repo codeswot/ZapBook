@@ -12,7 +12,7 @@ import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/session/start_session.dart';
-import 'package:zapbook/widgets/restart_widget.dart';
+import 'package:zapbook/core/presentation/widgets/restart_widget.dart';
 
 final _log = logging.Logger('SessionManager');
 

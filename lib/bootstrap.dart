@@ -10,7 +10,7 @@ import 'package:zapbook/core/di/marmot_module.dart';
 import 'package:zapbook/core/di/nostr_module.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
+import 'package:zapbook/core/services/performance_service.dart';
 import 'package:zapbook/core/session/start_session.dart';
 import 'package:google_fonts/google_fonts.dart';
 

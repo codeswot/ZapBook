@@ -6,11 +6,11 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_chrome_slot.dart';
 
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_fade_overlay.dart';
+import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/performance/performance_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
 import 'package:zapbook/core/services/density_service.dart';
@@ -32,7 +32,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_search_
 import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/theme/reading_style.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({

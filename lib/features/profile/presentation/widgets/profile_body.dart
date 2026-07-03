@@ -15,10 +15,10 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_package_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
 import 'package:zapbook/features/profile/presentation/widgets/account_switch_sheet.dart';
-import 'package:zapbook/widgets/app_nwc_connect_sheet.dart';
-import 'package:zapbook/widgets/app_nwc_connected_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_nwc_connect_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_nwc_connected_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 
 class ProfileBody extends StatelessWidget {
   const ProfileBody({super.key, required this.profile, this.nwcWalletName});

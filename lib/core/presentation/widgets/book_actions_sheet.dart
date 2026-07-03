@@ -7,15 +7,17 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
+import 'package:zapbook/core/presentation/widgets/book_edit_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/circle_members_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class BookActionsSheet extends StatelessWidget {
   const BookActionsSheet({
@@ -36,23 +38,28 @@ class BookActionsSheet extends StatelessWidget {
   static Future<void> show(
     BuildContext context, {
     required CircleBook book,
-    required bool isAdmin,
-    required String ownerLabel,
-    required VoidCallback onDelete,
-    required VoidCallback onLeave,
-  }) {
-    return showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: context.colors.transparent,
-      builder: (_) => BookActionsSheet(
-        book: book,
-        isAdmin: isAdmin,
-        ownerLabel: ownerLabel,
-        onDelete: onDelete,
-        onLeave: onLeave,
-      ),
-    );
+  }) async {
+    final cubit = getIt<CircleOperationsCubit>();
+    final isAdmin = await cubit.isAdminOf(book.id);
+    final ownerLabel = isAdmin ? '' : await cubit.ownerLabelFor(book.id);
+
+    if (context.mounted) {
+      return showModalBottomSheet(
+        context: context,
+        useRootNavigator: true,
+        backgroundColor: context.colors.transparent,
+        builder: (_) => BlocProvider.value(
+          value: cubit,
+          child: BookActionsSheet(
+            book: book,
+            isAdmin: isAdmin,
+            ownerLabel: ownerLabel,
+            onDelete: () => cubit.deleteBook(book),
+            onLeave: () => cubit.leaveCircle(book),
+          ),
+        ),
+      );
+    }
   }
 
   static Future<void> showWithId(
@@ -64,23 +71,8 @@ class BookActionsSheet extends StatelessWidget {
     final book = await repository.getBook(circleBookId);
     if (book == null) return;
 
-    final isAdmin = false;
-
-    String ownerLabel = '';
-
     if (context.mounted) {
-      await showModalBottomSheet(
-        context: context,
-        useRootNavigator: true,
-        backgroundColor: context.colors.transparent,
-        builder: (_) => BookActionsSheet(
-          book: book,
-          isAdmin: isAdmin,
-          ownerLabel: ownerLabel,
-          onDelete: () {},
-          onLeave: () {},
-        ),
-      );
+      await show(context, book: book);
     }
   }
 

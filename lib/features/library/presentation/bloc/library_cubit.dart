@@ -10,8 +10,10 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart';
 
 @injectable
 class LibraryCubit extends Cubit<LibraryState> {
-  LibraryCubit(this._watchCircleBooks, this._watchLastOpenedBook)
-    : super(const LibraryLoading()) {
+  LibraryCubit(
+    this._watchCircleBooks,
+    this._watchLastOpenedBook,
+  ) : super(const LibraryLoading()) {
     _init();
   }
 
@@ -34,15 +36,7 @@ class LibraryCubit extends Cubit<LibraryState> {
     }
   }
 
-  Future<void> deleteBook(String id) async {}
 
-  Future<void> leaveCircle(String id) async {}
-
-  Future<bool> isAdminOf(String circleBookId) async => false;
-
-  Future<String> ownerLabelFor(String circleBookId) async => '';
-
-  Future<void> shareBook(String circleBookId, String memberNpub) async {}
 
   Future<void> _init() async {
     _subscription = Rx.combineLatest2(

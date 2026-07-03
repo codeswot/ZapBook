@@ -3,12 +3,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_paste_button.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/widgets/app_icon_button.dart';
-import 'package:zapbook/widgets/app_input.dart';
+import 'package:zapbook/core/presentation/widgets/app_icon_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_banner.dart';
 import 'package:zapbook/features/onboarding/presentation/widgets/ob_step_intro.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class ObWalletView extends StatelessWidget {
   final OnboardingState state;

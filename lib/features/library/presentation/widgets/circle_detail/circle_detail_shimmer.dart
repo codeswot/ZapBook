@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/widgets/app_shimmer.dart';
+import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 
 class CircleDetailShimmer extends StatelessWidget {
   const CircleDetailShimmer({super.key, required this.circleBookId});

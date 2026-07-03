@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/earnings/earnings_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart';
 import 'package:zapbook/core/extensions/int_extension.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_stat_card.dart';

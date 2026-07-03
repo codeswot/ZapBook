@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_banner.dart';
+import 'package:zapbook/core/presentation/widgets/app_banner.dart';
 
 class AiVerifyingBanner extends StatelessWidget {
   const AiVerifyingBanner({super.key});

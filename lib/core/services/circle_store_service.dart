@@ -192,6 +192,6 @@ class CircleStoreService {
 
   Future<void> deleteCircleBook(CircleBook circleBook) async {
     await _groupStore.deleteGroup(circleBook.id);
-    await _fileStore.deleteBook(circleBook.nostrGroudId);
+    await _fileStore.deleteBook(circleBook.circleDirId);
   }
 }

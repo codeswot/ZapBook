@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
+import 'package:zapbook/core/services/performance_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

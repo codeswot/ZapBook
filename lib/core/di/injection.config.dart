@@ -36,16 +36,20 @@ import 'package:zapbook/core/domain/entities/circle_book.dart' as _i560;
 import 'package:zapbook/core/domain/ingest_book.dart' as _i696;
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
+import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/wizard_data.dart' as _i230;
-import 'package:zapbook/core/earnings/earnings_cubit.dart' as _i1044;
 import 'package:zapbook/core/identity/identity_local_data_source.dart' as _i603;
 import 'package:zapbook/core/identity/identity_repository.dart' as _i63;
 import 'package:zapbook/core/identity/local_key_signer_source.dart' as _i429;
 import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
 import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
-import 'package:zapbook/core/performance/performance_cubit.dart' as _i636;
-import 'package:zapbook/core/performance/performance_service.dart' as _i399;
+import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart'
+    as _i41;
+import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart'
+    as _i362;
+import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart'
+    as _i400;
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/app_info_service.dart' as _i19;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
@@ -69,6 +73,7 @@ import 'package:zapbook/core/services/message_router_service_impl.dart'
 import 'package:zapbook/core/services/milestone_service.dart' as _i31;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
 import 'package:zapbook/core/services/nwc_service.dart' as _i507;
+import 'package:zapbook/core/services/performance_service.dart' as _i39;
 import 'package:zapbook/core/services/quiz_service.dart' as _i995;
 import 'package:zapbook/core/services/reading_stats_service.dart' as _i182;
 import 'package:zapbook/core/services/secure_storage_service.dart' as _i123;
@@ -252,6 +257,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
       (book, _) => _i404.BookEditCubit(book),
     );
+    gh.lazySingleton<_i400.PerformanceCubit>(
+      () => _i400.PerformanceCubit(gh<InvalidType>()),
+    );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
       preResolve: true,
@@ -276,8 +284,8 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1034.FilePickerService>(),
       ),
     );
-    gh.singleton<_i399.PerformanceService>(
-      () => _i399.PerformanceService(gh<_i460.SharedPreferences>()),
+    gh.singleton<_i39.PerformanceService>(
+      () => _i39.PerformanceService(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i342.OnboardingLocalDataSource>(
       () => _i342.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
@@ -290,9 +298,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i58.ReaderSettingsCubit>(
       () => _i58.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i636.PerformanceCubit>(
-      () => _i636.PerformanceCubit(gh<_i399.PerformanceService>()),
     );
     gh.lazySingleton<_i397.KeyPackageService>(
       () => _i397.KeyPackageService(
@@ -406,8 +411,8 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i582.ZapSupportService>(),
       ),
     );
-    gh.factory<_i1044.EarningsCubit>(
-      () => _i1044.EarningsCubit(gh<_i240.ZapEarningsService>()),
+    gh.factory<_i362.EarningsCubit>(
+      () => _i362.EarningsCubit(gh<_i240.ZapEarningsService>()),
     );
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
@@ -625,11 +630,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i458.CircleDetailCubit>(
       () => _i458.CircleDetailCubit(gh<_i516.LibraryRepository>()),
     );
+    gh.factory<_i812.DeleteCircleBook>(
+      () => _i812.DeleteCircleBook(gh<_i516.LibraryRepository>()),
+    );
     gh.factory<_i16.WatchLastOpenedLibraryBook>(
       () => _i16.WatchLastOpenedLibraryBook(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
+    );
+    gh.factory<_i41.CircleOperationsCubit>(
+      () => _i41.CircleOperationsCubit(gh<_i812.DeleteCircleBook>()),
     );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(

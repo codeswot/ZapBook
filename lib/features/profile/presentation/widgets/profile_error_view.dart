@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
 
 class ProfileErrorView extends StatelessWidget {
   const ProfileErrorView({super.key, required this.message});

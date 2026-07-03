@@ -6,15 +6,15 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
-import 'package:zapbook/features/library/presentation/widgets/book_edit_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_members_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_confirm_sheet.dart';
-import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/book_edit_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/circle_members_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class CircleSettingsSheet extends StatelessWidget {
   const CircleSettingsSheet({

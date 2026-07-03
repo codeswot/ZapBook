@@ -10,17 +10,17 @@ import 'package:zapbook/features/library/domain/entities/share_skip.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/share_circle_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_button.dart';
-import 'package:zapbook/widgets/app_chip.dart';
-import 'package:zapbook/widgets/app_input.dart';
-import 'package:zapbook/widgets/app_loading_list.dart';
-import 'package:zapbook/widgets/app_paste_button.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_row.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_chip.dart';
+import 'package:zapbook/core/presentation/widgets/app_input.dart';
+import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
+import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_row.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/share_result_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class ShareCircleSheet extends StatelessWidget {
   const ShareCircleSheet({super.key, required this.book});

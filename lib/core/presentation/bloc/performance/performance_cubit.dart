@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/performance/performance_service.dart';
-import 'package:zapbook/core/performance/performance_state.dart';
+import 'package:zapbook/core/services/performance_service.dart';
+import 'package:zapbook/core/presentation/bloc/performance/performance_state.dart';
 
 @LazySingleton()
 class PerformanceCubit extends Cubit<PerformanceState> {

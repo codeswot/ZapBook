@@ -3,7 +3,7 @@ import 'package:zapbook/theme/app_radii.dart';
 
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_avatar.dart';
 
 class CelebrationReaction {
   final String emoji;

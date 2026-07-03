@@ -7,12 +7,12 @@ import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_button.dart';
-import 'package:zapbook/widgets/app_input.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_input.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class _ProfileEditSheetState extends State<ProfileEditSheet> {
   late final TextEditingController _nameController;

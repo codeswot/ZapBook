@@ -8,10 +8,10 @@ import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart';
-import 'package:zapbook/widgets/zap_sheet.dart';
-import 'package:zapbook/widgets/zap_nudge_sheet.dart';
-import 'package:zapbook/widgets/app_toast.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_long_press_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 

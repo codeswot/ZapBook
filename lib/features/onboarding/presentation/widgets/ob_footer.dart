@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/validators.dart';
-import 'package:zapbook/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
-import 'package:zapbook/widgets/app_toast.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 
 class ObFooter extends StatelessWidget {
   final OnboardingState state;

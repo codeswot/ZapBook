@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:zapbook/widgets/app_shimmer.dart';
+import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 
 class AppLoadingList extends StatelessWidget {
   const AppLoadingList({super.key, this.itemCount = 4});
