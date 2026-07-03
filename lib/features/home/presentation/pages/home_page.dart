@@ -45,7 +45,7 @@ class _HomeView extends StatelessWidget {
   }
 
   void _onBookLongPress(BuildContext context, CircleBook book) {
-    BookActionsSheet.showWithId(context, book.id);
+    BookActionsSheet.show(context, book: book);
   }
 
   @override

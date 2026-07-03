@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
@@ -59,20 +58,6 @@ class BookActionsSheet extends StatelessWidget {
           ),
         ),
       );
-    }
-  }
-
-  static Future<void> showWithId(
-    BuildContext context,
-    String circleBookId,
-  ) async {
-    // Todo, never use repo,service etc directly from UI
-    final repository = getIt<LibraryRepository>();
-    final book = await repository.getBook(circleBookId);
-    if (book == null) return;
-
-    if (context.mounted) {
-      await show(context, book: book);
     }
   }
 

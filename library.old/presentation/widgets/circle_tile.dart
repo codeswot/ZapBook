@@ -8,8 +8,8 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_actions_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class CircleTile extends StatelessWidget {

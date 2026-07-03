@@ -39,7 +39,7 @@ class CircleTile extends StatelessWidget {
 
     return BouncingInteractiveWidget(
       onTap: () => CircleDetailRoute(circleBookId: circle.id).push(context),
-      onLongPress: () => BookActionsSheet.showWithId(context, circle.id),
+      onLongPress: () => BookActionsSheet.show(context, book: circle),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

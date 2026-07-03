@@ -81,7 +81,11 @@ class _LibraryViewState extends State<_LibraryView> {
     }
 
     final completer = Completer<WizardData>();
-    orchestrator.startIngestion(state.file, completer.future, state.contentHash);
+    orchestrator.startIngestion(
+      state.file,
+      completer.future,
+      state.contentHash,
+    );
 
     BookWizardSheet.show(
       context,

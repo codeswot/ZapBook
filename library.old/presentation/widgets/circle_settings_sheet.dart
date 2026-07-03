@@ -12,9 +12,9 @@ import 'package:zapbook/features/library/presentation/widgets/circle_confirm_she
 import 'package:zapbook/features/library/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class CircleSettingsSheet extends StatelessWidget {
   const CircleSettingsSheet({

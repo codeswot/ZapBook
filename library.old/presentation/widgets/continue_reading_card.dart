@@ -6,9 +6,9 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/open_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/widgets/app_book_cover.dart';
-import 'package:zapbook/widgets/app_icon_button.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/app_icon_button.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class ContinueReadingCard extends StatelessWidget {
   const ContinueReadingCard({super.key, required this.book});

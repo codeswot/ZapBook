@@ -4,11 +4,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/features/library/domain/entities/share_skip.dart';
-import 'package:zapbook/widgets/app_button.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_row.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_row.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 
 class ShareResultSheet extends StatelessWidget {
   const ShareResultSheet({

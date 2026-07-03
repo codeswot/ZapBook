@@ -8,7 +8,7 @@ import 'package:zapbook/features/library/domain/enums/ingestion_job_status.dart'
 import 'package:zapbook/features/library/presentation/bloc/ingestion_queue_cubit.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class LibraryProcessingTile extends StatefulWidget {
   const LibraryProcessingTile({super.key, required this.job});

@@ -7,10 +7,10 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/widgets/app_loading_list.dart';
-import 'package:zapbook/widgets/app_profile_avatar.dart';
-import 'package:zapbook/widgets/app_sheet.dart';
-import 'package:zapbook/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
+import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class CircleMembersSheet extends StatelessWidget {
   const CircleMembersSheet({

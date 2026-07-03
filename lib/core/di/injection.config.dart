@@ -257,9 +257,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
       (book, _) => _i404.BookEditCubit(book),
     );
-    gh.lazySingleton<_i400.PerformanceCubit>(
-      () => _i400.PerformanceCubit(gh<InvalidType>()),
-    );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
       preResolve: true,
@@ -298,6 +295,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i58.ReaderSettingsCubit>(
       () => _i58.ReaderSettingsCubit(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i400.PerformanceCubit>(
+      () => _i400.PerformanceCubit(gh<_i39.PerformanceService>()),
     );
     gh.lazySingleton<_i397.KeyPackageService>(
       () => _i397.KeyPackageService(
