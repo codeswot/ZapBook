@@ -12,6 +12,8 @@ import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/group_transfer_service.dart';
+import 'package:zapbook/core/constants/app_constants.dart';
+import 'package:mime/mime.dart';
 
 part 'ingestion_orchestrator_state.dart';
 
@@ -162,6 +164,28 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
       final marmotGroupId = task.marmotGroupId;
       if (npub != null && marmotGroupId != null) {
         _transferService.uploadBookContent(npub, marmotGroupId, circleBookId);
+
+        final coverPath = await _fileStore.coverPathIfExists(circleBookId);
+        if (coverPath != null) {
+          try {
+            final coverBytes = await File(coverPath).readAsBytes();
+            final preparedImage = await _circleStore.prepareCover(
+              coverBytes: coverBytes,
+            );
+            final mimeType =
+                lookupMimeType(coverPath) ?? AppConstants.defaultImageMimeType;
+
+            _circleStore.updateCircleBookCoverOptimistic(
+              marmotGroupId: marmotGroupId,
+              circleDirId: circleBookId,
+              coverBytes: coverBytes,
+              preparedImage: preparedImage,
+              mimeType: mimeType,
+            );
+          } catch (e) {
+            //
+          }
+        }
       }
 
       final newTasks = Map<String, IngestionTaskState>.from(state.tasks);

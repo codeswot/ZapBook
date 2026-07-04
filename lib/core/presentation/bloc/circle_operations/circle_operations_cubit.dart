@@ -99,7 +99,8 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
               AppConstants.defaultImageMimeType;
 
           _circleStoreService.updateCircleBookCoverOptimistic(
-            book: book,
+            marmotGroupId: book.id,
+            circleDirId: book.circleDirId,
             coverBytes: coverBytes,
             preparedImage: preparedImage,
             mimeType: mimeType,

@@ -287,7 +287,8 @@ class CircleStoreService {
   }
 
   void updateCircleBookCoverOptimistic({
-    required CircleBook book,
+    required String marmotGroupId,
+    required String circleDirId,
     required Uint8List coverBytes,
     required GroupImagePrepared preparedImage,
     required String mimeType,
@@ -296,21 +297,17 @@ class CircleStoreService {
       try {
         await _groupStore.uploadImage(preparedImage, mimeType);
         await _groupStore.setGroupImage(
-          groupId: book.id,
+          groupId: marmotGroupId,
           preparedImage: preparedImage,
         );
-
+        
         final hashHex = hex.encode(preparedImage.imageHash);
-        await _fileStore.writeCover(
-          book.circleDirId,
-          coverBytes,
-          imageHashHex: hashHex,
-        );
-        await refreshBookCover(book.circleDirId, imageHashHex: hashHex);
+        await _fileStore.writeCover(circleDirId, coverBytes, imageHashHex: hashHex);
+        await refreshBookCover(circleDirId, imageHashHex: hashHex);
       } catch (e, st) {
         _log.warning('Failed background cover upload & update', e, st);
       } finally {
-        clearUploadingCover(book.id);
+        clearUploadingCover(marmotGroupId);
       }
     }());
   }

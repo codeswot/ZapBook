@@ -136,39 +136,6 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
     canvas.drawRect(bounds, Paint()..shader = shadowGradient);
 
-    final titleSize = math.max(12.0, width * 0.13);
-    final basePadding = math.max(8.0, width * 0.08);
-
-    final titlePainter = TextPainter(
-      text: TextSpan(
-        text: title,
-        style: TextStyle(
-          color: _ink,
-          fontSize: titleSize,
-          fontWeight: FontWeight.w700,
-          height: 1.05,
-          letterSpacing: -0.02 * titleSize,
-          shadows: [
-            Shadow(
-              color: _black.withValues(alpha: 0.6),
-              offset: const Offset(0, 1),
-              blurRadius: 6.0,
-            ),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    final maxTitleWidth = width - (spineWidth + basePadding * 2);
-    titlePainter.layout(maxWidth: maxTitleWidth);
-
-    final titleOffset = Offset(
-      spineWidth + basePadding,
-      height - basePadding - titlePainter.height,
-    );
-
-    titlePainter.paint(canvas, titleOffset);
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(width, height);
