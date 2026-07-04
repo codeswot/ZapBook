@@ -67,53 +67,6 @@ class GroupTransferService {
     }
   }
 
-  Future<void> uploadGroupCover(
-    String circleBookId,
-    String groupId,
-    Uint8List coverBytes,
-  ) async {
-    await _fileStore.writeCover(circleBookId, coverBytes);
-
-    final prep = await Marmot.prepareGroupImage(coverBytes, 'image/jpeg');
-    await _blossom.upload(prep.encryptedData, mimeType: 'image/jpeg');
-    final commit = await _marmot.setGroupImage(
-      groupId,
-      imageHash: prep.imageHash,
-      imageKey: prep.imageKey,
-      imageNonce: prep.imageNonce,
-      imageUploadKey: prep.imageUploadKey,
-    );
-    _envelope.publish(commit);
-  }
-
-  Future<String?> hydrateCover(
-    String circleBookId,
-    MarmotGroup? group, {
-    List<int>? imageHash,
-    List<int>? imageKey,
-    List<int>? imageNonce,
-  }) async {
-    final existing = await _fileStore.coverPathIfExists(circleBookId);
-    if (existing != null) return existing;
-
-    if (group == null) return null;
-    final hash = imageHash ?? group.imageHash;
-    final key = imageKey ?? group.imageKey;
-    final nonce = imageNonce ?? group.imageNonce;
-    if (hash == null || key == null || nonce == null) return null;
-
-    final blob = await _blossom.download(
-      '${BlossomService.servers.first}/${_hex(hash)}',
-    );
-    final bytes = await Marmot.decryptGroupImage(
-      encryptedData: blob,
-      imageHash: hash as Uint8List,
-      imageKey: key as Uint8List,
-      imageNonce: nonce as Uint8List,
-    );
-    return _fileStore.writeCover(circleBookId, bytes);
-  }
-
   Future<bool> downloadBookContent(
     String circleBookId,
     String groupId,
@@ -222,7 +175,4 @@ class GroupTransferService {
       yield await downloadAndDecrypt(groupId, ref);
     }
   }
-
-  static String _hex(List<int> bytes) =>
-      bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }

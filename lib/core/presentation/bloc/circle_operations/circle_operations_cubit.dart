@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +11,9 @@ import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operatio
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 import 'package:marmot_dart/marmot_dart.dart';
+import 'package:mime/mime.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/constants/app_constants.dart';
 
 @injectable
 class CircleOperationsCubit extends Cubit<CircleOperationsState> {
@@ -64,6 +67,48 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
       emit(CircleOperationsFailure(e.toString()));
       return null;
     }
+  }
+
+  void saveBookEditsInBackground({
+    required CircleBook book,
+    required String title,
+    required String author,
+    String? genre,
+    Uint8List? coverBytes,
+    Future<GroupImagePrepared>? pendingCoverUpload,
+  }) {
+    unawaited(() async {
+      try {
+        await _circleStoreService.updateCircleBookMetadata(
+          marmotGroupId: book.id,
+          title: title,
+          author: author,
+          genre: genre,
+        );
+
+        if (coverBytes != null && pendingCoverUpload != null) {
+          _circleStoreService.setUploadingCover(book.id, AppConstants.placeholderBlurHash);
+
+          final preparedImage = await pendingCoverUpload;
+          
+          if (preparedImage.blurhash != null) {
+            _circleStoreService.setUploadingCover(book.id, preparedImage.blurhash!);
+          }
+          
+          final mimeType = lookupMimeType('', headerBytes: coverBytes) ??
+              AppConstants.defaultImageMimeType;
+
+          _circleStoreService.updateCircleBookCoverOptimistic(
+            book: book,
+            coverBytes: coverBytes,
+            preparedImage: preparedImage,
+            mimeType: mimeType,
+          );
+        }
+      } catch (e, st) {
+        _log.warning('Failed background book save', e, st);
+      }
+    }());
   }
 
   Future<void> leaveCircle(CircleBook book) async {

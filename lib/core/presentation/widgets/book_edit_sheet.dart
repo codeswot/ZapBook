@@ -5,13 +5,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mime/mime.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_state.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/constants/book_genres.dart';
 import 'package:zapbook/core/services/file_picker_service.dart';
@@ -91,7 +89,7 @@ class _BodyState extends State<_Body> {
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _save(CircleOperationsCubit cubit) async {
     final title = _titleController.text;
     final author = _authorController.text;
     final genre = _genre;
@@ -101,38 +99,14 @@ class _BodyState extends State<_Body> {
 
     context.pop();
 
-    unawaited(() async {
-      try {
-        final service = getIt<CircleStoreService>();
-        await service.updateCircleBookMetadata(
-          marmotGroupId: book.id,
-          title: title,
-          author: author,
-          genre: genre,
-        );
-
-        if (coverBytes != null && pendingCoverUpload != null) {
-          service.setUploadingCover(book.id, 'L6PZfSi_.AyE_3t7t7R**0o#DgR4');
-
-          final preparedImage = await pendingCoverUpload;
-          final mimeType =
-              lookupMimeType('', headerBytes: coverBytes) ?? 'image/jpeg';
-
-          if (preparedImage.blurhash != null) {
-            service.setUploadingCover(book.id, preparedImage.blurhash!);
-          }
-
-          service.updateCircleBookCoverOptimistic(
-            book: book,
-            coverBytes: coverBytes,
-            preparedImage: preparedImage,
-            mimeType: mimeType,
-          );
-        }
-      } catch (e) {
-        // Silent background failure
-      }
-    }());
+    cubit.saveBookEditsInBackground(
+      book: book,
+      title: title,
+      author: author,
+      genre: genre,
+      coverBytes: coverBytes,
+      pendingCoverUpload: pendingCoverUpload,
+    );
   }
 
   @override
@@ -145,6 +119,7 @@ class _BodyState extends State<_Body> {
       },
       builder: (context, state) {
         final typography = context.typography;
+        final cubit = context.read<CircleOperationsCubit>();
         final saving = state is CircleOperationsLoading;
 
         ImageProvider? coverImage;
@@ -226,7 +201,7 @@ class _BodyState extends State<_Body> {
                 AppButton(
                   label: saving ? 'Saving…' : 'Save changes',
                   fullWidth: true,
-                  onTap: saving ? null : _save,
+                  onTap: saving ? null : () => _save(cubit),
                 ),
               ],
             ),
