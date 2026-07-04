@@ -74,13 +74,6 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
     canvas.drawRect(bounds, Paint()..color = _mist);
 
-    final hueColor = _getHueForTitle(title);
-    final spineWidth = math.max(6.0, width * 0.06);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, spineWidth, height.toDouble()),
-      Paint()..color = hueColor,
-    );
-
     canvas.saveLayer(bounds, Paint());
 
     if (illustration != null) {
@@ -136,7 +129,6 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
     canvas.drawRect(bounds, Paint()..shader = shadowGradient);
 
-
     final picture = recorder.endRecording();
     final image = await picture.toImage(width, height);
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
@@ -163,7 +155,7 @@ final class CanvasCoverGenerator implements CoverGenerator {
 
   void _drawAbstractArt(Canvas canvas, Rect bounds, String title) {
     final seed = title.hashCode;
-    final palette = [_getHueForTitle(title), ..._palette];
+    final palette = _palette;
     final random = math.Random(seed);
 
     final blobCount = 20 + random.nextInt(11);
@@ -181,14 +173,5 @@ final class CanvasCoverGenerator implements CoverGenerator {
         Paint()..color = color.withValues(alpha: 0.7),
       );
     }
-  }
-
-  Color _getHueForTitle(String title) {
-    final lower = title.toLowerCase();
-    if (lower.contains('bitcoin')) return _bitcoin;
-    if (lower.contains('nostr')) return _plum;
-    final hash = title.hashCode;
-    final hues = [_bitcoin, _plum, _mint, _sky];
-    return hues[hash.abs() % hues.length];
   }
 }

@@ -12,11 +12,14 @@ part 'circles_state.dart';
 @injectable
 class CirclesCubit extends Cubit<CirclesState> {
   CirclesCubit(this._circleStore) : super(const CirclesLoading()) {
-    _subscription = _circleStore.watchCircleBooks.listen(
-      (circles) =>
-          emit(circles.isEmpty ? const CirclesEmpty() : CirclesLoaded(circles)),
-      onError: (Object error) => emit(CirclesError('$error')),
-    );
+    _subscription = _circleStore.watchCircleBooks.listen((circles) {
+      final sharedCircles = circles.where((c) => c.isShared).toList();
+      emit(
+        sharedCircles.isEmpty
+            ? const CirclesEmpty()
+            : CirclesLoaded(sharedCircles),
+      );
+    }, onError: (Object error) => emit(CirclesError('$error')));
   }
 
   final CircleStoreService _circleStore;
