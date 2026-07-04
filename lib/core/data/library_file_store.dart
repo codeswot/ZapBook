@@ -60,7 +60,11 @@ class LibraryFileStore {
     );
   }
 
-  Future<String?> writeCover(String circleBookId, Uint8List? bytes, {String? imageHashHex}) async {
+  Future<String?> writeCover(
+    String circleBookId,
+    Uint8List? bytes, {
+    String? imageHashHex,
+  }) async {
     if (bytes == null || bytes.isEmpty) return null;
     await bookDir(circleBookId);
     final file = await coverFile(circleBookId, imageHashHex: imageHashHex);
@@ -81,9 +85,15 @@ class LibraryFileStore {
     return null;
   }
 
-  Future<String?> coverPathIfExists(String circleBookId, {String? imageHashHex}) async {
+  Future<String?> coverPathIfExists(
+    String circleBookId, {
+    String? imageHashHex,
+  }) async {
     if (imageHashHex != null) {
-      final hashFile = await coverFile(circleBookId, imageHashHex: imageHashHex);
+      final hashFile = await coverFile(
+        circleBookId,
+        imageHashHex: imageHashHex,
+      );
       if (await hashFile.exists()) return hashFile.path;
     }
     final file = await coverFile(circleBookId);

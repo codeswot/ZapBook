@@ -37,8 +37,10 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     try {
       emit(const CircleOperationsLoading());
       await _deleteCircleBook(book);
+      if (isClosed) return;
       emit(const CircleOperationsSuccess());
     } catch (e) {
+      if (isClosed) return;
       emit(CircleOperationsFailure(e.toString()));
     }
   }
@@ -58,12 +60,14 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
         genre: genre,
       );
 
+      if (isClosed) return null;
       emit(const CircleOperationsSuccess());
       return _circleStoreService.currentCircles
           .where((b) => b.id == book.id)
           .firstOrNull;
     } catch (e, st) {
       _log.warning('Failed to update book metadata', e, st);
+      if (isClosed) return null;
       emit(CircleOperationsFailure(e.toString()));
       return null;
     }
@@ -87,15 +91,28 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
         );
 
         if (coverBytes != null && pendingCoverUpload != null) {
-          _circleStoreService.setUploadingCover(book.id, AppConstants.placeholderBlurHash);
+          _circleStoreService.setUploadingCover(
+            book.id,
+            AppConstants.placeholderBlurHash,
+          );
 
-          final preparedImage = await pendingCoverUpload;
-          
-          if (preparedImage.blurhash != null) {
-            _circleStoreService.setUploadingCover(book.id, preparedImage.blurhash!);
+          GroupImagePrepared preparedImage;
+          try {
+            preparedImage = await pendingCoverUpload;
+          } catch (e) {
+            _circleStoreService.clearUploadingCover(book.id);
+            rethrow;
           }
-          
-          final mimeType = lookupMimeType('', headerBytes: coverBytes) ??
+
+          if (preparedImage.blurhash != null) {
+            _circleStoreService.setUploadingCover(
+              book.id,
+              preparedImage.blurhash!,
+            );
+          }
+
+          final mimeType =
+              lookupMimeType('', headerBytes: coverBytes) ??
               AppConstants.defaultImageMimeType;
 
           _circleStoreService.updateCircleBookCoverOptimistic(

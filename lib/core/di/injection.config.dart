@@ -61,14 +61,11 @@ import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
 import 'package:zapbook/core/services/group_store_service.dart' as _i40;
-import 'package:zapbook/core/services/group_store_service_impl.dart' as _i78;
 import 'package:zapbook/core/services/group_transfer_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
 import 'package:zapbook/core/services/message_router_service.dart' as _i223;
-import 'package:zapbook/core/services/message_router_service_impl.dart'
-    as _i452;
 import 'package:zapbook/core/services/milestone_service.dart' as _i31;
 import 'package:zapbook/core/services/nostr_service.dart' as _i11;
 import 'package:zapbook/core/services/nwc_service.dart' as _i507;
@@ -457,15 +454,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
-    gh.lazySingleton<_i40.GroupStoreService>(
-      () => _i78.GroupStoreServiceImpl(
-        gh<_i140.MarmotSyncService>(),
-        gh<_i970.Marmot>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i873.BlossomService>(),
-        gh<_i394.GroupEnvelopeService>(),
-      ),
-    );
     gh.lazySingleton<_i1073.NostrSession>(
       () => _i1073.NostrSession(
         gh<_i857.Ndk>(),
@@ -506,6 +494,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
+    gh.lazySingleton<_i223.MessageRouterService>(
+      () => _i223.MessageRouterService(gh<_i140.MarmotSyncService>()),
+    );
     gh.factory<_i634.OnboardingCubit>(
       () => _i634.OnboardingCubit(
         gh<_i1053.ClipboardService>(),
@@ -515,8 +506,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i341.CompleteOnboarding>(),
       ),
     );
-    gh.lazySingleton<_i223.MessageRouterService>(
-      () => _i452.MessageRouterServiceImpl(gh<_i140.MarmotSyncService>()),
+    gh.lazySingleton<_i40.GroupStoreService>(
+      () => _i40.GroupStoreService(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i873.BlossomService>(),
+        gh<_i394.GroupEnvelopeService>(),
+      ),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
@@ -530,6 +527,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i40.GroupStoreService>(),
         gh<_i854.LibraryFileStore>(),
       ),
+      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
       () => _i1043.IngestionOrchestratorCubit(

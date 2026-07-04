@@ -29,6 +29,8 @@ class CircleStoreService {
   Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
   List<CircleBook> get currentCircles => _circlesController.value;
 
+  StreamSubscription? _groupSubscription;
+
   final Map<String, int> _groupHashes = {};
   final Map<String, CircleBook> _lastSeenBooks = {};
 
@@ -64,131 +66,144 @@ class CircleStoreService {
       }).distinct();
 
   void _init() {
-    _groupStore.watchGroups.listen((groups) async {
-      final circles = groups
-          .where((g) => BookGroupNaming.matches(g.name))
-          .toList();
+    _groupSubscription = _groupStore.watchGroups
+        .asyncMap((groups) async {
+          final circles = groups
+              .where((g) => BookGroupNaming.matches(g.name))
+              .toList();
 
-      final books = <CircleBook>[];
-      final futures = <Future<void>>[];
+          final books = <CircleBook>[];
+          final futures = <Future<void>>[];
 
-      for (final g in circles) {
-        final currentHash = Object.hash(
-          g.name,
-          g.description,
-          g.memberCount,
-          g.adminNpubs.join(','),
-          g.imageHash != null ? String.fromCharCodes(g.imageHash!) : null,
-          g.imageKey != null ? String.fromCharCodes(g.imageKey!) : null,
-          g.imageNonce != null ? String.fromCharCodes(g.imageNonce!) : null,
-        );
-        final lastHash = _groupHashes[g.id];
-        final lastBook = _lastSeenBooks[g.id];
-
-        if (lastHash != null && lastHash == currentHash && lastBook != null) {
-          books.add(lastBook);
-          continue;
-        }
-
-        futures.add(() async {
-          final title = BookGroupNaming.titleOf(g.name);
-          final dirId = BookGroupNaming.circleDirIdOf(g.name);
-
-          String? author;
-          String? genre;
-          String? sourceFormat;
-          int? pageCount;
-          int? chapterCount;
-          String? zbfVersion;
-          bool? needsAiProcessing;
-          int? createdAtMs;
-          int? addedAtMs;
-          String? contentHash;
-
-          if (g.description.isNotEmpty) {
-            try {
-              final map = jsonDecode(g.description) as Map<String, dynamic>;
-              author = map['author'] as String?;
-              genre = map['genre'] as String?;
-              sourceFormat = map['sourceFormat'] as String?;
-              pageCount = (map['pageCount'] as num?)?.toInt();
-              chapterCount = (map['chapterCount'] as num?)?.toInt();
-              zbfVersion = map['zbfVersion'] as String?;
-              needsAiProcessing = map['needsAiProcessing'] as bool?;
-              createdAtMs = (map['createdAtMs'] as num?)?.toInt();
-              addedAtMs = (map['addedAtMs'] as num?)?.toInt();
-              contentHash = map['contentHash'] as String?;
-            } catch (error, _) {
-              _log.info('Error parsing description (legacy)');
-            }
-          }
-
-          final zbf = await _fileStore.zbfFile(dirId);
-
-          String? coverPath;
-          if (g.imageHash != null) {
-            final hashHex = hex.encode(g.imageHash!);
-            coverPath = await _fileStore.coverPathIfExists(
-              dirId,
-              imageHashHex: hashHex,
+          for (final g in circles) {
+            final currentHash = Object.hash(
+              g.name,
+              g.description,
+              g.memberCount,
+              g.adminNpubs.join(','),
+              g.imageHash != null ? String.fromCharCodes(g.imageHash!) : null,
+              g.imageKey != null ? String.fromCharCodes(g.imageKey!) : null,
+              g.imageNonce != null ? String.fromCharCodes(g.imageNonce!) : null,
             );
+            final lastHash = _groupHashes[g.id];
+            final lastBook = _lastSeenBooks[g.id];
 
-            if (coverPath == null) {
-              _downloadGroupImage(
-                g.id,
-                dirId,
-                hashHex,
-                g.imageHash!,
-                g.imageKey,
-                g.imageNonce,
-              );
+            if (lastHash != null &&
+                lastHash == currentHash &&
+                lastBook != null) {
+              books.add(lastBook);
+              continue;
             }
-          } else {
-            coverPath = await _fileStore.coverPathIfExists(dirId);
+
+            futures.add(() async {
+              final title = BookGroupNaming.titleOf(g.name);
+              final dirId = BookGroupNaming.circleDirIdOf(g.name);
+
+              String? author;
+              String? genre;
+              String? sourceFormat;
+              int? pageCount;
+              int? chapterCount;
+              String? zbfVersion;
+              bool? needsAiProcessing;
+              int? createdAtMs;
+              int? addedAtMs;
+              String? contentHash;
+
+              if (g.description.isNotEmpty) {
+                try {
+                  final map = jsonDecode(g.description) as Map<String, dynamic>;
+                  author = map['author'] as String?;
+                  genre = map['genre'] as String?;
+                  sourceFormat = map['sourceFormat'] as String?;
+                  pageCount = (map['pageCount'] as num?)?.toInt();
+                  chapterCount = (map['chapterCount'] as num?)?.toInt();
+                  zbfVersion = map['zbfVersion'] as String?;
+                  needsAiProcessing = map['needsAiProcessing'] as bool?;
+                  createdAtMs = (map['createdAtMs'] as num?)?.toInt();
+                  addedAtMs = (map['addedAtMs'] as num?)?.toInt();
+                  contentHash = map['contentHash'] as String?;
+                } catch (error, _) {
+                  _log.info('Error parsing description (legacy)');
+                }
+              }
+
+              final zbf = await _fileStore.zbfFile(dirId);
+
+              String? coverPath;
+              if (g.imageHash != null) {
+                final hashHex = hex.encode(g.imageHash!);
+                coverPath = await _fileStore.coverPathIfExists(
+                  dirId,
+                  imageHashHex: hashHex,
+                );
+
+                if (coverPath == null) {
+                  _downloadGroupImage(
+                    g.id,
+                    dirId,
+                    hashHex,
+                    g.imageHash!,
+                    g.imageKey,
+                    g.imageNonce,
+                  );
+                }
+              } else {
+                coverPath = await _fileStore.coverPathIfExists(dirId);
+              }
+              final book = CircleBook(
+                id: g.id,
+                nostrGroudId: g.nostrGroupId,
+                circleDirId: dirId,
+                title: title,
+                author: author ?? lastBook?.author ?? '',
+                genre: genre ?? lastBook?.genre,
+                memberCount: g.memberCount,
+                addedAt: addedAtMs != null
+                    ? DateTime.fromMillisecondsSinceEpoch(addedAtMs)
+                    : lastBook?.addedAt ?? DateTime.now(),
+                lastOpenedAt: lastBook?.lastOpenedAt,
+                coverPath: coverPath ?? lastBook?.coverPath,
+                sourceFormat: BookSourceFormat.fromWire(
+                  sourceFormat ?? lastBook?.sourceFormat.wireValue ?? 'pdf',
+                ),
+                pageCount: pageCount ?? lastBook?.pageCount ?? 0,
+                chapterCount: chapterCount ?? lastBook?.chapterCount ?? 0,
+                zbfPath: zbf.path,
+                needsAiProcessing:
+                    needsAiProcessing ?? lastBook?.needsAiProcessing ?? false,
+                zbfVersion: zbfVersion ?? lastBook?.zbfVersion ?? '',
+                createdAt: createdAtMs != null
+                    ? DateTime.fromMillisecondsSinceEpoch(createdAtMs)
+                    : lastBook?.createdAt ?? DateTime.now(),
+                contentHash: contentHash ?? lastBook?.contentHash,
+                adminNpubs: g.adminNpubs,
+              );
+              books.add(book);
+              _groupHashes[g.id] = currentHash;
+              _lastSeenBooks[g.id] = book;
+            }());
           }
-          final book = CircleBook(
-            id: g.id,
-            nostrGroudId: g.nostrGroupId,
-            circleDirId: dirId,
-            title: title,
-            author: author ?? lastBook?.author ?? '',
-            genre: genre ?? lastBook?.genre,
-            memberCount: g.memberCount,
-            addedAt: addedAtMs != null
-                ? DateTime.fromMillisecondsSinceEpoch(addedAtMs)
-                : lastBook?.addedAt ?? DateTime.now(),
-            lastOpenedAt: lastBook?.lastOpenedAt,
-            coverPath: coverPath ?? lastBook?.coverPath,
-            sourceFormat: BookSourceFormat.fromWire(
-              sourceFormat ?? lastBook?.sourceFormat.wireValue ?? 'pdf',
-            ),
-            pageCount: pageCount ?? lastBook?.pageCount ?? 0,
-            chapterCount: chapterCount ?? lastBook?.chapterCount ?? 0,
-            zbfPath: zbf.path,
-            needsAiProcessing:
-                needsAiProcessing ?? lastBook?.needsAiProcessing ?? false,
-            zbfVersion: zbfVersion ?? lastBook?.zbfVersion ?? '',
-            createdAt: createdAtMs != null
-                ? DateTime.fromMillisecondsSinceEpoch(createdAtMs)
-                : lastBook?.createdAt ?? DateTime.now(),
-            contentHash: contentHash ?? lastBook?.contentHash,
-            adminNpubs: g.adminNpubs,
-          );
-          books.add(book);
-          _groupHashes[g.id] = currentHash;
-          _lastSeenBooks[g.id] = book;
-        }());
-      }
 
-      await Future.wait(futures);
+          await Future.wait(futures);
 
-      final currentIds = circles.map((g) => g.id).toSet();
-      _groupHashes.removeWhere((id, _) => !currentIds.contains(id));
-      _lastSeenBooks.removeWhere((id, _) => !currentIds.contains(id));
+          final currentIds = circles.map((g) => g.id).toSet();
+          _groupHashes.removeWhere((id, _) => !currentIds.contains(id));
+          _lastSeenBooks.removeWhere((id, _) => !currentIds.contains(id));
 
-      books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
-      _circlesController.add(books);
-    });
+          books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+          return books;
+        })
+        .listen((books) {
+          _circlesController.add(books);
+        });
+  }
+
+  @disposeMethod
+  void dispose() {
+    _groupSubscription?.cancel();
+    _circlesController.close();
+    _uploadingCovers.close();
   }
 
   Future<void> _downloadGroupImage(
@@ -300,9 +315,13 @@ class CircleStoreService {
           groupId: marmotGroupId,
           preparedImage: preparedImage,
         );
-        
+
         final hashHex = hex.encode(preparedImage.imageHash);
-        await _fileStore.writeCover(circleDirId, coverBytes, imageHashHex: hashHex);
+        await _fileStore.writeCover(
+          circleDirId,
+          coverBytes,
+          imageHashHex: hashHex,
+        );
         await refreshBookCover(circleDirId, imageHashHex: hashHex);
       } catch (e, st) {
         _log.warning('Failed background cover upload & update', e, st);
