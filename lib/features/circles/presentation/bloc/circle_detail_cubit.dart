@@ -6,8 +6,8 @@ import 'dart:async';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
 @injectable

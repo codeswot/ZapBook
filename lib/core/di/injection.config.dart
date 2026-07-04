@@ -115,6 +115,14 @@ import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.
     as _i654;
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart'
     as _i584;
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart'
+    as _i947;
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_cubit.dart'
+    as _i688;
+import 'package:zapbook/features/circles/presentation/bloc/circles_cubit.dart'
+    as _i761;
+import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart'
+    as _i620;
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart'
     as _i539;
 import 'package:zapbook/features/home/data/datasources/home_dashboard_data_source.dart'
@@ -139,18 +147,10 @@ import 'package:zapbook/features/library/domain/usecases/watch_library_books.dar
     as _i1024;
 import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart'
     as _i385;
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart'
-    as _i458;
-import 'package:zapbook/features/library/presentation/bloc/circle_members_cubit.dart'
-    as _i906;
-import 'package:zapbook/features/library/presentation/bloc/circles_cubit.dart'
-    as _i668;
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart'
     as _i696;
-import 'package:zapbook/features/library/presentation/bloc/share_circle_cubit.dart'
-    as _i659;
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i405;
 import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
@@ -202,8 +202,8 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
+    gh.factory<_i620.ShareCircleCubit>(() => _i620.ShareCircleCubit());
     gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
-    gh.factory<_i659.ShareCircleCubit>(() => _i659.ShareCircleCubit());
     gh.singleton<_i708.AppDatabase>(() => _i708.AppDatabase());
     await gh.singletonAsync<_i19.AppInfoService>(
       () => registerModule.appInfoService(),
@@ -444,8 +444,8 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i803.SessionReloader>(),
       ),
     );
-    gh.factory<_i906.CircleMembersCubit>(
-      () => _i906.CircleMembersCubit(
+    gh.factory<_i688.CircleMembersCubit>(
+      () => _i688.CircleMembersCubit(
         gh<_i970.Marmot>(),
         gh<_i244.ContactService>(),
         gh<_i603.IdentityLocalDataSource>(),
@@ -514,6 +514,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i873.BlossomService>(),
         gh<_i394.GroupEnvelopeService>(),
       ),
+      dispose: (i) => i.dispose(),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
@@ -583,8 +584,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
     );
-    gh.factory<_i668.CirclesCubit>(
-      () => _i668.CirclesCubit(gh<_i821.CircleStoreService>()),
+    gh.factory<_i761.CirclesCubit>(
+      () => _i761.CirclesCubit(gh<_i821.CircleStoreService>()),
     );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i821.CircleStoreService>()),
@@ -621,8 +622,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1021.WatchHomeDashboard>(
       () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
-    gh.factory<_i458.CircleDetailCubit>(
-      () => _i458.CircleDetailCubit(gh<_i516.LibraryRepository>()),
+    gh.factory<_i947.CircleDetailCubit>(
+      () => _i947.CircleDetailCubit(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i812.DeleteCircleBook>(
       () => _i812.DeleteCircleBook(gh<_i516.LibraryRepository>()),

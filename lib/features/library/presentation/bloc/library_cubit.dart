@@ -10,10 +10,8 @@ import 'package:zapbook/features/library/presentation/bloc/library_state.dart';
 
 @injectable
 class LibraryCubit extends Cubit<LibraryState> {
-  LibraryCubit(
-    this._watchCircleBooks,
-    this._watchLastOpenedBook,
-  ) : super(const LibraryLoading()) {
+  LibraryCubit(this._watchCircleBooks, this._watchLastOpenedBook)
+    : super(const LibraryLoading()) {
     _init();
   }
 
@@ -35,8 +33,6 @@ class LibraryCubit extends Cubit<LibraryState> {
       );
     }
   }
-
-
 
   Future<void> _init() async {
     _subscription = Rx.combineLatest2(

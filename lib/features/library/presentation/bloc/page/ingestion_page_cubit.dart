@@ -31,11 +31,16 @@ class IngestionPageCubit extends Cubit<IngestionPageState> {
       final file = await _filePickerService.pickBook();
       if (file != null) {
         final hash = await _fileHasher.sha256OfFile(file);
-        final existing = _circleStoreService.currentCircles
-            .firstWhereOrNull((c) => c.contentHash == hash);
+        final existing = _circleStoreService.currentCircles.firstWhereOrNull(
+          (c) => c.contentHash == hash,
+        );
 
         if (existing != null) {
-          emit(IngestionPageError('“${existing.title}” is already in your library'));
+          emit(
+            IngestionPageError(
+              '“${existing.title}” is already in your library',
+            ),
+          );
           emit(const IngestionPageIdle());
           return;
         }

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';

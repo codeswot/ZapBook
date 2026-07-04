@@ -3,7 +3,7 @@ import 'package:flutter_blurhash/flutter_blurhash.dart';
 
 class PulsingBlurHash extends StatefulWidget {
   final String blurhash;
-  
+
   const PulsingBlurHash({super.key, required this.blurhash});
 
   @override
@@ -22,10 +22,11 @@ class _PulsingBlurHashState extends State<PulsingBlurHash>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    
-    _opacity = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+
+    _opacity = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -39,15 +40,9 @@ class _PulsingBlurHashState extends State<PulsingBlurHash>
     return AnimatedBuilder(
       animation: _opacity,
       builder: (context, child) {
-        return Opacity(
-          opacity: _opacity.value,
-          child: child,
-        );
+        return Opacity(opacity: _opacity.value, child: child);
       },
-      child: BlurHash(
-        hash: widget.blurhash,
-        imageFit: BoxFit.cover,
-      ),
+      child: BlurHash(hash: widget.blurhash, imageFit: BoxFit.cover),
     );
   }
 }

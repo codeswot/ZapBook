@@ -7,7 +7,7 @@ import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_state.dart'
     hide LibraryEmpty;
 import 'package:zapbook/features/library/presentation/widgets/library_empty.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_prompt_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/circle_prompt_sheet.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_processing_tile.dart';
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';

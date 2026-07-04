@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_state.dart'
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart'
     show MemberProgress;
-import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';

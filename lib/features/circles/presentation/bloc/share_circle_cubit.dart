@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/features/library/domain/entities/share_skip.dart';
-import 'package:zapbook/features/library/presentation/bloc/share_circle_state.dart';
+import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
+import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
 
 @injectable
 class ShareCircleCubit extends Cubit<ShareCircleState> {

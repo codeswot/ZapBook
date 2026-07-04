@@ -50,6 +50,7 @@ dependencies:
   mime: ^2.0.0
   flutter_blurhash: ^0.9.1
   convert: ^3.1.2
+  collection: ^1.19.1
 
 dependency_overrides:
   http: ^1.2.1

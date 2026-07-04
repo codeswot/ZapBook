@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/features/library/presentation/bloc/circles_cubit.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_tile.dart';
-import 'package:zapbook/features/library/presentation/widgets/circles_empty.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circles_cubit.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_tile.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circles_empty.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
 import 'package:zapbook/theme/app_theme.dart';
 

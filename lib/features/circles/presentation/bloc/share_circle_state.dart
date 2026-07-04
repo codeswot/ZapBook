@@ -1,5 +1,5 @@
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/features/library/domain/entities/share_skip.dart';
+import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 
 sealed class ShareCircleState {
   const ShareCircleState();

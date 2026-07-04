@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';

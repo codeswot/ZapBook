@@ -7,7 +7,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart';
 
 @injectable
 class CircleMembersCubit extends Cubit<CircleMembersState> {

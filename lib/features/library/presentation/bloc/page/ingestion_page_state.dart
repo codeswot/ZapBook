@@ -18,7 +18,12 @@ class IngestionPagePicking extends IngestionPageState {
 }
 
 class IngestionPageFilePicked extends IngestionPageState {
-  const IngestionPageFilePicked(this.file, this.rawTitle, this.contentHash, [this.author]);
+  const IngestionPageFilePicked(
+    this.file,
+    this.rawTitle,
+    this.contentHash, [
+    this.author,
+  ]);
 
   final File file;
   final String rawTitle;

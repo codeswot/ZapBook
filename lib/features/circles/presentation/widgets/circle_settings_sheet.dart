@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/core/presentation/widgets/book_edit_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/circle_members_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';

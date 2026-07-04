@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';

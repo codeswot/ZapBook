@@ -1,6 +1,6 @@
 import 'package:zapbook/core/domain/milestone_payload.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/features/library/presentation/bloc/circle_members_state.dart'
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
 sealed class CircleDetailState {
