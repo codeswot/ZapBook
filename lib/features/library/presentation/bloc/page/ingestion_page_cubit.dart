@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'dart:isolate';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:collection/collection.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
@@ -39,7 +42,34 @@ class IngestionPageCubit extends Cubit<IngestionPageState> {
 
         final rawTitle = file.path.split(Platform.pathSeparator).last;
         final cleanTitle = _sanitizeTitle(rawTitle);
-        emit(IngestionPageFilePicked(file, cleanTitle, hash));
+
+        String? extractedTitle;
+        String? extractedAuthor;
+
+        if (file.path.toLowerCase().endsWith('.pdf')) {
+          final metadata = await Isolate.run(() {
+            try {
+              final doc = PdfDocument(inputBytes: file.readAsBytesSync());
+              final info = doc.documentInformation;
+              final author = info.author.trim();
+              final title = info.title.trim();
+              doc.dispose();
+              return {
+                'author': author.isEmpty || author.toLowerCase() == 'unknown'
+                    ? null
+                    : author,
+                'title': title.isEmpty ? null : title,
+              };
+            } catch (_) {
+              return <String, String?>{};
+            }
+          });
+          extractedTitle = metadata['title'];
+          extractedAuthor = metadata['author'];
+        }
+
+        final finalTitle = extractedTitle ?? cleanTitle;
+        emit(IngestionPageFilePicked(file, finalTitle, hash, extractedAuthor));
         emit(const IngestionPageIdle());
       } else {
         emit(const IngestionPageIdle());

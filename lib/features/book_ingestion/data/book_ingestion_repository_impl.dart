@@ -49,8 +49,10 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
       return;
     }
 
+    final finalCircleBookId = circleDirId ?? Ulid().toString();
+    bool success = false;
+
     try {
-      final finalCircleBookId = circleDirId ?? Ulid().toString();
       final zbfDir = await _fileStore.bookDir(finalCircleBookId);
 
       ZbfBook? book;
@@ -88,9 +90,18 @@ final class BookIngestionRepositoryImpl implements BookIngestionRepository {
         unawaited(_vectorIndex.ensureEmbedded(book.manifest.id, path));
       }
 
+      success = true;
       yield IngestionProgress.written(result: book, zbfPath: path);
     } on Exception catch (error) {
       yield IngestionProgress.failed(error.toString());
+    } finally {
+      if (!success) {
+        try {
+          await _fileStore.deleteBook(finalCircleBookId);
+        } catch (e) {
+          _log.warning('Failed to delete book during cleanup: $e');
+        }
+      }
     }
   }
 

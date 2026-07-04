@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:zapbook/core/constants/book_genres.dart';
 import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
@@ -11,28 +12,13 @@ import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_st
 class BookWizardCubit extends Cubit<BookWizardState> {
   BookWizardCubit(
     @factoryParam this._completer,
-    @factoryParam String? initialTitle,
+    @factoryParam WizardInitialData? initialData,
     this._filePickerService,
   ) : super(
         BookWizardState(
-          title: initialTitle ?? 'Untitled',
-          availableGenres: const [
-            'Fiction',
-            'Non-Fiction',
-            'Sci-Fi',
-            'Fantasy',
-            'Mystery',
-            'Biography',
-            'History',
-            'Technology',
-            'Science',
-            'Romance',
-            'Thriller',
-            'Self-Help',
-            'Business',
-            'Philosophy',
-            'Art',
-          ],
+          title: initialData?.title ?? 'Untitled',
+          author: initialData?.author,
+          availableGenres: bookGenres,
         ),
       );
 

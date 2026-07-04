@@ -32,7 +32,6 @@ import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/nostr_module.dart' as _i96;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
 import 'package:zapbook/core/domain/book_ingestion_repository.dart' as _i379;
-import 'package:zapbook/core/domain/entities/circle_book.dart' as _i560;
 import 'package:zapbook/core/domain/ingest_book.dart' as _i696;
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
@@ -141,8 +140,6 @@ import 'package:zapbook/features/library/domain/usecases/watch_last_opened_libra
     as _i16;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
     as _i1024;
-import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart'
-    as _i404;
 import 'package:zapbook/features/library/presentation/bloc/book_text_search_cubit.dart'
     as _i385;
 import 'package:zapbook/features/library/presentation/bloc/circle_detail_cubit.dart'
@@ -254,9 +251,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i803.SessionReloader>(
       () => const _i803.SessionManagerReloader(),
     );
-    gh.factoryParam<_i404.BookEditCubit, _i560.CircleBook, dynamic>(
-      (book, _) => _i404.BookEditCubit(book),
-    );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
       preResolve: true,
@@ -269,17 +263,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
-    );
-    gh.factoryParam<
-      _i405.BookWizardCubit,
-      _i687.Completer<_i230.WizardData>,
-      String?
-    >(
-      (_completer, initialTitle) => _i405.BookWizardCubit(
-        _completer,
-        initialTitle,
-        gh<_i1034.FilePickerService>(),
-      ),
     );
     gh.singleton<_i39.PerformanceService>(
       () => _i39.PerformanceService(gh<_i460.SharedPreferences>()),
@@ -329,6 +312,17 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i118.DecodedMessageCache>(),
+      ),
+    );
+    gh.factoryParam<
+      _i405.BookWizardCubit,
+      _i687.Completer<_i230.WizardData>,
+      _i230.WizardInitialData?
+    >(
+      (_completer, initialData) => _i405.BookWizardCubit(
+        _completer,
+        initialData,
+        gh<_i1034.FilePickerService>(),
       ),
     );
     gh.lazySingleton<_i148.NostrSignerSource>(
@@ -463,6 +457,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
     );
+    gh.lazySingleton<_i40.GroupStoreService>(
+      () => _i78.GroupStoreServiceImpl(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i873.BlossomService>(),
+        gh<_i394.GroupEnvelopeService>(),
+      ),
+    );
     gh.lazySingleton<_i1073.NostrSession>(
       () => _i1073.NostrSession(
         gh<_i857.Ndk>(),
@@ -499,13 +502,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
-    );
-    gh.lazySingleton<_i40.GroupStoreService>(
-      () => _i78.GroupStoreServiceImpl(
-        gh<_i140.MarmotSyncService>(),
-        gh<_i970.Marmot>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
     );
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
@@ -640,7 +636,11 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
     );
     gh.factory<_i41.CircleOperationsCubit>(
-      () => _i41.CircleOperationsCubit(gh<_i812.DeleteCircleBook>()),
+      () => _i41.CircleOperationsCubit(
+        gh<_i812.DeleteCircleBook>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i821.CircleStoreService>(),
+      ),
     );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(

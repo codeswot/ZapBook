@@ -5,13 +5,12 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/circle_detail/circle_progress_bar.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 
 class CircleMyProgressCard extends StatelessWidget {
   const CircleMyProgressCard({
     super.key,
     required this.book,
-    required this.cover,
     required this.myNpub,
     required this.myProgressFraction,
     required this.myPage,
@@ -19,7 +18,6 @@ class CircleMyProgressCard extends StatelessWidget {
   });
 
   final CircleBook book;
-  final ImageProvider? cover;
   final String? myNpub;
   final double myProgressFraction;
   final int myPage;
@@ -43,7 +41,7 @@ class CircleMyProgressCard extends StatelessWidget {
             tag: 'circle-cover-${book.id}',
             child: Material(
               type: MaterialType.transparency,
-              child: AppBookCover(width: 72, height: 92, image: cover),
+              child: CircleBookCover(book: book, width: 72, height: 92),
             ),
           ),
           const SizedBox(width: 14),

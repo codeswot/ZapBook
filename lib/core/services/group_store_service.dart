@@ -20,12 +20,18 @@ abstract class GroupStoreService {
     List<String>? adminNpubs,
   });
 
+  Future<GroupImagePrepared> prepareImage(Uint8List imageBytes);
+  Future<void> uploadImage(GroupImagePrepared prep, String mimeType);
+
+  Future<Uint8List?> downloadImage(
+    Uint8List imageHash,
+    Uint8List? imageKey,
+    Uint8List? imageNonce,
+  );
+
   Future<String> setGroupImage({
     required String groupId,
-    required Uint8List imageHash,
-    required Uint8List imageKey,
-    required Uint8List imageNonce,
-    required Uint8List imageUploadKey,
+    required GroupImagePrepared preparedImage,
   });
 
   Future<void> deleteGroup(String groupId);

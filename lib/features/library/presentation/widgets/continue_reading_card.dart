@@ -1,12 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/open_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/app_icon_button.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
@@ -19,9 +17,6 @@ class ContinueReadingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final cover = book.coverPath;
-    final image = cover != null ? FileImage(File(cover)) : null;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       child: BouncingInteractiveWidget(
@@ -35,7 +30,7 @@ class ContinueReadingCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              AppBookCover(width: 56, height: 77, image: image),
+              CircleBookCover(book: book, width: 56, height: 77),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

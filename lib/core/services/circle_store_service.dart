@@ -1,5 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:convert/convert.dart';
+import 'package:flutter/painting.dart';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
+import 'package:marmot_dart/marmot_dart.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
@@ -19,11 +26,29 @@ class CircleStoreService {
   final LibraryFileStore _fileStore;
 
   final _circlesController = BehaviorSubject<List<CircleBook>>.seeded([]);
-  final _groupHashes = <String, int>{};
-  final _lastSeenBooks = <String, CircleBook>{};
-
   Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
   List<CircleBook> get currentCircles => _circlesController.value;
+
+  final Map<String, int> _groupHashes = {};
+  final Map<String, CircleBook> _lastSeenBooks = {};
+
+  final BehaviorSubject<Map<String, String>> _uploadingCovers =
+      BehaviorSubject.seeded({});
+  Stream<Map<String, String>> get watchUploadingCovers =>
+      _uploadingCovers.stream;
+  Map<String, String> get currentUploadingCovers => _uploadingCovers.value;
+
+  void setUploadingCover(String groupId, String blurhash) {
+    final current = Map<String, String>.from(_uploadingCovers.value);
+    current[groupId] = blurhash;
+    _uploadingCovers.add(current);
+  }
+
+  void clearUploadingCover(String groupId) {
+    final current = Map<String, String>.from(_uploadingCovers.value);
+    current.remove(groupId);
+    _uploadingCovers.add(current);
+  }
 
   Stream<CircleBook?> get watchLastOpenedCircleBook =>
       watchCircleBooks.map((circleBooks) {
@@ -102,7 +127,22 @@ class CircleStoreService {
 
           String? coverPath;
           if (g.imageHash != null) {
-            coverPath = (await _fileStore.coverFile(dirId)).path;
+            final hashHex = hex.encode(g.imageHash!);
+            coverPath = await _fileStore.coverPathIfExists(
+              dirId,
+              imageHashHex: hashHex,
+            );
+
+            if (coverPath == null) {
+              _downloadGroupImage(
+                g.id,
+                dirId,
+                hashHex,
+                g.imageHash!,
+                g.imageKey,
+                g.imageNonce,
+              );
+            }
           } else {
             coverPath = await _fileStore.coverPathIfExists(dirId);
           }
@@ -151,6 +191,29 @@ class CircleStoreService {
     });
   }
 
+  Future<void> _downloadGroupImage(
+    String groupId,
+    String dirId,
+    String hashHex,
+    Uint8List imageHash,
+    Uint8List? imageKey,
+    Uint8List? imageNonce,
+  ) async {
+    try {
+      final bytes = await _groupStore.downloadImage(
+        imageHash,
+        imageKey,
+        imageNonce,
+      );
+      if (bytes != null) {
+        await _fileStore.writeCover(dirId, bytes, imageHashHex: hashHex);
+        await refreshBookCover(dirId, imageHashHex: hashHex);
+      }
+    } catch (e, st) {
+      _log.warning('Failed to download image for $groupId', e, st);
+    }
+  }
+
   Future<String> createCircleBook({
     required String circleDirId,
     required String humanTitle,
@@ -168,24 +231,113 @@ class CircleStoreService {
     return cirlceGroup.id;
   }
 
-  // update
+  Future<void> updateCircleBookMetadata({
+    required String marmotGroupId,
+    String? author,
+    String? genre,
+    String? title,
+  }) async {
+    final group = _groupStore.currentGroups
+        .where((g) => g.id == marmotGroupId)
+        .firstOrNull;
+    if (group == null) return;
 
-  Future<void> refreshBookCover(String circleDirId) async {
+    Map<String, dynamic> metadata = {};
+    if (group.description.isNotEmpty) {
+      try {
+        metadata = Map<String, dynamic>.from(
+          jsonDecode(group.description) as Map,
+        );
+      } catch (_) {}
+    }
+
+    bool changed = false;
+    if (author != null && author.isNotEmpty && metadata['author'] != author) {
+      metadata['author'] = author;
+      changed = true;
+    }
+    if (genre != null && genre.isNotEmpty && metadata['genre'] != genre) {
+      metadata['genre'] = genre;
+      changed = true;
+    }
+
+    String? newName;
+    if (title != null && title.isNotEmpty) {
+      final circleDirId = BookGroupNaming.circleDirIdOf(group.name);
+      final generatedName = BookGroupNaming.nameFor(circleDirId, title);
+      if (generatedName != group.name) {
+        newName = generatedName;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await _groupStore.updateGroupMetadata(
+        groupId: marmotGroupId,
+        name: newName,
+        description: jsonEncode(metadata),
+      );
+    }
+  }
+
+  Future<GroupImagePrepared> prepareCover({
+    required Uint8List coverBytes,
+  }) async {
+    return _groupStore.prepareImage(coverBytes);
+  }
+
+  void updateCircleBookCoverOptimistic({
+    required CircleBook book,
+    required Uint8List coverBytes,
+    required GroupImagePrepared preparedImage,
+    required String mimeType,
+  }) {
+    unawaited(() async {
+      try {
+        await _groupStore.uploadImage(preparedImage, mimeType);
+        await _groupStore.setGroupImage(
+          groupId: book.id,
+          preparedImage: preparedImage,
+        );
+
+        final hashHex = hex.encode(preparedImage.imageHash);
+        await _fileStore.writeCover(
+          book.circleDirId,
+          coverBytes,
+          imageHashHex: hashHex,
+        );
+        await refreshBookCover(book.circleDirId, imageHashHex: hashHex);
+      } catch (e, st) {
+        _log.warning('Failed background cover upload & update', e, st);
+      } finally {
+        clearUploadingCover(book.id);
+      }
+    }());
+  }
+
+  Future<void> refreshBookCover(
+    String circleDirId, {
+    String? imageHashHex,
+  }) async {
     final bookEntry = _lastSeenBooks.entries
         .where((e) => e.value.circleDirId == circleDirId)
         .firstOrNull;
     if (bookEntry != null) {
       final book = bookEntry.value;
-      if (book.coverPath == null) {
-        final coverPath = await _fileStore.coverPathIfExists(circleDirId);
-        if (coverPath != null) {
-          final updatedBook = book.copyWith(coverPath: coverPath);
-          _lastSeenBooks[book.id] = updatedBook;
-
-          final books = _lastSeenBooks.values.toList();
-          books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
-          _circlesController.add(books);
+      final coverPath = await _fileStore.coverPathIfExists(
+        circleDirId,
+        imageHashHex: imageHashHex,
+      );
+      if (coverPath != null) {
+        if (book.coverPath != null && book.coverPath != coverPath) {
+          await FileImage(File(book.coverPath!)).evict();
         }
+        final updatedBook = book.copyWith(coverPath: coverPath);
+        _lastSeenBooks[book.id] = updatedBook;
+
+        final books = _lastSeenBooks.values.toList();
+        books.sort((a, b) => b.addedAt.compareTo(a.addedAt));
+        _circlesController.add(books);
       }
     }
   }

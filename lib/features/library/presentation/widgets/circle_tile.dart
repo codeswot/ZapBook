@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -8,34 +6,18 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/widgets/book_actions_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class CircleTile extends StatelessWidget {
   const CircleTile({super.key, required this.circle});
 
   final CircleBook circle;
 
-  AppBookCoverHue get _hue {
-    switch (circle.sourceFormat) {
-      case BookSourceFormat.pdf:
-        return AppBookCoverHue.orange;
-      case BookSourceFormat.epub:
-        return AppBookCoverHue.purple;
-      case BookSourceFormat.docx:
-        return AppBookCoverHue.sky;
-      case BookSourceFormat.txt:
-        return AppBookCoverHue.mint;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final cover = circle.coverPath;
-    final image = cover != null ? FileImage(File(cover)) : null;
 
     return BouncingInteractiveWidget(
       onTap: () => CircleDetailRoute(circleBookId: circle.id).push(context),
@@ -53,12 +35,7 @@ class CircleTile extends StatelessWidget {
               tag: 'circle-cover-${circle.id}',
               child: Material(
                 type: MaterialType.transparency,
-                child: AppBookCover(
-                  width: 72,
-                  height: 92,
-                  hue: _hue,
-                  image: image,
-                ),
+                child: CircleBookCover(book: circle, width: 72, height: 92),
               ),
             ),
             const SizedBox(width: 14),

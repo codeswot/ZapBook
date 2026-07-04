@@ -37,8 +37,10 @@ class LibraryFileStore {
   Future<Directory> zbfFile(String circleBookId) async =>
       Directory(await _bookPath(circleBookId));
 
-  Future<File> coverFile(String circleBookId) async =>
-      File('${await _bookPath(circleBookId)}/$_coverName');
+  Future<File> coverFile(String circleBookId, {String? imageHashHex}) async {
+    final name = imageHashHex != null ? 'cover_$imageHashHex.jpg' : _coverName;
+    return File('${await _bookPath(circleBookId)}/$name');
+  }
 
   Future<File> manifestFile(String circleBookId) async =>
       File('${await _bookPath(circleBookId)}/manifest.json');
@@ -58,10 +60,10 @@ class LibraryFileStore {
     );
   }
 
-  Future<String?> writeCover(String circleBookId, Uint8List? bytes) async {
+  Future<String?> writeCover(String circleBookId, Uint8List? bytes, {String? imageHashHex}) async {
     if (bytes == null || bytes.isEmpty) return null;
     await bookDir(circleBookId);
-    final file = await coverFile(circleBookId);
+    final file = await coverFile(circleBookId, imageHashHex: imageHashHex);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
   }
@@ -79,9 +81,13 @@ class LibraryFileStore {
     return null;
   }
 
-  Future<String?> coverPathIfExists(String circleBookId) async {
+  Future<String?> coverPathIfExists(String circleBookId, {String? imageHashHex}) async {
+    if (imageHashHex != null) {
+      final hashFile = await coverFile(circleBookId, imageHashHex: imageHashHex);
+      if (await hashFile.exists()) return hashFile.path;
+    }
     final file = await coverFile(circleBookId);
-    return file.existsSync() ? file.path : null;
+    return await file.exists() ? file.path : null;
   }
 
   Future<void> deleteBook(String circleBookId) async {

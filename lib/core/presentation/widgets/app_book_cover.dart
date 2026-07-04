@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
+import 'package:zapbook/core/presentation/widgets/pulsing_blurhash.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -14,6 +15,8 @@ class AppBookCover extends StatelessWidget {
   final String? title;
   final String? author;
   final ImageProvider? image;
+  final String? blurhash;
+  final bool showInfos;
 
   const AppBookCover({
     super.key,
@@ -23,6 +26,8 @@ class AppBookCover extends StatelessWidget {
     this.title,
     this.author,
     this.image,
+    this.blurhash,
+    this.showInfos = false,
   });
 
   @override
@@ -101,7 +106,11 @@ class AppBookCover extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (image != null)
+            if (blurhash != null && blurhash!.isNotEmpty)
+              Positioned.fill(
+                child: maskWithFade(PulsingBlurHash(blurhash: blurhash!)),
+              )
+            else if (image != null)
               Positioned.fill(
                 child: maskWithFade(
                   Image(
@@ -159,7 +168,7 @@ class AppBookCover extends StatelessWidget {
                 ),
               ),
             ),
-            if (title != null)
+            if (showInfos && title != null) ...[
               Positioned(
                 left: 0,
                 right: 0,
@@ -220,6 +229,7 @@ class AppBookCover extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),

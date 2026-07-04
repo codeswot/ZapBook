@@ -8,3 +8,10 @@ final class WizardData {
   final String? author;
   final String? genre;
 }
+
+final class WizardInitialData {
+  const WizardInitialData({this.title, this.author});
+
+  final String? title;
+  final String? author;
+}

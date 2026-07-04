@@ -67,7 +67,13 @@ class GroupTransferService {
     }
   }
 
-  Future<void> uploadGroupCover(String groupId, Uint8List coverBytes) async {
+  Future<void> uploadGroupCover(
+    String circleBookId,
+    String groupId,
+    Uint8List coverBytes,
+  ) async {
+    await _fileStore.writeCover(circleBookId, coverBytes);
+
     final prep = await Marmot.prepareGroupImage(coverBytes, 'image/jpeg');
     await _blossom.upload(prep.encryptedData, mimeType: 'image/jpeg');
     final commit = await _marmot.setGroupImage(

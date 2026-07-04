@@ -90,7 +90,10 @@ class _LibraryViewState extends State<_LibraryView> {
     BookWizardSheet.show(
       context,
       completer: completer,
-      rawTitle: state.rawTitle,
+      initialData: WizardInitialData(
+        title: state.rawTitle,
+        author: state.author,
+      ),
     );
   }
 

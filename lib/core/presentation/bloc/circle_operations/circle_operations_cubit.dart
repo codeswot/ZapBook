@@ -1,16 +1,34 @@
+import 'dart:typed_data';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_state.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+
+import 'package:marmot_dart/marmot_dart.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
 
 @injectable
 class CircleOperationsCubit extends Cubit<CircleOperationsState> {
-  CircleOperationsCubit(this._deleteCircleBook)
-      : super(const CircleOperationsInitial());
+  CircleOperationsCubit(
+    this._deleteCircleBook,
+    this._identityLocal,
+    this._circleStoreService,
+  ) : super(const CircleOperationsInitial());
 
   final DeleteCircleBook _deleteCircleBook;
+  final IdentityLocalDataSource _identityLocal;
+  final CircleStoreService _circleStoreService;
+
+  final _log = logging.Logger('CircleOperationsCubit');
+
+  Future<GroupImagePrepared> prepareCover(Uint8List coverBytes) async {
+    return _circleStoreService.prepareCover(coverBytes: coverBytes);
+  }
 
   Future<void> deleteBook(CircleBook book) async {
     try {
@@ -22,6 +40,32 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     }
   }
 
+  Future<CircleBook?> updateBookMetadata({
+    required CircleBook book,
+    required String title,
+    required String author,
+    String? genre,
+  }) async {
+    try {
+      emit(const CircleOperationsLoading());
+      await _circleStoreService.updateCircleBookMetadata(
+        marmotGroupId: book.id,
+        title: title,
+        author: author,
+        genre: genre,
+      );
+
+      emit(const CircleOperationsSuccess());
+      return _circleStoreService.currentCircles
+          .where((b) => b.id == book.id)
+          .firstOrNull;
+    } catch (e, st) {
+      _log.warning('Failed to update book metadata', e, st);
+      emit(CircleOperationsFailure(e.toString()));
+      return null;
+    }
+  }
+
   Future<void> leaveCircle(CircleBook book) async {
     // Stub
   }
@@ -30,7 +74,11 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     // Stub
   }
 
-  Future<bool> isAdminOf(String circleBookId) async => false;
+  Future<bool> isAdminOf(CircleBook book) async {
+    final myNpub = await _identityLocal.readNpub();
+    if (myNpub == null) return false;
+    return book.adminNpubs.contains(myNpub);
+  }
 
-  Future<String> ownerLabelFor(String circleBookId) async => '';
+  Future<String> ownerLabelFor(CircleBook book) async => '';
 }

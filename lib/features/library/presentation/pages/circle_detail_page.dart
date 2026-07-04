@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -150,11 +148,6 @@ class _Loaded extends StatelessWidget {
 
   CircleBook get book => state.book;
 
-  ImageProvider? get _coverImage {
-    final path = book.coverPath;
-    return path != null ? FileImage(File(path)) : null;
-  }
-
   void _openBook(BuildContext context) {
     context.read<CircleDetailCubit>().open(circleBookId);
     ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
@@ -207,7 +200,6 @@ class _Loaded extends StatelessWidget {
               ],
               CircleMyProgressCard(
                 book: book,
-                cover: _coverImage,
                 myNpub: state.myNpub,
                 myProgressFraction:
                     state.memberProgress[state.myNpub]?.fraction ?? 0,

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -8,28 +6,15 @@ import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/core/presentation/widgets/book_actions_sheet.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/zbf/enums/book_source_format.dart';
+import 'package:zapbook/theme/app_theme.dart';
 
 class CircleBookTile extends StatelessWidget {
   const CircleBookTile({super.key, required this.book, this.onOpen});
 
   final CircleBook book;
   final VoidCallback? onOpen;
-
-  AppBookCoverHue get _hue {
-    switch (book.sourceFormat) {
-      case BookSourceFormat.pdf:
-        return AppBookCoverHue.orange;
-      case BookSourceFormat.epub:
-        return AppBookCoverHue.purple;
-      case BookSourceFormat.docx:
-        return AppBookCoverHue.sky;
-      case BookSourceFormat.txt:
-        return AppBookCoverHue.mint;
-    }
-  }
 
   void _open(BuildContext context) {
     onOpen?.call();
@@ -45,8 +30,6 @@ class CircleBookTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cover = book.coverPath;
-    final image = cover != null ? FileImage(File(cover)) : null;
     return BouncingInteractiveWidget(
       onTap: () => _open(context),
       onLongPress: () => _showActions(context),
@@ -55,21 +38,19 @@ class CircleBookTile extends StatelessWidget {
           final width = constraints.maxWidth;
           return Stack(
             children: [
-              AppBookCover(
+              CircleBookCover(
+                book: book,
                 width: width,
                 height: width / 0.727,
-                hue: _hue,
-                title: book.title,
-                author: book.author,
-                image: image,
+                showInfos: true,
               ),
               if (book.isShared)
-                const Positioned(
+                Positioned(
                   top: 8,
                   right: 8,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.black54,
+                      color: context.colors.ink.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                     ),
                     child: Padding(
@@ -77,7 +58,7 @@ class CircleBookTile extends StatelessWidget {
                       child: Icon(
                         LucideIcons.users,
                         size: 12,
-                        color: Colors.white,
+                        color: context.colors.paper,
                       ),
                     ),
                   ),

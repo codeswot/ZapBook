@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -12,7 +10,7 @@ import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
@@ -41,11 +39,6 @@ class CircleSettingsSheet extends StatelessWidget {
       builder: (_) =>
           CircleSettingsSheet(cubit: cubit, book: book, isAdmin: isAdmin),
     );
-  }
-
-  ImageProvider? get _cover {
-    final path = book.coverPath;
-    return path != null ? FileImage(File(path)) : null;
   }
 
   Future<void> _addReaders(BuildContext context) async {
@@ -98,7 +91,7 @@ class CircleSettingsSheet extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppBookCover(width: 44, height: 60, image: _cover),
+              CircleBookCover(book: book, width: 44, height: 60),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

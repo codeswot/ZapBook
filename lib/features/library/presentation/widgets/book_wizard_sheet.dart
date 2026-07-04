@@ -21,7 +21,7 @@ class BookWizardSheet extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     required Completer<WizardData> completer,
-    required String rawTitle,
+    required WizardInitialData initialData,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -30,7 +30,7 @@ class BookWizardSheet extends StatefulWidget {
       backgroundColor: context.colors.transparent,
       builder: (_) => BlocProvider<BookWizardCubit>(
         create: (_) =>
-            getIt<BookWizardCubit>(param1: completer, param2: rawTitle),
+            getIt<BookWizardCubit>(param1: completer, param2: initialData),
         child: const BookWizardSheet(),
       ),
     );

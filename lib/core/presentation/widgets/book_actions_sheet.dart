@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,7 +12,7 @@ import 'package:zapbook/core/presentation/widgets/circle_members_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/share_circle_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
@@ -39,8 +37,8 @@ class BookActionsSheet extends StatelessWidget {
     required CircleBook book,
   }) async {
     final cubit = getIt<CircleOperationsCubit>();
-    final isAdmin = await cubit.isAdminOf(book.id);
-    final ownerLabel = isAdmin ? '' : await cubit.ownerLabelFor(book.id);
+    final isAdmin = await cubit.isAdminOf(book);
+    final ownerLabel = isAdmin ? '' : await cubit.ownerLabelFor(book);
 
     if (context.mounted) {
       return showModalBottomSheet(
@@ -62,7 +60,6 @@ class BookActionsSheet extends StatelessWidget {
   }
 
   Future<void> _onDeleteTap(BuildContext context) async {
-    context.pop();
     final confirmed = await CircleConfirmSheet.show(
       context,
       title: 'Delete this book?',
@@ -73,12 +70,11 @@ class BookActionsSheet extends StatelessWidget {
                 'device and you’ll no longer be part of its circle.',
       action: 'Delete book',
     );
-    if (confirmed) (isAdmin ? onDelete : onLeave)();
-  }
-
-  ImageProvider? get _coverImage {
-    final path = book.coverPath;
-    return path != null ? FileImage(File(path)) : null;
+    if (!context.mounted) return;
+    if (confirmed) {
+      context.pop();
+      (isAdmin ? onDelete : onLeave)();
+    }
   }
 
   @override
@@ -93,7 +89,7 @@ class BookActionsSheet extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppBookCover(width: 48, height: 66, image: _coverImage),
+              CircleBookCover(book: book, width: 48, height: 66),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -107,15 +103,13 @@ class BookActionsSheet extends StatelessWidget {
                       style: typography.h3.copyWith(color: colors.ink),
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          book.author,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: typography.bodyS.copyWith(color: colors.slate),
-                        ),
-                      ],
+                    Text(
+                      book.author.trim().isNotEmpty
+                          ? book.author.trim()
+                          : 'Unknown author',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: typography.bodyS.copyWith(color: colors.slate),
                     ),
                     if (isAdmin || ownerLabel.isNotEmpty) ...[
                       const SizedBox(height: 2),

@@ -31,7 +31,11 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
 
   final Map<String, StreamSubscription<IngestionProgress>> _subscriptions = {};
 
-  String startIngestion(File file, Future<WizardData> wizardDataFuture, String contentHash) {
+  String startIngestion(
+    File file,
+    Future<WizardData> wizardDataFuture,
+    String contentHash,
+  ) {
     final circleBookId = Ulid().toString();
     final taskState = IngestionTaskState(
       file: file,
@@ -43,7 +47,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     wizardDataFuture
         .then((data) {
           _saveCircleBook(circleBookId, data, contentHash);
-          
+
           final task = state.tasks[circleBookId];
           if (task != null) {
             final newTasks = Map<String, IngestionTaskState>.from(state.tasks);
@@ -101,7 +105,11 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     _checkAndTriggerUpload(circleBookId);
   }
 
-  Future<void> _saveCircleBook(String circleBookId, WizardData data, String contentHash) async {
+  Future<void> _saveCircleBook(
+    String circleBookId,
+    WizardData data,
+    String contentHash,
+  ) async {
     if (!state.tasks.containsKey(circleBookId)) return;
 
     final metadata = {
@@ -149,7 +157,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
 
     if (task.isGroupCreated && task.isExtractComplete) {
       _circleStore.refreshBookCover(circleBookId);
-      
+
       final npub = ActiveAccount.currentNpub;
       final marmotGroupId = task.marmotGroupId;
       if (npub != null && marmotGroupId != null) {

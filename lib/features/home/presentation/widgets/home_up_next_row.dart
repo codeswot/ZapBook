@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class HomeUpNextRow extends StatelessWidget {
@@ -63,9 +62,6 @@ class HomeUpNextRow extends StatelessWidget {
             itemCount: books.length,
             itemBuilder: (context, index) {
               final book = books[index];
-              final cover = book.coverPath;
-              final image = cover != null ? FileImage(File(cover)) : null;
-
               return Padding(
                 padding: const EdgeInsets.only(right: 14),
                 child: BouncingInteractiveWidget(
@@ -75,12 +71,11 @@ class HomeUpNextRow extends StatelessWidget {
                       : null,
                   child: Stack(
                     children: [
-                      AppBookCover(
+                      CircleBookCover(
+                        book: book,
                         width: 96,
                         height: 132,
-                        title: book.title,
-                        author: book.author,
-                        image: image,
+                        showInfos: true,
                       ),
                       Positioned(
                         top: 8,

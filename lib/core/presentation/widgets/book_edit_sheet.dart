@@ -1,13 +1,20 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mime/mime.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/features/library/presentation/bloc/book_edit_cubit.dart';
-import 'package:zapbook/features/library/presentation/bloc/book_edit_state.dart';
+import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_state.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:marmot_dart/marmot_dart.dart';
+import 'package:zapbook/core/constants/book_genres.dart';
+import 'package:zapbook/core/services/file_picker_service.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
@@ -24,8 +31,8 @@ class BookEditSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<BookEditCubit>(param1: book),
-      child: const _Body(),
+      create: (_) => getIt<CircleOperationsCubit>(),
+      child: _Body(book: book),
     );
   }
 
@@ -41,19 +48,29 @@ class BookEditSheet extends StatelessWidget {
 }
 
 class _Body extends StatefulWidget {
-  const _Body();
+  const _Body({required this.book});
+
+  final CircleBook book;
 
   @override
   State<_Body> createState() => _BodyState();
 }
 
 class _BodyState extends State<_Body> {
-  late final _titleController = TextEditingController(
-    text: context.read<BookEditCubit>().state.title,
-  );
+  late final _titleController = TextEditingController(text: widget.book.title);
   late final _authorController = TextEditingController(
-    text: context.read<BookEditCubit>().state.author,
+    text: widget.book.author,
   );
+
+  String? _genre;
+  Uint8List? _newCover;
+  Future<GroupImagePrepared>? _pendingCoverUpload;
+
+  @override
+  void initState() {
+    super.initState();
+    _genre = widget.book.genre;
+  }
 
   @override
   void dispose() {
@@ -62,23 +79,79 @@ class _BodyState extends State<_Body> {
     super.dispose();
   }
 
+  Future<void> _pickCover() async {
+    final bytes = await getIt<FilePickerService>().pickImage();
+    if (bytes != null && mounted) {
+      setState(() {
+        _newCover = bytes;
+        _pendingCoverUpload = context
+            .read<CircleOperationsCubit>()
+            .prepareCover(bytes);
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    final title = _titleController.text;
+    final author = _authorController.text;
+    final genre = _genre;
+    final coverBytes = _newCover;
+    final pendingCoverUpload = _pendingCoverUpload;
+    final book = widget.book;
+
+    context.pop();
+
+    unawaited(() async {
+      try {
+        final service = getIt<CircleStoreService>();
+        await service.updateCircleBookMetadata(
+          marmotGroupId: book.id,
+          title: title,
+          author: author,
+          genre: genre,
+        );
+
+        if (coverBytes != null && pendingCoverUpload != null) {
+          service.setUploadingCover(book.id, 'L6PZfSi_.AyE_3t7t7R**0o#DgR4');
+
+          final preparedImage = await pendingCoverUpload;
+          final mimeType =
+              lookupMimeType('', headerBytes: coverBytes) ?? 'image/jpeg';
+
+          if (preparedImage.blurhash != null) {
+            service.setUploadingCover(book.id, preparedImage.blurhash!);
+          }
+
+          service.updateCircleBookCoverOptimistic(
+            book: book,
+            coverBytes: coverBytes,
+            preparedImage: preparedImage,
+            mimeType: mimeType,
+          );
+        }
+      } catch (e) {
+        // Silent background failure
+      }
+    }());
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<BookEditCubit, BookEditState>(
+    return BlocConsumer<CircleOperationsCubit, CircleOperationsState>(
       listener: (context, state) {
-        if (state.error != null) {
-          context.toast.showError(state.error!);
+        if (state is CircleOperationsFailure) {
+          context.toast.showError(state.error);
         }
       },
       builder: (context, state) {
         final typography = context.typography;
-        final cubit = context.read<BookEditCubit>();
+        final saving = state is CircleOperationsLoading;
 
         ImageProvider? coverImage;
-        if (state.newCover != null) {
-          coverImage = MemoryImage(state.newCover!);
+        if (_newCover != null) {
+          coverImage = MemoryImage(_newCover!);
         } else {
-          final path = state.book.coverPath;
+          final path = widget.book.coverPath;
           coverImage = path != null ? FileImage(File(path)) : null;
         }
 
@@ -96,7 +169,7 @@ class _BodyState extends State<_Body> {
                     AppBookCover(
                       width: 100,
                       height: 150,
-                      title: state.title,
+                      title: _titleController.text,
                       image: coverImage,
                     ),
                     const SizedBox(width: 16),
@@ -106,7 +179,7 @@ class _BodyState extends State<_Body> {
                           AppInput(
                             controller: _titleController,
                             label: 'Title',
-                            onChanged: cubit.setTitle,
+                            onChanged: (_) => setState(() {}),
                           ),
                           const SizedBox(height: 16),
                           AppInput(
@@ -119,7 +192,7 @@ class _BodyState extends State<_Body> {
                             icon: Icons.image_outlined,
                             variant: AppButtonVariant.tonal,
                             fullWidth: true,
-                            onTap: state.saving ? null : cubit.pickCover,
+                            onTap: saving ? null : _pickCover,
                           ),
                         ],
                       ),
@@ -135,34 +208,25 @@ class _BodyState extends State<_Body> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: state.genres.map((genre) {
-                    final selected = state.genre == genre;
+                  children: bookGenres.map((genre) {
+                    final selected = _genre == genre;
                     return AppChip(
                       label: genre,
                       selected: selected,
                       tone: selected ? AppChipTone.zap : null,
-                      onTap: () => cubit.setGenre(selected ? null : genre),
+                      onTap: () {
+                        setState(() {
+                          _genre = selected ? null : genre;
+                        });
+                      },
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 32),
                 AppButton(
-                  label: state.saving ? 'Saving…' : 'Save changes',
+                  label: saving ? 'Saving…' : 'Save changes',
                   fullWidth: true,
-                  onTap: state.saving
-                      ? null
-                      : () async {
-                          final updated = await cubit.save();
-                          if (updated != null && context.mounted) {
-                            final coverPath = updated.coverPath;
-                            if (state.newCover != null && coverPath != null) {
-                              await FileImage(File(coverPath)).evict();
-                            }
-                            if (context.mounted) {
-                              context.pop(updated);
-                            }
-                          }
-                        },
+                  onTap: saving ? null : _save,
                 ),
               ],
             ),
