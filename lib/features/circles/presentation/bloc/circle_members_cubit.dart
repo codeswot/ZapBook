@@ -35,23 +35,25 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
 
     await _sub?.cancel();
 
-    _sub = _contacts.watch(memberNpubs).listen((contacts) {
-      if (isClosed || state is CircleMembersBusy) return;
+    await _contacts.prime(memberNpubs);
+    if (isClosed || state is CircleMembersBusy) return;
 
-      final byNpub = {for (final c in contacts) c.npub: c};
-      final contactNpubs = _contacts.stored.toSet();
+    final contacts = memberNpubs
+        .map((npub) => _contacts.contactFor(npub))
+        .toList();
+    final contactNpubs = contacts.map((c) => c.npub).toSet();
+    final byNpub = {for (final c in contacts) c.npub: c};
 
-      final entries = [
-        for (final npub in memberNpubs)
-          MemberEntry(
-            npub: npub,
-            contact: byNpub[npub] ?? Contact(npub: npub),
-            isSelf: npub == myNpub,
-            isContact: contactNpubs.contains(npub),
-          ),
-      ];
-      emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
-    });
+    final entries = [
+      for (final npub in memberNpubs)
+        MemberEntry(
+          npub: npub,
+          contact: byNpub[npub] ?? Contact(npub: npub),
+          isSelf: npub == myNpub,
+          isContact: contactNpubs.contains(npub),
+        ),
+    ];
+    emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
   }
 
   Future<void> refresh(String circleBookId) async {

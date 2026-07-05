@@ -94,7 +94,6 @@ class CheersDataSourceImpl implements CheersDataSource {
   @override
   Stream<List<CheersActivity>> watchActivities() {
     int? lastSignature;
-    var lastMyNpub = '';
 
     bool isReloading = false;
     void reload({bool force = false}) async {
@@ -142,7 +141,6 @@ class CheersDataSourceImpl implements CheersDataSource {
         }
         activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        lastMyNpub = myNpub;
         for (final activity in activities) {
           await _cheersDao.saveActivity(activity);
         }
@@ -153,15 +151,15 @@ class CheersDataSourceImpl implements CheersDataSource {
       }
     }
 
-    final directZapSub = _directZaps.stream.listen((zap) {
+    _directZaps.stream.listen((zap) {
       _cheersDao.saveActivity(zap);
     });
 
     reload(force: false);
     Future.microtask(() => reload(force: true));
 
-    final sub = _changeController.stream.listen((_) => reload(force: false));
-    final syncSub = _sync.onSync.listen((_) => reload(force: false));
+    _changeController.stream.listen((_) => reload(force: false));
+    _sync.onSync.listen((_) => reload(force: false));
 
     return _cheersDao.watchActivities().asyncMap((activities) async {
       final myNpub = await _identityLocal.readNpub() ?? '';

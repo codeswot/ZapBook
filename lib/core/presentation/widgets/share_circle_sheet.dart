@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
@@ -95,6 +96,7 @@ class _BodyState extends State<_Body> {
             : <String>[];
         final isLoading = state is ShareCircleLoading;
         final isAdding = state is ShareCircleBusy && state.adding;
+        final isSharing = state is ShareCircleBusy && state.sharing;
         final error = _validateNpub(_npubController.text, state);
 
         String labelFor(String npub) {
@@ -212,7 +214,7 @@ class _BodyState extends State<_Body> {
                     children: [
                       for (final npub in selectedNpubs)
                         AppChip(
-                          label: labelFor(npub),
+                          label: labelFor(npub.toNpubShort()),
                           icon: LucideIcons.x,
                           selected: true,
                           onTap: () => cubit.toggleNpub(npub),
@@ -284,23 +286,20 @@ class _BodyState extends State<_Body> {
                   icon: LucideIcons.userPlus,
                   variant: AppButtonVariant.purple,
                   fullWidth: true,
-                  onTap: selectedNpubs.isEmpty
+                  isLoading: isSharing,
+                  onTap: selectedNpubs.isEmpty || isSharing
                       ? null
                       : () {
-                          // todo: fix
-                          final shareBookWith = null; //getIt<ShareBookWith>();
                           final rootContext = context;
                           final friendsList = List<Contact>.from(friends);
                           final npubsToShare = List<String>.from(selectedNpubs);
                           final circleBookId = widget.book.id;
 
-                          context.toast.showInfo('Sharing book');
-
-                          rootContext.pop();
-
-                          shareBookWith(circleBookId, npubsToShare)
+                          cubit
+                              .share(circleBookId)
                               .then((skipped) {
                                 if (rootContext.mounted) {
+                                  rootContext.pop();
                                   if (skipped.isNotEmpty) {
                                     ShareResultSheet.show(
                                       rootContext,
@@ -308,7 +307,7 @@ class _BodyState extends State<_Body> {
                                       friendsList,
                                     );
                                   } else {
-                                    context.toast.showSuccess(
+                                    rootContext.toast.showSuccess(
                                       'Book shared successfully!',
                                     );
                                   }
@@ -316,6 +315,7 @@ class _BodyState extends State<_Body> {
                               })
                               .catchError((_) {
                                 if (rootContext.mounted) {
+                                  rootContext.pop();
                                   final allSkipped = npubsToShare
                                       .map(
                                         (n) => ShareSkip(

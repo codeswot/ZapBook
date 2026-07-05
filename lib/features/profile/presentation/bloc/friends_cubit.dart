@@ -8,33 +8,24 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
-@injectable
+@lazySingleton
 class FriendsCubit extends Cubit<FriendsState> {
-  FriendsCubit(this._contacts) : super(const FriendsLoading()) {
-    _sub = _contacts.friendsStream.listen((friends) {
-      if (!isClosed && state is! FriendsBusy) emit(FriendsLoaded(friends));
-    });
-  }
+  StreamSubscription? _sub;
+
+  FriendsCubit(this._contacts) : super(const FriendsLoading());
 
   final ContactService _contacts;
   final _log = logging.Logger('FriendsCubit');
-  StreamSubscription<List<Contact>>? _sub;
-
-  @override
-  Future<void> close() {
-    _sub?.cancel();
-    return super.close();
-  }
 
   Future<void> load() async {
-    emit(const FriendsLoading());
-    try {
-      final friends = await _contacts.friends();
-      emit(FriendsLoaded(friends));
-    } on Object catch (e, stack) {
-      _log.warning('Load friends failed', e, stack);
-      emit(const FriendsLoaded([]));
-    }
+    _sub?.cancel();
+    _sub = _contacts.friends.listen((friends) {
+      if (!isClosed) emit(FriendsLoaded(friends));
+    }, onError: (e, stack) {
+      if (!isClosed) {
+        _log.warning('Load friends stream error', e, stack);
+      }
+    });
   }
 
   Future<void> addNpub(String npub) async {
@@ -50,11 +41,11 @@ class FriendsCubit extends Cubit<FriendsState> {
 
     try {
       await _contacts.add(npub);
-      final friends = await _contacts.friends();
-      emit(FriendsLoaded(friends));
     } on ContactException catch (e) {
+      if (isClosed) return;
       emit(FriendsError.from(state, e.message));
     } on Exception catch (e, stack) {
+      if (isClosed) return;
       _log.warning('Add contact failed', e, stack);
       emit(FriendsError.from(state, 'Could not add contact'));
     }
@@ -66,15 +57,16 @@ class FriendsCubit extends Cubit<FriendsState> {
 
     try {
       await _contacts.remove(npub);
-      final friends = await _contacts.friends();
-      emit(FriendsLoaded(friends));
     } on Object catch (e, stack) {
+      if (isClosed) return;
       _log.warning('Remove contact failed', e, stack);
       emit(FriendsLoaded(current));
     }
   }
 
-  int get contactCount => _contacts.stored.length;
+  Future<Contact> resolveNpub(String npub) => _contacts.resolve(npub);
+
+  int get contactCount => _currentFriends.length;
 
   List<Contact> get _currentFriends {
     final s = state;
@@ -82,5 +74,11 @@ class FriendsCubit extends Cubit<FriendsState> {
     if (s is FriendsBusy) return s.friends;
     if (s is FriendsError) return s.friends;
     return const [];
+  }
+
+  @override
+  Future<void> close() {
+    _sub?.cancel();
+    return super.close();
   }
 }

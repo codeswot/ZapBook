@@ -513,7 +513,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i735.ProfileRemoteDataSource>(),
       ),
     );
-    gh.factory<_i397.FriendsCubit>(
+    gh.lazySingleton<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
     );
     gh.lazySingleton<_i821.CircleStoreService>(

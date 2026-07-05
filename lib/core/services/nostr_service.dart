@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:ndk/domain_layer/entities/read_write_marker.dart';
+import 'package:ndk/domain_layer/entities/contact_list.dart' as ndk_contacts;
 import 'package:ndk/domain_layer/entities/user_relay_list.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
 
@@ -17,6 +18,15 @@ class NostrService {
 
   bool get isLoggedIn => _ndk.accounts.isLoggedIn;
   String? get pubkey => _ndk.accounts.getPublicKey();
+
+  Future<ndk_contacts.ContactList?> getContactList(String pubkey) =>
+      _ndk.follows.getContactList(pubkey);
+
+  Future<ndk_contacts.ContactList> broadcastAddContact(String hex) =>
+      _ndk.follows.broadcastAddContact(hex);
+
+  Future<ndk_contacts.ContactList?> broadcastRemoveContact(String hex) =>
+      _ndk.follows.broadcastRemoveContact(hex);
 
   Future<Metadata> publishMetadata({
     String? name,
@@ -78,6 +88,27 @@ class NostrService {
 
   Future<Metadata?> getMetadata(String pubkey, {bool forceRefresh = false}) =>
       _ndk.metadata.loadMetadata(pubkey, forceRefresh: forceRefresh);
+
+  ndk_contacts.ContactList? getCachedContactList(String pubkey) =>
+      _store.loadContactList(pubkey);
+
+  List<Metadata> getCachedMetadatas(List<String> pubkeys) =>
+      _store.loadMetadatas(pubkeys);
+
+  List<Metadata> getCachedMetadatasFromEvents(List<String> pubkeys) {
+    if (pubkeys.isEmpty) return const [];
+    final events = _store.loadEvents(
+      kinds: const [Metadata.kKind],
+      pubKeys: pubkeys,
+    );
+    final metadatas = <Metadata>[];
+    for (final event in events) {
+      try {
+        metadatas.add(Metadata.fromEvent(event));
+      } catch (_) {}
+    }
+    return metadatas;
+  }
 
   Future<List<Metadata>> getMetadatas(
     List<String> pubkeys, {
