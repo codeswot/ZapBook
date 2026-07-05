@@ -61,7 +61,7 @@ import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
 import 'package:zapbook/core/services/group_store_service.dart' as _i40;
-import 'package:zapbook/core/services/group_transfer_service.dart' as _i860;
+import 'package:zapbook/core/services/circle_transfer_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
@@ -375,8 +375,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
     );
-    gh.lazySingleton<_i860.GroupTransferService>(
-      () => _i860.GroupTransferService(
+    gh.lazySingleton<_i860.CircleShareService>(
+      () => _i860.CircleShareService(
         gh<_i970.Marmot>(),
         gh<_i873.BlossomService>(),
         gh<_i854.LibraryFileStore>(),
@@ -534,7 +534,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i1043.IngestionOrchestratorCubit(
         gh<_i379.BookIngestionRepository>(),
         gh<_i821.CircleStoreService>(),
-        gh<_i860.GroupTransferService>(),
+        gh<_i860.CircleShareService>(),
         gh<_i854.LibraryFileStore>(),
       ),
     );

@@ -13,8 +13,8 @@ import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 @lazySingleton
-class GroupTransferService {
-  GroupTransferService(
+class CircleShareService {
+  CircleShareService(
     this._marmot,
     this._blossom,
     this._fileStore,
@@ -25,7 +25,7 @@ class GroupTransferService {
   final BlossomService _blossom;
   final LibraryFileStore _fileStore;
   final GroupEnvelopeService _envelope;
-  final _log = logging.Logger('GroupTransferService');
+  final _log = logging.Logger('CircleShareService');
 
   static const _reader = ZbfReader();
   static const _segmenter = ZbfSegmenter();
@@ -52,14 +52,20 @@ class GroupTransferService {
         );
       }
 
-      await for (final segment in _segmenter.segment(handle)) {
-        final index = segment.index.toString().padLeft(4, '0');
-        await _uploadBlob(
-          npub,
-          groupId,
-          segment.bytes,
-          'application/octet-stream',
-          '$circleBookId.seg$index.zbfseg',
+      final segments = await _segmenter.segment(handle).toList();
+      for (var i = 0; i < segments.length; i += 4) {
+        final batch = segments.skip(i).take(4);
+        await Future.wait(
+          batch.map((segment) {
+            final index = segment.index.toString().padLeft(4, '0');
+            return _uploadBlob(
+              npub,
+              groupId,
+              segment.bytes,
+              'application/octet-stream',
+              '$circleBookId.seg$index.zbfseg',
+            );
+          }),
         );
       }
     } finally {
@@ -171,8 +177,14 @@ class GroupTransferService {
     String groupId,
     List<MarmotMediaRef> refs,
   ) async* {
-    for (final ref in refs) {
-      yield await downloadAndDecrypt(groupId, ref);
+    for (var i = 0; i < refs.length; i += 4) {
+      final batch = refs.skip(i).take(4);
+      final downloaded = await Future.wait(
+        batch.map((ref) => downloadAndDecrypt(groupId, ref)),
+      );
+      for (final bytes in downloaded) {
+        yield bytes;
+      }
     }
   }
 }

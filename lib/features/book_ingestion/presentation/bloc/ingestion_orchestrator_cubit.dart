@@ -11,7 +11,7 @@ import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/group_transfer_service.dart';
+import 'package:zapbook/core/services/circle_transfer_service.dart';
 import 'package:zapbook/core/constants/app_constants.dart';
 import 'package:mime/mime.dart';
 
@@ -28,7 +28,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
 
   final BookIngestionRepository _repository;
   final CircleStoreService _circleStore;
-  final GroupTransferService _transferService;
+  final CircleShareService _transferService;
   final LibraryFileStore _fileStore;
 
   final Map<String, StreamSubscription<IngestionProgress>> _subscriptions = {};
