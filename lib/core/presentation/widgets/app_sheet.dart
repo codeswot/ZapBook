@@ -13,7 +13,7 @@ class AppSheet extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
     final bottomPadding = mediaQuery.padding.bottom;
-    final maxHeight = (mediaQuery.size.height - bottomInset) * 0.9;
+    final maxHeight = mediaQuery.size.height * 0.85;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),

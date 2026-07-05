@@ -22,17 +22,19 @@ class AppProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: borderColor != null
-            ? Border.all(color: borderColor!, width: borderWidth)
-            : null,
-      ),
-      child: ClipOval(
-        child: _AvatarImage(url: url, size: size),
+    return RepaintBoundary(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: borderColor != null
+              ? Border.all(color: borderColor!, width: borderWidth)
+              : null,
+        ),
+        child: ClipOval(
+          child: _AvatarImage(url: url, size: size),
+        ),
       ),
     );
   }

@@ -14,7 +14,10 @@
             "name": "zapbook (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",    
+            "env": {
+                "APP_ID_SUFFIX": ".dev"
+            }
         },
         {
             "name": "zapbook (release mode)",

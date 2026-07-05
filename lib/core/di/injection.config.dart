@@ -52,6 +52,7 @@ import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dar
 import 'package:zapbook/core/router/app_router.dart' as _i571;
 import 'package:zapbook/core/services/app_info_service.dart' as _i19;
 import 'package:zapbook/core/services/blossom_service.dart' as _i873;
+import 'package:zapbook/core/services/circle_share_service.dart' as _i455;
 import 'package:zapbook/core/services/circle_store_service.dart' as _i821;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
@@ -61,7 +62,6 @@ import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
 import 'package:zapbook/core/services/group_store_service.dart' as _i40;
-import 'package:zapbook/core/services/circle_share_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
@@ -115,6 +115,8 @@ import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.
     as _i654;
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart'
     as _i584;
+import 'package:zapbook/features/circles/domain/usecases/share_circle_book.dart'
+    as _i5;
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart'
     as _i947;
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_cubit.dart'
@@ -202,7 +204,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
-    gh.factory<_i620.ShareCircleCubit>(() => _i620.ShareCircleCubit());
     gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
     gh.singleton<_i708.AppDatabase>(() => _i708.AppDatabase());
     await gh.singletonAsync<_i19.AppInfoService>(
@@ -375,8 +376,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
     );
-    gh.lazySingleton<_i860.CircleShareService>(
-      () => _i860.CircleShareService(
+    gh.lazySingleton<_i455.CircleShareService>(
+      () => _i455.CircleShareService(
         gh<_i970.Marmot>(),
         gh<_i873.BlossomService>(),
         gh<_i854.LibraryFileStore>(),
@@ -417,17 +418,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i397.KeyPackageService>(),
       ),
     );
-    gh.lazySingleton<_i244.ContactService>(
-      () => _i244.ContactService(
-        gh<_i460.SharedPreferences>(),
-        gh<_i11.NostrService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-      dispose: (i) => i.dispose(),
-    );
-    gh.factory<_i397.FriendsCubit>(
-      () => _i397.FriendsCubit(gh<_i244.ContactService>()),
-    );
     gh.lazySingleton<_i379.BookIngestionRepository>(
       () => _i785.BookIngestionRepositoryImpl(
         extractors: gh<List<_i751.BookExtractor>>(),
@@ -444,15 +434,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i803.SessionReloader>(),
       ),
     );
-    gh.factory<_i688.CircleMembersCubit>(
-      () => _i688.CircleMembersCubit(
-        gh<_i970.Marmot>(),
-        gh<_i244.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    );
+    gh.lazySingleton<_i244.ContactService>(
+      () => _i244.ContactService(
+        gh<_i11.NostrService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i1073.NostrSession>(
       () => _i1073.NostrSession(
@@ -523,20 +513,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i735.ProfileRemoteDataSource>(),
       ),
     );
+    gh.factory<_i397.FriendsCubit>(
+      () => _i397.FriendsCubit(gh<_i244.ContactService>()),
+    );
     gh.lazySingleton<_i821.CircleStoreService>(
       () => _i821.CircleStoreService(
         gh<_i40.GroupStoreService>(),
         gh<_i854.LibraryFileStore>(),
       ),
       dispose: (i) => i.dispose(),
-    );
-    gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
-      () => _i1043.IngestionOrchestratorCubit(
-        gh<_i379.BookIngestionRepository>(),
-        gh<_i821.CircleStoreService>(),
-        gh<_i860.CircleShareService>(),
-        gh<_i854.LibraryFileStore>(),
-      ),
     );
     gh.lazySingleton<_i265.HomeDashboardDataSource>(
       () => _i265.HomeDashboardDataSourceImpl(
@@ -545,6 +530,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i182.ReadingStatsService>(),
         gh<_i821.CircleStoreService>(),
+      ),
+    );
+    gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
+      () => _i1043.IngestionOrchestratorCubit(
+        gh<_i379.BookIngestionRepository>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i455.CircleShareService>(),
+        gh<_i854.LibraryFileStore>(),
       ),
     );
     gh.lazySingleton<_i326.HomeDashboardRepository>(
@@ -557,6 +550,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
         gh<_i857.Ndk>(),
         gh<_i64.CheersDataSource>(),
+      ),
+    );
+    gh.factory<_i688.CircleMembersCubit>(
+      () => _i688.CircleMembersCubit(
+        gh<_i970.Marmot>(),
+        gh<_i244.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
       ),
     );
     gh.factory<_i696.IngestionPageCubit>(
@@ -584,11 +584,28 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i654.WatchCheersActivities>(
       () => _i654.WatchCheersActivities(gh<_i314.CheersRepository>()),
     );
+    gh.factory<_i5.ShareCircleBookUseCase>(
+      () => _i5.ShareCircleBookUseCase(
+        gh<_i970.Marmot>(),
+        gh<_i397.KeyPackageService>(),
+        gh<_i394.GroupEnvelopeService>(),
+        gh<_i455.CircleShareService>(),
+        gh<_i821.CircleStoreService>(),
+      ),
+    );
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i821.CircleStoreService>()),
     );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i821.CircleStoreService>()),
+    );
+    gh.factory<_i620.ShareCircleCubit>(
+      () => _i620.ShareCircleCubit(
+        gh<_i244.ContactService>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i970.Marmot>(),
+        gh<_i5.ShareCircleBookUseCase>(),
+      ),
     );
     gh.factory<_i145.ProfileCubit>(
       () => _i145.ProfileCubit(
