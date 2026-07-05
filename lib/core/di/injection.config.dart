@@ -61,7 +61,7 @@ import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
 import 'package:zapbook/core/services/group_store_service.dart' as _i40;
-import 'package:zapbook/core/services/circle_transfer_service.dart' as _i860;
+import 'package:zapbook/core/services/circle_share_service.dart' as _i860;
 import 'package:zapbook/core/services/key_package_service.dart' as _i397;
 import 'package:zapbook/core/services/lnurl_service.dart' as _i96;
 import 'package:zapbook/core/services/marmot_sync_service.dart' as _i140;
