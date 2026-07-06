@@ -23,14 +23,12 @@ class BookActionsSheet extends StatelessWidget {
     required this.isAdmin,
     required this.ownerLabel,
     required this.onDelete,
-    required this.onLeave,
   });
 
   final CircleBook book;
   final bool isAdmin;
   final String ownerLabel;
   final VoidCallback onDelete;
-  final VoidCallback onLeave;
 
   static Future<void> show(
     BuildContext context, {
@@ -52,7 +50,6 @@ class BookActionsSheet extends StatelessWidget {
             isAdmin: isAdmin,
             ownerLabel: ownerLabel,
             onDelete: () => cubit.deleteBook(book),
-            onLeave: () => cubit.leaveCircle(book),
           ),
         ),
       );
@@ -73,7 +70,7 @@ class BookActionsSheet extends StatelessWidget {
     if (!context.mounted) return;
     if (confirmed) {
       context.pop();
-      (isAdmin ? onDelete : onLeave)();
+      onDelete();
     }
   }
 

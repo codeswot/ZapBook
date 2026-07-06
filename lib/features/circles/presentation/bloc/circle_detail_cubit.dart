@@ -9,6 +9,8 @@ import 'package:zapbook/features/library/domain/repositories/library_repository.
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
+import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
 
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
@@ -75,7 +77,17 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
   Future<void> removeMember(String circleBookId, String npub) async {}
 
-  Future<void> leave(String circleBookId) async {}
+  Future<void> leave(String circleBookId) async {
+    final s = state;
+    if (s is! CircleDetailLoaded) return;
+    await getIt<CircleOperationsCubit>().leaveCircle(s.book);
+    if (!isClosed) emit(const CircleDetailClosed());
+  }
 
-  Future<void> dissolve(String circleBookId) async {}
+  Future<void> dissolve(String circleBookId) async {
+    final s = state;
+    if (s is! CircleDetailLoaded) return;
+    await getIt<CircleOperationsCubit>().deleteBook(s.book);
+    if (!isClosed) emit(const CircleDetailClosed());
+  }
 }

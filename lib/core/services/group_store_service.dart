@@ -11,6 +11,7 @@ import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/blossom_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @LazySingleton()
 class GroupStoreService {
@@ -25,6 +26,7 @@ class GroupStoreService {
   final Map<String, MarmotGroup> _groupsMap = {};
   Future<void>? _initFuture;
   StreamSubscription? _sub;
+  StreamSubscription? _syncSub;
 
   GroupStoreService(
     this._marmotSync,
@@ -32,26 +34,41 @@ class GroupStoreService {
     this._identityLocal,
     this._blossom,
     this._envelope,
+    this._prefs,
   ) {
     _initFuture = _init();
   }
 
   final BlossomService _blossom;
   final GroupEnvelopeService _envelope;
+  final SharedPreferences _prefs;
+
+  List<String> get _deletedGroupIds =>
+      _prefs.getStringList('deleted_groups') ?? [];
 
   Future<void> _init() async {
-    final groups = await _marmot.listGroups();
-
-    for (final g in groups) {
-      _groupsMap[g.id] = g;
-    }
-    _groupsSubject.add(_groupsMap.values.toList());
+    await _refreshGroups();
 
     _sub = _marmotSync.onGroup.listen((updatedGroup) {
+      if (_deletedGroupIds.contains(updatedGroup.id)) return;
       _groupsMap[updatedGroup.id] = updatedGroup;
       _groupsSubject.add(_groupsMap.values.toList());
       _groupUpdatedSubject.add(updatedGroup);
     });
+
+    _syncSub = _marmotSync.onSync.listen((_) => _refreshGroups());
+  }
+
+  Future<void> _refreshGroups() async {
+    final groups = await _marmot.listGroups();
+    final deletedIds = _deletedGroupIds;
+
+    for (final g in groups) {
+      if (!deletedIds.contains(g.id)) {
+        _groupsMap[g.id] = g;
+      }
+    }
+    _groupsSubject.add(_groupsMap.values.toList());
   }
 
   Stream<List<MarmotGroup>> get watchGroups async* {
@@ -162,6 +179,10 @@ class GroupStoreService {
 
   Future<void> deleteGroup(String groupId) async {
     try {
+      final deletedIds = _deletedGroupIds;
+      if (!deletedIds.contains(groupId)) {
+        await _prefs.setStringList('deleted_groups', [...deletedIds, groupId]);
+      }
       await _marmot.deleteGroup(groupId);
     } catch (e, st) {
       _log.warning(
@@ -172,6 +193,15 @@ class GroupStoreService {
     }
     _groupsMap.remove(groupId);
     _groupsSubject.add(_groupsMap.values.toList());
+  }
+
+  Future<void> leaveGroup(String groupId) async {
+    try {
+      final res = await _marmot.leaveGroup(groupId);
+      _envelope.publish(res.evolutionEventJson);
+    } catch (e, st) {
+      _log.warning('Marmot leaveGroup failed', e, st);
+    }
   }
 
   Future<void> _optimisticUpdate(String groupId) async {
@@ -186,6 +216,7 @@ class GroupStoreService {
   @disposeMethod
   void dispose() {
     _sub?.cancel();
+    _syncSub?.cancel();
     _groupsSubject.close();
     _groupUpdatedSubject.close();
   }

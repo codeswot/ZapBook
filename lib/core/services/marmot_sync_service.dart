@@ -116,6 +116,7 @@ class MarmotSyncService {
           _log.info(
             'Scheduling heavy updates from welcome queue (acceptedAny = true)',
           );
+          _syncController.add(null);
           _scheduleHeavyUpdates();
         }
       }

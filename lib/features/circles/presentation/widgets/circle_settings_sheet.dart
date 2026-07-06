@@ -58,9 +58,10 @@ class CircleSettingsSheet extends StatelessWidget {
     final ok = await CircleConfirmSheet.show(
       context,
       title: 'Delete this circle?',
-      message:
-          'Everyone except you will be removed from “${book.title}”. '
-          'The book stays in your library as a private copy.',
+      message: isAdmin
+          ? 'Everyone except you will be removed from “${book.title}”. '
+            'The book stays in your library as a private copy.'
+          : 'You will leave the circle and the book will be deleted from your local device.',
       action: 'Delete circle',
     );
     if (ok) await cubit.dissolve(book.id);
@@ -72,8 +73,8 @@ class CircleSettingsSheet extends StatelessWidget {
       context,
       title: 'Leave this circle?',
       message:
-          'You’ll be removed from “${book.title}” and it will leave your '
-          'library on this device.',
+          'You’ll be removed from “${book.title}” but it will stay in your '
+          'library as a private copy on this device.',
       action: 'Leave circle',
     );
     if (ok) await cubit.leave(book.id);
@@ -145,13 +146,21 @@ class CircleSettingsSheet extends StatelessWidget {
               tone: colors.tomato,
               onTap: () => _delete(context),
             )
-          else
+          else ...[
+            _SettingsRow(
+              icon: LucideIcons.trash2,
+              label: 'Leave and delete locally',
+              tone: colors.tomato,
+              onTap: () => _delete(context),
+            ),
+            const SizedBox(height: 10),
             _SettingsRow(
               icon: LucideIcons.logOut,
-              label: 'Leave circle',
+              label: 'Leave circle (keep private copy)',
               tone: colors.tomato,
               onTap: () => _leave(context),
             ),
+          ]
         ],
       ),
     );

@@ -359,7 +359,14 @@ class CircleStoreService {
   }
 
   Future<void> deleteCircleBook(CircleBook circleBook) async {
+    print(
+      'Qs Deleting circle book: ${circleBook.title} (${circleBook.id}) and dirId: ${circleBook.circleDirId}',
+    );
     await _groupStore.deleteGroup(circleBook.id);
     await _fileStore.deleteBook(circleBook.circleDirId);
+  }
+
+  Future<void> leaveCircleBook(CircleBook circleBook) async {
+    await _groupStore.leaveGroup(circleBook.id);
   }
 }

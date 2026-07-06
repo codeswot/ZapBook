@@ -6,7 +6,6 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/domain/usecases/delete_circle_book.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_state.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
@@ -17,13 +16,9 @@ import 'package:zapbook/core/constants/app_constants.dart';
 
 @injectable
 class CircleOperationsCubit extends Cubit<CircleOperationsState> {
-  CircleOperationsCubit(
-    this._deleteCircleBook,
-    this._identityLocal,
-    this._circleStoreService,
-  ) : super(const CircleOperationsInitial());
+  CircleOperationsCubit(this._identityLocal, this._circleStoreService)
+    : super(const CircleOperationsInitial());
 
-  final DeleteCircleBook _deleteCircleBook;
   final IdentityLocalDataSource _identityLocal;
   final CircleStoreService _circleStoreService;
 
@@ -36,7 +31,11 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   Future<void> deleteBook(CircleBook book) async {
     try {
       emit(const CircleOperationsLoading());
-      await _deleteCircleBook(book);
+      final isAdmin = await isAdminOf(book);
+      if (!isAdmin) {
+        await _circleStoreService.leaveCircleBook(book);
+      }
+      await _circleStoreService.deleteCircleBook(book);
       if (isClosed) return;
       emit(const CircleOperationsSuccess());
     } catch (e) {
@@ -130,7 +129,15 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   }
 
   Future<void> leaveCircle(CircleBook book) async {
-    // Stub
+    try {
+      emit(const CircleOperationsLoading());
+      await _circleStoreService.leaveCircleBook(book);
+      if (isClosed) return;
+      emit(const CircleOperationsSuccess());
+    } catch (e) {
+      if (isClosed) return;
+      emit(CircleOperationsFailure(e.toString()));
+    }
   }
 
   Future<void> shareBook(CircleBook book, String memberNpub) async {

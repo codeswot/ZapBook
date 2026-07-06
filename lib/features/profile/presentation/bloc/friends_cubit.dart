@@ -19,13 +19,20 @@ class FriendsCubit extends Cubit<FriendsState> {
 
   Future<void> load() async {
     _sub?.cancel();
-    _sub = _contacts.friends.listen((friends) {
-      if (!isClosed) emit(FriendsLoaded(friends));
-    }, onError: (e, stack) {
-      if (!isClosed) {
-        _log.warning('Load friends stream error', e, stack);
-      }
-    });
+    _sub = _contacts.friends.listen(
+      (friends) {
+        if (!isClosed) emit(FriendsLoaded(friends));
+      },
+      onError: (e, stack) {
+        if (!isClosed) {
+          _log.warning('Load friends stream error', e, stack);
+          emit(FriendsError.from(state, 'Failed to load friends'));
+        }
+      },
+      onDone: () {
+        if (!isClosed) emit(FriendsError.from(state, 'Friends stream closed'));
+      },
+    );
   }
 
   Future<void> addNpub(String npub) async {

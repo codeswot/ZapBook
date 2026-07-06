@@ -22,8 +22,8 @@ class FriendsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<FriendsCubit>()..load(),
+    return BlocProvider.value(
+      value: getIt<FriendsCubit>()..load(),
       child: const _Body(),
     );
   }
@@ -139,7 +139,10 @@ class _BodyState extends State<_Body> {
                               isAdding: isAdding,
                             )
                           : Text(
-                              'No contacts found matching "$query"',
+                              'No contacts found matching "$query"'.substring(
+                                0,
+                                100,
+                              ),
                               style: typography.body.copyWith(
                                 color: colors.slate,
                               ),

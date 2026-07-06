@@ -487,6 +487,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i223.MessageRouterService>(
       () => _i223.MessageRouterService(gh<_i140.MarmotSyncService>()),
     );
+    gh.lazySingleton<_i40.GroupStoreService>(
+      () => _i40.GroupStoreService(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i873.BlossomService>(),
+        gh<_i394.GroupEnvelopeService>(),
+        gh<_i460.SharedPreferences>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.factory<_i634.OnboardingCubit>(
       () => _i634.OnboardingCubit(
         gh<_i1053.ClipboardService>(),
@@ -495,16 +506,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i136.ImportIdentity>(),
         gh<_i341.CompleteOnboarding>(),
       ),
-    );
-    gh.lazySingleton<_i40.GroupStoreService>(
-      () => _i40.GroupStoreService(
-        gh<_i140.MarmotSyncService>(),
-        gh<_i970.Marmot>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i873.BlossomService>(),
-        gh<_i394.GroupEnvelopeService>(),
-      ),
-      dispose: (i) => i.dispose(),
     );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
@@ -596,6 +597,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i821.CircleStoreService>()),
     );
+    gh.factory<_i41.CircleOperationsCubit>(
+      () => _i41.CircleOperationsCubit(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i821.CircleStoreService>(),
+      ),
+    );
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i821.CircleStoreService>()),
     );
@@ -650,13 +657,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
-    );
-    gh.factory<_i41.CircleOperationsCubit>(
-      () => _i41.CircleOperationsCubit(
-        gh<_i812.DeleteCircleBook>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i821.CircleStoreService>(),
-      ),
     );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(
