@@ -61,14 +61,29 @@ class GroupStoreService {
 
   Future<void> _refreshGroups() async {
     final groups = await _marmot.listGroups();
-    final deletedIds = _deletedGroupIds;
+    final deletedIds = _deletedGroupIds.toSet();
+
+    bool changed = false;
+    final newMap = <String, MarmotGroup>{};
 
     for (final g in groups) {
-      if (!deletedIds.contains(g.id)) {
-        _groupsMap[g.id] = g;
+      if (deletedIds.contains(g.id)) continue;
+      newMap[g.id] = g;
+
+      if (_groupsMap[g.id] != g) {
+        changed = true;
       }
     }
-    _groupsSubject.add(_groupsMap.values.toList());
+
+    if (_groupsMap.length != newMap.length) {
+      changed = true;
+    }
+
+    if (changed) {
+      _groupsMap.clear();
+      _groupsMap.addAll(newMap);
+      _groupsSubject.add(_groupsMap.values.toList());
+    }
   }
 
   Stream<List<MarmotGroup>> get watchGroups async* {
