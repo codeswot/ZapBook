@@ -37,17 +37,30 @@ class ShareCircleBookUseCase {
     final groupId = book.id;
     final skips = <ShareSkip>[];
 
-    for (final npub in npubs) {
+    final fetchFutures = npubs.map((npub) async {
       try {
-        final keyPackageJson = await _keyPackageService.fetchKeyPackage(npub);
-        if (keyPackageJson == null) {
-          _log.warning('No key package found for $npub');
-          skips.add(
-            ShareSkip(npub: npub, reason: ShareSkipReason.noKeyPackage),
-          );
-          continue;
-        }
+        final kp = await _keyPackageService.fetchKeyPackage(npub);
+        return MapEntry(npub, kp);
+      } catch (e, st) {
+        _log.warning('Failed to fetch key package for $npub', e, st);
+        return MapEntry(npub, null);
+      }
+    });
 
+    final keyPackages = await Future.wait(fetchFutures);
+    final publishFutures = <Future<void>>[];
+
+    for (final entry in keyPackages) {
+      final npub = entry.key;
+      final keyPackageJson = entry.value;
+
+      if (keyPackageJson == null) {
+        _log.warning('No key package found for $npub');
+        skips.add(ShareSkip(npub: npub, reason: ShareSkipReason.noKeyPackage));
+        continue;
+      }
+
+      try {
         final result = await _circleStore.addCircleMember(
           groupId,
           keyPackageJson,
@@ -61,13 +74,25 @@ class ShareCircleBookUseCase {
         }
 
         final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+
         for (final rumorJson in result.welcomeRumors) {
-          await _envelopeService.giftWrapAndPublish(rumorJson, hex);
+          publishFutures.add(
+            _envelopeService.giftWrapAndPublish(rumorJson, hex).catchError((
+              e,
+              st,
+            ) {
+              _log.severe('Failed to publish welcome rumor for $npub', e, st);
+            }),
+          );
         }
       } catch (e, stack) {
         _log.severe('Failed to add member', e, stack);
         skips.add(ShareSkip(npub: npub, reason: ShareSkipReason.unknownError));
       }
+    }
+
+    if (publishFutures.isNotEmpty) {
+      await Future.wait(publishFutures);
     }
 
     if (skips.length < npubs.length) {

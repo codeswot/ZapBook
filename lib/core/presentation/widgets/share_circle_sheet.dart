@@ -213,12 +213,14 @@ class _BodyState extends State<_Body> {
                     runSpacing: 8,
                     children: [
                       for (final npub in selectedNpubs)
-                        AppChip(
-                          label: labelFor(npub.toNpubShort()),
-                          icon: LucideIcons.x,
-                          selected: true,
-                          onTap: () => cubit.toggleNpub(npub),
-                        ),
+                        npub.isNpub
+                            ? AppChip(
+                                label: labelFor(npub.toNpubShort()),
+                                icon: LucideIcons.x,
+                                selected: true,
+                                onTap: () => cubit.toggleNpub(npub),
+                              )
+                            : SizedBox.shrink(),
                     ],
                   ),
                 ],
