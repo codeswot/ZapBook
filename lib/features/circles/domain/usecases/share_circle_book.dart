@@ -98,7 +98,7 @@ class ShareCircleBookUseCase {
     }
 
     if (skips.length < npubs.length) {
-      await _shareService.uploadBookContent(myNpub, groupId, circleBookId);
+      await _shareService.uploadBookContent(myNpub, groupId, book.circleDirId);
       await _groupStore.refreshGroup(groupId);
     }
 

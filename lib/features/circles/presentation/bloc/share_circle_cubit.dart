@@ -136,26 +136,30 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
         myNpub: myNpub,
       );
 
-      emit(
-        ShareCircleLoaded(
-          friends: s.friends,
-          selectedNpubs: const [],
-          existingMembers: s.existingMembers,
-          shareResult: skips,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          ShareCircleLoaded(
+            friends: s.friends,
+            selectedNpubs: const [],
+            existingMembers: s.existingMembers,
+            shareResult: skips,
+          ),
+        );
+      }
 
       return skips;
     } catch (e, stack) {
       _log.severe('Failed to share circle book', e, stack);
 
-      emit(
-        ShareCircleLoaded(
-          friends: s.friends,
-          selectedNpubs: s.selectedNpubs,
-          existingMembers: s.existingMembers,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          ShareCircleLoaded(
+            friends: s.friends,
+            selectedNpubs: s.selectedNpubs,
+            existingMembers: s.existingMembers,
+          ),
+        );
+      }
       rethrow;
     }
   }

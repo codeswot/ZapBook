@@ -7,7 +7,6 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
-import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
 import 'package:zapbook/theme/app_theme.dart';
@@ -19,7 +18,6 @@ import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_row.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
-import 'package:zapbook/features/circles/presentation/widgets/share_result_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
@@ -292,46 +290,44 @@ class _BodyState extends State<_Body> {
                   onTap: selectedNpubs.isEmpty || isSharing
                       ? null
                       : () {
-                          final rootContext = context;
-                          final friendsList = List<Contact>.from(friends);
-                          final npubsToShare = List<String>.from(selectedNpubs);
                           final circleBookId = widget.book.id;
+
+                          final messengerState = ScaffoldMessenger.of(context);
+                          final successSnackbar = AppToast.buildSnackBar(
+                            context,
+                            message: 'shared successfully!',
+                            type: AppToastType.success,
+                          );
+                          final skipSnackbar = AppToast.buildSnackBar(
+                            context,
+                            message: 'Shared, but some friends skipped',
+                            type: AppToastType.success,
+                          );
+                          final errorSnackbar = AppToast.buildSnackBar(
+                            context,
+                            message:
+                                'Failed to share circle. Please try again.',
+                            type: AppToastType.error,
+                          );
+
+                          context.toast.showSuccess(
+                            'Sharing circle in the background...',
+                          );
+                          Navigator.of(context).pop();
 
                           cubit
                               .share(circleBookId)
                               .then((skipped) {
-                                if (rootContext.mounted) {
-                                  rootContext.pop();
-                                  if (skipped.isNotEmpty) {
-                                    ShareResultSheet.show(
-                                      rootContext,
-                                      skipped,
-                                      friendsList,
-                                    );
-                                  } else {
-                                    rootContext.toast.showSuccess(
-                                      'Book shared successfully!',
-                                    );
-                                  }
+                                messengerState.hideCurrentSnackBar();
+                                if (skipped.isNotEmpty) {
+                                  messengerState.showSnackBar(skipSnackbar);
+                                } else {
+                                  messengerState.showSnackBar(successSnackbar);
                                 }
                               })
                               .catchError((_) {
-                                if (rootContext.mounted) {
-                                  rootContext.pop();
-                                  final allSkipped = npubsToShare
-                                      .map(
-                                        (n) => ShareSkip(
-                                          npub: n,
-                                          reason: ShareSkipReason.noKeyPackage,
-                                        ),
-                                      )
-                                      .toList();
-                                  ShareResultSheet.show(
-                                    rootContext,
-                                    allSkipped,
-                                    friendsList,
-                                  );
-                                }
+                                messengerState.hideCurrentSnackBar();
+                                messengerState.showSnackBar(errorSnackbar);
                               });
                         },
                 ),

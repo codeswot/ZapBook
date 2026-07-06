@@ -12,6 +12,11 @@ import 'package:zapbook/core/services/blossom_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
+class BookDownloadProgress {
+  final String circleBookId;
+  const BookDownloadProgress(this.circleBookId);
+}
+
 @lazySingleton
 class CircleShareService {
   CircleShareService(
@@ -27,6 +32,11 @@ class CircleShareService {
   final GroupEnvelopeService _envelope;
   final _log = logging.Logger('CircleShareService');
 
+  final _progressController =
+      StreamController<BookDownloadProgress>.broadcast();
+  Stream<BookDownloadProgress> get onBookDownloadProgress =>
+      _progressController.stream;
+
   static const _reader = ZbfReader();
   static const _segmenter = ZbfSegmenter();
 
@@ -36,7 +46,12 @@ class CircleShareService {
     String circleBookId,
   ) async {
     final zbf = await _fileStore.zbfFile(circleBookId);
-    if (!zbf.existsSync()) return;
+    if (!zbf.existsSync()) {
+      _log.warning(
+        'Cannot upload book content: ZBF file not found for $circleBookId',
+      );
+      return;
+    }
 
     final handle = await _reader.open(zbf.path);
     try {
@@ -73,6 +88,38 @@ class CircleShareService {
     }
   }
 
+  Future<bool> fetchAndDownloadBook(String circleBookId, String groupId) async {
+    try {
+      final messages = await _marmot.getMessages(groupId);
+      final segments = <MarmotMediaRef>[];
+      MarmotMediaRef? sourceRef;
+
+      for (final message in messages) {
+        for (final media in message.media) {
+          if (!media.filename.startsWith(circleBookId)) continue;
+
+          if (media.filename.endsWith('.source')) {
+            sourceRef = media;
+          } else if (media.filename.endsWith('.zbfseg')) {
+            segments.add(media);
+          }
+        }
+      }
+
+      if (segments.isEmpty && sourceRef == null) {
+        _log.warning('No book assets found in messages for $circleBookId');
+        return false;
+      }
+
+      segments.sort((a, b) => a.filename.compareTo(b.filename));
+
+      return downloadBookContent(circleBookId, groupId, segments, sourceRef);
+    } catch (e, st) {
+      _log.warning('Failed to fetch messages for $groupId', e, st);
+      return false;
+    }
+  }
+
   Future<bool> downloadBookContent(
     String circleBookId,
     String groupId,
@@ -90,6 +137,9 @@ class CircleShareService {
         _downloadSegments(groupId, segmentRefs),
         zbf.path,
         sourceBytes: sourceBytes,
+        onSegmentProcessed: () {
+          _progressController.add(BookDownloadProgress(circleBookId));
+        },
       );
       return true;
     } on Object catch (error, stack) {

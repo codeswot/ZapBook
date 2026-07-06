@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading.dart';
@@ -21,28 +20,11 @@ class ZbfViewerPage extends StatelessWidget {
   final String? highlightQuery;
   final ZbfReader? reader;
 
-  String get _circleBookId {
-    final type = FileSystemEntity.typeSync(zbfPath);
-    if (type == FileSystemEntityType.directory) {
-      return Uri.parse(zbfPath).pathSegments.where((s) => s.isNotEmpty).last;
-    }
-    return File(
-      zbfPath,
-    ).parent.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (File('$zbfPath/manifest.json').existsSync()) {
-      return _LocalReader(
-        zbfPath: zbfPath,
-        reader: reader ?? getIt<ZbfReader>(),
-        initialPage: initialPage,
-        highlightQuery: highlightQuery,
-      );
-    }
-    return _ProgressiveReader(
-      circleBookId: _circleBookId,
+    return _LocalReader(
+      zbfPath: zbfPath,
+      reader: reader ?? getIt<ZbfReader>(),
       initialPage: initialPage,
       highlightQuery: highlightQuery,
     );
@@ -67,36 +49,24 @@ class _LocalReader extends StatefulWidget {
 }
 
 class _LocalReaderState extends State<_LocalReader> {
-  Future<ZbfBookHandle>? _openFuture;
-  ZbfBookHandle? _handle;
+  late final Future<ZbfBookHandle> _futureHandle;
 
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  void _load() {
-    _openFuture = widget.reader.open(widget.zbfPath).then((handle) {
-      if (mounted) {
-        _handle = handle;
-      } else {
-        handle.close();
-      }
-      return handle;
-    });
+    _futureHandle = widget.reader.open(widget.zbfPath);
   }
 
   @override
   void dispose() {
-    _handle?.close();
+    _futureHandle.then((handle) => handle.close());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<ZbfBookHandle>(
-      future: _openFuture,
+      future: _futureHandle,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _ViewerError(message: '${snapshot.error}');
@@ -113,70 +83,15 @@ class _LocalReaderState extends State<_LocalReader> {
   }
 }
 
-class _ProgressiveReader extends StatefulWidget {
-  const _ProgressiveReader({
-    required this.circleBookId,
-    required this.initialPage,
-    required this.highlightQuery,
-  });
 
-  final String circleBookId;
-  final int? initialPage;
-  final String? highlightQuery;
-
-  @override
-  State<_ProgressiveReader> createState() => _ProgressiveReaderState();
-}
-
-class _ProgressiveReaderState extends State<_ProgressiveReader> {
-  // todo: fix "ProgressiveBook"
-  dynamic _book;
-  String? _error;
-  bool _disposed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tryOpen();
-  }
-
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
-  }
-
-  Future<void> _tryOpen() async {
-    if (_disposed) return;
-    setState(() => _error = 'Failed to open book');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_error != null) {
-      return _ViewerError(message: _error!);
-    }
-    if (_book == null) {
-      return const _ViewerLoading(message: 'Preparing book...');
-    }
-    return ReaderScreen(
-      handle: _book!.handle,
-      segmentLoader: _book!.loader,
-      initialPage: widget.initialPage,
-      highlightQuery: widget.highlightQuery,
-    );
-  }
-}
 
 class _ViewerLoading extends StatelessWidget {
-  const _ViewerLoading({this.message});
-
-  final String? message;
+  const _ViewerLoading();
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: context.colors.paper,
-    body: ReaderPageLoading(message: message ?? 'Opening…'),
+    body: const ReaderPageLoading(message: 'Opening…'),
   );
 }
 

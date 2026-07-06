@@ -22,14 +22,35 @@ final class LibraryLoaded extends LibraryState {
     this.books, {
     this.lastOpenedBook,
     this.showCirclePrompt = false,
+    this.downloadingBookIds = const {},
   });
 
   final List<CircleBook> books;
   final CircleBook? lastOpenedBook;
   final bool showCirclePrompt;
+  final Set<String> downloadingBookIds;
+
+  LibraryLoaded copyWith({
+    List<CircleBook>? books,
+    CircleBook? lastOpenedBook,
+    bool? showCirclePrompt,
+    Set<String>? downloadingBookIds,
+  }) {
+    return LibraryLoaded(
+      books ?? this.books,
+      lastOpenedBook: lastOpenedBook ?? this.lastOpenedBook,
+      showCirclePrompt: showCirclePrompt ?? this.showCirclePrompt,
+      downloadingBookIds: downloadingBookIds ?? this.downloadingBookIds,
+    );
+  }
 
   @override
-  List<Object?> get props => [books, lastOpenedBook, showCirclePrompt];
+  List<Object?> get props => [
+        books,
+        lastOpenedBook,
+        showCirclePrompt,
+        downloadingBookIds,
+      ];
 }
 
 final class LibraryError extends LibraryState {

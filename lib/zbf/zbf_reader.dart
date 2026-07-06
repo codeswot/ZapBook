@@ -8,6 +8,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:zapbook/zbf/entities/book_chapter.dart';
 import 'package:zapbook/zbf/entities/book_manifest.dart';
 import 'package:zapbook/zbf/entities/book_page.dart';
+import 'package:zapbook/zbf/enums/book_layout_type.dart';
 import 'package:zapbook/zbf/support/asset_naming.dart';
 
 final class ZbfReader {
@@ -146,7 +147,14 @@ final class ZbfBookHandle {
 
     final result = _pageStmt.select([globalIndex]);
     if (result.isEmpty) {
-      throw StateError('Missing page $globalIndex');
+      return BookPage(
+        pageNumber: globalIndex + 1,
+        chapterIndex: 0,
+        chapterTitle: '',
+        needsAiProcessing: false,
+        layoutType: BookLayoutType.processing,
+        blocks: const [],
+      );
     }
 
     final decoded = BookPage.fromJson(

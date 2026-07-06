@@ -40,7 +40,7 @@ class LibraryBody extends StatelessWidget {
             };
             final lastOpenedBook = switch (library) {
               LibraryLoaded(:final lastOpenedBook) =>
-                  (lastOpenedBook != null && !tasks.containsKey(lastOpenedBook.id))
+                  (lastOpenedBook != null && !tasks.containsKey(lastOpenedBook.circleDirId))
                       ? lastOpenedBook
                       : null,
               _ => null,
@@ -62,14 +62,14 @@ class LibraryBody extends StatelessWidget {
                       .toList();
                       
             final displayBooks = filteredBooks
-                .where((book) => !tasks.containsKey(book.id))
+                .where((book) => !tasks.containsKey(book.circleDirId))
                 .toList();
 
             final textHits = context.watch<BookTextSearchCubit>().state;
             final hasTextHits =
                 searchQuery.isNotEmpty &&
                 textHits.any(
-                  (hit) => books.any((b) => b.id == hit.circleBookId),
+                  (hit) => books.any((b) => b.circleDirId == hit.circleBookId),
                 );
 
             if (displayBooks.isEmpty &&

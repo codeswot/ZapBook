@@ -31,7 +31,7 @@ class AppToast {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        _buildSnackBar(
+        buildSnackBar(
           context,
           message: message,
           type: type,
@@ -63,7 +63,7 @@ class AppToast {
     overlay.insert(entry);
   }
 
-  static SnackBar _buildSnackBar(
+  static SnackBar buildSnackBar(
     BuildContext context, {
     required String message,
     AppToastType type = AppToastType.normal,

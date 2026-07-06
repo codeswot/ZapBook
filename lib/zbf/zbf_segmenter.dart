@@ -377,6 +377,7 @@ class ZbfSegmenter {
     String outputDirectory, {
     Uint8List? coverBytes,
     Uint8List? sourceBytes,
+    void Function()? onSegmentProcessed,
   }) async {
     final dir = Directory(outputDirectory);
     if (!dir.existsSync()) {
@@ -409,20 +410,24 @@ class ZbfSegmenter {
           }),
         );
 
-        manifest ??= result.manifest;
+        if (manifest == null && result.manifest != null) {
+          manifest = result.manifest;
+          final manifestBytes = _json(manifest!.toJson());
+          File('$outputDirectory/manifest.json').writeAsBytesSync(manifestBytes);
+        }
+        
         writtenAssets.addAll(result.writtenAssets);
 
         for (final page in result.pages) {
           stmt.execute([page.pageIndex, page.chapterIndex, page.json]);
         }
+        
+        onSegmentProcessed?.call();
       }
 
       if (manifest == null) {
         throw StateError('No manifest found in segments');
       }
-
-      final manifestBytes = _json(manifest.toJson());
-      File('$outputDirectory/manifest.json').writeAsBytesSync(manifestBytes);
 
       if (coverBytes != null) {
         File(

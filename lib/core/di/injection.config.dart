@@ -143,6 +143,8 @@ import 'package:zapbook/features/library/data/repositories/marmot_library_reposi
     as _i894;
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart'
     as _i516;
+import 'package:zapbook/features/library/domain/usecases/download_circle_book.dart'
+    as _i578;
 import 'package:zapbook/features/library/domain/usecases/watch_last_opened_library_book.dart'
     as _i16;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
@@ -452,6 +454,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i140.MarmotSyncService>(),
       ),
     );
+    gh.factory<_i578.DownloadCircleBook>(
+      () => _i578.DownloadCircleBook(gh<_i455.CircleShareService>()),
+    );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
@@ -664,16 +669,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
     );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
-      ),
-    );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(
         gh<_i1024.WatchCircleBooks>(),
         gh<_i16.WatchLastOpenedLibraryBook>(),
+        gh<_i578.DownloadCircleBook>(),
+      ),
+    );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     return this;

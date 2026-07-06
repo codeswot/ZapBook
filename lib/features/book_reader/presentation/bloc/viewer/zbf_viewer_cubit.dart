@@ -9,6 +9,7 @@ import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/core/services/circle_share_service.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
@@ -18,10 +19,12 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     PdfPageRasterizer? rasterizer,
     PdfChunkExtractor? chunkExtractor,
     PageDao? pageCache,
+    CircleShareService? shareService,
     int initialPage = 0,
   }) : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
        _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
        _pageCache = pageCache ?? getIt<PageDao>(),
+       _shareService = shareService ?? getIt<CircleShareService>(),
        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
        super(ZbfViewerState(currentPage: initialPage)) {
     _initialize(initialPage);
@@ -30,6 +33,14 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   Future<void> _initialize(int initialPage) async {
     await _hydrateFromCache(initialPage);
     if (isClosed) return;
+    
+    _progressSub = _shareService.onBookDownloadProgress.listen((event) {
+      if (event.circleBookId == handle.manifest.id && !isClosed) {
+        _reconcilePrep();
+        emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+      }
+    });
+
     _ensureSegment(initialPage);
     _prefetch(initialPage);
     _ensureInitialChunk(initialPage);
@@ -57,7 +68,10 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   final PdfPageRasterizer _rasterizer;
   final PdfChunkExtractor _chunkExtractor;
   final PageDao _pageCache;
+  final CircleShareService _shareService;
   final _logger = Logger('ZbfViewerCubit');
+
+  StreamSubscription? _progressSub;
 
   static const _prepTimeout = Duration(seconds: 8);
   static const _loadTimeout = Duration(seconds: 20);
@@ -390,6 +404,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   @override
   Future<void> close() {
+    _progressSub?.cancel();
     _prepTimer?.cancel();
     _prefetchQueue.clear();
     return super.close();

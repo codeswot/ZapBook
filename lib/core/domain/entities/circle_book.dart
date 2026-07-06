@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 
 import 'package:zapbook/zbf/enums/book_source_format.dart';
@@ -48,6 +49,7 @@ final class CircleBook extends Equatable {
   final bool removedFromCircle;
 
   bool get isShared => memberCount > 1;
+  bool get isDownloaded => File('$zbfPath/manifest.json').existsSync();
 
   CircleBook copyWith({
     String? title,
