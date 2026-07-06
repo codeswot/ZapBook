@@ -118,6 +118,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> dissolve(CircleBook circleBook) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
+
     await _circleStore.deleteCircleBook(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
   }

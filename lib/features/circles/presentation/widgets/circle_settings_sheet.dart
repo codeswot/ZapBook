@@ -53,7 +53,7 @@ class CircleSettingsSheet extends StatelessWidget {
     await cubit.refresh(book.id);
   }
 
-  Future<void> _delete(BuildContext context) async {
+  Future<void> _deleteAndOrLeave(BuildContext context) async {
     context.pop();
     final ok = await CircleConfirmSheet.show(
       context,
@@ -64,20 +64,13 @@ class CircleSettingsSheet extends StatelessWidget {
           : 'You will leave the circle and the book will be deleted from your local device.',
       action: 'Delete circle',
     );
-    if (ok) await cubit.dissolve(book);
-  }
-
-  Future<void> _leave(BuildContext context) async {
-    context.pop();
-    final ok = await CircleConfirmSheet.show(
-      context,
-      title: 'Leave this circle?',
-      message:
-          'You’ll be removed from “${book.title}” but it will stay in your '
-          'library as a private copy on this device.',
-      action: 'Leave circle',
-    );
-    if (ok) await cubit.leave(book);
+    if (ok) {
+      if (isAdmin) {
+        await cubit.dissolve(book);
+      } else {
+        await cubit.leave(book);
+      }
+    }
   }
 
   @override
@@ -144,21 +137,15 @@ class CircleSettingsSheet extends StatelessWidget {
               icon: LucideIcons.trash2,
               label: 'Delete circle',
               tone: colors.tomato,
-              onTap: () => _delete(context),
+              onTap: () => _deleteAndOrLeave(context),
             )
           else ...[
-            _SettingsRow(
-              icon: LucideIcons.logOut,
-              label: 'Leave circle',
-              tone: colors.tomato,
-              onTap: () => _leave(context),
-            ),
             const SizedBox(height: 10),
             _SettingsRow(
               icon: LucideIcons.trash2,
-              label: 'Leave and delete circle',
+              label: 'Leave Circle',
               tone: colors.tomato,
-              onTap: () => _delete(context),
+              onTap: () => _deleteAndOrLeave(context),
             ),
           ],
         ],

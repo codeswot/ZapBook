@@ -51,6 +51,7 @@ class GroupStoreService {
 
     _sub = _marmotSync.onGroup.listen((updatedGroup) {
       if (_deletedGroupIds.contains(updatedGroup.id)) return;
+
       _groupsMap[updatedGroup.id] = updatedGroup;
       _groupsSubject.add(_groupsMap.values.toList());
       _groupUpdatedSubject.add(updatedGroup);
@@ -136,6 +137,7 @@ class GroupStoreService {
       relayUrls: ZapbookConfig.broadcastRelays,
     );
 
+    await _envelope.publish(res);
     await _optimisticUpdate(groupId);
     return res;
   }
@@ -213,7 +215,8 @@ class GroupStoreService {
   Future<void> leaveGroup(String groupId) async {
     try {
       final res = await _marmot.leaveGroup(groupId);
-      _envelope.publish(res.evolutionEventJson);
+      await _envelope.publish(res.evolutionEventJson);
+      await _optimisticUpdate(groupId);
     } catch (e, st) {
       _log.warning('Marmot leaveGroup failed', e, st);
     }
@@ -238,7 +241,7 @@ class GroupStoreService {
   ) async {
     try {
       final res = await _marmot.addMember(groupId, keyPackageJson);
-      _envelope.publish(res.evolutionEventJson);
+      await _envelope.publish(res.evolutionEventJson);
       return res;
     } catch (e, st) {
       _log.warning('Marmot addMember failed', e, st);
@@ -249,7 +252,7 @@ class GroupStoreService {
   Future<void> removeMember(String groupId, String memberNpub) async {
     try {
       final res = await _marmot.removeMember(groupId, memberNpub);
-      _envelope.publish(res.evolutionEventJson);
+      await _envelope.publish(res.evolutionEventJson);
     } catch (e, st) {
       _log.warning('Marmot removeMember failed', e, st);
     }

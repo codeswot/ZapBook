@@ -14,14 +14,15 @@ class GroupEnvelopeService {
 
   static const _relays = ZapbookConfig.broadcastRelays;
 
-  void publish(String eventJson) {
+  Future<void> publish(String eventJson) async {
     try {
-      _ndk.broadcast.broadcast(
+      final response = _ndk.broadcast.broadcast(
         nostrEvent: _toNip01Event(eventJson),
         specificRelays: _relays,
       );
+      await response.broadcastDoneFuture.timeout(const Duration(seconds: 3));
     } on Object catch (error, stack) {
-      _log.warning('Relay publish failed', error, stack);
+      _log.warning('Relay publish failed or timed out', error, stack);
     }
   }
 
