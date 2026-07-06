@@ -91,7 +91,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   void nextPage() {
     var next = state.currentPage + 1;
-    while (next < handle.manifest.pageCount - 1 && _isSkippable(next)) {
+    while (next < handle.manifest.pageCount && _isSkippable(next)) {
       next++;
     }
     if (next < handle.manifest.pageCount) pageChanged(next);
@@ -99,7 +99,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   void previousPage() {
     var prev = state.currentPage - 1;
-    while (prev > 0 && _isSkippable(prev)) {
+    while (prev >= 0 && _isSkippable(prev)) {
       prev--;
     }
     if (prev >= 0) pageChanged(prev);
@@ -116,6 +116,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
     _ensureSegment(index);
     _ensureSegment(index + ZbfSegmenter.pagesPerSegment);
+    _ensureSegment(index - ZbfSegmenter.pagesPerSegment);
 
     final currentChunk = _chunkForPage(index);
     final page = handle.pageAt(index);
@@ -337,6 +338,13 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
     while (_prefetchQueue.isNotEmpty) {
       if (isClosed) break;
+
+      _prefetchQueue.sort(
+        (a, b) => (a - state.currentPage).abs().compareTo(
+          (b - state.currentPage).abs(),
+        ),
+      );
+
       final pageIndex = _prefetchQueue.removeAt(0);
       final page = handle.pageAt(pageIndex);
       if (page.layoutType == BookLayoutType.processing) continue;
