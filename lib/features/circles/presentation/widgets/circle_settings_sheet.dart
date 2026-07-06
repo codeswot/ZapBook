@@ -60,7 +60,7 @@ class CircleSettingsSheet extends StatelessWidget {
       title: 'Delete this circle?',
       message: isAdmin
           ? 'Everyone except you will be removed from “${book.title}”. '
-            'The book stays in your library as a private copy.'
+                'The book stays in your library as a private copy.'
           : 'You will leave the circle and the book will be deleted from your local device.',
       action: 'Delete circle',
     );
@@ -148,19 +148,19 @@ class CircleSettingsSheet extends StatelessWidget {
             )
           else ...[
             _SettingsRow(
-              icon: LucideIcons.trash2,
-              label: 'Leave and delete locally',
-              tone: colors.tomato,
-              onTap: () => _delete(context),
-            ),
-            const SizedBox(height: 10),
-            _SettingsRow(
               icon: LucideIcons.logOut,
-              label: 'Leave circle (keep private copy)',
+              label: 'Leave circle',
               tone: colors.tomato,
               onTap: () => _leave(context),
             ),
-          ]
+            const SizedBox(height: 10),
+            _SettingsRow(
+              icon: LucideIcons.trash2,
+              label: 'Leave and delete circle',
+              tone: colors.tomato,
+              onTap: () => _delete(context),
+            ),
+          ],
         ],
       ),
     );

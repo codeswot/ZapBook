@@ -228,6 +228,8 @@ class GroupStoreService {
     _groupUpdatedSubject.add(updated);
   }
 
+  Future<void> refreshGroup(String groupId) => _optimisticUpdate(groupId);
+
   @disposeMethod
   void dispose() {
     _sub?.cancel();

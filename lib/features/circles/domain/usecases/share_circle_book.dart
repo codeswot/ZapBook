@@ -5,6 +5,7 @@ import 'package:zapbook/core/services/circle_share_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/services/group_store_service.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 
 @injectable
@@ -15,6 +16,7 @@ class ShareCircleBookUseCase {
     this._envelopeService,
     this._shareService,
     this._circleStore,
+    this._groupStore,
   );
 
   final Marmot _marmot;
@@ -22,6 +24,7 @@ class ShareCircleBookUseCase {
   final GroupEnvelopeService _envelopeService;
   final CircleShareService _shareService;
   final CircleStoreService _circleStore;
+  final GroupStoreService _groupStore;
   final _log = logging.Logger('ShareCircleBookUseCase');
   Future<List<ShareSkip>> call({
     required String circleBookId,
@@ -63,6 +66,7 @@ class ShareCircleBookUseCase {
 
     if (skips.length < npubs.length) {
       await _shareService.uploadBookContent(myNpub, groupId, circleBookId);
+      await _groupStore.refreshGroup(groupId);
     }
 
     return skips;
