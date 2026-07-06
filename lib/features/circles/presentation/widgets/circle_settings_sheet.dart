@@ -64,7 +64,7 @@ class CircleSettingsSheet extends StatelessWidget {
           : 'You will leave the circle and the book will be deleted from your local device.',
       action: 'Delete circle',
     );
-    if (ok) await cubit.dissolve(book.id);
+    if (ok) await cubit.dissolve(book);
   }
 
   Future<void> _leave(BuildContext context) async {
@@ -77,7 +77,7 @@ class CircleSettingsSheet extends StatelessWidget {
           'library as a private copy on this device.',
       action: 'Leave circle',
     );
-    if (ok) await cubit.leave(book.id);
+    if (ok) await cubit.leave(book);
   }
 
   @override

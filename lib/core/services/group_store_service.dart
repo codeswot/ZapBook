@@ -228,6 +228,19 @@ class GroupStoreService {
     _groupUpdatedSubject.add(updated);
   }
 
+  Future<List<MarmotMember>> getMembers(String groupId) async {
+    return await _marmot.getMembers(groupId);
+  }
+
+  Future<void> removeMember(String groupId, String memberNpub) async {
+    try {
+      final res = await _marmot.removeMember(groupId, memberNpub);
+      _envelope.publish(res.evolutionEventJson);
+    } catch (e, st) {
+      _log.warning('Marmot removeMember failed', e, st);
+    }
+  }
+
   Future<void> refreshGroup(String groupId) => _optimisticUpdate(groupId);
 
   @disposeMethod

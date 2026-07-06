@@ -1,0 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
+import 'package:zapbook/core/router/app_router.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
+import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
+    show MemberEntry;
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_detail_top_bar.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_my_progress_card.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_reader_tile.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_removed_banner.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_settings_sheet.dart';
+import 'package:zapbook/features/circles/presentation/widgets/reader_actions_sheet.dart';
+import 'package:zapbook/theme/app_theme.dart';
+
+class CircleLoadedView extends StatelessWidget {
+  const CircleLoadedView({
+    super.key,
+    required this.circleBookId,
+    required this.state,
+  });
+
+  final String circleBookId;
+  final CircleDetailLoaded state;
+
+  CircleBook get book => state.book;
+
+  void _openBook(BuildContext context) {
+    context.read<CircleDetailCubit>().open(circleBookId);
+    ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+  }
+
+  void _openSettings(BuildContext context) {
+    CircleSettingsSheet.show(
+      context,
+      cubit: context.read<CircleDetailCubit>(),
+      book: book,
+      isAdmin: state.isAdmin,
+    );
+  }
+
+  void _readerActions(BuildContext context, MemberEntry entry) {
+    ReaderActionsSheet.show(
+      context,
+      cubit: context.read<CircleDetailCubit>(),
+      entry: entry,
+      circleBookId: circleBookId,
+      bookTitle: book.title,
+      canRemove: state.isAdmin,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CircleDetailTopBar(
+          readersCount: state.members.length,
+          circleBookId: circleBookId,
+          bookTitle: book.title,
+          onSettings: book.removedFromCircle
+              ? null
+              : () => _openSettings(context),
+        ),
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 22, 24, 12),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    if (book.removedFromCircle) ...[
+                      const CircleRemovedBanner(),
+                      const SizedBox(height: 14),
+                    ],
+                    CircleMyProgressCard(
+                      book: book,
+                      myNpub: state.myNpub,
+                      myProgressFraction:
+                          state.memberProgress[state.myNpub]?.fraction ?? 0,
+                      myPage:
+                          state.memberProgress[state.myNpub]?.currentPage ??
+                          state.myPage,
+                      satsEarned: state.satsEarned,
+                    ),
+                    const SizedBox(height: 14),
+                    AppButton(
+                      label: 'Open book',
+                      icon: LucideIcons.bookOpen,
+                      fullWidth: true,
+                      onTap: () => _openBook(context),
+                    ),
+                    const SizedBox(height: 26),
+                    Row(
+                      children: [
+                        Text(
+                          'Readers',
+                          style: typography.h3.copyWith(color: colors.ink),
+                        ),
+                      ],
+                    ),
+                  ]),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final entry = state.members[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: CircleReaderTile(
+                        entry: entry,
+                        isOwner: state.isMemberAdmin(entry.npub),
+                        isYou: entry.isSelf,
+                        pageCount: book.pageCount,
+                        bookTitle: book.title,
+                        circleBookId: book.id,
+                        memberProgress: state.memberProgress,
+                        onLongPress: entry.isSelf
+                            ? null
+                            : () => _readerActions(context, entry),
+                      ),
+                    );
+                  }, childCount: state.members.length),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

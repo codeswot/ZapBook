@@ -141,7 +141,7 @@ class _Body extends StatelessWidget {
                                 color: colors.tomato,
                               ),
                             ),
-                          if (!entry.isContact) ...[
+                          if (!entry.isFollow) ...[
                             const SizedBox(width: 10),
                             BouncingInteractiveWidget(
                               onTap: () {},

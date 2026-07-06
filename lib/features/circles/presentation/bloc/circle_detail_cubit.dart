@@ -1,39 +1,58 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 import 'dart:async';
 
 import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/zap_service.dart';
-import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart';
 
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
-  CircleDetailCubit(this._libraryRepository)
+  CircleDetailCubit(this._identityLocal, this._circleStore, this._contacts)
     : super(const CircleDetailLoading());
 
-  final LibraryRepository _libraryRepository;
+  final CircleStoreService _circleStore;
+  final IdentityLocalDataSource _identityLocal;
+  final ContactService _contacts;
 
   Future<void> load(String circleBookId) async {
-    final book = await _libraryRepository.getBook(circleBookId);
+    final book = _circleStore.currentCircles
+        .where((c) => c.id == circleBookId)
+        .firstOrNull;
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
       return;
     }
 
+    final myNpub = await _identityLocal.readNpub() ?? '';
+
+    final circleMembers = await _circleStore.getCircleMembers(circleBookId);
+    final members = circleMembers
+        .map(
+          (member) => MemberEntry(
+            npub: member.npub,
+            contact: member,
+            isSelf: member.npub == myNpub,
+            isFollow: member.isFollow,
+          ),
+        )
+        .toList();
+
     emit(
       CircleDetailLoaded(
         book: book,
-        members: const [],
-        adminNpubs: const {},
-        myNpub: '',
-        milestones: const [],
+        myNpub: myNpub,
+        members: members,
+        adminNpubs: book.adminNpubs.toSet(),
         memberProgress: const {},
+        milestones: const [],
         satsEarned: 0,
       ),
     );
@@ -73,21 +92,33 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     required String toNpub,
   }) async {}
 
-  void toggleContact(String npub, bool isContact) {}
+  Future<void> removeMember(String circleBookId, String npub) async {
+    final currentState = state;
+    if (currentState is CircleDetailLoaded) {
+      await _circleStore.removeCircleMember(circleBookId, npub);
+      await refresh(circleBookId);
+    }
+  }
 
-  Future<void> removeMember(String circleBookId, String npub) async {}
+  void toggleContact(String npub, bool isFollow) async {
+    if (isFollow) {
+      await _contacts.add(npub);
+    } else {
+      await _contacts.remove(npub);
+    }
+  }
 
-  Future<void> leave(String circleBookId) async {
+  Future<void> leave(CircleBook circleBook) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
-    await getIt<CircleOperationsCubit>().leaveCircle(s.book);
+    await _circleStore.leaveCircleBook(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
   }
 
-  Future<void> dissolve(String circleBookId) async {
+  Future<void> dissolve(CircleBook circleBook) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
-    await getIt<CircleOperationsCubit>().deleteBook(s.book);
+    await _circleStore.deleteCircleBook(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
   }
 }

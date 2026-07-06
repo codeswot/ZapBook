@@ -2,21 +2,21 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:marmot_dart/marmot_dart.dart';
 
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart';
 
 @injectable
 class CircleMembersCubit extends Cubit<CircleMembersState> {
-  CircleMembersCubit(this._marmot, this._contacts, this._identity)
+  CircleMembersCubit(this._circleStore, this._identity, this._contacts)
     : super(const CircleMembersLoading());
 
-  final Marmot _marmot;
-  final ContactService _contacts;
   final IdentityLocalDataSource _identity;
+  final CircleStoreService _circleStore;
+  final ContactService _contacts;
 
   StreamSubscription<List<Contact>>? _sub;
 
@@ -30,30 +30,22 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     emit(const CircleMembersLoading());
 
     final myNpub = await _identity.readNpub();
-    final members = await _marmot.getMembers(circleBookId);
-    final memberNpubs = members.map((m) => m.npub).toList();
+
+    final circleMembers = await _circleStore.getCircleMembers(circleBookId);
+    final members = circleMembers
+        .map(
+          (member) => MemberEntry(
+            npub: member.npub,
+            contact: member,
+            isSelf: member.npub == myNpub,
+            isFollow: member.isFollow,
+          ),
+        )
+        .toList();
 
     await _sub?.cancel();
 
-    await _contacts.prime(memberNpubs);
-    if (isClosed || state is CircleMembersBusy) return;
-
-    final contacts = memberNpubs
-        .map((npub) => _contacts.contactFor(npub))
-        .toList();
-    final contactNpubs = contacts.map((c) => c.npub).toSet();
-    final byNpub = {for (final c in contacts) c.npub: c};
-
-    final entries = [
-      for (final npub in memberNpubs)
-        MemberEntry(
-          npub: npub,
-          contact: byNpub[npub] ?? Contact(npub: npub),
-          isSelf: npub == myNpub,
-          isContact: contactNpubs.contains(npub),
-        ),
-    ];
-    emit(CircleMembersLoaded(entries: entries, isAdmin: isAdmin));
+    emit(CircleMembersLoaded(entries: members, isAdmin: isAdmin));
   }
 
   Future<void> refresh(String circleBookId) async {
@@ -67,15 +59,11 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     }
   }
 
-  void toggleContact(String npub, bool isContact) async {
-    if (isContact) {
+  void toggleContact(String npub, bool isFollow) async {
+    if (isFollow) {
       await _contacts.add(npub);
     } else {
       await _contacts.remove(npub);
     }
-  }
-
-  Future<void> removeMember(String circleBookId, String npub) async {
-    // Stub
   }
 }

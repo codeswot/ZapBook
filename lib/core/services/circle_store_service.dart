@@ -10,20 +10,23 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/group_store_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 import 'package:logging/logging.dart' as logging;
 
 @lazySingleton
 class CircleStoreService {
-  CircleStoreService(this._groupStore, this._fileStore) {
+  CircleStoreService(this._groupStore, this._fileStore, this._contactStore) {
     _init();
   }
   final _log = logging.Logger('CircleStoreService');
 
   final GroupStoreService _groupStore;
   final LibraryFileStore _fileStore;
+  final ContactService _contactStore;
 
   final _circlesController = BehaviorSubject<List<CircleBook>>.seeded([]);
   Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
@@ -359,11 +362,22 @@ class CircleStoreService {
   }
 
   Future<void> deleteCircleBook(CircleBook circleBook) async {
-    print(
-      'Qs Deleting circle book: ${circleBook.title} (${circleBook.id}) and dirId: ${circleBook.circleDirId}',
-    );
     await _groupStore.deleteGroup(circleBook.id);
     await _fileStore.deleteBook(circleBook.circleDirId);
+  }
+
+  Future<List<Contact>> getCircleMembers(String circleBookId) async {
+    final marmotMembers = await _groupStore.getMembers(circleBookId);
+    return Future.wait(
+      marmotMembers.map((member) => _contactStore.resolve(member.npub)),
+    );
+  }
+
+  Future<void> removeCircleMember(
+    String circleBookId,
+    String memberNpub,
+  ) async {
+    await _groupStore.removeMember(circleBookId, memberNpub);
   }
 
   Future<void> leaveCircleBook(CircleBook circleBook) async {

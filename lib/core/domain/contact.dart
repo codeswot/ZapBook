@@ -4,12 +4,14 @@ class Contact {
     this.displayName,
     this.picture,
     this.lud16,
+    this.isFollow = false,
   });
 
   final String npub;
   final String? displayName;
   final String? picture;
   final String? lud16;
+  final bool isFollow;
 
   String get label => (displayName != null && displayName!.trim().isNotEmpty)
       ? displayName!.trim()

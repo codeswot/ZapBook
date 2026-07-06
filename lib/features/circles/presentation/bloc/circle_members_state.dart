@@ -29,12 +29,12 @@ class MemberEntry {
   final String npub;
   final Contact contact;
   final bool isSelf;
-  final bool isContact;
+  final bool isFollow;
 
   const MemberEntry({
     required this.npub,
     required this.contact,
     required this.isSelf,
-    required this.isContact,
+    required this.isFollow,
   });
 }

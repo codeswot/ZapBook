@@ -43,12 +43,21 @@ class ContactService {
         }
         _currentFriends = _buildContacts(hexes, metas);
         _friendsController.add(_currentFriends);
+      } else {
+        _currentFriends = [];
+        _friendsController.add(_currentFriends);
       }
     }
 
     try {
       final contactList = await _nostr.getContactList(pubkey);
-      if (contactList == null) return;
+      if (contactList == null) {
+        if (cachedList == null) {
+          _currentFriends = [];
+          _friendsController.add(_currentFriends);
+        }
+        return;
+      }
 
       final hexes = List<String>.from(
         contactList.contacts,
@@ -144,11 +153,21 @@ class ContactService {
         ? meta!.displayName
         : meta?.name;
 
+    final pubkey = _nostr.pubkey;
+    bool isFollow = false;
+    if (pubkey != null) {
+      final cachedList = _nostr.getCachedContactList(pubkey);
+      if (cachedList != null) {
+        isFollow = cachedList.contacts.contains(hex);
+      }
+    }
+
     return Contact(
       npub: npub,
       displayName: name,
       picture: meta?.picture,
       lud16: meta?.lud16,
+      isFollow: isFollow,
     );
   }
 
