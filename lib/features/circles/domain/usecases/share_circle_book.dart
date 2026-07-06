@@ -11,7 +11,6 @@ import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 @injectable
 class ShareCircleBookUseCase {
   ShareCircleBookUseCase(
-    this._marmot,
     this._keyPackageService,
     this._envelopeService,
     this._shareService,
@@ -19,7 +18,6 @@ class ShareCircleBookUseCase {
     this._groupStore,
   );
 
-  final Marmot _marmot;
   final KeyPackageService _keyPackageService;
   final GroupEnvelopeService _envelopeService;
   final CircleShareService _shareService;
@@ -50,9 +48,17 @@ class ShareCircleBookUseCase {
           continue;
         }
 
-        final result = await _marmot.addMember(groupId, keyPackageJson);
-
-        _envelopeService.publish(result.evolutionEventJson);
+        final result = await _circleStore.addCircleMember(
+          groupId,
+          keyPackageJson,
+        );
+        if (result == null) {
+          _log.warning('Failed to add member $npub');
+          skips.add(
+            ShareSkip(npub: npub, reason: ShareSkipReason.unknownError),
+          );
+          continue;
+        }
 
         final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
         for (final rumorJson in result.welcomeRumors) {

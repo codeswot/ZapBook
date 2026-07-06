@@ -589,6 +589,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i821.CircleStoreService>()),
     );
+    gh.factory<_i5.ShareCircleBookUseCase>(
+      () => _i5.ShareCircleBookUseCase(
+        gh<_i397.KeyPackageService>(),
+        gh<_i394.GroupEnvelopeService>(),
+        gh<_i455.CircleShareService>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i40.GroupStoreService>(),
+      ),
+    );
     gh.factory<_i41.CircleOperationsCubit>(
       () => _i41.CircleOperationsCubit(
         gh<_i603.IdentityLocalDataSource>(),
@@ -598,21 +607,19 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i821.CircleStoreService>()),
     );
+    gh.factory<_i620.ShareCircleCubit>(
+      () => _i620.ShareCircleCubit(
+        gh<_i244.ContactService>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i970.Marmot>(),
+        gh<_i5.ShareCircleBookUseCase>(),
+      ),
+    );
     gh.factory<_i688.CircleMembersCubit>(
       () => _i688.CircleMembersCubit(
         gh<_i821.CircleStoreService>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i244.ContactService>(),
-      ),
-    );
-    gh.factory<_i5.ShareCircleBookUseCase>(
-      () => _i5.ShareCircleBookUseCase(
-        gh<_i970.Marmot>(),
-        gh<_i397.KeyPackageService>(),
-        gh<_i394.GroupEnvelopeService>(),
-        gh<_i455.CircleShareService>(),
-        gh<_i821.CircleStoreService>(),
-        gh<_i40.GroupStoreService>(),
       ),
     );
     gh.factory<_i145.ProfileCubit>(
@@ -655,14 +662,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1024.WatchCircleBooks>(
       () => _i1024.WatchCircleBooks(gh<_i516.LibraryRepository>()),
-    );
-    gh.factory<_i620.ShareCircleCubit>(
-      () => _i620.ShareCircleCubit(
-        gh<_i244.ContactService>(),
-        gh<_i821.CircleStoreService>(),
-        gh<_i970.Marmot>(),
-        gh<_i5.ShareCircleBookUseCase>(),
-      ),
     );
     gh.factory<_i602.HomeCubit>(
       () => _i602.HomeCubit(

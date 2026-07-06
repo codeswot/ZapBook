@@ -22,13 +22,13 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
   IngestionOrchestratorCubit(
     this._repository,
     this._circleStore,
-    this._transferService,
+    this._circleShareService,
     this._fileStore,
   ) : super(const IngestionOrchestratorState());
 
   final BookIngestionRepository _repository;
   final CircleStoreService _circleStore;
-  final CircleShareService _transferService;
+  final CircleShareService _circleShareService;
   final LibraryFileStore _fileStore;
 
   final Map<String, StreamSubscription<IngestionProgress>> _subscriptions = {};
@@ -163,7 +163,11 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
       final npub = ActiveAccount.currentNpub;
       final marmotGroupId = task.marmotGroupId;
       if (npub != null && marmotGroupId != null) {
-        _transferService.uploadBookContent(npub, marmotGroupId, circleBookId);
+        _circleShareService.uploadBookContent(
+          npub,
+          marmotGroupId,
+          circleBookId,
+        );
 
         final coverPath = await _fileStore.coverPathIfExists(circleBookId);
         if (coverPath != null) {

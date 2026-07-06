@@ -232,6 +232,20 @@ class GroupStoreService {
     return await _marmot.getMembers(groupId);
   }
 
+  Future<MemberChangeResult?> addMember(
+    String groupId,
+    String keyPackageJson,
+  ) async {
+    try {
+      final res = await _marmot.addMember(groupId, keyPackageJson);
+      _envelope.publish(res.evolutionEventJson);
+      return res;
+    } catch (e, st) {
+      _log.warning('Marmot addMember failed', e, st);
+      return null;
+    }
+  }
+
   Future<void> removeMember(String groupId, String memberNpub) async {
     try {
       final res = await _marmot.removeMember(groupId, memberNpub);

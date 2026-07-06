@@ -373,6 +373,13 @@ class CircleStoreService {
     );
   }
 
+  Future<MemberChangeResult?> addCircleMember(
+    String circleBookId,
+    String keyPackageJson,
+  ) async {
+    return await _groupStore.addMember(circleBookId, keyPackageJson);
+  }
+
   Future<void> removeCircleMember(
     String circleBookId,
     String memberNpub,
