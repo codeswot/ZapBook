@@ -28,8 +28,8 @@ class KeyPackageService {
   final _keyPackageCache = <String, String>{};
   final _activeFetches = <String, Future<String?>>{};
 
-  Future<String?> fetchKeyPackage(String npub) {
-    if (_keyPackageCache.containsKey(npub)) {
+  Future<String?> fetchKeyPackage(String npub, {bool forceRefresh = false}) {
+    if (!forceRefresh && _keyPackageCache.containsKey(npub)) {
       return Future.value(_keyPackageCache[npub]);
     }
 

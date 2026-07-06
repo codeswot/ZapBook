@@ -16,10 +16,16 @@ import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/services/group_store_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 import 'package:logging/logging.dart' as logging;
+import 'package:zapbook/core/services/key_package_service.dart';
 
 @lazySingleton
 class CircleStoreService {
-  CircleStoreService(this._groupStore, this._fileStore, this._contactStore) {
+  CircleStoreService(
+    this._groupStore,
+    this._fileStore,
+    this._contactStore,
+    this._keyPackageService,
+  ) {
     _init();
   }
   final _log = logging.Logger('CircleStoreService');
@@ -27,6 +33,7 @@ class CircleStoreService {
   final GroupStoreService _groupStore;
   final LibraryFileStore _fileStore;
   final ContactService _contactStore;
+  final KeyPackageService _keyPackageService;
 
   final _circlesController = BehaviorSubject<List<CircleBook>>.seeded([]);
   Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
@@ -298,6 +305,10 @@ class CircleStoreService {
     }
   }
 
+  Future<void> syncCircleState(String marmotGroupId) async {
+    await _groupStore.syncGroupState(marmotGroupId);
+  }
+
   Future<GroupImagePrepared> prepareCover({
     required Uint8List coverBytes,
   }) async {
@@ -364,6 +375,7 @@ class CircleStoreService {
   Future<void> deleteCircleBook(CircleBook circleBook) async {
     await _groupStore.deleteGroup(circleBook.id);
     await _fileStore.deleteBook(circleBook.circleDirId);
+    unawaited(_keyPackageService.forceRotate());
   }
 
   Future<List<Contact>> getCircleMembers(String circleBookId) async {

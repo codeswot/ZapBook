@@ -142,6 +142,10 @@ class MarmotSyncService {
     _heavyUpdatePending = false;
     try {
       await _keyPackages.forceRotate();
+      final groups = await _marmot.listGroups();
+      for (final group in groups) {
+        _groupController.add(group);
+      }
       await _restartGroupSub();
     } on Object catch (error, stack) {
       _log.warning('Heavy updates failed', error, stack);

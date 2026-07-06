@@ -184,7 +184,7 @@ class ReaderActionsSheet extends StatelessWidget {
               cubit.toggleContact(entry.npub, entry.isFollow);
             },
           ),
-          if (canRemove) ...[
+          if (canRemove && !entry.isSelf) ...[
             const SizedBox(height: 10),
             _ActionRow(
               icon: LucideIcons.userMinus,

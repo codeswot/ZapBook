@@ -39,10 +39,12 @@ class ShareCircleBookUseCase {
 
     final fetchFutures = npubs.map((npub) async {
       try {
-        final kp = await _keyPackageService.fetchKeyPackage(npub);
+        final kp = await _keyPackageService.fetchKeyPackage(
+          npub,
+          forceRefresh: true,
+        );
         return MapEntry(npub, kp);
-      } catch (e, st) {
-        _log.warning('Failed to fetch key package for $npub', e, st);
+      } catch (e, st) {        _log.warning('Failed to fetch key package for $npub', e, st);
         return MapEntry(npub, null);
       }
     });

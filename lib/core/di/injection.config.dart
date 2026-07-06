@@ -507,20 +507,21 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i341.CompleteOnboarding>(),
       ),
     );
-    gh.lazySingleton<_i821.CircleStoreService>(
-      () => _i821.CircleStoreService(
-        gh<_i40.GroupStoreService>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i244.ContactService>(),
-      ),
-      dispose: (i) => i.dispose(),
-    );
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i63.IdentityRepository>(),
         gh<_i735.ProfileRemoteDataSource>(),
       ),
+    );
+    gh.lazySingleton<_i821.CircleStoreService>(
+      () => _i821.CircleStoreService(
+        gh<_i40.GroupStoreService>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i244.ContactService>(),
+        gh<_i397.KeyPackageService>(),
+      ),
+      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
@@ -532,14 +533,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i182.ReadingStatsService>(),
         gh<_i821.CircleStoreService>(),
-      ),
-    );
-    gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
-      () => _i1043.IngestionOrchestratorCubit(
-        gh<_i379.BookIngestionRepository>(),
-        gh<_i821.CircleStoreService>(),
-        gh<_i455.CircleShareService>(),
-        gh<_i854.LibraryFileStore>(),
       ),
     );
     gh.factory<_i947.CircleDetailCubit>(
@@ -620,6 +613,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i821.CircleStoreService>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i244.ContactService>(),
+      ),
+    );
+    gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
+      () => _i1043.IngestionOrchestratorCubit(
+        gh<_i379.BookIngestionRepository>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i455.CircleShareService>(),
+        gh<_i854.LibraryFileStore>(),
       ),
     );
     gh.factory<_i145.ProfileCubit>(

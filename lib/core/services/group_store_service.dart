@@ -46,12 +46,19 @@ class GroupStoreService {
   List<String> get _deletedGroupIds =>
       _prefs.getStringList('deleted_groups') ?? [];
 
+  Future<void> _undeleteGroup(String groupId) async {
+    final deletedIds = _deletedGroupIds;
+    if (deletedIds.contains(groupId)) {
+      deletedIds.remove(groupId);
+      await _prefs.setStringList('deleted_groups', deletedIds);
+    }
+  }
+
   Future<void> _init() async {
     await _refreshGroups();
 
     _sub = _marmotSync.onGroup.listen((updatedGroup) {
-      if (_deletedGroupIds.contains(updatedGroup.id)) return;
-
+      _undeleteGroup(updatedGroup.id);
       _groupsMap[updatedGroup.id] = updatedGroup;
       _groupsSubject.add(_groupsMap.values.toList());
       _groupUpdatedSubject.add(updatedGroup);
@@ -68,7 +75,9 @@ class GroupStoreService {
     final newMap = <String, MarmotGroup>{};
 
     for (final g in groups) {
-      if (deletedIds.contains(g.id)) continue;
+      if (deletedIds.contains(g.id)) {
+        _undeleteGroup(g.id);
+      }
       newMap[g.id] = g;
 
       if (_groupsMap[g.id] != g) {
@@ -140,6 +149,15 @@ class GroupStoreService {
     await _envelope.publish(res);
     await _optimisticUpdate(groupId);
     return res;
+  }
+
+  Future<void> syncGroupState(String groupId) async {
+    final res = await _marmot.updateGroupMetadata(
+      groupId,
+      relayUrls: ZapbookConfig.broadcastRelays,
+    );
+    await _envelope.publish(res);
+    await _optimisticUpdate(groupId);
   }
 
   Future<GroupImagePrepared> prepareImage(Uint8List imageBytes) async {

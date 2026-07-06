@@ -53,23 +53,32 @@ class CircleSettingsSheet extends StatelessWidget {
     await cubit.refresh(book.id);
   }
 
-  Future<void> _deleteAndOrLeave(BuildContext context) async {
+  Future<void> _deleteCircle(BuildContext context) async {
     context.pop();
     final ok = await CircleConfirmSheet.show(
       context,
       title: 'Delete this circle?',
-      message: isAdmin
-          ? 'Everyone except you will be removed from “${book.title}”. '
-                'The book stays in your library as a private copy.'
-          : 'You will leave the circle and the book will be deleted from your local device.',
+      message:
+          'Everyone except you will be removed from “${book.title}”. '
+          'The book stays in your library as a private copy.',
       action: 'Delete circle',
     );
     if (ok) {
-      if (isAdmin) {
-        await cubit.dissolve(book);
-      } else {
-        await cubit.leave(book);
-      }
+      await cubit.dissolve(book);
+    }
+  }
+
+  Future<void> _leaveAndDelete(BuildContext context) async {
+    context.pop();
+    final ok = await CircleConfirmSheet.show(
+      context,
+      title: 'Leave and delete circle?',
+      message:
+          'You will leave the circle and the book will be permanently deleted from your local device.',
+      action: 'Leave & Delete',
+    );
+    if (ok) {
+      await cubit.leaveAndDelete(book);
     }
   }
 
@@ -137,15 +146,15 @@ class CircleSettingsSheet extends StatelessWidget {
               icon: LucideIcons.trash2,
               label: 'Delete circle',
               tone: colors.tomato,
-              onTap: () => _deleteAndOrLeave(context),
+              onTap: () => _deleteCircle(context),
             )
           else ...[
             const SizedBox(height: 10),
             _SettingsRow(
-              icon: LucideIcons.trash2,
-              label: 'Leave Circle',
+              icon: LucideIcons.doorOpen,
+              label: 'Leave circle',
               tone: colors.tomato,
-              onTap: () => _deleteAndOrLeave(context),
+              onTap: () => _leaveAndDelete(context),
             ),
           ],
         ],
