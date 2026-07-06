@@ -31,9 +31,6 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   }
 
   Future<void> _initialize(int initialPage) async {
-    await _hydrateFromCache(initialPage);
-    if (isClosed) return;
-    
     _progressSub = _shareService.onBookDownloadProgress.listen((event) {
       if (event.circleBookId == handle.manifest.id && !isClosed) {
         _reconcilePrep();
@@ -43,6 +40,10 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
     _ensureSegment(initialPage);
     _prefetch(initialPage);
+
+    await _hydrateFromCache(initialPage);
+    if (isClosed) return;
+
     _ensureInitialChunk(initialPage);
     _armPrepWatchdog(initialPage);
   }

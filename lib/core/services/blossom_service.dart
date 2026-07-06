@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
@@ -13,6 +14,7 @@ class BlossomService {
 
   final Ndk _ndk;
   final _log = logging.Logger('BlossomService');
+  final http.Client _httpClient = http.Client();
 
   static const List<String> servers = [
     'https://blossom.primal.net',
@@ -65,17 +67,39 @@ class BlossomService {
 
     for (final tryUrl in allUrlsToTry) {
       try {
-        final response = await http.get(Uri.parse(tryUrl));
+        final request = http.Request('GET', Uri.parse(tryUrl));
+        final response = await _httpClient.send(request);
+
         if (response.statusCode == 200 || response.statusCode == 206) {
-          final bytes = response.bodyBytes;
-          if (bytes.length > maxDownloadBytes) {
-            throw Exception(
-              'Blossom blob exceeds ${maxDownloadBytes ~/ (1024 * 1024)}MB limit',
-            );
+          final contentType = response.headers['content-type'] ?? '';
+          if (contentType.contains('text/html')) {
+            _log.warning('Server returned HTML, skipping $tryUrl');
+            continue;
           }
-          final hash = sha256.convert(bytes).toString();
+
+          final declaredLength = int.tryParse(response.headers['content-length'] ?? '');
+          if (declaredLength != null && declaredLength > maxDownloadBytes) {
+            throw Exception('File too large: ${declaredLength ~/ (1024 * 1024)}MB');
+          }
+
+          final byteBuilder = BytesBuilder();
+          final hashSink = AccumulatorSink<Digest>();
+          final hashInput = sha256.startChunkedConversion(hashSink);
+
+          await for (final chunk in response.stream) {
+            byteBuilder.add(chunk);
+            hashInput.add(chunk);
+
+            if (byteBuilder.length > maxDownloadBytes) {
+              throw Exception('Streamed file exceeded size limit');
+            }
+          }
+
+          hashInput.close();
+          final hash = hashSink.events.single.toString();
+
           if (hash == expectedSha256) {
-            return bytes;
+            return byteBuilder.takeBytes();
           } else {
             _log.warning('Hash mismatch for $tryUrl');
           }

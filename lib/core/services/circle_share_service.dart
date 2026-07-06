@@ -91,21 +91,22 @@ class CircleShareService {
   Future<bool> fetchAndDownloadBook(String circleBookId, String groupId) async {
     try {
       final messages = await _marmot.getMessages(groupId);
-      final segments = <MarmotMediaRef>[];
+      final segmentsMap = <String, MarmotMediaRef>{};
       MarmotMediaRef? sourceRef;
 
-      for (final message in messages) {
+      for (final message in messages.reversed) {
         for (final media in message.media) {
           if (!media.filename.startsWith(circleBookId)) continue;
 
           if (media.filename.endsWith('.source')) {
-            sourceRef = media;
+            sourceRef ??= media;
           } else if (media.filename.endsWith('.zbfseg')) {
-            segments.add(media);
+            segmentsMap.putIfAbsent(media.filename, () => media);
           }
         }
       }
 
+      final segments = segmentsMap.values.toList();
       if (segments.isEmpty && sourceRef == null) {
         _log.warning('No book assets found in messages for $circleBookId');
         return false;
