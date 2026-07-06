@@ -162,6 +162,8 @@ mixin $ZbfViewerRoute on GoRouteData {
     zbfPath: state.uri.queryParameters['zbf-path']!,
     page: _$convertMapValue('page', state.uri.queryParameters, int.tryParse),
     query: state.uri.queryParameters['query'],
+    bookTitle: state.uri.queryParameters['book-title'],
+    coverPath: state.uri.queryParameters['cover-path'],
   );
 
   ZbfViewerRoute get _self => this as ZbfViewerRoute;
@@ -173,6 +175,8 @@ mixin $ZbfViewerRoute on GoRouteData {
       'zbf-path': _self.zbfPath,
       if (_self.page != null) 'page': _self.page!.toString(),
       if (_self.query != null) 'query': _self.query,
+      if (_self.bookTitle != null) 'book-title': _self.bookTitle,
+      if (_self.coverPath != null) 'cover-path': _self.coverPath,
     },
   );
 

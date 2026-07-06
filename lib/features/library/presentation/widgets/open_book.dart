@@ -7,5 +7,9 @@ import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 
 void openBook(BuildContext context, CircleBook book) {
   context.read<LibraryCubit>().markOpened(book.id);
-  ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+  ZbfViewerRoute(
+    zbfPath: book.zbfPath,
+    bookTitle: book.title,
+    coverPath: book.coverPath,
+  ).push(context);
 }

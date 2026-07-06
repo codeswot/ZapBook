@@ -31,7 +31,11 @@ class CircleLoadedView extends StatelessWidget {
 
   void _openBook(BuildContext context) {
     context.read<CircleDetailCubit>().open(circleBookId);
-    ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+    ZbfViewerRoute(
+      zbfPath: book.zbfPath,
+      bookTitle: book.title,
+      coverPath: book.coverPath,
+    ).push(context);
   }
 
   void _openSettings(BuildContext context) {

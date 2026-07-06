@@ -67,6 +67,8 @@ class _SearchHitTile extends StatelessWidget {
 
     return InkWell(
       onTap: () => ZbfViewerRoute(
+        bookTitle: book.title,
+        coverPath: book.coverPath,
         zbfPath: book.zbfPath,
         page: hit.pageNumber - 1,
         query: query,

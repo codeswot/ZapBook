@@ -32,11 +32,7 @@ class ReaderHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
           child: Row(
             children: [
-              IconButton(
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back_rounded),
-                color: colors.ink,
-              ),
+              BackButton(onPressed: onBack, color: colors.ink),
               const SizedBox(width: 4),
               Expanded(
                 child: Column(

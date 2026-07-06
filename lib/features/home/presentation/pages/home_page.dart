@@ -35,13 +35,21 @@ class _HomeView extends StatelessWidget {
       CircleDetailRoute(circleBookId: book.id).push(context);
     } else {
       context.read<HomeCubit>().touchBookOpened(book.id);
-      ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+      ZbfViewerRoute(
+        zbfPath: book.zbfPath,
+        bookTitle: book.title,
+        coverPath: book.coverPath,
+      ).push(context);
     }
   }
 
   void _onBookOpen(BuildContext context, CircleBook book) {
     context.read<HomeCubit>().touchBookOpened(book.id);
-    ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+    ZbfViewerRoute(
+      zbfPath: book.zbfPath,
+      bookTitle: book.title,
+      coverPath: book.coverPath,
+    ).push(context);
   }
 
   void _onBookLongPress(BuildContext context, CircleBook book) {

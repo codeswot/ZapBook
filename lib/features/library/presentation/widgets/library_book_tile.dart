@@ -24,7 +24,11 @@ class CircleBookTile extends StatelessWidget {
     }
     onOpen?.call();
     context.read<LibraryCubit>().markOpened(book.id);
-    ZbfViewerRoute(zbfPath: book.zbfPath).push(context);
+    ZbfViewerRoute(
+      zbfPath: book.zbfPath,
+      bookTitle: book.title,
+      coverPath: book.coverPath,
+    ).push(context);
   }
 
   Future<void> _showActions(BuildContext context) async {
@@ -37,7 +41,9 @@ class CircleBookTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<LibraryCubit, LibraryState>(
       builder: (context, state) {
-        final isDownloading = state is LibraryLoaded && state.downloadingBookIds.contains(book.id);
+        final isDownloading =
+            state is LibraryLoaded &&
+            state.downloadingBookIds.contains(book.id);
 
         return BouncingInteractiveWidget(
           onTap: () => _open(context),
