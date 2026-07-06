@@ -26,7 +26,10 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     return super.close();
   }
 
+  String? _circleBookId;
+
   Future<void> load(String circleBookId, bool isAdmin) async {
+    _circleBookId = circleBookId;
     emit(const CircleMembersLoading());
 
     final myNpub = await _identity.readNpub();
@@ -61,9 +64,13 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
 
   void toggleContact(String npub, bool isFollow) async {
     if (isFollow) {
-      await _contacts.add(npub);
-    } else {
       await _contacts.remove(npub);
+    } else {
+      await _contacts.add(npub);
+    }
+    
+    if (_circleBookId != null) {
+      await refresh(_circleBookId!);
     }
   }
 }

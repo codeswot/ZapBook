@@ -39,7 +39,10 @@ class LibraryBody extends StatelessWidget {
               _ => const <CircleBook>[],
             };
             final lastOpenedBook = switch (library) {
-              LibraryLoaded(:final lastOpenedBook) => lastOpenedBook,
+              LibraryLoaded(:final lastOpenedBook) =>
+                  (lastOpenedBook != null && !tasks.containsKey(lastOpenedBook.id))
+                      ? lastOpenedBook
+                      : null,
               _ => null,
             };
 
@@ -57,6 +60,10 @@ class LibraryBody extends StatelessWidget {
                             book.author.toLowerCase().contains(query),
                       )
                       .toList();
+                      
+            final displayBooks = filteredBooks
+                .where((book) => !tasks.containsKey(book.id))
+                .toList();
 
             final textHits = context.watch<BookTextSearchCubit>().state;
             final hasTextHits =
@@ -65,7 +72,7 @@ class LibraryBody extends StatelessWidget {
                   (hit) => books.any((b) => b.id == hit.circleBookId),
                 );
 
-            if (filteredBooks.isEmpty &&
+            if (displayBooks.isEmpty &&
                 searchQuery.isNotEmpty &&
                 !hasTextHits) {
               return Center(
@@ -122,13 +129,13 @@ class LibraryBody extends StatelessWidget {
               );
             }
 
-            if (filteredBooks.isEmpty && tasks.isEmpty && !hasTextHits) {
+            if (displayBooks.isEmpty && tasks.isEmpty && !hasTextHits) {
               return const SingleChildScrollView(child: LibraryEmpty());
             }
 
             return Shelf(
               tasks: tasks,
-              books: filteredBooks,
+              books: displayBooks,
               lastOpenedBook: lastOpenedBook,
               allBooks: books,
               searchHits: hasTextHits ? textHits : null,

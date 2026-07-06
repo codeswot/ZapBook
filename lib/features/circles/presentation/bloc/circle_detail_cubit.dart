@@ -104,9 +104,14 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
   void toggleContact(String npub, bool isFollow) async {
     if (isFollow) {
-      await _contacts.add(npub);
-    } else {
       await _contacts.remove(npub);
+    } else {
+      await _contacts.add(npub);
+    }
+    
+    final currentState = state;
+    if (currentState is CircleDetailLoaded) {
+      await refresh(currentState.book.id);
     }
   }
 
