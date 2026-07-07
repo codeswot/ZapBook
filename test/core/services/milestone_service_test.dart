@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
@@ -15,72 +16,355 @@ class MockIdentityLocalDataSource extends Mock
 
 class MockDecodedMessageCache extends Mock implements DecodedMessageCache {}
 
-class FakeMarmotMessage extends Fake implements MarmotMessage {
-  @override
-  String? get payloadJson =>
-      '{"type": "zapbook.book.milestone", "book_id": "book1"}';
-  @override
-  String get id => 'msg1';
-  @override
-  String get senderNpub => 'npub_sender';
+class MockBroadcast extends Mock implements Broadcast {}
 
-  DateTime get timestamp => DateTime.now();
-  @override
-  String get groupId => 'group1';
-  @override
-  int get timestampSecs => DateTime.now().millisecondsSinceEpoch ~/ 1000;
-}
+class FakeNip01Event extends Fake implements Nip01Event {}
+
+class FakeNdkBroadcastResponse extends Fake implements NdkBroadcastResponse {}
+
+class MockMarmotGroup extends Mock implements MarmotGroup {}
+
+class FakeMarmotMessage extends Fake implements MarmotMessage {}
 
 void main() {
-  late MockMarmot marmot;
-  late MockNdk ndk;
-  late MockIdentityLocalDataSource identity;
-  late MockDecodedMessageCache cache;
   late MilestoneService service;
+  late MockMarmot mockMarmot;
+  late MockNdk mockNdk;
+  late MockIdentityLocalDataSource mockIdentity;
+  late MockDecodedMessageCache mockCache;
+  late MockBroadcast mockBroadcast;
+
+  setUpAll(() {
+    registerFallbackValue(FakeNip01Event());
+    registerFallbackValue(FakeMarmotMessage());
+  });
 
   setUp(() {
-    marmot = MockMarmot();
-    ndk = MockNdk();
-    identity = MockIdentityLocalDataSource();
-    cache = MockDecodedMessageCache();
+    mockMarmot = MockMarmot();
+    mockNdk = MockNdk();
+    mockIdentity = MockIdentityLocalDataSource();
+    mockCache = MockDecodedMessageCache();
+    mockBroadcast = MockBroadcast();
 
-    when(() => identity.readNpub()).thenAnswer((_) async => 'npub_self');
-    when(() => marmot.listGroups()).thenAnswer((_) async => []);
+    when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
+    when(() => mockIdentity.readNpub()).thenAnswer(
+      (_) async =>
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+    );
 
-    service = MilestoneService(marmot, ndk, identity, cache);
+    service = MilestoneService(mockMarmot, mockNdk, mockIdentity, mockCache);
   });
 
-  test('progressOf returns null initially', () {
-    expect(service.progressOf('book1'), isNull);
-  });
+  test('ingestMessage processes progress correctly', () {
+    final msg = MarmotMessage(
+      id: '1',
+      groupId: 'g1',
+      senderNpub:
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+      timestampSecs: 1000,
+      payloadJson: '{"type":"zapbook.book.progress"}',
+      media: const [],
+    );
 
-  test('membersOf returns empty initially', () {
-    expect(service.membersOf('book1'), isEmpty);
-  });
-
-  test('loadMembers handles exceptions silently', () async {
-    when(() => marmot.getMessages(any())).thenThrow(Exception('test'));
-    final result = await service.loadMembers('book1');
-    expect(result, isEmpty);
-  });
-
-  test('ingestMessage handles valid milestone', () {
-    final msg = FakeMarmotMessage();
-    when(() => cache.get(msg)).thenReturn({
+    when(() => mockCache.get(any())).thenReturn({
+      'type': 'zapbook.book.progress',
       'circleBookId': 'book1',
-      'type': 'zapbook.book.milestone',
-      'payload': {
-        'book_id': 'book1',
-        'chapter_index': 1,
-        'page_index': 5,
-        'page_count': 100,
-        'started_at': DateTime.now().millisecondsSinceEpoch,
-        'last_read_at': DateTime.now().millisecondsSinceEpoch,
-        'words_read': 500,
-        'milestone_type': 'page',
-      },
+      'fraction': 0.5,
+      'currentPage': 5,
+      'currentWordCount': 500,
+      'totalWordCount': 1000,
     });
 
     service.ingestMessage(msg);
+
+    final progress = service.membersOf(
+      'book1',
+    )['npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6'];
+    expect(progress, isNotNull);
+    expect(progress!.fraction, 0.5);
+    expect(progress.currentPage, 5);
+  });
+
+  test('ingestMessage processes milestone correctly', () {
+    final msg = MarmotMessage(
+      id: '2',
+      groupId: 'g1',
+      senderNpub:
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+      timestampSecs: 1000,
+      payloadJson: '{"type":"zapbook.book.milestone"}',
+      media: const [],
+    );
+
+    when(() => mockCache.get(any())).thenReturn({
+      'type': 'zapbook.book.milestone',
+      'circleBookId': 'book1',
+      'milestone_idx': 1,
+      'current_page': 5,
+      'progress_pct': 50.0,
+      'current_word_count': 500,
+      'total_word_count': 1000,
+    });
+
+    service.ingestMessage(msg);
+
+    final milestones = service.getMilestones('book1');
+    expect(milestones.length, 1);
+    expect(milestones.first.milestoneIdx, 1);
+
+    final events = service.milestoneEvents();
+    expect(events.length, 1);
+    expect(events.first.milestoneIdx, 1);
+  });
+
+  test('ingestMessage processes completed correctly', () {
+    final msg = MarmotMessage(
+      id: '3',
+      groupId: 'g1',
+      senderNpub:
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+      timestampSecs: 1000,
+      payloadJson: '{"type":"zapbook.book.completed"}',
+      media: const [],
+    );
+
+    when(
+      () => mockCache.get(any()),
+    ).thenReturn({'type': 'zapbook.book.completed', 'circleBookId': 'book1'});
+
+    service.ingestMessage(msg);
+
+    final progress = service.membersOf(
+      'book1',
+    )['npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6'];
+    expect(progress, isNotNull);
+    expect(progress!.fraction, 1.0);
+    expect(service.completedBooksCount, 1);
+  });
+
+  test('updateProgress debounces and publishes progress', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+    when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+      (_) async => jsonEncode({
+        'pubkey':
+            'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+        'kind': 1,
+        'content': 'test',
+        'created_at': 123,
+        'tags': [],
+      }),
+    );
+    when(
+      () => mockBroadcast.broadcast(
+        nostrEvent: any(named: 'nostrEvent'),
+        specificRelays: any(named: 'specificRelays'),
+      ),
+    ).thenReturn(FakeNdkBroadcastResponse());
+
+    service.updateProgress(
+      circleBookId: 'book1',
+      currentPage: 1,
+      currentWordCount: 100,
+      totalWords: 1000,
+      fraction: 0.1,
+    );
+
+    service.flushProgress('book1');
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    verify(() => mockMarmot.sendStructured(any(), any(), any())).called(1);
+  });
+
+  test('markCompleted debounces and publishes progress', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+    when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+      (_) async => jsonEncode({
+        'pubkey':
+            'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+        'kind': 1,
+        'content': 'test',
+        'created_at': 123,
+        'tags': [],
+      }),
+    );
+    when(
+      () => mockBroadcast.broadcast(
+        nostrEvent: any(named: 'nostrEvent'),
+        specificRelays: any(named: 'specificRelays'),
+      ),
+    ).thenReturn(FakeNdkBroadcastResponse());
+
+    await service.markCompleted('book1', totalWords: 1000);
+
+    final progress = service.progressOf('book1');
+    expect(progress, isNotNull);
+    expect(progress!.fraction, 1.0);
+    expect(progress.currentWordCount, 1000);
+  });
+
+  test('publishBookCompleted publishes message', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+    when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+      (_) async => jsonEncode({
+        'pubkey':
+            'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+        'kind': 1,
+        'content': 'test',
+        'created_at': 123,
+        'tags': [],
+      }),
+    );
+    when(
+      () => mockBroadcast.broadcast(
+        nostrEvent: any(named: 'nostrEvent'),
+        specificRelays: any(named: 'specificRelays'),
+      ),
+    ).thenReturn(FakeNdkBroadcastResponse());
+
+    await service.publishBookCompleted('book1');
+
+    final progress = service.membersOf(
+      'book1',
+    )['npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6'];
+    expect(progress, isNotNull);
+    expect(progress!.fraction, 1.0);
+  });
+
+  test('publishMilestone publishes correctly', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+    when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+      (_) async => jsonEncode({
+        'pubkey':
+            'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+        'kind': 1,
+        'content': 'test',
+        'created_at': 123,
+        'tags': [],
+      }),
+    );
+    when(
+      () => mockBroadcast.broadcast(
+        nostrEvent: any(named: 'nostrEvent'),
+        specificRelays: any(named: 'specificRelays'),
+      ),
+    ).thenReturn(FakeNdkBroadcastResponse());
+
+    await service.publishMilestone(
+      circleBookId: 'book1',
+      milestoneIdx: 1,
+      currentWordCount: 100,
+      totalWordCount: 1000,
+      progressPct: 10.0,
+      currentPage: 1,
+      sessionEngagedMs: 5000,
+    );
+
+    final milestones = service.getMilestones('book1');
+    expect(milestones.isNotEmpty, true);
+    expect(milestones.first.milestoneIdx, 1);
+  });
+
+  test('syncAll fetches and ingests messages', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+
+    final msg = MarmotMessage(
+      id: '1',
+      groupId: 'g1',
+      senderNpub:
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+      timestampSecs: 1000,
+      payloadJson: '{"type":"zapbook.book.progress"}',
+      media: const [],
+    );
+    when(() => mockMarmot.getMessages('g1')).thenAnswer((_) async => [msg]);
+
+    when(() => mockCache.get(any())).thenReturn({
+      'type': 'zapbook.book.progress',
+      'circleBookId': 'book1',
+      'fraction': 0.8,
+      'currentPage': 8,
+      'currentWordCount': 800,
+      'totalWordCount': 1000,
+    });
+
+    await service.syncAll();
+
+    final members = service.membersOf('book1');
+    expect(
+      members['npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6']
+          ?.fraction,
+      0.8,
+    );
+  });
+
+  test('loadMembers fetches and returns members', () async {
+    final group = MockMarmotGroup();
+    when(() => group.id).thenReturn('g1');
+    when(() => group.name).thenReturn('zapbook-book-book1');
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => [group]);
+
+    final msg = MarmotMessage(
+      id: '1',
+      groupId: 'g1',
+      senderNpub:
+          'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
+      timestampSecs: 1000,
+      payloadJson: '{"type":"zapbook.book.progress"}',
+      media: const [],
+    );
+    when(() => mockMarmot.getMessages('g1')).thenAnswer((_) async => [msg]);
+
+    when(() => mockCache.get(any())).thenReturn({
+      'type': 'zapbook.book.progress',
+      'circleBookId': 'book1',
+      'fraction': 0.9,
+      'currentPage': 9,
+      'currentWordCount': 900,
+      'totalWordCount': 1000,
+    });
+
+    final members = await service.loadMembers('book1');
+    expect(
+      members['npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6']
+          ?.fraction,
+      0.9,
+    );
+  });
+
+  test('watchProgress and watchMembers emit correctly', () async {
+    final progressStream = service.watchProgress('book1');
+    final membersStream = service.watchMembers('book1');
+
+    final pFuture = expectLater(progressStream, emits(isA<BookProgress>()));
+    final mFuture = expectLater(
+      membersStream,
+      emits(isA<Map<String, BookProgress>>()),
+    );
+
+    service.updateProgress(
+      circleBookId: 'book1',
+      currentPage: 2,
+      currentWordCount: 200,
+      totalWords: 1000,
+      fraction: 0.2,
+    );
+
+    await Future.wait([pFuture, mFuture]);
   });
 }

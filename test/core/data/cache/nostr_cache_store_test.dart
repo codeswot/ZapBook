@@ -102,18 +102,22 @@ void main() {
           pubKey: 'pubA',
           createdAt: 10,
           kind: 1,
-          content: '',
+          content: 'hello world',
           sig: '',
-          tags: [],
+          tags: [
+            ['t', 'test'],
+          ],
         ),
         Nip01Event(
           id: 'evt2',
           pubKey: 'pubA',
           createdAt: 20,
           kind: 1,
-          content: '',
+          content: 'hello 2',
           sig: '',
-          tags: [],
+          tags: [
+            ['p', 'test2'],
+          ],
         ),
         Nip01Event(
           id: 'evt3',
@@ -122,7 +126,9 @@ void main() {
           kind: 2,
           content: '',
           sig: '',
-          tags: [],
+          tags: [
+            ['t', 'test'],
+          ],
         ),
       ]);
 
@@ -132,6 +138,25 @@ void main() {
       final byKind = store.loadEvents(kinds: [2]);
       expect(byKind.length, 1);
       expect(byKind.first.id, 'evt3');
+
+      final bySearch = store.loadEvents(search: 'hello');
+      expect(bySearch.length, 2);
+
+      final byTag = store.loadEvents(
+        tags: {
+          't': ['test'],
+        },
+      );
+      expect(byTag.length, 2);
+
+      final bySince = store.loadEvents(since: 20);
+      expect(bySince.length, 2);
+
+      final byUntil = store.loadEvents(until: 20);
+      expect(byUntil.length, 2);
+
+      final byLimit = store.loadEvents(limit: 1);
+      expect(byLimit.length, 1);
     });
   });
 
@@ -158,7 +183,6 @@ void main() {
   group('ContactList', () {
     test('saves and loads contact lists', () {
       final contacts = ContactList(pubKey: 'pub1', contacts: ['c1', 'c2']);
-      // NDK's ContactList doesn't take createdAt in constructor but sets it internally or we can ignore it
 
       store.saveContactList(contacts);
 
