@@ -44,7 +44,8 @@ class ShareCircleBookUseCase {
           forceRefresh: true,
         );
         return MapEntry(npub, kp);
-      } catch (e, st) {        _log.warning('Failed to fetch key package for $npub', e, st);
+      } catch (e, st) {
+        _log.warning('Failed to fetch key package for $npub', e, st);
         return MapEntry(npub, null);
       }
     });

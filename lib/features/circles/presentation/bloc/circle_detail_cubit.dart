@@ -108,7 +108,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     } else {
       await _contacts.add(npub);
     }
-    
+
     final currentState = state;
     if (currentState is CircleDetailLoaded) {
       await refresh(currentState.book.id);

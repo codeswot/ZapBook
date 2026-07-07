@@ -93,7 +93,7 @@ class CircleShareService {
       final messages = await _marmot.getMessages(groupId);
       final segmentsMap = <String, MarmotMediaRef>{};
       MarmotMediaRef? sourceRef;
-      
+
       int maxSegmentIndex = -1;
 
       for (final message in messages.reversed) {
@@ -105,7 +105,9 @@ class CircleShareService {
           } else if (media.filename.endsWith('.zbfseg')) {
             if (segmentsMap.putIfAbsent(media.filename, () => media) == media) {
               // Extract index from .seg0000.zbfseg
-              final match = RegExp(r'\.seg(\d+)\.zbfseg$').firstMatch(media.filename);
+              final match = RegExp(
+                r'\.seg(\d+)\.zbfseg$',
+              ).firstMatch(media.filename);
               if (match != null) {
                 final idx = int.parse(match.group(1)!);
                 if (idx > maxSegmentIndex) {
@@ -115,9 +117,9 @@ class CircleShareService {
             }
           }
         }
-        
-        if (maxSegmentIndex != -1 && 
-            segmentsMap.length == maxSegmentIndex + 1 && 
+
+        if (maxSegmentIndex != -1 &&
+            segmentsMap.length == maxSegmentIndex + 1 &&
             sourceRef != null) {
           break;
         }

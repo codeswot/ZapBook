@@ -413,15 +413,17 @@ class ZbfSegmenter {
         if (manifest == null && result.manifest != null) {
           manifest = result.manifest;
           final manifestBytes = _json(manifest!.toJson());
-          File('$outputDirectory/manifest.json').writeAsBytesSync(manifestBytes);
+          File(
+            '$outputDirectory/manifest.json',
+          ).writeAsBytesSync(manifestBytes);
         }
-        
+
         writtenAssets.addAll(result.writtenAssets);
 
         for (final page in result.pages) {
           stmt.execute([page.pageIndex, page.chapterIndex, page.json]);
         }
-        
+
         onSegmentProcessed?.call();
       }
 

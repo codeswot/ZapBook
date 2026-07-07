@@ -41,11 +41,7 @@ final class LibraryLoaded extends LibraryState {
   }
 
   @override
-  List<Object?> get props => [
-        books,
-        lastOpenedBook,
-        showCirclePrompt,
-      ];
+  List<Object?> get props => [books, lastOpenedBook, showCirclePrompt];
 }
 
 final class LibraryError extends LibraryState {

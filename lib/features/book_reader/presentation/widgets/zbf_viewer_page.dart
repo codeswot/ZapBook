@@ -79,12 +79,13 @@ class _LocalReader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<ReaderInitCubit>()..open(
-        zbfPath,
-        circleDirId: circleDirId,
-        groupId: groupId,
-        downloadCubit: context.read<BookDownloadCubit>(),
-      ),
+      create: (context) => getIt<ReaderInitCubit>()
+        ..open(
+          zbfPath,
+          circleDirId: circleDirId,
+          groupId: groupId,
+          downloadCubit: context.read<BookDownloadCubit>(),
+        ),
       child: BlocBuilder<ReaderInitCubit, ReaderInitState>(
         builder: (context, state) {
           if (state is ReaderInitError) {

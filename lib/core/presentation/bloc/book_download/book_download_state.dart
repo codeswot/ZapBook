@@ -25,5 +25,9 @@ class BookDownloadState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [downloadingBookIds, downloadProgress, errorMessage];
+  List<Object?> get props => [
+    downloadingBookIds,
+    downloadProgress,
+    errorMessage,
+  ];
 }

@@ -68,7 +68,7 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     } else {
       await _contacts.add(npub);
     }
-    
+
     if (_circleBookId != null) {
       await refresh(_circleBookId!);
     }

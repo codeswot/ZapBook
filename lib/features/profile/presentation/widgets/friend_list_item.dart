@@ -28,10 +28,7 @@ class FriendListItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          AppProfileAvatar(
-            url: friend.picture ?? '',
-            size: 36,
-          ),
+          AppProfileAvatar(url: friend.picture ?? '', size: 36),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -42,36 +39,23 @@ class FriendListItem extends StatelessWidget {
                   friend.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: typography.bodyL.copyWith(
-                    color: colors.ink,
-                  ),
+                  style: typography.bodyL.copyWith(color: colors.ink),
                 ),
                 const SizedBox(height: 2),
                 GestureDetector(
                   onTap: () {
-                    Clipboard.setData(
-                      ClipboardData(text: friend.npub),
-                    );
-                    context.toast.showInfo(
-                      'npub copied',
-                      rootNavigator: true,
-                    );
+                    Clipboard.setData(ClipboardData(text: friend.npub));
+                    context.toast.showInfo('npub copied', rootNavigator: true);
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         friend.shortNpub,
-                        style: typography.bodyS.copyWith(
-                          color: colors.slate,
-                        ),
+                        style: typography.bodyS.copyWith(color: colors.slate),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        LucideIcons.copy,
-                        size: 12,
-                        color: colors.slate2,
-                      ),
+                      Icon(LucideIcons.copy, size: 12, color: colors.slate2),
                     ],
                   ),
                 ),
@@ -82,9 +66,7 @@ class FriendListItem extends StatelessWidget {
             const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2),
             )
           else
             BouncingInteractiveWidget(

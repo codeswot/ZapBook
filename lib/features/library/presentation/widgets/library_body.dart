@@ -40,9 +40,10 @@ class LibraryBody extends StatelessWidget {
             };
             final lastOpenedBook = switch (library) {
               LibraryLoaded(:final lastOpenedBook) =>
-                  (lastOpenedBook != null && !tasks.containsKey(lastOpenedBook.circleDirId))
-                      ? lastOpenedBook
-                      : null,
+                (lastOpenedBook != null &&
+                        !tasks.containsKey(lastOpenedBook.circleDirId))
+                    ? lastOpenedBook
+                    : null,
               _ => null,
             };
 
@@ -60,7 +61,7 @@ class LibraryBody extends StatelessWidget {
                             book.author.toLowerCase().contains(query),
                       )
                       .toList();
-                      
+
             final displayBooks = filteredBooks
                 .where((book) => !tasks.containsKey(book.circleDirId))
                 .toList();

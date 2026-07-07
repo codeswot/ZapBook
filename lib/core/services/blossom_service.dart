@@ -77,9 +77,13 @@ class BlossomService {
             continue;
           }
 
-          final declaredLength = int.tryParse(response.headers['content-length'] ?? '');
+          final declaredLength = int.tryParse(
+            response.headers['content-length'] ?? '',
+          );
           if (declaredLength != null && declaredLength > maxDownloadBytes) {
-            throw Exception('File too large: ${declaredLength ~/ (1024 * 1024)}MB');
+            throw Exception(
+              'File too large: ${declaredLength ~/ (1024 * 1024)}MB',
+            );
           }
 
           final byteBuilder = BytesBuilder();
