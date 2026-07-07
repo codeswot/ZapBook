@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
 import 'package:zapbook/features/home/presentation/bloc/home_cubit.dart';
 import 'package:zapbook/features/home/presentation/bloc/home_state.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_header.dart';
@@ -34,6 +35,10 @@ class _HomeView extends StatelessWidget {
     if (book.memberCount > 1) {
       CircleDetailRoute(circleBookId: book.id).push(context);
     } else {
+      if (!book.isDownloaded) {
+        context.read<BookDownloadCubit>().downloadBook(book);
+        return;
+      }
       context.read<HomeCubit>().touchBookOpened(book.id);
       ZbfViewerRoute(
         zbfPath: book.zbfPath,
@@ -44,11 +49,19 @@ class _HomeView extends StatelessWidget {
   }
 
   void _onBookOpen(BuildContext context, CircleBook book) {
-    context.read<HomeCubit>().touchBookOpened(book.id);
+    if (!book.isDownloaded) {
+      context.read<BookDownloadCubit>().downloadBook(book);
+      context.read<HomeCubit>().touchBookOpened(book.id);
+    } else {
+      context.read<HomeCubit>().touchBookOpened(book.id);
+    }
+
     ZbfViewerRoute(
       zbfPath: book.zbfPath,
       bookTitle: book.title,
       coverPath: book.coverPath,
+      circleDirId: book.circleDirId,
+      groupId: book.id,
     ).push(context);
   }
 

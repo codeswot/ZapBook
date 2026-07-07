@@ -43,12 +43,12 @@ class CircleShareService {
   Future<void> uploadBookContent(
     String npub,
     String groupId,
-    String circleBookId,
+    String circleDirId,
   ) async {
-    final zbf = await _fileStore.zbfFile(circleBookId);
+    final zbf = await _fileStore.zbfFile(circleDirId);
     if (!zbf.existsSync()) {
       _log.warning(
-        'Cannot upload book content: ZBF file not found for $circleBookId',
+        'Cannot upload book content: ZBF file not found for $circleDirId',
       );
       return;
     }
@@ -63,7 +63,7 @@ class CircleShareService {
           groupId,
           sourceBytes,
           'application/octet-stream',
-          '$circleBookId.source',
+          '$circleDirId.source',
         );
       }
 
@@ -78,7 +78,7 @@ class CircleShareService {
               groupId,
               segment.bytes,
               'application/octet-stream',
-              '$circleBookId.seg$index.zbfseg',
+              '$circleDirId.seg$index.zbfseg',
             );
           }),
         );
@@ -88,33 +88,50 @@ class CircleShareService {
     }
   }
 
-  Future<bool> fetchAndDownloadBook(String circleBookId, String groupId) async {
+  Future<bool> fetchAndDownloadBook(String groupId, String circleDirId) async {
     try {
       final messages = await _marmot.getMessages(groupId);
       final segmentsMap = <String, MarmotMediaRef>{};
       MarmotMediaRef? sourceRef;
+      
+      int maxSegmentIndex = -1;
 
       for (final message in messages.reversed) {
         for (final media in message.media) {
-          if (!media.filename.startsWith(circleBookId)) continue;
+          if (!media.filename.startsWith(circleDirId)) continue;
 
           if (media.filename.endsWith('.source')) {
             sourceRef ??= media;
           } else if (media.filename.endsWith('.zbfseg')) {
-            segmentsMap.putIfAbsent(media.filename, () => media);
+            if (segmentsMap.putIfAbsent(media.filename, () => media) == media) {
+              // Extract index from .seg0000.zbfseg
+              final match = RegExp(r'\.seg(\d+)\.zbfseg$').firstMatch(media.filename);
+              if (match != null) {
+                final idx = int.parse(match.group(1)!);
+                if (idx > maxSegmentIndex) {
+                  maxSegmentIndex = idx;
+                }
+              }
+            }
           }
+        }
+        
+        if (maxSegmentIndex != -1 && 
+            segmentsMap.length == maxSegmentIndex + 1 && 
+            sourceRef != null) {
+          break;
         }
       }
 
       final segments = segmentsMap.values.toList();
-      if (segments.isEmpty && sourceRef == null) {
-        _log.warning('No book assets found in messages for $circleBookId');
+      if (segments.isEmpty) {
+        _log.warning('No segment assets found in messages for $circleDirId');
         return false;
       }
 
       segments.sort((a, b) => a.filename.compareTo(b.filename));
 
-      return downloadBookContent(circleBookId, groupId, segments, sourceRef);
+      return downloadBookContent(circleDirId, groupId, segments, sourceRef);
     } catch (e, st) {
       _log.warning('Failed to fetch messages for $groupId', e, st);
       return false;
@@ -122,7 +139,7 @@ class CircleShareService {
   }
 
   Future<bool> downloadBookContent(
-    String circleBookId,
+    String circleDirId,
     String groupId,
     List<MarmotMediaRef> segmentRefs,
     MarmotMediaRef? sourceRef,
@@ -133,19 +150,19 @@ class CircleShareService {
         sourceBytes = await downloadAndDecrypt(groupId, sourceRef);
       }
 
-      final zbf = await _fileStore.zbfFile(circleBookId);
+      final zbf = await _fileStore.zbfFile(circleDirId);
       await _segmenter.reassembleToDirectory(
         _downloadSegments(groupId, segmentRefs),
         zbf.path,
         sourceBytes: sourceBytes,
         onSegmentProcessed: () {
-          _progressController.add(BookDownloadProgress(circleBookId));
+          _progressController.add(BookDownloadProgress(circleDirId));
         },
       );
       return true;
     } on Object catch (error, stack) {
       _log.warning(
-        'Download book content failed for $circleBookId',
+        'Download book content failed for $circleDirId',
         error,
         stack,
       );
@@ -154,7 +171,7 @@ class CircleShareService {
   }
 
   Future<SegmentData?> loadSegment(
-    String circleBookId,
+    String circleDirId,
     String groupId,
     int segmentIndex,
     MarmotMediaRef ref,
@@ -170,7 +187,7 @@ class CircleShareService {
       );
     } on Object catch (error, stack) {
       _log.warning(
-        'Load segment $segmentIndex for $circleBookId failed',
+        'Load segment $segmentIndex for $circleDirId failed',
         error,
         stack,
       );

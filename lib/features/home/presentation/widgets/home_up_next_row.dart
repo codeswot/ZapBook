@@ -5,6 +5,7 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/book_download_overlay.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class HomeUpNextRow extends StatelessWidget {
@@ -71,11 +72,14 @@ class HomeUpNextRow extends StatelessWidget {
                       : null,
                   child: Stack(
                     children: [
-                      CircleBookCover(
+                      BookDownloadOverlay(
                         book: book,
-                        width: 96,
-                        height: 132,
-                        showInfos: true,
+                        child: CircleBookCover(
+                          book: book,
+                          width: 96,
+                          height: 132,
+                          showInfos: true,
+                        ),
                       ),
                       Positioned(
                         top: 8,

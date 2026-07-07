@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
+import 'package:zapbook/core/presentation/widgets/book_download_overlay.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class HomeContinueReadingCard extends StatelessWidget {
@@ -49,7 +53,10 @@ class HomeContinueReadingCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleBookCover(book: book, width: 64, height: 84),
+                  BookDownloadOverlay(
+                    book: book,
+                    child: CircleBookCover(book: book, width: 64, height: 84),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -142,21 +149,27 @@ class HomeContinueReadingCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: colors.bitcoin,
-                      shape: BoxShape.circle,
-                    ),
-                    child: BouncingInteractiveWidget(
-                      onTap: onBookOpen,
-                      child: Icon(
-                        LucideIcons.bookOpen,
-                        size: 16,
-                        color: colors.bitcoinDark,
-                      ),
-                    ),
+                  BlocBuilder<BookDownloadCubit, BookDownloadState>(
+                    builder: (context, state) {
+                      return Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: colors.bitcoin,
+                          shape: BoxShape.circle,
+                        ),
+                        child: BouncingInteractiveWidget(
+                          onTap: onBookOpen,
+                          child: Icon(
+                            book.isDownloaded
+                                ? LucideIcons.bookOpen
+                                : LucideIcons.cloudDownload,
+                            size: 16,
+                            color: colors.bitcoinDark,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

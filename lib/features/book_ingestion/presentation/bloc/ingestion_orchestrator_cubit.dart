@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:ulid/ulid.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
@@ -30,7 +31,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
   final CircleStoreService _circleStore;
   final CircleShareService _circleShareService;
   final LibraryFileStore _fileStore;
-
+  final _log = logging.Logger('IngestionOrchestratorCubit');
   final Map<String, StreamSubscription<IngestionProgress>> _subscriptions = {};
 
   String startIngestion(
@@ -148,28 +149,28 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
 
     try {
       await _fileStore.deleteBook(circleBookId);
-    } catch (e) {
-      // Ignored if it doesn't exist or fails
+    } catch (e, stackTrace) {
+      _log.warning(
+        'Failed to delete book files for $circleBookId ',
+        e,
+        stackTrace,
+      );
     }
   }
 
-  void _checkAndTriggerUpload(String circleBookId) async {
-    final task = state.tasks[circleBookId];
+  void _checkAndTriggerUpload(String circleDirId) async {
+    final task = state.tasks[circleDirId];
     if (task == null) return;
 
     if (task.isGroupCreated && task.isExtractComplete) {
-      _circleStore.refreshBookCover(circleBookId);
+      _circleStore.refreshBookCover(circleDirId);
 
       final npub = ActiveAccount.currentNpub;
       final marmotGroupId = task.marmotGroupId;
       if (npub != null && marmotGroupId != null) {
-        _circleShareService.uploadBookContent(
-          npub,
-          marmotGroupId,
-          circleBookId,
-        );
+        _circleShareService.uploadBookContent(npub, marmotGroupId, circleDirId);
 
-        final coverPath = await _fileStore.coverPathIfExists(circleBookId);
+        final coverPath = await _fileStore.coverPathIfExists(circleDirId);
         if (coverPath != null) {
           try {
             final coverBytes = await File(coverPath).readAsBytes();
@@ -181,19 +182,23 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
 
             _circleStore.updateCircleBookCoverOptimistic(
               marmotGroupId: marmotGroupId,
-              circleDirId: circleBookId,
+              circleDirId: circleDirId,
               coverBytes: coverBytes,
               preparedImage: preparedImage,
               mimeType: mimeType,
             );
-          } catch (e) {
-            //
+          } catch (e, stackTrace) {
+            _log.warning(
+              'Failed to update book cover for $circleDirId ',
+              e,
+              stackTrace,
+            );
           }
         }
       }
 
       final newTasks = Map<String, IngestionTaskState>.from(state.tasks);
-      newTasks.remove(circleBookId);
+      newTasks.remove(circleDirId);
       emit(state.copyWith(tasks: newTasks));
     }
   }

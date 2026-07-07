@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
@@ -30,11 +32,19 @@ class CircleLoadedView extends StatelessWidget {
   CircleBook get book => state.book;
 
   void _openBook(BuildContext context) {
-    context.read<CircleDetailCubit>().open(circleBookId);
+    if (!book.isDownloaded) {
+      context.read<BookDownloadCubit>().downloadBook(book);
+      context.read<CircleDetailCubit>().open(circleBookId);
+    } else {
+      context.read<CircleDetailCubit>().open(circleBookId);
+    }
+
     ZbfViewerRoute(
       zbfPath: book.zbfPath,
       bookTitle: book.title,
       coverPath: book.coverPath,
+      circleDirId: book.circleDirId,
+      groupId: book.id,
     ).push(context);
   }
 
@@ -96,11 +106,19 @@ class CircleLoadedView extends StatelessWidget {
                       satsEarned: state.satsEarned,
                     ),
                     const SizedBox(height: 14),
-                    AppButton(
-                      label: 'Open book',
-                      icon: LucideIcons.bookOpen,
-                      fullWidth: true,
-                      onTap: () => _openBook(context),
+                    BlocBuilder<BookDownloadCubit, BookDownloadState>(
+                      builder: (context, state) {
+                        return AppButton(
+                          label: book.isDownloaded
+                              ? 'Open book'
+                              : 'Download and open book',
+                          icon: book.isDownloaded
+                              ? LucideIcons.bookOpen
+                              : LucideIcons.cloudDownload,
+                          fullWidth: true,
+                          onTap: () => _openBook(context),
+                        );
+                      },
                     ),
                     const SizedBox(height: 26),
                     Row(

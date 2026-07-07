@@ -164,6 +164,8 @@ mixin $ZbfViewerRoute on GoRouteData {
     query: state.uri.queryParameters['query'],
     bookTitle: state.uri.queryParameters['book-title'],
     coverPath: state.uri.queryParameters['cover-path'],
+    circleDirId: state.uri.queryParameters['circle-dir-id'],
+    groupId: state.uri.queryParameters['group-id'],
   );
 
   ZbfViewerRoute get _self => this as ZbfViewerRoute;
@@ -177,6 +179,8 @@ mixin $ZbfViewerRoute on GoRouteData {
       if (_self.query != null) 'query': _self.query,
       if (_self.bookTitle != null) 'book-title': _self.bookTitle,
       if (_self.coverPath != null) 'cover-path': _self.coverPath,
+      if (_self.circleDirId != null) 'circle-dir-id': _self.circleDirId,
+      if (_self.groupId != null) 'group-id': _self.groupId,
     },
   );
 

@@ -16,13 +16,12 @@ class GroupEnvelopeService {
 
   Future<void> publish(String eventJson) async {
     try {
-      final response = _ndk.broadcast.broadcast(
+      _ndk.broadcast.broadcast(
         nostrEvent: _toNip01Event(eventJson),
         specificRelays: _relays,
       );
-      await response.broadcastDoneFuture.timeout(const Duration(seconds: 3));
     } on Object catch (error, stack) {
-      _log.warning('Relay publish failed or timed out', error, stack);
+      _log.warning('Relay publish failed', error, stack);
     }
   }
 

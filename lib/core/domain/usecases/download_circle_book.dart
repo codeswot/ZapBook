@@ -7,7 +7,7 @@ class DownloadCircleBook {
 
   final CircleShareService _circleShareService;
 
-  Future<bool> call(String circleBookId, String groupId) async {
-    return _circleShareService.fetchAndDownloadBook(circleBookId, groupId);
+  Future<bool> call(String groupId, String circleDirId) async {
+    return _circleShareService.fetchAndDownloadBook(groupId, circleDirId);
   }
 }

@@ -22,25 +22,21 @@ final class LibraryLoaded extends LibraryState {
     this.books, {
     this.lastOpenedBook,
     this.showCirclePrompt = false,
-    this.downloadingBookIds = const {},
   });
 
   final List<CircleBook> books;
   final CircleBook? lastOpenedBook;
   final bool showCirclePrompt;
-  final Set<String> downloadingBookIds;
 
   LibraryLoaded copyWith({
     List<CircleBook>? books,
     CircleBook? lastOpenedBook,
     bool? showCirclePrompt,
-    Set<String>? downloadingBookIds,
   }) {
     return LibraryLoaded(
       books ?? this.books,
       lastOpenedBook: lastOpenedBook ?? this.lastOpenedBook,
       showCirclePrompt: showCirclePrompt ?? this.showCirclePrompt,
-      downloadingBookIds: downloadingBookIds ?? this.downloadingBookIds,
     );
   }
 
@@ -49,7 +45,6 @@ final class LibraryLoaded extends LibraryState {
         books,
         lastOpenedBook,
         showCirclePrompt,
-        downloadingBookIds,
       ];
 }
 

@@ -147,6 +147,8 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
   final String? query;
   final String? bookTitle;
   final String? coverPath;
+  final String? circleDirId;
+  final String? groupId;
 
   const ZbfViewerRoute({
     required this.zbfPath,
@@ -154,6 +156,8 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
     this.query,
     this.bookTitle,
     this.coverPath,
+    this.circleDirId,
+    this.groupId,
   });
 
   @override
@@ -163,6 +167,8 @@ class ZbfViewerRoute extends GoRouteData with $ZbfViewerRoute {
     highlightQuery: query,
     bookTitle: bookTitle,
     coverPath: coverPath,
+    circleDirId: circleDirId,
+    groupId: groupId,
   );
 }
 
