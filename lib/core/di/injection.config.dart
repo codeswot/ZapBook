@@ -63,6 +63,7 @@ import 'package:zapbook/core/services/contact_service.dart' as _i244;
 import 'package:zapbook/core/services/decoded_message_cache.dart' as _i118;
 import 'package:zapbook/core/services/density_service.dart' as _i740;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
+import 'package:zapbook/core/services/file_logger_service.dart' as _i199;
 import 'package:zapbook/core/services/file_picker_service.dart' as _i1034;
 import 'package:zapbook/core/services/group_envelope_service.dart' as _i394;
 import 'package:zapbook/core/services/group_store_service.dart' as _i40;
@@ -236,6 +237,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i740.DensityService>(() => _i740.DensityService());
     gh.lazySingleton<_i917.FileHasher>(() => const _i917.FileHasher());
+    gh.lazySingleton<_i199.FileLoggerService>(() => _i199.FileLoggerService());
     gh.lazySingleton<_i1034.FilePickerService>(
       () => _i1034.FilePickerService(),
     );

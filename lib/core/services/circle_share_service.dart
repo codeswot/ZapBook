@@ -104,7 +104,6 @@ class CircleShareService {
             sourceRef ??= media;
           } else if (media.filename.endsWith('.zbfseg')) {
             if (segmentsMap.putIfAbsent(media.filename, () => media) == media) {
-              // Extract index from .seg0000.zbfseg
               final match = RegExp(
                 r'\.seg(\d+)\.zbfseg$',
               ).firstMatch(media.filename);
