@@ -5,7 +5,7 @@ import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 @injectable
-final class CompleteOnboarding {
+class CompleteOnboarding {
   const CompleteOnboarding(this._identity, this._onboarding, this._reloader);
 
   final IdentityRepository _identity;

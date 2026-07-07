@@ -5,18 +5,23 @@ import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
-import 'package:zapbook/core/session/session_manager.dart';
+import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
 
 @injectable
 class SwitchAccountCubit extends Cubit<SwitchAccountState> {
-  SwitchAccountCubit(this._identityLocal, this._identityRepo, this._remote)
-    : super(const SwitchAccountLoading());
+  SwitchAccountCubit(
+    this._identityLocal,
+    this._identityRepo,
+    this._remote,
+    this._sessionReloader,
+  ) : super(const SwitchAccountLoading());
 
   final IdentityLocalDataSource _identityLocal;
   final IdentityRepository _identityRepo;
   final ProfileRemoteDataSource _remote;
+  final SessionReloader _sessionReloader;
   final _log = logging.Logger('SwitchAccountCubit');
 
   Future<void> load() async {
@@ -86,7 +91,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
     );
     try {
       await _identityLocal.setActive(npub);
-      await reloadSession();
+      await _sessionReloader.reload();
     } on Object catch (e, stack) {
       _log.warning('Switch account failed', e, stack);
       emit(SwitchAccountLoaded(accounts: accounts, activeNpub: active));
@@ -129,7 +134,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       final keypair = await _identityRepo.importFromNsec(trimmed);
       await _identityRepo.persist(npub: keypair.npub, nsec: keypair.nsec!);
 
-      await reloadSession();
+      await _sessionReloader.reload();
       return true;
     } on Object catch (e, stack) {
       _log.warning('Import account failed', e, stack);

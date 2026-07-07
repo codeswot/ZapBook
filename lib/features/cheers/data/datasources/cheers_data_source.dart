@@ -68,6 +68,7 @@ class CheersDataSourceImpl implements CheersDataSource {
 
   Future<void> _catchUpGroup(MarmotGroup group, {bool force = false}) async {
     if (!force && _caughtUpGroups.contains(group.id)) return;
+    _caughtUpGroups.add(group.id);
     try {
       final events = await _ndk.requests
           .query(
@@ -85,7 +86,6 @@ class CheersDataSourceImpl implements CheersDataSource {
           await _marmot.processIncoming(event.toMarmotJson());
         } on Object catch (_) {}
       }
-      _caughtUpGroups.add(group.id);
     } on Object catch (error) {
       _log.fine('Catch-up failed for ${group.id}: $error');
     }

@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
-final class FileHasher {
+class FileHasher {
   const FileHasher();
 
   Future<String> sha256OfFile(File file) async {

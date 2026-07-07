@@ -26,12 +26,9 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   final ShareCircleBookUseCase _shareUseCase;
   final _log = logging.Logger('ShareCircleCubit');
   bool isValidNpub(String value) {
-    try {
-      MarmotIdentity.pubkeyHexFromNpub(value);
-      return true;
-    } catch (_) {
-      return false;
-    }
+    if (value.isEmpty) return false;
+    final npubRegex = RegExp(r'^npub1[02-9ac-hj-np-z]{58}$');
+    return npubRegex.hasMatch(value);
   }
 
   Future<void> load(String circleBookId) async {

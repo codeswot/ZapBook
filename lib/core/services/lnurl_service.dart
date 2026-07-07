@@ -6,9 +6,9 @@ import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class LnurlService {
-  LnurlService();
+  LnurlService({http.Client? client}) : _client = client ?? http.Client();
 
-  final _client = http.Client();
+  final http.Client _client;
   final _payResponseCache = <String, LnurlPayResponse>{};
   final _activePayResolutions = <String, Future<LnurlPayResponse>>{};
 

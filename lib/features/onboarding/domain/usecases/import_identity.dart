@@ -4,7 +4,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 
 @injectable
-final class ImportIdentity {
+class ImportIdentity {
   const ImportIdentity(this._identity);
 
   final IdentityRepository _identity;

@@ -3,7 +3,7 @@ import 'package:injectable/injectable.dart';
 import 'package:zapbook/features/profile/domain/repositories/profile_repository.dart';
 
 @injectable
-final class UpdateProfile {
+class UpdateProfile {
   const UpdateProfile(this._repository);
 
   final ProfileRepository _repository;

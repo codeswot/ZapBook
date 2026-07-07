@@ -45,8 +45,6 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         )
         .toList();
 
-    unawaited(syncCircleState(book));
-
     emit(
       CircleDetailLoaded(
         book: book,
@@ -58,6 +56,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         satsEarned: 0,
       ),
     );
+
+    unawaited(syncCircleState(book));
   }
 
   Future<void> refresh(String circleBookId) => load(circleBookId);
@@ -102,7 +102,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     }
   }
 
-  void toggleContact(String npub, bool isFollow) async {
+  Future<void> toggleContact(String npub, bool isFollow) async {
     if (isFollow) {
       await _contacts.remove(npub);
     } else {

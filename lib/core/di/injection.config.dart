@@ -522,13 +522,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i341.CompleteOnboarding>(),
       ),
     );
-    gh.factory<_i982.SwitchAccountCubit>(
-      () => _i982.SwitchAccountCubit(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i63.IdentityRepository>(),
-        gh<_i735.ProfileRemoteDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i821.CircleStoreService>(
       () => _i821.CircleStoreService(
         gh<_i40.GroupStoreService>(),
@@ -548,6 +541,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i182.ReadingStatsService>(),
         gh<_i821.CircleStoreService>(),
+      ),
+    );
+    gh.factory<_i982.SwitchAccountCubit>(
+      () => _i982.SwitchAccountCubit(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i63.IdentityRepository>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i803.SessionReloader>(),
       ),
     );
     gh.factory<_i947.CircleDetailCubit>(
