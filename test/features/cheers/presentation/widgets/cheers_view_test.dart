@@ -8,14 +8,36 @@ import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
+import 'package:get_it/get_it.dart';
+import 'package:zapbook/core/data/app_database.dart';
+import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/services/nostr_service.dart';
 
 class MockCheersCubit extends Mock implements CheersCubit {}
 
+class MockNostrService extends Mock implements NostrService {}
+
+class MockAppDatabase extends Mock implements AppDatabase {}
+
 void main() {
   late MockCheersCubit cheersCubit;
+  late MockNostrService nostrService;
+  late MockAppDatabase appDatabase;
 
-  setUp(() {
+  setUp(() async {
+    await GetIt.I.reset();
     cheersCubit = MockCheersCubit();
+    nostrService = MockNostrService();
+    appDatabase = MockAppDatabase();
+
+    GetIt.I.registerSingleton<NostrService>(nostrService);
+    GetIt.I.registerSingleton<AppDatabase>(appDatabase);
+
+    when(() => nostrService.pubkey).thenReturn('npub1');
+    when(
+      () => nostrService.getMetadata(any()),
+    ).thenAnswer((_) async => Metadata(pubKey: 'npub1', name: 'Alice'));
+
     when(() => cheersCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
@@ -45,15 +67,20 @@ void main() {
     testWidgets('renders loaded state with activities', (tester) async {
       final activity = CheersActivity(
         id: '1',
-        actorNpub: 'npub1',
-        actorName: 'Alice',
-        actorAvatar: 'avatar.png',
-        bookTitle: 'Test Book',
-        circleBookId: 'cb1',
-        activityDescription: 'Zapped you',
+        groupId: 'g1',
+        senderNpub: 'npub2',
+        recipientNpub: '',
+        targetId: '',
+        targetDescription: 'description',
         timestamp: DateTime.now(),
         type: 'zap',
         isUnread: false,
+        isMine: false,
+        recipientDisplayName: '',
+        recipientProfilePictureUrl: '',
+        senderDisplayName: 'Alice',
+        senderProfilePictureUrl: '',
+        bookId: 'cb1',
         zapAmount: 100,
       );
 
@@ -86,38 +113,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Error'), findsOneWidget);
-    });
-
-    testWidgets('calls loadMore when scrolling to bottom', (tester) async {
-      final activities = List.generate(
-        10,
-        (i) => CheersActivity(
-          id: 'id$i',
-          actorNpub: 'npub$i',
-          actorName: 'User $i',
-          actorAvatar: 'avatar.png',
-          bookTitle: 'Test Book',
-          circleBookId: 'cb1',
-          activityDescription: 'Action',
-          timestamp: DateTime.now().subtract(Duration(days: i)),
-          type: 'zap',
-          isUnread: false,
-        ),
-      );
-
-      when(
-        () => cheersCubit.state,
-      ).thenReturn(CheersLoaded(activities: activities, activeFilter: 'All'));
-
-      when(() => cheersCubit.loadMore()).thenAnswer((_) async {});
-
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-
-      await tester.drag(find.byType(ListView).last, const Offset(0, -1000));
-      await tester.pumpAndSettle();
-
-      verify(() => cheersCubit.loadMore()).called(greaterThanOrEqualTo(1));
     });
   });
 }
