@@ -52,11 +52,17 @@ void main() {
     mockCircleStore = MockCircleStoreService();
     mockContacts = MockContactService();
     mockCircleProgressDao = MockCircleProgressDao();
-    when(() => mockCircleProgressDao.watchProgress(any())).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockCircleProgressDao.watchProgress(any()),
+    ).thenAnswer((_) => Stream.value([]));
   });
 
-  CircleDetailCubit buildCubit() =>
-      CircleDetailCubit(mockIdentity, mockCircleStore, mockContacts, mockCircleProgressDao);
+  CircleDetailCubit buildCubit() => CircleDetailCubit(
+    mockIdentity,
+    mockCircleStore,
+    mockContacts,
+    mockCircleProgressDao,
+  );
 
   group('CircleDetailCubit', () {
     test('load emits error if book not found', () async {

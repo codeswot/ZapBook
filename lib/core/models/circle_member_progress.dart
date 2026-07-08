@@ -42,11 +42,11 @@ class CircleMemberProgress extends Equatable {
 
   @override
   List<Object?> get props => [
-        groupId,
-        pubKey,
-        bookId,
-        pageIndex,
-        progressPercentage,
-        updatedAt,
-      ];
+    groupId,
+    pubKey,
+    bookId,
+    pageIndex,
+    progressPercentage,
+    updatedAt,
+  ];
 }

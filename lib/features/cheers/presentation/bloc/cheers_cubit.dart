@@ -32,13 +32,10 @@ class CheersCubit extends Cubit<CheersState> {
   String _activeFilter = 'All';
 
   void _subscribe() {
-    _subscription = _watchCheersActivities().listen(
-      (activities) {
-        _rawActivities = activities;
-        _emitFiltered();
-      },
-      onError: (Object error) => emit(CheersError(error.toString())),
-    );
+    _subscription = _watchCheersActivities().listen((activities) {
+      _rawActivities = activities;
+      _emitFiltered();
+    }, onError: (Object error) => emit(CheersError(error.toString())));
   }
 
   void setFilter(String filter) {
@@ -57,7 +54,8 @@ class CheersCubit extends Cubit<CheersState> {
 
       switch (_activeFilter) {
         case 'Milestones':
-          if (a.type == 'milestone' || a.type == 'notification') filtered.add(a);
+          if (a.type == 'milestone' || a.type == 'notification')
+            filtered.add(a);
           break;
         case 'Zaps':
           if (a.type == 'zap' && (a.isMine || a.recipientNpub.isNotEmpty)) {
