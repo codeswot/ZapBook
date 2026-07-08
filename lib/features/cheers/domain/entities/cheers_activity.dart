@@ -1,38 +1,17 @@
-import 'package:equatable/equatable.dart';
-
-final class CheersActivity extends Equatable {
-  const CheersActivity({
-    required this.id,
-    required this.actorNpub,
-    required this.actorName,
-    this.actorAvatar,
-    required this.bookTitle,
-    this.circleBookId,
-    required this.activityDescription,
-    required this.timestamp,
-    required this.type,
-    required this.isUnread,
-    this.nudgeId,
-    this.thumbsUpCount = 0,
-    this.clapCount = 0,
-    this.fireCount = 0,
-    this.rocketCount = 0,
-    this.trophyCount = 0,
-    this.zapAmount,
-    this.zapReaction,
-    this.zapTargetId,
-    this.zapTargetDescription,
-    this.zapRecipientNpub,
-  });
-
+class CheersActivity {
   final String id;
-  final String actorNpub;
-  final String actorName;
-  final String? actorAvatar;
-  final String bookTitle;
-  final String? circleBookId;
-  final String activityDescription;
+  final String groupId;
+  final String senderNpub;
+  final String recipientNpub;
+  final String recipientDisplayName;
+  final String recipientProfilePictureUrl;
+  final String senderDisplayName;
+  final String senderProfilePictureUrl;
+  final String? bookId;
+  final String targetId;
+  final String targetDescription;
   final DateTime timestamp;
+  final String? bookCircleTitle;
   final String type;
   final bool isUnread;
   final String? nudgeId;
@@ -43,57 +22,32 @@ final class CheersActivity extends Equatable {
   final int trophyCount;
   final int? zapAmount;
   final String? zapReaction;
-  final String? zapTargetId;
-  final String? zapTargetDescription;
-  final String? zapRecipientNpub;
+  final bool isMine;
 
-  CheersActivity copyWith({String? actorName, String? actorAvatar}) =>
-      CheersActivity(
-        id: id,
-        actorNpub: actorNpub,
-        actorName: actorName ?? this.actorName,
-        actorAvatar: actorAvatar ?? this.actorAvatar,
-        bookTitle: bookTitle,
-        circleBookId: circleBookId,
-        activityDescription: activityDescription,
-        timestamp: timestamp,
-        type: type,
-        isUnread: isUnread,
-        nudgeId: nudgeId,
-        thumbsUpCount: thumbsUpCount,
-        clapCount: clapCount,
-        fireCount: fireCount,
-        rocketCount: rocketCount,
-        trophyCount: trophyCount,
-        zapAmount: zapAmount,
-        zapReaction: zapReaction,
-        zapTargetId: zapTargetId,
-        zapTargetDescription: zapTargetDescription,
-        zapRecipientNpub: zapRecipientNpub,
-      );
-
-  @override
-  List<Object?> get props => [
-    id,
-    actorNpub,
-    actorName,
-    actorAvatar,
-    bookTitle,
-    circleBookId,
-    activityDescription,
-    timestamp,
-    type,
-    isUnread,
-    nudgeId,
-    thumbsUpCount,
-    clapCount,
-    fireCount,
-    rocketCount,
-    trophyCount,
-    zapAmount,
-    zapReaction,
-    zapTargetId,
-    zapTargetDescription,
-    zapRecipientNpub,
-  ];
+  CheersActivity({
+    required this.id,
+    required this.groupId,
+    required this.senderNpub,
+    required this.recipientNpub,
+    required this.targetId,
+    required this.targetDescription,
+    required this.timestamp,
+    required this.type,
+    required this.isUnread,
+    required this.isMine,
+    this.nudgeId,
+    this.thumbsUpCount = 0,
+    this.clapCount = 0,
+    this.fireCount = 0,
+    this.rocketCount = 0,
+    this.trophyCount = 0,
+    this.zapAmount,
+    this.zapReaction,
+    this.bookCircleTitle,
+    required this.recipientDisplayName,
+    required this.recipientProfilePictureUrl,
+    required this.senderDisplayName,
+    required this.senderProfilePictureUrl,
+    this.bookId,
+  });
 }

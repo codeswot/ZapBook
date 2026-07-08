@@ -8,13 +8,11 @@ import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/services/key_package_service.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
-import 'package:zapbook/core/services/zap_confirmation_service.dart';
 
 Future<void> startSession() async {
   final ok = await getIt<NostrSession>().login();
   if (ok) {
     unawaited(getIt<KeyPackageService>().publishIfNeeded());
-    getIt<ZapConfirmationService>().resume();
     await _publishPendingProfile();
   }
   final stats = getIt<ReadingStatsService>();

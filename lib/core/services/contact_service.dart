@@ -76,9 +76,13 @@ class ContactService {
     }
   }
 
-  Future<Contact> resolve(String npub) async {
+  Future<Contact> resolve(String npub, {bool forceRefresh = false}) async {
     final hex = await _hexOf(npub);
-    final meta = await _nostr.getMetadata(hex);
+    final meta =
+        _nostr.getCachedMetadatas([hex]).firstOrNull ??
+        _nostr.getCachedMetadatasFromEvents([hex]).firstOrNull ??
+        await _nostr.getMetadata(hex, forceRefresh: forceRefresh);
+
     return _contact(hex, npub, meta);
   }
 
@@ -125,8 +129,23 @@ class ContactService {
       hex = Nip19.decode(npub);
     } catch (_) {
       hex = '';
+      _log.warning('Invalid npub format: $npub');
     }
-    return _contact(hex, npub, null);
+
+    Metadata? meta;
+    if (hex.isNotEmpty) {
+      final metas = _nostr.getCachedMetadatas([hex]);
+      if (metas.isNotEmpty) {
+        meta = metas.first;
+      } else {
+        final eventsMeta = _nostr.getCachedMetadatasFromEvents([hex]);
+        if (eventsMeta.isNotEmpty) {
+          meta = eventsMeta.first;
+        }
+      }
+    }
+
+    return _contact(hex, npub, meta);
   }
 
   Future<String> _hexOf(String npub) async {

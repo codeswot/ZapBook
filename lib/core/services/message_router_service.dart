@@ -1,81 +1,68 @@
 import 'dart:async';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:injectable/injectable.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
+import 'package:zapbook/core/data/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
+import 'package:zapbook/core/models/circle_member_progress.dart';
 
 @LazySingleton()
 class MessageRouterService {
   final MarmotSyncService _marmotSyncService;
+  final CheersDao _cheersDao;
+  final CircleProgressDao _circleProgressDao;
+
+  final _log = logging.Logger('MessageRouterService');
   StreamSubscription<MarmotMessage>? _messageSub;
 
-  final _initialBookController =
-      StreamController<InitialBookMessage>.broadcast();
-  final _progressController = StreamController<BookProgressMessage>.broadcast();
-  final _milestoneController = StreamController<MilestoneMessage>.broadcast();
-  final _bookCompletedController =
-      StreamController<BookCompletedMessage>.broadcast();
-  final _cheersController = StreamController<CheersMessage>.broadcast();
-  final _zapNudgeController = StreamController<ZapNudgeMessage>.broadcast();
-  final _zapReadyController = StreamController<ZapReadyMessage>.broadcast();
-  final _zapSentController = StreamController<ZapSentMessage>.broadcast();
-
-  MessageRouterService(this._marmotSyncService) {
+  MessageRouterService(
+    this._marmotSyncService,
+    this._cheersDao,
+    this._circleProgressDao,
+  ) {
     initialize();
   }
 
-  Stream<InitialBookMessage> get onInitialBook => _initialBookController.stream;
-
-  Stream<BookProgressMessage> get onProgress => _progressController.stream;
-
-  Stream<MilestoneMessage> get onMilestone => _milestoneController.stream;
-
-  Stream<BookCompletedMessage> get onBookCompleted =>
-      _bookCompletedController.stream;
-
-  Stream<CheersMessage> get onCheers => _cheersController.stream;
-
-  Stream<ZapNudgeMessage> get onZapNudge => _zapNudgeController.stream;
-
-  Stream<ZapReadyMessage> get onZapReady => _zapReadyController.stream;
-
-  Stream<ZapSentMessage> get onZapSent => _zapSentController.stream;
-
   void initialize() {
-    _messageSub = _marmotSyncService.onMessage.listen(_handleRawMessage);
+    _messageSub ??= _marmotSyncService.onMessage.listen(
+      _handleRawMessage,
+      onError: (Object error, StackTrace stack) {
+        _log.warning('Message stream error', error, stack);
+      },
+    );
   }
 
-  void _handleRawMessage(MarmotMessage rawMsg) {
+  Future<void> _handleRawMessage(MarmotMessage rawMsg) async {
     final parsed = AppMessage.tryParse(rawMsg);
     if (parsed == null) return;
-    if (parsed is InitialBookMessage) {
-      _initialBookController.add(parsed);
-    } else if (parsed is BookProgressMessage) {
-      _progressController.add(parsed);
-    } else if (parsed is MilestoneMessage) {
-      _milestoneController.add(parsed);
-    } else if (parsed is BookCompletedMessage) {
-      _bookCompletedController.add(parsed);
-    } else if (parsed is CheersMessage) {
-      _cheersController.add(parsed);
-    } else if (parsed is ZapNudgeMessage) {
-      _zapNudgeController.add(parsed);
-    } else if (parsed is ZapReadyMessage) {
-      _zapReadyController.add(parsed);
-    } else if (parsed is ZapSentMessage) {
-      _zapSentController.add(parsed);
+
+    try {
+      switch (parsed) {
+        case BookProgressMessage():
+          await _circleProgressDao.upsertProgress(
+            CircleMemberProgress.fromAppMessage(parsed),
+          );
+        case CheersMessage() || ZapSentMessage() || MilestoneMessage():
+          final activity = CheersActivityMessage.fromAppMessage(parsed);
+          if (activity != null) {
+            await _cheersDao.saveActivity(activity);
+          }
+        case InitialBookMessage() ||
+            BookCompletedMessage() ||
+            ZapNudgeMessage() ||
+            ZapReadyMessage():
+          break;
+      }
+    } on Object catch (error, stack) {
+      _log.warning('Failed to route message ${rawMsg.id}', error, stack);
     }
   }
 
   void dispose() {
     _messageSub?.cancel();
-    _initialBookController.close();
-    _progressController.close();
-    _milestoneController.close();
-    _bookCompletedController.close();
-    _cheersController.close();
-    _zapNudgeController.close();
-    _zapReadyController.close();
-    _zapSentController.close();
+    _messageSub = null;
   }
 }

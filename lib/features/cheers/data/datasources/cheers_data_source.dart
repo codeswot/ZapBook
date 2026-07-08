@@ -1,194 +1,107 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:marmot_dart/marmot_dart.dart';
-import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/config/zapbook_config.dart';
-import 'package:zapbook/core/domain/book_group_naming.dart';
-import 'package:zapbook/core/extensions/nip01_event_extension.dart';
+import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/decoded_message_cache.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/core/services/marmot_sync_service.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 
 abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();
   Future<void> sendZap(String activityId, int amount, String reactionType);
-  Future<void> sendDirectZap(
-    String groupId,
-    String recipientNpub,
-    int amount,
-    String reactionType,
-  );
-  void bumpLimit();
 }
 
 final _log = logging.Logger('CheersDataSource');
 
-const _cheerType = 'zapbook.cheer';
-
 @LazySingleton(as: CheersDataSource)
 class CheersDataSourceImpl implements CheersDataSource {
   CheersDataSourceImpl(
-    this._marmot,
-    this._ndk,
+    this._circleStore,
     this._identityLocal,
-    this._milestone,
-    this._contacts,
-    this._cache,
-    this._sync,
     this._cheersDao,
+    this._contactService,
   );
 
-  final Marmot _marmot;
-  final Ndk _ndk;
+  final CircleStoreService _circleStore;
   final IdentityLocalDataSource _identityLocal;
-  final MilestoneService _milestone;
-  final ContactService _contacts;
-  final DecodedMessageCache _cache;
-  final MarmotSyncService _sync;
   final CheersDao _cheersDao;
-
-  int _messageLimit = 300;
-
-  final _changeController = StreamController<void>.broadcast();
-  final _caughtUpGroups = <String>{};
-
-  static final _directZaps = StreamController<CheersActivity>.broadcast();
-  static Stream<CheersActivity> get directZaps => _directZaps.stream;
-
-  static void addDirectZap(CheersActivity activity) {
-    _directZaps.add(activity);
-  }
-
-  Future<void> _catchUpGroup(MarmotGroup group, {bool force = false}) async {
-    if (!force && _caughtUpGroups.contains(group.id)) return;
-    _caughtUpGroups.add(group.id);
-    try {
-      final events = await _ndk.requests
-          .query(
-            filter: Filter(
-              kinds: const [445],
-              tags: {
-                '#h': [group.nostrGroupId],
-              },
-            ),
-            explicitRelays: ZapbookConfig.broadcastRelays,
-          )
-          .future;
-      for (final event in events) {
-        try {
-          await _marmot.processIncoming(event.toMarmotJson());
-        } on Object catch (_) {}
-      }
-    } on Object catch (error) {
-      _log.fine('Catch-up failed for ${group.id}: $error');
-    }
-  }
+  final ContactService _contactService;
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
-    int? lastSignature;
-
-    bool isReloading = false;
-    void reload({bool force = false}) async {
-      if (isReloading && !force) return;
-      isReloading = true;
-      try {
-        final myNpub = await _identityLocal.readNpub() ?? '';
-        final groups = await _marmot.listGroups();
-        final bookGroups = groups
-            .where((group) => BookGroupNaming.matches(group.name))
-            .toList();
-
-        if (force || bookGroups.any((g) => !_caughtUpGroups.contains(g.id))) {
-          Future.microtask(() async {
-            await Future.wait(
-              bookGroups.map((g) => _catchUpGroup(g, force: force)),
-            );
-            reload(force: false);
-          });
-        }
-        final perGroupMessages = await Future.wait(
-          bookGroups.map(
-            (group) => _marmot.getMessages(
-              group.id,
-              params: MessageListParams(limit: _messageLimit),
-            ),
-          ),
-        );
-
-        final signature = _signatureFor(perGroupMessages);
-        if (!force && signature == lastSignature) return;
-        lastSignature = signature;
-
-        final cutoffSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600;
-        final activities = <CheersActivity>[];
-        for (var i = 0; i < bookGroups.length; i++) {
-          activities.addAll(
-            _groupActivities(
-              bookGroups[i],
-              perGroupMessages[i],
-              myNpub,
-              cutoffSecs,
-            ),
-          );
-        }
-        activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-        for (final activity in activities) {
-          await _cheersDao.saveActivity(activity);
-        }
-      } catch (error, stack) {
-        _log.warning('activities reload failed', error, stack);
-      } finally {
-        isReloading = false;
-      }
-    }
-
-    _directZaps.stream.listen((zap) {
-      _cheersDao.saveActivity(zap);
-    });
-
-    reload(force: false);
-    Future.microtask(() => reload(force: true));
-
-    _changeController.stream.listen((_) => reload(force: false));
-    _sync.onSync.listen((_) => reload(force: false));
-
     return _cheersDao.watchActivities().asyncMap((activities) async {
-      final myNpub = await _identityLocal.readNpub() ?? '';
-      final actorNpubs = activities.map((a) => a.actorNpub).toSet().toList();
-      await _contacts.prime(actorNpubs);
-      return activities.map((a) {
-        if (a.actorNpub == myNpub) return a;
-        return _withMetadata(a);
+      if (activities.isEmpty) return const <CheersActivity>[];
+
+      final myNpub = await _identityLocal.readNpub();
+      final circlesMap = {for (final c in _circleStore.currentCircles) c.id: c};
+
+      final uniqueNpubs = {
+        for (final msg in activities) ...[
+          if (msg.actorNpub.isNpub == true) msg.actorNpub,
+          if (msg.zapRecipientNpub?.isNpub == true) msg.zapRecipientNpub!,
+        ],
+      };
+
+      final contactsMap = <String, Contact>{};
+
+      await Future.wait(
+        uniqueNpubs.map((npub) async {
+          try {
+            contactsMap[npub] = await _contactService.resolve(npub);
+          } catch (_) {
+            _log.warning('Failed to resolve contact for npub: $npub');
+          }
+        }),
+      );
+
+      return activities.map((msg) {
+        final circle = circlesMap[msg.groupId];
+        final senderContact = contactsMap[msg.actorNpub];
+        final recipientContact = msg.zapRecipientNpub != null
+            ? contactsMap[msg.zapRecipientNpub!]
+            : null;
+
+        final isMine = msg.type == 'mine' || msg.actorNpub == myNpub;
+
+        final recName = recipientContact?.displayName;
+        final senderName = senderContact?.displayName;
+
+        return CheersActivity(
+          id: msg.id,
+          groupId: circle?.id ?? msg.groupId ?? '',
+          senderNpub: msg.actorNpub,
+          recipientNpub: msg.zapRecipientNpub ?? '',
+          targetId: msg.zapTargetId ?? '',
+          targetDescription:
+              msg.zapTargetDescription ?? msg.activityDescription,
+          timestamp: msg.timestamp,
+          type: msg.type,
+          isUnread: msg.isUnread,
+          isMine: isMine,
+          nudgeId: msg.nudgeId,
+          thumbsUpCount: msg.thumbsUpCount,
+          clapCount: msg.clapCount,
+          fireCount: msg.fireCount,
+          rocketCount: msg.rocketCount,
+          trophyCount: msg.trophyCount,
+          zapAmount: msg.zapAmount,
+          zapReaction: msg.zapReaction,
+          bookCircleTitle: circle?.title,
+          recipientDisplayName: recName != null && recName.isNotEmpty
+              ? recName
+              : msg.zapRecipientNpub?.toNpubShort() ?? '',
+          recipientProfilePictureUrl: recipientContact?.picture ?? '',
+          senderDisplayName: senderName != null && senderName.isNotEmpty
+              ? senderName
+              : msg.actorNpub.toNpubShort(),
+          senderProfilePictureUrl: senderContact?.picture ?? '',
+          bookId: msg.circleBookId,
+        );
       }).toList();
     });
-  }
-
-  CheersActivity _withMetadata(CheersActivity activity) {
-    final contact = _contacts.contactFor(activity.actorNpub);
-    final name = (contact.displayName?.trim().isNotEmpty ?? false)
-        ? contact.displayName!.trim()
-        : activity.actorName;
-    final avatar = (contact.picture?.trim().isNotEmpty ?? false)
-        ? contact.picture
-        : activity.actorAvatar;
-    return activity.copyWith(actorName: name, actorAvatar: avatar);
-  }
-
-  int _signatureFor(List<List<MarmotMessage>> perGroupMessages) {
-    var signature = 17;
-    for (final messages in perGroupMessages) {
-      signature = signature * 31 + messages.length;
-    }
-    return signature;
   }
 
   @override
@@ -200,318 +113,8 @@ class CheersDataSourceImpl implements CheersDataSource {
     final npub = await _identityLocal.readNpub();
     if (npub == null || npub.isEmpty) return;
 
-    final parts = activityId.split(':');
-    if (parts.length < 2) return;
-    final groupId = parts[0];
-    final messageId = parts[1];
-
-    final payload = {
-      'type': _cheerType,
-      'activityId': messageId,
-      'amount': amount,
-      'reactionType': reactionType,
-    };
-
-    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
-
-    _changeController.add(null);
-
-    try {
-      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
-      final tags = (map['tags'] as List)
-          .map((tag) => (tag as List).map((e) => e.toString()).toList())
-          .toList();
-      String pubKey = map['pubkey'] as String;
-      if (pubKey.startsWith('npub')) {
-        pubKey = Nip19.decode(pubKey);
-      }
-      final nipEvent = Nip01Event(
-        id: map['id'] as String?,
-        pubKey: pubKey,
-        kind: (map['kind'] as num).toInt(),
-        tags: tags,
-        content: map['content'] as String,
-        sig: map['sig'] as String?,
-        createdAt: (map['created_at'] as num).toInt(),
-      );
-      _ndk.broadcast.broadcast(
-        nostrEvent: nipEvent,
-        specificRelays: ZapbookConfig.broadcastRelays,
-      );
-    } catch (error, stack) {
+    try {} catch (error, stack) {
       _log.warning('cheer broadcast failed', error, stack);
     }
-  }
-
-  @override
-  Future<void> sendDirectZap(
-    String groupId,
-    String recipientNpub,
-    int amount,
-    String reactionType,
-  ) async {
-    final npub = await _identityLocal.readNpub();
-    if (npub == null || npub.isEmpty) return;
-
-    final payload = {
-      'type': _cheerType,
-      'activityId': '',
-      'amount': amount,
-      'reactionType': reactionType,
-      'recipientNpub': recipientNpub,
-    };
-
-    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
-
-    _changeController.add(null);
-
-    try {
-      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
-      final tags = (map['tags'] as List)
-          .map((tag) => (tag as List).map((e) => e.toString()).toList())
-          .toList();
-      String pubKey = map['pubkey'] as String;
-      if (pubKey.startsWith('npub')) {
-        pubKey = Nip19.decode(pubKey);
-      }
-      final nipEvent = Nip01Event(
-        id: map['id'] as String?,
-        pubKey: pubKey,
-        kind: (map['kind'] as num).toInt(),
-        tags: tags,
-        content: map['content'] as String,
-        sig: map['sig'] as String?,
-        createdAt: (map['created_at'] as num).toInt(),
-      );
-      _ndk.broadcast.broadcast(
-        nostrEvent: nipEvent,
-        specificRelays: ZapbookConfig.broadcastRelays,
-      );
-    } catch (_) {}
-  }
-
-  List<CheersActivity> _groupActivities(
-    MarmotGroup group,
-    List<MarmotMessage> messages,
-    String myNpub,
-    int cutoffSecs,
-  ) {
-    final activities = <CheersActivity>[];
-
-    {
-      var bookTitle = 'Unknown Book';
-      final cheers = <Map<String, dynamic>>[];
-      final cheerEntries = <Map<String, dynamic>>[];
-      final nudges = <Map<String, dynamic>>[];
-      final resolvedNudgeIds = <String>{};
-      final seenNudgeIds = <String>{};
-      final readyForMe = <Map<String, dynamic>>{};
-
-      for (final msg in messages) {
-        final decoded = _cache.get(msg);
-        if (decoded == null) continue;
-        switch (decoded['type']) {
-          case 'zapbook.book.milestone':
-          case 'zapbook.book.completed':
-            _milestone.ingestMessage(msg);
-          case 'zapbook.book.meta':
-            bookTitle = decoded['title'] as String? ?? bookTitle;
-          case _cheerType:
-            final entry = {
-              'activityId': decoded['activityId'],
-              'reactionType': decoded['reactionType'],
-              'amount': (decoded['amount'] as num?)?.toInt() ?? 0,
-              'senderNpub': msg.senderNpub,
-              'timestampSecs': msg.timestampSecs.toInt(),
-            };
-            cheers.add(entry);
-            cheerEntries.add(entry);
-          case 'zapbook.zap.sent':
-            cheerEntries.add({
-              'activityId': '${decoded['fromNpub']}:${decoded['sentAtMs']}',
-              'reactionType': decoded['reactionType'] ?? 'like',
-              'amount': (decoded['amount'] as num?)?.toInt() ?? 0,
-              'senderNpub': decoded['fromNpub'] as String? ?? msg.senderNpub,
-              'timestampSecs': msg.timestampSecs.toInt(),
-              'recipientNpub': decoded['toNpub'],
-            });
-          case 'zapbook.zap.nudge':
-            nudges.add(decoded);
-          case 'zapbook.zap.ready':
-            final id = decoded['nudgeId'] as String? ?? '';
-            resolvedNudgeIds.add(id);
-            if (decoded['toNpub'] == myNpub) readyForMe.add(decoded);
-        }
-      }
-
-      for (final event in _milestone.eventsForGroup(group.id)) {
-        final isMine = event.npub == myNpub;
-        final pctStr = event.progressPct > 0
-            ? ' (${event.progressPct.toStringAsFixed(1)}%)'
-            : '';
-        final description = event.completed
-            ? 'Finished the book'
-            : 'Milestone ${event.milestoneIdx + 1}: page ${event.currentPage}'
-                  '$pctStr';
-        final fallback = ProfileMetaGenerator.generate(seed: event.npub);
-
-        var thumbsUp = 0;
-        var claps = 0;
-        var fire = 0;
-        var rocket = 0;
-        var trophy = 0;
-        for (final cheer in cheers) {
-          if (cheer['activityId'] != event.id) continue;
-          switch (cheer['reactionType']) {
-            case 'like':
-              thumbsUp++;
-            case 'clap':
-              claps++;
-            case 'fire':
-              fire++;
-            case 'rocket':
-              rocket++;
-            case 'trophy':
-              trophy++;
-          }
-        }
-
-        activities.add(
-          CheersActivity(
-            id: '${event.groupId}:${event.id}',
-            actorNpub: event.npub,
-            actorName: isMine ? 'You' : fallback.displayName,
-            actorAvatar: fallback.avatar,
-            bookTitle: bookTitle,
-            circleBookId: event.circleBookId,
-            activityDescription: description,
-            timestamp: event.timestamp,
-            type: isMine ? 'mine' : 'milestone',
-            isUnread:
-                !isMine &&
-                event.timestamp.millisecondsSinceEpoch ~/ 1000 > cutoffSecs,
-            thumbsUpCount: thumbsUp,
-            clapCount: claps,
-            fireCount: fire,
-            rocketCount: rocket,
-            trophyCount: trophy,
-          ),
-        );
-      }
-
-      for (final cheer in cheerEntries) {
-        final senderNpub = cheer['senderNpub'] as String;
-        final isFromMe = senderNpub == myNpub;
-        final reactionType = cheer['reactionType'] as String;
-        final amount = cheer['amount'] as int;
-        final activityId = cheer['activityId'] as String;
-        final recipientNpub = cheer['recipientNpub'] as String?;
-
-        final isDirectZap = activityId.isEmpty;
-        if (!isDirectZap) continue;
-
-        final gen = ProfileMetaGenerator.generate(
-          seed: isFromMe ? (recipientNpub ?? senderNpub) : senderNpub,
-        );
-        final senderName = isFromMe ? 'You' : gen.displayName;
-
-        String description;
-        if (isFromMe && recipientNpub != null) {
-          final recName = ProfileMetaGenerator.generate(
-            seed: recipientNpub,
-          ).displayName;
-          description = 'You zapped $recName $amount sats in "$bookTitle"';
-        } else if (!isFromMe) {
-          description = '$senderName zapped you $amount sats in "$bookTitle"';
-        } else {
-          description = 'You zapped $amount sats in "$bookTitle"';
-        }
-
-        activities.add(
-          CheersActivity(
-            id: '${group.id}:${cheer['activityId']}:${cheer['senderNpub']}:${cheer['reactionType']}:${cheer['timestampSecs']}',
-            actorNpub: senderNpub,
-            actorName: senderName,
-            actorAvatar: isFromMe ? null : gen.avatar,
-            bookTitle: bookTitle,
-            circleBookId: group.id,
-            activityDescription: description,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(
-              (cheer['timestampSecs'] as int) * 1000,
-            ),
-            type: 'zap',
-            isUnread: false,
-            zapAmount: amount,
-            zapReaction: reactionType,
-            zapTargetId: activityId,
-            zapTargetDescription:
-                '$senderName zapped $amount sats in "$bookTitle"',
-            zapRecipientNpub: cheer['recipientNpub'] as String?,
-          ),
-        );
-      }
-
-      for (final nudge in nudges) {
-        if (nudge['toNpub'] != myNpub) continue;
-        final nudgeId = nudge['nudgeId'] as String? ?? '';
-        if (nudgeId.isEmpty || resolvedNudgeIds.contains(nudgeId)) continue;
-        final fromNpub = nudge['fromNpub'] as String? ?? '';
-        final gen = ProfileMetaGenerator.generate(seed: fromNpub);
-        final fromName = nudge['fromName'] as String? ?? gen.displayName;
-        final createdMs =
-            (nudge['createdAtMs'] as num?)?.toInt() ??
-            DateTime.now().millisecondsSinceEpoch;
-        activities.add(
-          CheersActivity(
-            id: '${group.id}:$nudgeId',
-            actorNpub: fromNpub,
-            actorName: fromName,
-            actorAvatar: gen.avatar,
-            bookTitle: bookTitle,
-            activityDescription:
-                '$fromName wants to zap you, but your receiving address '
-                "isn't set. Set it in your profile, then tap to buzz them.",
-            timestamp: DateTime.fromMillisecondsSinceEpoch(createdMs),
-            type: 'zap_nudge',
-            isUnread: true,
-            nudgeId: nudgeId,
-          ),
-        );
-      }
-
-      for (final ready in readyForMe) {
-        final nudgeId = ready['nudgeId'] as String? ?? '';
-        if (seenNudgeIds.contains(nudgeId)) continue;
-        seenNudgeIds.add(nudgeId);
-        final fromNpub = ready['fromNpub'] as String? ?? '';
-        final gen = ProfileMetaGenerator.generate(seed: fromNpub);
-        final fromName = ready['fromName'] as String? ?? gen.displayName;
-        final createdMs =
-            (ready['createdAtMs'] as num?)?.toInt() ??
-            DateTime.now().millisecondsSinceEpoch;
-        activities.add(
-          CheersActivity(
-            id: '${group.id}:$nudgeId:ready',
-            actorNpub: fromNpub,
-            actorName: fromName,
-            actorAvatar: gen.avatar,
-            bookTitle: bookTitle,
-            activityDescription: '$fromName set up their wallet — zap them!',
-            timestamp: DateTime.fromMillisecondsSinceEpoch(createdMs),
-            type: 'zap_ready',
-            isUnread: true,
-            nudgeId: nudgeId,
-          ),
-        );
-      }
-    }
-
-    return activities;
-  }
-
-  @override
-  void bumpLimit() {
-    _messageLimit += 300;
-    _changeController.add(null);
   }
 }

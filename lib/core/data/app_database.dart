@@ -1,11 +1,15 @@
 import 'package:injectable/injectable.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:zapbook/core/di/marmot_module.dart';
+import 'dart:typed_data';
 
 @singleton
 class AppDatabase {
-  AppDatabase() : _dbPath = null;
-  AppDatabase.forPath(String dbPath) : _dbPath = dbPath;
+  AppDatabase() : _dbPath = null, _isTest = false;
+  AppDatabase.forPath(String dbPath) : _dbPath = dbPath, _isTest = true;
+
+  final bool _isTest;
 
   String? _dbPath;
   Database? _db;
@@ -16,15 +20,29 @@ class AppDatabase {
     return _dbPath = '${dir.path}/zapbook.db';
   }
 
+  String _toHex(Uint8List bytes) {
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
+  }
+
   Future<Database> open() async {
     final existing = _db;
     if (existing != null) return existing;
 
     final db = sqlite3.open(await _path());
+
+    if (_isTest) {
+      final key = Uint8List(32);
+      db.execute("PRAGMA key = \"x'${_toHex(key)}'\";");
+    } else {
+      final key = await MarmotWarmup.getSecureDbKey();
+      db.execute("PRAGMA key = \"x'${_toHex(key)}'\";");
+    }
+
     db.execute('PRAGMA journal_mode=WAL');
 
     _createBookPagesTable(db);
     _createCheersFeedTable(db);
+    _createCircleMemberProgressTable(db);
 
     return _db = db;
   }
@@ -40,14 +58,25 @@ class AppDatabase {
     ''');
   }
 
+  void _createCircleMemberProgressTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS circle_member_progress (
+        group_id TEXT NOT NULL,
+        pub_key TEXT NOT NULL,
+        book_id TEXT NOT NULL,
+        page_index INTEGER NOT NULL,
+        progress_percentage REAL NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (group_id, pub_key, book_id)
+      )
+    ''');
+  }
+
   void _createCheersFeedTable(Database db) {
     db.execute('''
       CREATE TABLE IF NOT EXISTS cheers_feed (
         id TEXT PRIMARY KEY,
         actor_npub TEXT NOT NULL,
-        actor_name TEXT NOT NULL,
-        actor_avatar TEXT,
-        book_title TEXT NOT NULL,
         book_id TEXT,
         activity_description TEXT NOT NULL,
         timestamp INTEGER NOT NULL,
@@ -63,7 +92,8 @@ class AppDatabase {
         zap_reaction TEXT,
         zap_target_id TEXT,
         zap_target_description TEXT,
-        zap_recipient_npub TEXT
+        zap_recipient_npub TEXT,
+        group_id TEXT
       )
     ''');
     db.execute(

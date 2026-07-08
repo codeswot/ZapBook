@@ -29,22 +29,17 @@ final class MarmotWarmup {
     final dir = await AccountPaths.supportRoot();
     final dbPath = '${dir.path}/marmot.db';
 
-    if (Platform.isAndroid) {
-      return Marmot.sqliteWithKey(dbPath: dbPath, dbKey: await _androidDbKey());
-    }
-
-    await Marmot.initKeyringStore();
-    return Marmot.sqlite(
-      dbPath: dbPath,
-      serviceId: 'com.zapbook.geeksaxis',
-      keyId: 'zapbook_marmot_key_id',
-    );
+    final key = await getSecureDbKey();
+    return Marmot.sqliteWithKey(dbPath: dbPath, dbKey: key);
   }
 
   static const _secure = FlutterSecureStorage();
   static const _keyStorageKey = 'marmot_db_key';
 
-  static Future<Uint8List> _androidDbKey() async {
+  static Future<Uint8List> getSecureDbKey() async {
+    if (Platform.environment.containsKey('DEBUG_TEST_DB_KEY')) {
+      return Uint8List(32);
+    }
     final b64 = await _secure.read(key: _keyStorageKey);
     if (b64 != null) return base64Decode(b64);
 

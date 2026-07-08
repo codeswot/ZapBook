@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
@@ -17,21 +17,36 @@ class CheersLongPressSheet extends StatelessWidget {
     super.key,
     required this.activity,
     required this.cubit,
+    required this.actorName,
+    required this.actorAvatar,
+    required this.bookTitle,
   });
 
   final CheersActivity activity;
   final CheersCubit cubit;
+  final String actorName;
+  final String? actorAvatar;
+  final String bookTitle;
 
   static Future<void> show(
     BuildContext context, {
     required CheersActivity activity,
     required CheersCubit cubit,
+    required String actorName,
+    required String? actorAvatar,
+    required String bookTitle,
   }) {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CheersLongPressSheet(activity: activity, cubit: cubit),
+      builder: (_) => CheersLongPressSheet(
+        activity: activity,
+        cubit: cubit,
+        actorName: actorName,
+        actorAvatar: actorAvatar,
+        bookTitle: bookTitle,
+      ),
     );
   }
 
@@ -39,7 +54,7 @@ class CheersLongPressSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final isMine = activity.type == 'mine';
+    final isMine = activity.isMine;
 
     return AppSheet(
       child: Column(
@@ -48,7 +63,7 @@ class CheersLongPressSheet extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppProfileAvatar(url: activity.actorAvatar ?? '', size: 44),
+              AppProfileAvatar(url: actorAvatar ?? '', size: 44),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -56,14 +71,14 @@ class CheersLongPressSheet extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isMine ? 'My Progress' : activity.actorName,
+                      isMine ? 'My Progress' : actorName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: typography.h3.copyWith(color: colors.ink),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      activity.activityDescription,
+                      activity.targetDescription,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: typography.bodyS.copyWith(color: colors.slate),
@@ -85,6 +100,7 @@ class CheersLongPressSheet extends StatelessWidget {
                   activity: activity,
                   amount: 21,
                   gesture: ZapGesture.thumbsUp,
+                  actorName: actorName,
                 );
               },
             ),
@@ -99,6 +115,7 @@ class CheersLongPressSheet extends StatelessWidget {
                   activity: activity,
                   amount: 210,
                   gesture: ZapGesture.fire,
+                  actorName: actorName,
                 );
               },
             ),
@@ -111,8 +128,7 @@ class CheersLongPressSheet extends StatelessWidget {
             onTap: () {
               Clipboard.setData(
                 ClipboardData(
-                  text:
-                      '${activity.actorName}: ${activity.activityDescription}',
+                  text: '$actorName: ${activity.targetDescription}',
                 ),
               );
               context.pop();
@@ -127,7 +143,7 @@ class CheersLongPressSheet extends StatelessWidget {
               SharePlus.instance.share(
                 ShareParams(
                   text:
-                      '${activity.actorName}: ${activity.activityDescription} — ${activity.bookTitle}',
+                      '$actorName: ${activity.targetDescription} — $bookTitle',
                 ),
               );
               context.pop();

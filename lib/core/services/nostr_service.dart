@@ -105,7 +105,9 @@ class NostrService {
     for (final event in events) {
       try {
         metadatas.add(Metadata.fromEvent(event));
-      } catch (_) {}
+      } catch (_) {
+        _log.warning('Failed to parse metadata from event: ${event.id}');
+      }
     }
     return metadatas;
   }

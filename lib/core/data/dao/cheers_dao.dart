@@ -4,7 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/data/app_database.dart';
-import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 
 @lazySingleton
 class CheersDao {
@@ -15,8 +15,8 @@ class CheersDao {
 
   final _changeController = StreamController<void>.broadcast();
 
-  Stream<List<CheersActivity>> watchActivities() {
-    late StreamController<List<CheersActivity>> controller;
+  Stream<List<CheersActivityMessage>> watchActivities() {
+    late StreamController<List<CheersActivityMessage>> controller;
 
     Future<void> emit() async {
       final activities = await loadActivities();
@@ -25,7 +25,7 @@ class CheersDao {
       }
     }
 
-    controller = StreamController<List<CheersActivity>>.broadcast(
+    controller = StreamController<List<CheersActivityMessage>>.broadcast(
       onListen: emit,
     );
 
@@ -39,7 +39,7 @@ class CheersDao {
     return controller.stream;
   }
 
-  Future<List<CheersActivity>> loadActivities({int limit = 300}) async {
+  Future<List<CheersActivityMessage>> loadActivities({int limit = 300}) async {
     try {
       final db = await _appDatabase.open();
       final rows = db.select(
@@ -48,13 +48,11 @@ class CheersDao {
       );
 
       return rows.map((row) {
-        return CheersActivity(
+        return CheersActivityMessage(
           id: row['id'] as String,
           actorNpub: row['actor_npub'] as String,
-          actorName: row['actor_name'] as String,
-          actorAvatar: row['actor_avatar'] as String?,
-          bookTitle: row['book_title'] as String,
           circleBookId: row['book_id'] as String?,
+          groupId: row['group_id'] as String?,
           activityDescription: row['activity_description'] as String,
           timestamp: DateTime.fromMillisecondsSinceEpoch(
             row['timestamp'] as int,
@@ -80,25 +78,23 @@ class CheersDao {
     }
   }
 
-  Future<void> saveActivity(CheersActivity activity) async {
+  Future<void> saveActivity(CheersActivityMessage activity) async {
     try {
       final db = await _appDatabase.open();
       db.execute(
         '''
         INSERT OR REPLACE INTO cheers_feed (
-          id, actor_npub, actor_name, actor_avatar, book_title, book_id, 
+          id, actor_npub, book_id, group_id,
           activity_description, timestamp, type, is_unread, nudge_id, 
           thumbs_up_count, clap_count, fire_count, rocket_count, trophy_count, 
           zap_amount, zap_reaction, zap_target_id, zap_target_description, zap_recipient_npub
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           activity.id,
           activity.actorNpub,
-          activity.actorName,
-          activity.actorAvatar,
-          activity.bookTitle,
           activity.circleBookId,
+          activity.groupId,
           activity.activityDescription,
           activity.timestamp.millisecondsSinceEpoch,
           activity.type,

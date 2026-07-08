@@ -12,7 +12,7 @@ abstract class AppMessageTypes {
   static const zapSent = 'zapbook.zap.sent';
 }
 
-abstract class AppMessage {
+sealed class AppMessage {
   final MarmotMessage rawMessage;
 
   String get groupId => rawMessage.groupId;

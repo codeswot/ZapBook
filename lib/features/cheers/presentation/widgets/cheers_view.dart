@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
-import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
+import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
+import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart';
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
@@ -40,13 +40,17 @@ class _CheersViewState extends State<CheersView> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      context.read<CheersCubit>().loadMore();
-    }
+        _scrollController.position.maxScrollExtent - 200) {}
   }
 
-  void _showZapSheet(BuildContext context, CheersActivity activity) {
-    if (activity.type == 'mine' || activity.actorName == 'You') {
+  void _showZapSheet(
+    BuildContext context,
+    CheersActivity activity,
+    String actorName,
+    String? actorAvatar,
+    String bookTitle,
+  ) {
+    if (activity.isMine) {
       return;
     }
     final colors = context.colors;
@@ -55,7 +59,7 @@ class _CheersViewState extends State<CheersView> {
       context: context,
       header: Row(
         children: [
-          AppProfileAvatar(url: activity.actorAvatar ?? '', size: 48),
+          AppProfileAvatar(url: actorAvatar ?? '', size: 48),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -63,7 +67,7 @@ class _CheersViewState extends State<CheersView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Zap ${activity.actorName}',
+                  'Zap $actorName',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: typography.h3.copyWith(
@@ -73,18 +77,20 @@ class _CheersViewState extends State<CheersView> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${activity.activityDescription}:',
+                  '${activity.targetDescription}:',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: typography.bodyS.copyWith(color: colors.slate),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  activity.bookTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.body.copyWith(color: colors.slate2),
-                ),
+                if (bookTitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    bookTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: typography.body.copyWith(color: colors.slate2),
+                  ),
+                ],
               ],
             ),
           ),
@@ -95,16 +101,26 @@ class _CheersViewState extends State<CheersView> {
           activity: activity,
           gesture: gesture,
           amount: amount,
+          actorName: actorName,
           comment: message,
         );
       },
     );
   }
 
-  void _showLongPressMenu(BuildContext context, CheersActivity activity) {
+  void _showLongPressMenu(
+    BuildContext context,
+    CheersActivity activity,
+    String actorName,
+    String? actorAvatar,
+    String bookTitle,
+  ) {
     CheersLongPressSheet.show(
       context,
       activity: activity,
+      actorName: actorName,
+      actorAvatar: actorAvatar,
+      bookTitle: bookTitle,
       cubit: context.read<CheersCubit>(),
     );
   }
@@ -296,28 +312,47 @@ class _CheersViewState extends State<CheersView> {
                         final item = filtered[index];
                         return CheersActivityCard(
                           activity: item,
-                          onTap: () {
+                          onTap: (actorName, actorAvatar, bookTitle) {
                             if (item.type == 'zap_nudge') {
-                              context.read<CheersCubit>().performNudge(item);
+                              context.read<CheersCubit>().performNudge(
+                                item,
+                                actorName,
+                              );
                             } else {
-                              _showZapSheet(context, item);
+                              _showZapSheet(
+                                context,
+                                item,
+                                actorName,
+                                actorAvatar,
+                                bookTitle,
+                              );
                             }
                           },
-                          onLongPress: () {
+                          onLongPress: (actorName, actorAvatar, bookTitle) {
                             if (item.type == 'zap_nudge') {
-                              context.read<CheersCubit>().performNudge(item);
+                              context.read<CheersCubit>().performNudge(
+                                item,
+                                actorName,
+                              );
                             } else if (item.type != 'zap') {
-                              _showLongPressMenu(context, item);
+                              _showLongPressMenu(
+                                context,
+                                item,
+                                actorName,
+                                actorAvatar,
+                                bookTitle,
+                              );
                             }
                           },
-                          onReactionTap: (gesture) {
-                            if (item.type == 'mine') {
+                          onReactionTap: (gesture, actorName) {
+                            if (item.isMine) {
                               return;
                             }
                             context.read<CheersCubit>().performZap(
                               activity: item,
                               gesture: gesture,
                               amount: gesture.sats ?? 21,
+                              actorName: actorName,
                             );
                           },
                         );

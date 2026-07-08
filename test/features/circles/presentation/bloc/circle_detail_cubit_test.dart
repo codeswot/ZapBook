@@ -6,6 +6,8 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
@@ -15,6 +17,8 @@ class MockIdentityLocalDataSource extends Mock
 class MockCircleStoreService extends Mock implements CircleStoreService {}
 
 class MockContactService extends Mock implements ContactService {}
+
+class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 CircleBook _createTestBook(String id, String title, List<String> adminNpubs) {
   return CircleBook(
@@ -39,6 +43,7 @@ void main() {
   late MockIdentityLocalDataSource mockIdentity;
   late MockCircleStoreService mockCircleStore;
   late MockContactService mockContacts;
+  late MockCircleProgressDao mockCircleProgressDao;
 
   final testBook = _createTestBook('book1', 'Test Book', ['npub1admin']);
 
@@ -46,10 +51,12 @@ void main() {
     mockIdentity = MockIdentityLocalDataSource();
     mockCircleStore = MockCircleStoreService();
     mockContacts = MockContactService();
+    mockCircleProgressDao = MockCircleProgressDao();
+    when(() => mockCircleProgressDao.watchProgress(any())).thenAnswer((_) => Stream.value([]));
   });
 
   CircleDetailCubit buildCubit() =>
-      CircleDetailCubit(mockIdentity, mockCircleStore, mockContacts);
+      CircleDetailCubit(mockIdentity, mockCircleStore, mockContacts, mockCircleProgressDao);
 
   group('CircleDetailCubit', () {
     test('load emits error if book not found', () async {

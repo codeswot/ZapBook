@@ -13,14 +13,22 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.d
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
-  CircleDetailCubit(this._identityLocal, this._circleStore, this._contacts)
-    : super(const CircleDetailLoading());
+  CircleDetailCubit(
+    this._identityLocal,
+    this._circleStore,
+    this._contacts,
+    this._progressDao,
+  ) : super(const CircleDetailLoading());
 
   final CircleStoreService _circleStore;
   final IdentityLocalDataSource _identityLocal;
   final ContactService _contacts;
+  final CircleProgressDao _progressDao;
+  StreamSubscription? _progressSub;
 
   Future<void> load(String circleBookId) async {
     final book = _circleStore.currentCircles
@@ -56,6 +64,25 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
         satsEarned: 0,
       ),
     );
+
+    _progressSub?.cancel();
+    _progressSub = _progressDao.watchProgress(book.id).listen((progressList) {
+      final s = state;
+      if (s is CircleDetailLoaded) {
+        final newProgress = <String, MemberProgress>{};
+        for (final p in progressList) {
+          if (p.bookId == circleBookId) {
+            newProgress[p.pubKey] = MemberProgress(
+              currentPage: p.pageIndex,
+              currentWordCount: 0,
+              totalWordCount: 1,
+              fraction: p.progressPercentage,
+            );
+          }
+        }
+        emit(s.copyWith(memberProgress: newProgress));
+      }
+    });
 
     unawaited(syncCircleState(book));
   }
@@ -135,5 +162,11 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
 
     await _circleStore.deleteCircleBook(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
+  }
+
+  @override
+  Future<void> close() {
+    _progressSub?.cancel();
+    return super.close();
   }
 }

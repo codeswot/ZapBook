@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zapbook/core/data/app_database.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
-import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 
 void main() {
   late Directory tempDir;
@@ -21,12 +21,11 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
-  CheersActivity createActivity(String id, int timestampMillis) {
-    return CheersActivity(
+  CheersActivityMessage createActivity(String id, int timestampMillis) {
+    return CheersActivityMessage(
       id: id,
       actorNpub: 'npub1',
-      actorName: 'Alice',
-      bookTitle: 'The Book',
+
       activityDescription: 'Shared a book',
       timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMillis),
       type: 'cheer',
@@ -47,7 +46,6 @@ void main() {
     final activities = await store.loadActivities();
     expect(activities.length, 1);
     expect(activities.first.id, 'act1');
-    expect(activities.first.actorName, 'Alice');
     expect(activities.first.type, 'cheer');
   });
 

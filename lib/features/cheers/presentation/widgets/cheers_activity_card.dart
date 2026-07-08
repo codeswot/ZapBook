@@ -35,15 +35,18 @@ class CheersActivityCard extends StatelessWidget {
   });
 
   final CheersActivity activity;
-  final VoidCallback onTap;
-  final void Function(ZapGesture gesture) onReactionTap;
-  final VoidCallback? onLongPress;
+  final void Function(String actorName, String? actorAvatar, String bookTitle)
+  onTap;
+  final void Function(ZapGesture gesture, String actorName) onReactionTap;
+  final void Function(String actorName, String? actorAvatar, String bookTitle)?
+  onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final isMine = activity.type == 'mine';
+    final activity = this.activity;
+
     final isNotice =
         activity.type == 'zap_nudge' || activity.type == 'zap_ready';
     final isZap = activity.type == 'zap';
@@ -52,11 +55,27 @@ class CheersActivityCard extends StatelessWidget {
       (g) => _getGestureCount(activity, g) > 0,
     );
 
+    final actorName = activity.isMine
+        ? 'You'
+        : (activity.senderDisplayName.isNotEmpty
+              ? activity.senderDisplayName
+              : 'Someone');
+    final actorAvatar = activity.isMine
+        ? null
+        : activity.senderProfilePictureUrl;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: BouncingInteractiveWidget(
-        onTap: onTap,
-        onLongPress: onLongPress,
+        onTap: () =>
+            onTap(actorName, actorAvatar, activity.bookCircleTitle ?? ''),
+        onLongPress: onLongPress != null
+            ? () => onLongPress!(
+                actorName,
+                actorAvatar,
+                activity.bookCircleTitle ?? '',
+              )
+            : null,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -73,7 +92,7 @@ class CheersActivityCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppProfileAvatar(url: activity.actorAvatar ?? '', size: 40),
+                  AppProfileAvatar(url: actorAvatar ?? '', size: 40),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -83,7 +102,7 @@ class CheersActivityCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              activity.actorName,
+                              actorName,
                               style: typography.bodyL.copyWith(
                                 color: colors.ink,
                                 fontWeight: FontWeight.w700,
@@ -99,20 +118,22 @@ class CheersActivityCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          activity.activityDescription,
+                          activity.targetDescription,
                           style: typography.body.copyWith(
                             color: colors.ink2,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          activity.bookTitle,
-                          style: typography.caption.copyWith(
-                            color: colors.slate,
-                            fontWeight: FontWeight.w600,
+                        if (activity.bookCircleTitle?.isNotEmpty == true) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            activity.bookCircleTitle!,
+                            style: typography.caption.copyWith(
+                              color: colors.slate,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -123,12 +144,23 @@ class CheersActivityCard extends StatelessWidget {
                 if (hasReactions)
                   _ReactionsRow(
                     activity: activity,
-                    onReactionTap: onReactionTap,
-                    onTap: onTap,
-                    isMine: isMine,
+                    onReactionTap: (gesture) =>
+                        onReactionTap(gesture, actorName),
+                    onTap: () => onTap(
+                      actorName,
+                      actorAvatar,
+                      activity.bookCircleTitle ?? '',
+                    ),
+                    isMine: activity.isMine,
                   )
-                else if (!isMine)
-                  _EmptyReactions(onTap: onTap),
+                else if (!activity.isMine)
+                  _EmptyReactions(
+                    onTap: () => onTap(
+                      actorName,
+                      actorAvatar,
+                      activity.bookCircleTitle ?? '',
+                    ),
+                  ),
               ],
             ],
           ),
