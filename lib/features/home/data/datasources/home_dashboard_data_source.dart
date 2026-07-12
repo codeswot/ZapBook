@@ -42,12 +42,13 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
       _stats.watchStats(),
       _changeController.stream.startWith(null),
       (circles, statsRecord, _) async {
-        final npub = await _identityLocal.readNpub();
         final stats = HomeDashboardStats(
-          dayStreak: statsRecord?.streak ?? 0,
+          dayStreak: statsRecord?.effectiveStreak ?? 0,
           satsEarned: statsRecord?.satsEarned ?? 0,
           booksRead: statsRecord?.booksRead ?? 0,
         );
+
+        final npub = await _identityLocal.readNpub();
 
         CircleBook? lastOpened;
 

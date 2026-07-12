@@ -21,6 +21,21 @@ class ReadingStatsRecord {
     required this.updatedAt,
   });
 
+  int get effectiveStreak {
+    if (lastActivityDate == null) return 0;
+    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+    final yesterday = DateTime.now()
+        .toUtc()
+        .subtract(const Duration(days: 1))
+        .toIso8601String()
+        .substring(0, 10);
+
+    if (lastActivityDate == today || lastActivityDate == yesterday) {
+      return streak;
+    }
+    return 0;
+  }
+
   factory ReadingStatsRecord.fromRow(Map<String, dynamic> row) {
     return ReadingStatsRecord(
       pubKey: row['pub_key'] as String,

@@ -53,7 +53,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           : fallbackAvatar,
       lightningAddress: metadata?.lud16 ?? '',
       satsEarned: statsRecord?.satsEarned ?? 0,
-      dayStreak: statsRecord?.streak ?? 0,
+      dayStreak: statsRecord?.effectiveStreak ?? 0,
       booksRead: statsRecord?.booksRead ?? 0,
       milestones: await _stats.getMilestones(),
     );
