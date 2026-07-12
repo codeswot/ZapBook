@@ -140,10 +140,6 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     }
   }
 
-  Future<void> shareBook(CircleBook book, String memberNpub) async {
-    // Stub
-  }
-
   Future<bool> isAdminOf(CircleBook book) async {
     final myNpub = await _identityLocal.readNpub();
     if (myNpub == null) return false;

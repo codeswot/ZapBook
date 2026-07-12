@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 
@@ -18,7 +19,10 @@ class MockSigner extends Mock implements Bip340EventSigner {}
 
 class MockNostrCacheStore extends Mock implements NostrCacheStore {}
 
-class MockMilestoneService extends Mock implements MilestoneService {}
+class MockIdentityLocalDataSource extends Mock
+    implements IdentityLocalDataSource {}
+
+class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 class MockZapEarningsService extends Mock implements ZapEarningsService {}
 
@@ -33,7 +37,8 @@ void main() {
   late MockSigner mockSigner;
 
   late MockNostrCacheStore mockCache;
-  late MockMilestoneService mockMilestoneService;
+  late MockIdentityLocalDataSource mockIdentity;
+  late MockCircleProgressDao mockProgressDao;
   late MockZapEarningsService mockEarnings;
   late ReadingStatsService service;
 
@@ -51,7 +56,8 @@ void main() {
     when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
 
     mockCache = MockNostrCacheStore();
-    mockMilestoneService = MockMilestoneService();
+    mockIdentity = MockIdentityLocalDataSource();
+    mockProgressDao = MockCircleProgressDao();
     mockEarnings = MockZapEarningsService();
 
     // Default earnings stubs
@@ -59,16 +65,20 @@ void main() {
     when(() => mockEarnings.earnedForCircle(any())).thenReturn(50);
     when(() => mockEarnings.start()).thenAnswer((_) async {});
 
-    // Default milestone stubs
-    when(() => mockMilestoneService.completedBooksCount).thenReturn(5);
-    when(() => mockMilestoneService.myMilestonesCount).thenReturn(10);
-    when(() => mockMilestoneService.allMilestoneDates).thenReturn({});
-    when(() => mockMilestoneService.syncAll()).thenAnswer((_) async {});
+    // Default progress stubs
+    when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'pubkey1');
+    when(
+      () => mockProgressDao.countCompletedBooks(any()),
+    ).thenAnswer((_) async => 5);
+    when(
+      () => mockProgressDao.sumMilestonesReached(any()),
+    ).thenAnswer((_) async => 10);
 
     service = ReadingStatsService(
       mockNdk,
       mockCache,
-      mockMilestoneService,
+      mockProgressDao,
+      mockIdentity,
       mockEarnings,
     );
   });
@@ -85,7 +95,8 @@ void main() {
       .toIso8601String()
       .substring(0, 10);
 
-  test('properties return values from dependencies', () {
+  test('properties return values from dependencies', () async {
+    await service.syncBookStats();
     expect(service.booksRead, 5);
     expect(service.milestones, 10);
     expect(service.satsEarned, 100);
@@ -93,39 +104,38 @@ void main() {
     expect(service.satsEarnedListenable, isA<ValueNotifier<int>>());
   });
 
-  test('syncBookStats delegates to MilestoneService', () async {
+  test('syncBookStats fetches from dao', () async {
     await service.syncBookStats();
-    verify(() => mockMilestoneService.syncAll()).called(1);
-  });
-
-  test('streak calculates correctly from milestone dates', () {
-    expect(service.streak, 0);
-
-    when(
-      () => mockMilestoneService.allMilestoneDates,
-    ).thenReturn({dayBeforeYesterday(), yesterday(), today()});
-
-    expect(service.streak, 3);
+    verify(() => mockProgressDao.countCompletedBooks(any())).called(1);
+    verify(() => mockProgressDao.sumMilestonesReached(any())).called(1);
   });
 
   test(
-    'streak does not reset if today is missing but yesterday is present',
-    () {
+    'streak calculates correctly from milestone dates after recording',
+    () async {
+      expect(service.streak, 0);
+      when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
       when(
-        () => mockMilestoneService.allMilestoneDates,
-      ).thenReturn({dayBeforeYesterday(), yesterday()});
+        () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
+      ).thenReturn([
+        Nip01Event(
+          pubKey: 'pubkey1',
+          kind: 30078,
+          tags: [
+            ['d', 'zapbook:stats:raw'],
+          ],
+          content: jsonEncode({
+            'last_publish_date': dayBeforeYesterday(),
+            'milestone_dates': [dayBeforeYesterday(), yesterday(), today()],
+          }),
+          createdAt: 1000,
+        ),
+      ]);
 
-      expect(service.streak, 2);
+      await service.load();
+      expect(service.streak, 3);
     },
   );
-
-  test('streak is 0 if last date is older than yesterday', () {
-    when(
-      () => mockMilestoneService.allMilestoneDates,
-    ).thenReturn({dayBeforeYesterday()});
-
-    expect(service.streak, 0);
-  });
 
   test('load parses raw cache event and starts earnings', () async {
     when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');

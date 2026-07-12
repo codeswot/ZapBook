@@ -186,7 +186,6 @@ void main() {
           author: 'Bg Author',
         );
 
-        // Give event loop time to process unawaited future
         await Future.delayed(Duration.zero);
 
         verify(

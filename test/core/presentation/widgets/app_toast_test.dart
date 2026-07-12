@@ -165,7 +165,6 @@ void main() {
 
       expect(find.text('Overlay message'), findsOneWidget);
 
-      // Tap to dismiss
       await tester.tap(find.byIcon(LucideIcons.x));
       await tester.pumpAndSettle();
 

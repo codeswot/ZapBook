@@ -31,12 +31,13 @@ class BlossomService {
     for (final server in servers) {
       try {
         final url = '$server/upload';
-        final request = http.MultipartRequest('PUT', Uri.parse(url));
+        final request = http.Request('PUT', Uri.parse(url));
+        request.bodyBytes = bytes;
 
         if (account != null && account.signer.canSign()) {
           final payloadHash = sha256.convert(bytes).toString();
           final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-          final expiration = now + 600; // 10 minutes
+          final expiration = now + 600;
 
           final authEvent = Nip01Event(
             pubKey: account.pubkey,

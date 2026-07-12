@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart';
+import 'package:zapbook/features/home/domain/usecases/touch_dashboard_book_opened.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
@@ -13,7 +14,11 @@ class MockReadingProgressRepository extends Mock
 
 class MockMilestoneService extends Mock implements MilestoneService {}
 
-class MockQuizService extends Mock implements QuizService {}
+class MockWatchMyReadingProgressUseCase extends Mock
+    implements WatchMyReadingProgressUseCase {}
+
+class MockTouchDashboardBookOpened extends Mock
+    implements TouchDashboardBookOpened {}
 
 class MockReadingStatsService extends Mock implements ReadingStatsService {}
 
@@ -38,7 +43,8 @@ ZbfBookHandle _handle() {
 void main() {
   late MockReadingProgressRepository mockRepo;
   late MockMilestoneService mockMilestone;
-  late MockQuizService mockQuiz;
+  late MockWatchMyReadingProgressUseCase mockWatchProgress;
+  late MockTouchDashboardBookOpened mockTouchOpened;
   late MockReadingStatsService mockStats;
 
   setUpAll(() {
@@ -48,10 +54,12 @@ void main() {
   setUp(() {
     mockRepo = MockReadingProgressRepository();
     mockMilestone = MockMilestoneService();
-    mockQuiz = MockQuizService();
+    mockWatchProgress = MockWatchMyReadingProgressUseCase();
+    mockTouchOpened = MockTouchDashboardBookOpened();
     mockStats = MockReadingStatsService();
 
-    when(() => mockQuiz.onCompleted).thenAnswer((_) => const Stream.empty());
+    when(() => mockTouchOpened(any())).thenAnswer((_) async {});
+
     when(
       () => mockRepo.saveSnapshot(
         any(),
@@ -62,8 +70,18 @@ void main() {
   });
 
   ReadingProgressCubit buildCubit() {
-    return ReadingProgressCubit(mockRepo, mockMilestone, mockQuiz, mockStats)
-      ..open(_handle(), circleBookId: 'test_book', clock: () => 100000);
+    return ReadingProgressCubit(
+      mockRepo,
+      mockWatchProgress,
+      mockMilestone,
+      mockStats,
+      mockTouchOpened,
+    )..open(
+      _handle(),
+      circleDirId: 'test_book',
+      groupId: 'test_group',
+      clock: () => 100000,
+    );
   }
 
   group('ReadingProgressCubit', () {

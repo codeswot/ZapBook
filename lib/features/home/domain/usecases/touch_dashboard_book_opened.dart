@@ -2,7 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:zapbook/features/home/domain/repositories/home_dashboard_repository.dart';
 
 @injectable
-final class TouchDashboardBookOpened {
+class TouchDashboardBookOpened {
   const TouchDashboardBookOpened(this._repository);
 
   final HomeDashboardRepository _repository;
