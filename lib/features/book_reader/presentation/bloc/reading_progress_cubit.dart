@@ -1,142 +1,72 @@
 import 'dart:async';
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 import 'package:reading_progress/reading_progress.dart';
+import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart';
+import 'package:zapbook/core/domain/entities/reading_progress.dart';
 
-import 'package:zapbook/core/services/density_service.dart';
 import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/core/services/quiz_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
-import 'package:zapbook/features/book_reader/data/book_density_mapper.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
+import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
+import 'package:zapbook/features/book_reader/domain/reading_engine.dart';
 import 'package:zapbook/zbf/zbf.dart';
-import 'package:zapbook/core/domain/quiz_models.dart';
 
-int _systemClock() => DateTime.now().millisecondsSinceEpoch;
-
-ProgressConfig _configFor(int totalWords, BookSourceFormat format) {
-  final isEpub = format == BookSourceFormat.epub;
-  if (totalWords >= 900) {
-    if (isEpub) {
-      return const ProgressConfig(
-        k: 0.15,
-        skimRatio: 1.0,
-        skimVelocity: 999999.0,
-      );
-    }
-    return const ProgressConfig();
-  }
-  final unit = (totalWords / 3).ceil().clamp(1, 300);
-  if (isEpub) {
-    return ProgressConfig(
-      wordUnitSize: unit,
-      milestoneThresholdUnits: 1,
-      k: 0.15,
-      skimRatio: 1.0,
-      skimVelocity: 999999.0,
-    );
-  }
-  return ProgressConfig(wordUnitSize: unit, milestoneThresholdUnits: 1);
-}
+part 'reading_progress_state.dart';
 
 const defaultHeartbeat = Duration(seconds: 10);
 
-class ReadingProgressCubit extends Cubit<ReadingState> {
-  factory ReadingProgressCubit.forBook(
-    ZbfBookHandle handle, {
-    required String circleBookId,
-    int Function()? clock,
-    Duration heartbeat = defaultHeartbeat,
-    ReadingProgressRepository? repository,
-    DensityService? densityService,
-    MilestoneService? milestoneService,
-    QuizService? quizService,
-    ReadingStatsService? statsService,
-  }) {
-    final density = bookDensityFromHandle(handle);
-    final config = _configFor(density.totalWords, handle.manifest.sourceFormat);
-    return ReadingProgressCubit._(
-      deps: ReadingDeps(density: density, config: config),
-      circleBookId: circleBookId,
-      clock: clock,
-      heartbeat: heartbeat,
-      repository: repository,
-      milestoneService: milestoneService,
-      quizService: quizService,
-      statsService: statsService,
-      handle: handle,
-    );
-  }
+@injectable
+class ReadingProgressCubit extends Cubit<ReadingProgressState> {
+  ReadingProgressCubit(
+    this._localReadingProgressStore,
+    this._watchProgressUseCase,
+    this._milestoneService,
+    this._statsService,
+  ) : super(const ReadingProgressState());
 
-  factory ReadingProgressCubit.forDeps({
-    required ReadingDeps deps,
-    String circleBookId = '',
-    int Function()? clock,
-    Duration heartbeat = defaultHeartbeat,
-    ReadingProgressRepository? repository,
-  }) {
-    return ReadingProgressCubit._(
-      deps: deps,
-      circleBookId: circleBookId,
-      clock: clock,
-      heartbeat: heartbeat,
-      repository: repository,
-    );
-  }
+  final ReadingProgressLocalStore _localReadingProgressStore;
+  final WatchMyReadingProgressUseCase _watchProgressUseCase;
+  final MilestoneService _milestoneService;
+  final ReadingStatsService _statsService;
 
-  ReadingProgressCubit._({
-    required ReadingDeps deps,
-    required this.circleBookId,
-    int Function()? clock,
-    this.heartbeat = defaultHeartbeat,
-    this.repository,
-    this.milestoneService,
-    this.quizService,
-    this.statsService,
-    this._handle,
-  }) : _deps = deps,
-       _now = clock ?? _systemClock,
-       super(ReadingState.initial(deps)) {
-    _quizSub = quizService?.onCompleted.listen((result) {
-      if (result.score == 1.0) {}
-    });
-  }
-
-  final ReadingDeps _deps;
-  final String circleBookId;
-  final int Function() _now;
-  final Duration heartbeat;
-  final ReadingProgressRepository? repository;
-  final MilestoneService? milestoneService;
-  final QuizService? quizService;
-  final ReadingStatsService? statsService;
-  final ZbfBookHandle? _handle;
-
-  int get totalWords => _deps.density.totalWords;
-
-  double get wordProgress =>
-      totalWords > 0 ? (state.wordsRead / totalWords).clamp(0.0, 1.0) : 0;
-
-  final _effects = StreamController<ProgressEffect>.broadcast(sync: true);
-  Stream<ProgressEffect> get effects => _effects.stream;
-
+  late final ReadingEngine _engine;
+  late final String _circleDirId;
+  late final String _groupId;
+  Duration _heartbeat = defaultHeartbeat;
   Timer? _timer;
-  Timer? _saveTimer;
-  Timer? _scrollSaveTimer;
-  StreamSubscription<QuizResult>? _quizSub;
   bool _paused = false;
   bool _closed = false;
   bool _dirty = false;
   double? _lastScrollOffset;
-  final _publishedMilestones = <int>{};
+
+  int get totalWords => _engine.totalWords;
+  double get wordProgress => _engine.wordProgress;
+
+  Stream<ReadingProgress?> watchProgress() {
+    return _watchProgressUseCase(groupId: _groupId, bookId: _circleDirId);
+  }
+
+  void open(
+    ZbfBookHandle handle, {
+    required String circleDirId,
+    required String groupId,
+    int Function()? clock,
+    Duration heartbeat = defaultHeartbeat,
+  }) {
+    _circleDirId = circleDirId;
+    _groupId = groupId;
+    _heartbeat = heartbeat;
+    _engine = ReadingEngine.forBook(handle, clock: clock);
+    emit(_project());
+  }
 
   Future<({int? page, double? scrollOffset})> restore() async {
-    final repo = repository;
-    if (repo == null) return (page: null, scrollOffset: null);
-    final saved = await repo.loadSnapshot(circleBookId);
+    final saved = await _localReadingProgressStore.loadSnapshot(_circleDirId);
     if (saved == null) return (page: null, scrollOffset: null);
-    emit(
-      state.copyWith(
+    _engine.seed(
+      _engine.state.copyWith(
         wpm: saved.state.wpm,
         completedPages: saved.state.completedPages,
         visitedPages: saved.state.visitedPages,
@@ -146,61 +76,45 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
         milestonesReached: saved.state.milestonesReached,
       ),
     );
-    for (var i = 0; i < saved.state.milestonesReached; i++) {
-      _publishedMilestones.add(i);
-    }
+    emit(_project());
     return (page: saved.state.currentPage, scrollOffset: saved.scrollOffset);
   }
 
   void start({int initialPage = 0}) {
-    _dispatch(PageOpened(page: initialPage, atMs: _now()));
-    milestoneService?.updateProgress(
-      circleBookId: circleBookId,
-      currentPage: initialPage,
-      currentWordCount: state.wordsRead,
-      totalWords: totalWords,
-      fraction: wordProgress,
-    );
-    _timer ??= Timer.periodic(heartbeat, (_) => tick());
+    if (_closed) return;
+    _run(_engine.openPage(initialPage));
+    _report();
+    _timer ??= Timer.periodic(_heartbeat, (_) => tick());
   }
 
   void openPage(int page) {
-    _dispatch(PageOpened(page: page, atMs: _now()));
-    milestoneService?.updateProgress(
-      circleBookId: circleBookId,
-      currentPage: page,
-      currentWordCount: state.wordsRead,
-      totalWords: totalWords,
-      fraction: wordProgress,
-    );
+    if (_closed) return;
+    _run(_engine.openPage(page));
+    _report();
     _dirty = true;
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(seconds: 5), () {
-      _save();
-    });
   }
 
-  void tap() => _dispatch(Interaction(kind: InteractionKind.tap, atMs: _now()));
+  void tap() {
+    if (_closed) return;
+    _run(_engine.tap());
+  }
 
-  void scroll({double velocity = 0}) => _dispatch(
-    Interaction(
-      kind: InteractionKind.scroll,
-      atMs: _now(),
-      scrollVelocity: velocity,
-    ),
-  );
+  void scroll({double velocity = 0}) {
+    if (_closed) return;
+    _run(_engine.scroll(velocity: velocity));
+  }
 
   void tick() {
-    if (_paused) return;
-    _dispatch(Tick(atMs: _now()));
+    if (_paused || _closed) return;
+    _run(_engine.tick());
+    if (_dirty) _save();
   }
 
   void pause() {
     if (_paused) return;
     _paused = true;
-    _dispatch(AppBackgrounded(atMs: _now()));
+    if (!_closed) _run(_engine.background());
     _save();
-    quizService?.onPause();
   }
 
   void resume() => _paused = false;
@@ -210,104 +124,78 @@ class ReadingProgressCubit extends Cubit<ReadingState> {
     _closed = true;
     _timer?.cancel();
     _timer = null;
-    _scrollSaveTimer?.cancel();
-    _scrollSaveTimer = null;
-    final page = state.currentPage;
+    final page = _engine.state.currentPage;
     if (page != null) {
-      _dispatch(
-        PageExited(page: page, direction: ExitDirection.forward, atMs: _now()),
-      );
+      _run(_engine.exitPage(page, ExitDirection.forward));
     }
-    milestoneService?.flushProgress(circleBookId);
+    _milestoneService.closeBook(_circleDirId);
     _save();
-    quizService?.onPause();
   }
 
-  void _dispatch(ReadingEvent event) {
-    if (_closed && event is! PageExited) return;
-    final out = reduce(state, event, _deps);
-    emit(out.state);
-    for (final effect in out.effects) {
+  void _run(List<ProgressEffect> effects) {
+    emit(_project());
+    _handleEffects(effects);
+  }
+
+  ReadingProgressState _project() => ReadingProgressState(
+    fraction: _engine.wordProgress,
+    currentPage: _engine.state.currentPage ?? 0,
+    wordsRead: _engine.state.wordsRead,
+    bookCompleted: _engine.state.bookCompleted,
+  );
+
+  void _handleEffects(List<ProgressEffect> effects) {
+    for (final effect in effects) {
       _dirty = true;
-      _effects.add(effect);
+      if (effect is PageCompleted) {
+        _milestoneService.flushProgress(_circleDirId);
+      }
       if (effect is MilestoneReached) {
         _save();
-        _publishMilestone(effect);
-        _stashQuiz(effect);
-        statsService?.recordMilestone();
+        _report();
+        _statsService.recordMilestone();
       }
       if (effect is BookCompleted) {
         _save();
-        milestoneService?.recordBookCompleted(circleBookId);
-        unawaited(
-          milestoneService?.markCompleted(circleBookId, totalWords: totalWords),
-        );
-        unawaited(milestoneService?.publishBookCompleted(circleBookId));
+        _report();
       }
     }
   }
 
-  void _publishMilestone(MilestoneReached effect) {
-    if (_publishedMilestones.contains(effect.index)) return;
-    _publishedMilestones.add(effect.index);
-    milestoneService?.publishMilestone(
-      circleBookId: circleBookId,
-      milestoneIdx: effect.index,
-      currentWordCount: effect.wordsRead,
-      totalWordCount: totalWords,
-      progressPct: totalWords > 0 ? (effect.wordsRead / totalWords) * 100 : 0,
-      currentPage: state.currentPage ?? 0,
-      sessionEngagedMs: state.sessionEngagedMs,
+  void _report() {
+    _milestoneService.reportProgress(
+      circleDirId: _circleDirId,
+      groupId: _groupId,
+      currentPage: _engine.state.currentPage ?? 0,
+      currentWordCount: _engine.state.wordsRead,
+      totalWords: totalWords,
+      fraction: wordProgress,
+      milestonesReached: _engine.state.milestonesReached,
+      bookCompleted: _engine.state.bookCompleted,
     );
-  }
-
-  void _stashQuiz(MilestoneReached effect) {
-    final qs = quizService;
-    if (qs == null) return;
-    final handle = _handle;
-    if (handle == null) return;
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_closed) return;
-      final text = extractMilestoneText(handle, _deps.density, effect.index);
-      qs.stashMilestone(
-        effect.index,
-        effect.wordsRead,
-        state.pointsBanked,
-        text,
-      );
-    });
   }
 
   void saveScrollOffset(double offset) {
     _lastScrollOffset = offset;
     _dirty = true;
-    _scrollSaveTimer?.cancel();
-    _scrollSaveTimer = Timer(const Duration(seconds: 10), () {
-      _save();
-    });
   }
 
   void _save() {
-    final repo = repository;
-    if (repo == null || !_dirty) return;
+    if (!_dirty) return;
     _dirty = false;
     unawaited(
-      repo.saveSnapshot(circleBookId, state, scrollOffset: _lastScrollOffset),
+      _localReadingProgressStore.saveSnapshot(
+        _circleDirId,
+        _engine.state,
+        scrollOffset: _lastScrollOffset,
+      ),
     );
   }
 
   @override
   Future<void> close() {
     _timer?.cancel();
-    _saveTimer?.cancel();
-    _scrollSaveTimer?.cancel();
-    _quizSub?.cancel();
     _timer = null;
-    _saveTimer = null;
-    _scrollSaveTimer = null;
-    _quizSub = null;
-    _effects.close();
     return super.close();
   }
 }

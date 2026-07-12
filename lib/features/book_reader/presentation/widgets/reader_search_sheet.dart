@@ -16,17 +16,17 @@ final _log = Logger('ReaderSearchSheet');
 
 class ReaderSearchSheet extends StatefulWidget {
   const ReaderSearchSheet({
-    required this.circleBookId,
+    required this.circleDirId,
     required this.onSelect,
     super.key,
   });
 
-  final String circleBookId;
+  final String circleDirId;
   final void Function(int page, String query) onSelect;
 
   static Future<void> show(
     BuildContext context, {
-    required String circleBookId,
+    required String circleDirId,
     required void Function(int page, String query) onSelect,
   }) {
     return showModalBottomSheet(
@@ -35,7 +35,7 @@ class ReaderSearchSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: context.colors.transparent,
       builder: (_) =>
-          ReaderSearchSheet(circleBookId: circleBookId, onSelect: onSelect),
+          ReaderSearchSheet(circleDirId: circleDirId, onSelect: onSelect),
     );
   }
 
@@ -75,7 +75,7 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
   Future<void> _run(String q) async {
     final keyword = await _keyword.search(
       q,
-      circleBookId: widget.circleBookId,
+      circleDirId: widget.circleDirId,
       limit: 30,
     );
     final seen = {for (final h in keyword) h.pageNumber};
@@ -83,14 +83,14 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
     try {
       final semantic = await _vectors.search(
         q,
-        circleBookId: widget.circleBookId,
+        circleDirId: widget.circleDirId,
         limit: 30,
       );
       for (final hit in semantic) {
         if (seen.add(hit.pageNumber)) {
           blended.add(
             BookSearchHit(
-              circleBookId: hit.circleBookId,
+              circleDirId: hit.circleDirId,
               pageNumber: hit.pageNumber,
               chapterTitle: '',
               snippet: hit.text,

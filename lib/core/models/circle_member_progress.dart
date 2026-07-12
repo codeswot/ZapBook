@@ -8,6 +8,8 @@ class CircleMemberProgress extends Equatable {
   final int pageIndex;
   final double progressPercentage;
   final int updatedAt;
+  final int milestonesReached;
+  final bool completed;
 
   const CircleMemberProgress({
     required this.groupId,
@@ -16,6 +18,8 @@ class CircleMemberProgress extends Equatable {
     required this.pageIndex,
     required this.progressPercentage,
     required this.updatedAt,
+    this.milestonesReached = 0,
+    this.completed = false,
   });
 
   factory CircleMemberProgress.fromAppMessage(BookProgressMessage msg) {
@@ -26,6 +30,8 @@ class CircleMemberProgress extends Equatable {
       pageIndex: msg.payload['currentPage'] as int? ?? 0,
       progressPercentage: (msg.payload['fraction'] as num?)?.toDouble() ?? 0.0,
       updatedAt: msg.timestampSecs,
+      milestonesReached: (msg.payload['milestonesReached'] as num?)?.toInt() ?? 0,
+      completed: msg.payload['bookCompleted'] as bool? ?? false,
     );
   }
 
@@ -37,6 +43,8 @@ class CircleMemberProgress extends Equatable {
       pageIndex: row['page_index'] as int,
       progressPercentage: (row['progress_percentage'] as num).toDouble(),
       updatedAt: row['updated_at'] as int,
+      milestonesReached: (row['milestones_reached'] as num?)?.toInt() ?? 0,
+      completed: ((row['completed'] as num?)?.toInt() ?? 0) == 1,
     );
   }
 
@@ -48,5 +56,7 @@ class CircleMemberProgress extends Equatable {
     pageIndex,
     progressPercentage,
     updatedAt,
+    milestonesReached,
+    completed,
   ];
 }

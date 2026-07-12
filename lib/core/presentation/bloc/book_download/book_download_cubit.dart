@@ -13,8 +13,8 @@ class BookDownloadCubit extends Cubit<BookDownloadState> {
     _progressSub = _shareService.onBookDownloadProgress.listen((event) {
       if (isClosed) return;
       final newProgress = Map<String, int>.from(state.downloadProgress);
-      newProgress[event.circleBookId] =
-          (newProgress[event.circleBookId] ?? 0) + 1;
+      newProgress[event.circleDirId] =
+          (newProgress[event.circleDirId] ?? 0) + 1;
       emit(state.copyWith(downloadProgress: newProgress));
     });
   }

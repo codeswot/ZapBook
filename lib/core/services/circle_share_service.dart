@@ -13,8 +13,8 @@ import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 class BookDownloadProgress {
-  final String circleBookId;
-  const BookDownloadProgress(this.circleBookId);
+  final String circleDirId;
+  const BookDownloadProgress(this.circleDirId);
 }
 
 @lazySingleton

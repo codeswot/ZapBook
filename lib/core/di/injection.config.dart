@@ -22,11 +22,15 @@ import 'package:zapbook/core/data/cache/nostr_cache_store.dart' as _i68;
 import 'package:zapbook/core/data/dao/cheers_dao.dart' as _i826;
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart' as _i107;
 import 'package:zapbook/core/data/dao/page_dao.dart' as _i50;
+import 'package:zapbook/core/data/datasources/circle_progress_data_source.dart'
+    as _i220;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart'
     as _i342;
 import 'package:zapbook/core/data/documents_directory.dart' as _i240;
 import 'package:zapbook/core/data/library_file_store.dart' as _i854;
+import 'package:zapbook/core/data/repositories/circle_progress_repository.dart'
+    as _i59;
 import 'package:zapbook/core/data/search/book_search_index.dart' as _i525;
 import 'package:zapbook/core/data/search/book_vector_index.dart' as _i491;
 import 'package:zapbook/core/data/search/embedding_service.dart' as _i18;
@@ -40,6 +44,8 @@ import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart'
     as _i665;
+import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart'
+    as _i35;
 import 'package:zapbook/core/domain/wizard_data.dart' as _i230;
 import 'package:zapbook/core/identity/identity_local_data_source.dart' as _i603;
 import 'package:zapbook/core/identity/identity_repository.dart' as _i63;
@@ -101,14 +107,16 @@ import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orch
     as _i1043;
 import 'package:zapbook/features/book_reader/data/quiz_repository.dart'
     as _i246;
-import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart'
-    as _i898;
+import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart'
+    as _i603;
 import 'package:zapbook/features/book_reader/data/recognition_quiz_builder.dart'
     as _i974;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_init_cubit.dart'
     as _i227;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
     as _i58;
+import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart'
+    as _i362;
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart'
     as _i64;
 import 'package:zapbook/features/cheers/data/repositories/cheers_repository_impl.dart'
@@ -269,6 +277,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i123.SecureStorageService>()),
     );
+    gh.lazySingleton<_i220.CircleProgressDataSource>(
+      () => _i220.CircleProgressDataSourceImpl(gh<_i107.CircleProgressDao>()),
+    );
     gh.factory<_i227.ReaderInitCubit>(
       () => _i227.ReaderInitCubit(gh<_i138.ZbfReader>()),
     );
@@ -304,19 +315,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i246.QuizRepository>(
       () => _i246.QuizRepository(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
     );
-    gh.lazySingleton<_i898.ReadingProgressRepository>(
-      () => _i898.ReadingProgressRepository(
-        gh<_i857.Ndk>(),
-        gh<_i68.NostrCacheStore>(),
-      ),
-    );
-    gh.lazySingleton<_i31.MilestoneService>(
-      () => _i31.MilestoneService(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i118.DecodedMessageCache>(),
-      ),
+    gh.lazySingleton<_i59.CircleProgressRepository>(
+      () => _i59.CircleProgressRepository(gh<_i220.CircleProgressDataSource>()),
     );
     gh.lazySingleton<_i718.ZapNudgeService>(
       () => _i718.ZapNudgeService(
@@ -390,6 +390,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
     );
+    gh.lazySingleton<_i603.ReadingProgressLocalStore>(
+      () => _i603.ReadingProgressLocalStore(
+        gh<_i460.SharedPreferences>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i455.CircleShareService>(
       () => _i455.CircleShareService(
         gh<_i970.Marmot>(),
@@ -398,16 +404,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i394.GroupEnvelopeService>(),
       ),
     );
-    gh.lazySingleton<_i182.ReadingStatsService>(
-      () => _i182.ReadingStatsService(
-        gh<_i857.Ndk>(),
-        gh<_i68.NostrCacheStore>(),
-        gh<_i31.MilestoneService>(),
-        gh<_i240.ZapEarningsService>(),
-      ),
-    );
     gh.lazySingleton<_i11.NostrService>(
       () => _i11.NostrService(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
+    );
+    gh.factory<_i35.WatchMyReadingProgressUseCase>(
+      () => _i35.WatchMyReadingProgressUseCase(
+        gh<_i59.CircleProgressRepository>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
     );
     gh.lazySingleton<_i362.ZapService>(
       () => _i362.ZapService(
@@ -448,11 +452,29 @@ extension GetItInjectableX on _i174.GetIt {
         writer: gh<_i1.ZbfWriter>(),
       ),
     );
+    gh.lazySingleton<_i182.ReadingStatsService>(
+      () => _i182.ReadingStatsService(
+        gh<_i857.Ndk>(),
+        gh<_i68.NostrCacheStore>(),
+        gh<_i107.CircleProgressDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i240.ZapEarningsService>(),
+      ),
+    );
     gh.factory<_i341.CompleteOnboarding>(
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
         gh<_i377.OnboardingRepository>(),
         gh<_i803.SessionReloader>(),
+      ),
+    );
+    gh.lazySingleton<_i31.MilestoneService>(
+      () => _i31.MilestoneService(
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i394.GroupEnvelopeService>(),
+        gh<_i107.CircleProgressDao>(),
+        gh<_i826.CheersDao>(),
       ),
     );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
@@ -525,15 +547,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(gh<_i244.ContactService>()),
     );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i821.CircleStoreService>(),
-      ),
-    );
     gh.lazySingleton<_i64.CheersDataSource>(
       () => _i64.CheersDataSourceImpl(
         gh<_i821.CircleStoreService>(),
@@ -556,11 +569,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i63.IdentityRepository>(),
         gh<_i735.ProfileRemoteDataSource>(),
         gh<_i803.SessionReloader>(),
-      ),
-    );
-    gh.lazySingleton<_i326.HomeDashboardRepository>(
-      () => _i139.HomeDashboardRepositoryImpl(
-        gh<_i265.HomeDashboardDataSource>(),
       ),
     );
     gh.factory<_i81.BookDownloadCubit>(
@@ -624,6 +632,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i244.ContactService>(),
       ),
     );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i821.CircleStoreService>(),
+        gh<_i107.CircleProgressDao>(),
+        gh<_i460.SharedPreferences>(),
+      ),
+    );
     gh.lazySingleton<_i1043.IngestionOrchestratorCubit>(
       () => _i1043.IngestionOrchestratorCubit(
         gh<_i379.BookIngestionRepository>(),
@@ -646,11 +663,10 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i582.ZapSupportService>(),
       ),
     );
-    gh.factory<_i899.TouchDashboardBookOpened>(
-      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
-    );
-    gh.factory<_i1021.WatchHomeDashboard>(
-      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
+    gh.lazySingleton<_i326.HomeDashboardRepository>(
+      () => _i139.HomeDashboardRepositoryImpl(
+        gh<_i265.HomeDashboardDataSource>(),
+      ),
     );
     gh.factory<_i636.SendCheersZap>(
       () => _i636.SendCheersZap(gh<_i314.CheersRepository>()),
@@ -674,16 +690,31 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i11.NostrService>(),
       ),
     );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
-      ),
+    gh.factory<_i899.TouchDashboardBookOpened>(
+      () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
+    );
+    gh.factory<_i1021.WatchHomeDashboard>(
+      () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
     );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(
         gh<_i1024.WatchCircleBooks>(),
         gh<_i16.WatchLastOpenedLibraryBook>(),
+      ),
+    );
+    gh.factory<_i362.ReadingProgressCubit>(
+      () => _i362.ReadingProgressCubit(
+        gh<_i603.ReadingProgressLocalStore>(),
+        gh<_i35.WatchMyReadingProgressUseCase>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i899.TouchDashboardBookOpened>(),
+      ),
+    );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     return this;

@@ -1,89 +1,51 @@
 import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
-import 'package:ndk/ndk.dart';
 import 'package:reading_progress/reading_progress.dart';
-import 'package:zapbook/core/config/zapbook_config.dart';
-
-import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 @lazySingleton
-class ReadingProgressRepository {
-  ReadingProgressRepository(this._ndk, this._cache);
+class ReadingProgressLocalStore {
+  ReadingProgressLocalStore(this._prefs, this._identity);
 
-  final Ndk _ndk;
-  final NostrCacheStore _cache;
+  final SharedPreferences _prefs;
+  final IdentityLocalDataSource _identity;
 
-  static const _kind = 30078;
+  String _key(String npub, String circleDirId) =>
+      'reading_progress_${npub}_$circleDirId';
 
   Future<void> saveSnapshot(
-    String circleBookId,
+    String circleDirId,
     ReadingState state, {
     double? scrollOffset,
   }) async {
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return;
-
-    final account = _ndk.accounts.getLoggedAccount();
-    if (account == null) return;
+    final npub = await _identity.readNpub();
+    if (npub == null) return;
 
     final json = _stateToJson(state);
     if (scrollOffset != null) {
       json['_scroll_offset'] = scrollOffset;
     }
-    final plaintext = jsonEncode(json);
-    final encrypted = await account.signer.encryptNip44(
-      plaintext: plaintext,
-      recipientPubKey: pubkey,
-    );
-    if (encrypted == null) return;
-
-    final event = Nip01Event(
-      pubKey: pubkey,
-      kind: _kind,
-      tags: [
-        ['d', circleBookId],
-      ],
-      content: encrypted,
-      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    );
-    await account.signer.sign(event);
-
-    _cache.saveEvent(event);
-
-    _ndk.broadcast.broadcast(
-      nostrEvent: event,
-      specificRelays: ZapbookConfig.broadcastRelays,
-    );
+    await _prefs.setString(_key(npub, circleDirId), jsonEncode(json));
   }
 
   Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(
-    String circleBookId,
+    String circleDirId,
   ) async {
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return null;
+    final npub = await _identity.readNpub();
+    if (npub == null) return null;
 
-    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_kind]);
+    final str = _prefs.getString(_key(npub, circleDirId));
+    if (str == null) return null;
 
-    final match = events.where((e) {
-      final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
-      return dTag.isNotEmpty && dTag.first[1] == circleBookId;
-    });
-
-    if (match.isEmpty) return null;
-
-    final account = _ndk.accounts.getLoggedAccount();
-    if (account == null) return null;
-
-    final plaintext = await account.signer.decryptNip44(
-      ciphertext: match.first.content,
-      senderPubKey: pubkey,
-    );
-    if (plaintext == null) return null;
-
-    final json = jsonDecode(plaintext) as Map<String, dynamic>;
-    final scrollOffset = (json['_scroll_offset'] as num?)?.toDouble();
-    return (state: _stateFromJson(json), scrollOffset: scrollOffset);
+    try {
+      final json = jsonDecode(str) as Map<String, dynamic>;
+      final scrollOffset = (json['_scroll_offset'] as num?)?.toDouble();
+      return (state: _stateFromJson(json), scrollOffset: scrollOffset);
+    } catch (_) {
+      return null;
+    }
   }
 
   Map<String, dynamic> _stateToJson(ReadingState state) => {

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/models/circle_member_progress.dart';
 
 final class CheersActivityMessage extends Equatable {
   const CheersActivityMessage({
@@ -24,6 +25,55 @@ final class CheersActivityMessage extends Equatable {
     this.zapRecipientNpub,
     this.bookTitle,
   });
+
+  static CheersActivityMessage? cheerFromProgress({
+    required String id,
+    required String actorNpub,
+    required String groupId,
+    required int timestampSecs,
+    CircleMemberProgress? previous,
+    required CircleMemberProgress next,
+    String? bookTitle,
+  }) {
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(
+      timestampSecs * 1000,
+    );
+    final prevCompleted = previous?.completed ?? false;
+    final prevMilestones = previous?.milestonesReached ?? 0;
+
+    if (next.completed && !prevCompleted) {
+      return CheersActivityMessage(
+        id: id,
+        actorNpub: actorNpub,
+        circleBookId: next.bookId,
+        groupId: groupId,
+        activityDescription: 'Finished the book',
+        timestamp: timestamp,
+        type: 'milestone',
+        isUnread: true,
+        bookTitle: bookTitle,
+      );
+    }
+
+    if (next.milestonesReached > prevMilestones) {
+      final pct = next.progressPercentage * 100;
+      final pctStr = pct > 0 ? ' (${pct.toStringAsFixed(1)}%)' : '';
+      return CheersActivityMessage(
+        id: id,
+        actorNpub: actorNpub,
+        circleBookId: next.bookId,
+        groupId: groupId,
+        activityDescription:
+            'Milestone ${next.milestonesReached}: page ${next.pageIndex}$pctStr',
+        timestamp: timestamp,
+        type: 'milestone',
+        isUnread: true,
+        bookTitle: bookTitle,
+      );
+    }
+
+    return null;
+  }
 
   static CheersActivityMessage? fromAppMessage(
     AppMessage msg, {
@@ -69,42 +119,6 @@ final class CheersActivityMessage extends Equatable {
         zapTargetId: msg.payload['targetId'] as String?,
         zapTargetDescription: msg.payload['targetDescription'] as String?,
         zapRecipientNpub: msg.payload['recipientNpub'] as String?,
-        bookTitle: bookTitle,
-      );
-    }
-
-    if (msg is MilestoneMessage) {
-      final milestoneIdx = msg.payload['milestone_idx'] as int? ?? 0;
-      final currentPage = msg.payload['current_page'] as int? ?? 0;
-      final progressPct =
-          (msg.payload['progress_pct'] as num?)?.toDouble() ?? 0.0;
-      final pctStr = progressPct > 0
-          ? ' (${progressPct.toStringAsFixed(1)}%)'
-          : '';
-      return CheersActivityMessage(
-        id: msg.id,
-        actorNpub: msg.senderNpub,
-        circleBookId: msg.payload['book_id'] as String?,
-        groupId: msg.groupId,
-        activityDescription:
-            'Milestone ${milestoneIdx + 1}: page $currentPage$pctStr',
-        timestamp: timestamp,
-        type: 'milestone',
-        isUnread: true,
-        bookTitle: bookTitle,
-      );
-    }
-
-    if (msg is BookCompletedMessage) {
-      return CheersActivityMessage(
-        id: msg.id,
-        actorNpub: msg.senderNpub,
-        circleBookId: msg.payload['book_id'] as String?,
-        groupId: msg.groupId,
-        activityDescription: 'Finished the book',
-        timestamp: timestamp,
-        type: 'milestone',
-        isUnread: true,
         bookTitle: bookTitle,
       );
     }

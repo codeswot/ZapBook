@@ -10,13 +10,13 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class BookSearchHit {
   const BookSearchHit({
-    required this.circleBookId,
+    required this.circleDirId,
     required this.pageNumber,
     required this.chapterTitle,
     required this.snippet,
   });
 
-  final String circleBookId;
+  final String circleDirId;
   final int pageNumber;
   final String chapterTitle;
   final String snippet;
@@ -177,13 +177,13 @@ class BookSearchIndex {
 
   Future<List<BookSearchHit>> search(
     String query, {
-    String? circleBookId,
+    String? circleDirId,
     int limit = 30,
   }) async {
     final match = _toMatchQuery(query);
     if (match == null) return const [];
     final db = await _open();
-    final filter = circleBookId == null ? '' : 'AND book_id = ?';
+    final filter = circleDirId == null ? '' : 'AND book_id = ?';
     try {
       final rows = db.select(
         '''
@@ -194,12 +194,12 @@ class BookSearchIndex {
         ORDER BY rank
         LIMIT ?
         ''',
-        [match, ?circleBookId, limit],
+        [match, ?circleDirId, limit],
       );
       return [
         for (final row in rows)
           BookSearchHit(
-            circleBookId: row['book_id'] as String,
+            circleDirId: row['book_id'] as String,
             pageNumber: (row['page_number'] as num).toInt(),
             chapterTitle: row['chapter_title'] as String? ?? '',
             snippet: row['excerpt'] as String? ?? '',

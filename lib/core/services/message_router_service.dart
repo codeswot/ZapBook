@@ -42,10 +42,25 @@ class MessageRouterService {
     try {
       switch (parsed) {
         case BookProgressMessage():
-          await _circleProgressDao.upsertProgress(
-            CircleMemberProgress.fromAppMessage(parsed),
+          final next = CircleMemberProgress.fromAppMessage(parsed);
+          final previous = await _circleProgressDao.getProgress(
+            groupId: next.groupId,
+            bookId: next.bookId,
+            pubKey: next.pubKey,
           );
-        case CheersMessage() || ZapSentMessage() || MilestoneMessage():
+          await _circleProgressDao.upsertProgress(next);
+          final cheer = CheersActivityMessage.cheerFromProgress(
+            id: parsed.id,
+            actorNpub: parsed.senderNpub,
+            groupId: parsed.groupId,
+            timestampSecs: parsed.timestampSecs,
+            previous: previous,
+            next: next,
+          );
+          if (cheer != null) {
+            await _cheersDao.saveActivity(cheer);
+          }
+        case CheersMessage() || ZapSentMessage():
           final activity = CheersActivityMessage.fromAppMessage(parsed);
           if (activity != null) {
             await _cheersDao.saveActivity(activity);

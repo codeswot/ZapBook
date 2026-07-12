@@ -4,8 +4,6 @@ import 'package:marmot_dart/marmot_dart.dart';
 abstract class AppMessageTypes {
   static const bookMeta = 'zapbook.book.meta';
   static const bookProgress = 'zapbook.book.progress';
-  static const bookMilestone = 'zapbook.book.milestone';
-  static const bookCompleted = 'zapbook.book.completed';
   static const cheer = 'zapbook.cheer';
   static const zapNudge = 'zapbook.zap.nudge';
   static const zapReady = 'zapbook.zap.ready';
@@ -36,10 +34,6 @@ sealed class AppMessage {
           return InitialBookMessage(message, decoded);
         case AppMessageTypes.bookProgress:
           return BookProgressMessage(message, decoded);
-        case AppMessageTypes.bookMilestone:
-          return MilestoneMessage(message, decoded);
-        case AppMessageTypes.bookCompleted:
-          return BookCompletedMessage(message, decoded);
         case AppMessageTypes.cheer:
           return CheersMessage(message, decoded);
         case AppMessageTypes.zapNudge:
@@ -67,12 +61,6 @@ class BookProgressMessage extends AppMessage {
   final Map<String, dynamic> payload;
 
   const BookProgressMessage(super.message, this.payload);
-}
-
-class MilestoneMessage extends AppMessage {
-  final Map<String, dynamic> payload;
-
-  const MilestoneMessage(super.message, this.payload);
 }
 
 class BookCompletedMessage extends AppMessage {

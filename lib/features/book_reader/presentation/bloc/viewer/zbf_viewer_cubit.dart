@@ -32,7 +32,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   Future<void> _initialize(int initialPage) async {
     _progressSub = _shareService.onBookDownloadProgress.listen((event) {
-      if (event.circleBookId == handle.manifest.id && !isClosed) {
+      if (event.circleDirId == handle.manifest.id && !isClosed) {
         _reconcilePrep();
         emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
       }

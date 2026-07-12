@@ -7,7 +7,8 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
@@ -15,12 +16,14 @@ class ReadingStatsService {
   ReadingStatsService(
     this._ndk,
     this._cache,
-    this._milestoneService,
+    this._progressDao,
+    this._identity,
     this._earnings,
   );
   final Ndk _ndk;
   final NostrCacheStore _cache;
-  final MilestoneService _milestoneService;
+  final CircleProgressDao _progressDao;
+  final IdentityLocalDataSource _identity;
   final ZapEarningsService _earnings;
 
   static const _statsKind = 30078;
@@ -30,22 +33,29 @@ class ReadingStatsService {
   final _milestoneDates = <String>{};
   String? _lastPublishDate;
   bool _loaded = false;
+  int _booksRead = 0;
+  int _milestones = 0;
 
-  int get booksRead => _milestoneService.completedBooksCount;
-  int get milestones => _milestoneService.myMilestonesCount;
+  int get booksRead => _booksRead;
+  int get milestones => _milestones;
   int get satsEarned => _earnings.totalEarned.value;
   int satsEarnedForCircle(String circleId) =>
       _earnings.earnedForCircle(circleId);
   ValueListenable<int> get satsEarnedListenable => _earnings.totalEarned;
 
-  Future<void> syncBookStats() => _milestoneService.syncAll();
+  Future<void> syncBookStats() async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return;
+    _booksRead = await _progressDao.countCompletedBooks(npub);
+    _milestones = await _progressDao.sumMilestonesReached(npub);
+  }
 
   int? _cachedStreak;
   int? _cachedStreakDatesLength;
   String? _cachedStreakToday;
 
   int get streak {
-    final dates = {..._milestoneService.allMilestoneDates, ..._milestoneDates};
+    final dates = _milestoneDates;
     if (dates.isEmpty) return 0;
 
     final today = _today();
@@ -121,6 +131,7 @@ class ReadingStatsService {
 
     _loaded = true;
 
+    unawaited(syncBookStats());
     unawaited(_earnings.start());
   }
 

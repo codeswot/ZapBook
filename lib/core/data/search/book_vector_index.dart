@@ -14,13 +14,13 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class SemanticHit {
   const SemanticHit({
-    required this.circleBookId,
+    required this.circleDirId,
     required this.pageNumber,
     required this.text,
     required this.score,
   });
 
-  final String circleBookId;
+  final String circleDirId;
   final int pageNumber;
   final String text;
   final double score;
@@ -272,7 +272,7 @@ class BookVectorIndex {
 
   Future<List<SemanticHit>> search(
     String query, {
-    String? circleBookId,
+    String? circleDirId,
     int limit = 10,
     double minScore = 0.35,
   }) async {
@@ -285,7 +285,7 @@ class BookVectorIndex {
       () => _scoreChunks(
         dbPath: dbPath,
         queryVector: queryVector,
-        circleBookId: circleBookId,
+        circleBookId: circleDirId,
         limit: limit,
         minScore: minScore,
       ),
@@ -374,7 +374,7 @@ class BookVectorIndex {
       return topHits.map((hit) {
         final r = rowIdToRow[hit.rowid]!;
         return SemanticHit(
-          circleBookId: r['book_id'] as String,
+          circleDirId: r['book_id'] as String,
           pageNumber: (r['page_number'] as num).toInt(),
           text: r['text'] as String,
           score: hit.score,

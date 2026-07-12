@@ -67,16 +67,43 @@ class AppDatabase {
         page_index INTEGER NOT NULL,
         progress_percentage REAL NOT NULL,
         updated_at INTEGER NOT NULL,
+        milestones_reached INTEGER NOT NULL DEFAULT 0,
+        completed INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (group_id, pub_key, book_id)
       )
     ''');
+    _addColumnIfMissing(
+      db,
+      'circle_member_progress',
+      'milestones_reached',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    _addColumnIfMissing(
+      db,
+      'circle_member_progress',
+      'completed',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
+  void _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String definition,
+  ) {
+    final info = db.select('PRAGMA table_info($table)');
+    final exists = info.any((row) => row['name'] == column);
+    if (!exists) {
+      db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+    }
   }
 
   void _createCheersFeedTable(Database db) {
     db.execute('''
       CREATE TABLE IF NOT EXISTS cheers_feed (
         id TEXT PRIMARY KEY,
-        actor_npub TEXT NOT NULL,
+        actor_npub TEXT NOT NULL,        
         book_id TEXT,
         activity_description TEXT NOT NULL,
         timestamp INTEGER NOT NULL,
@@ -96,6 +123,8 @@ class AppDatabase {
         group_id TEXT
       )
     ''');
+    _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
+
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_cheers_timestamp ON cheers_feed(timestamp DESC)',
     );
