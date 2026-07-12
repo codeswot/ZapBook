@@ -8,6 +8,7 @@ import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:ndk/ndk.dart';
 
 class MockMarmot extends Mock implements Marmot {}
@@ -21,6 +22,8 @@ class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 class MockCheersDao extends Mock implements CheersDao {}
 
+class MockReadingStatsService extends Mock implements ReadingStatsService {}
+
 class FakeNip01Event extends Fake implements Nip01Event {}
 
 class FakeCircleMemberProgress extends Fake implements CircleMemberProgress {}
@@ -32,6 +35,7 @@ void main() {
   late MockGroupEnvelopeService mockEnvelope;
   late MockCircleProgressDao mockProgressDao;
   late MockCheersDao mockCheersDao;
+  late MockReadingStatsService mockStats;
 
   setUpAll(() {
     registerFallbackValue(FakeNip01Event());
@@ -54,6 +58,7 @@ void main() {
     mockEnvelope = MockGroupEnvelopeService();
     mockProgressDao = MockCircleProgressDao();
     mockCheersDao = MockCheersDao();
+    mockStats = MockReadingStatsService();
 
     when(() => mockIdentity.readNpub()).thenAnswer(
       (_) async =>
@@ -70,6 +75,7 @@ void main() {
       () => mockProgressDao.upsertProgress(any()),
     ).thenAnswer((_) async => {});
     when(() => mockCheersDao.saveActivity(any())).thenAnswer((_) async => {});
+    when(() => mockStats.recordProgressMade(any())).thenAnswer((_) async => {});
     when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
       (_) async =>
           '{"pubkey": "a", "kind": 1, "tags": [], "content": "", "created_at": 0}',
@@ -82,6 +88,7 @@ void main() {
       mockEnvelope,
       mockProgressDao,
       mockCheersDao,
+      mockStats,
     );
   });
 

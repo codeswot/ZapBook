@@ -37,12 +37,17 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    return Rx.combineLatest2(
+    return Rx.combineLatest3(
       _circleStore.watchCircleBooks,
+      _stats.watchStats(),
       _changeController.stream.startWith(null),
-      (circles, _) async {
+      (circles, statsRecord, _) async {
         final npub = await _identityLocal.readNpub();
-        final stats = await _fetchStats();
+        final stats = HomeDashboardStats(
+          dayStreak: statsRecord?.streak ?? 0,
+          satsEarned: statsRecord?.satsEarned ?? 0,
+          booksRead: statsRecord?.booksRead ?? 0,
+        );
 
         CircleBook? lastOpened;
 
@@ -76,26 +81,21 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
         );
       }
 
-      return _progressDao.watchAllProgressByGroupId(lastOpened.id).map((
-        progressList,
-      ) {
-        double? progress;
-        int? page;
-        for (final p in progressList) {
-          if (p.pubKey == npub && p.bookId == lastOpened.circleDirId) {
-            progress = p.progressPercentage;
-            page = p.pageIndex;
-            break;
-          }
-        }
-        return HomeDashboard(
-          stats: stats,
-          circles: circles.toList(),
-          lastOpenedCircleBook: lastOpened,
-          lastOpenedProgress: progress,
-          lastOpenedPage: page,
-        );
-      });
+      return _progressDao
+          .watchMyProgress(
+            groupId: lastOpened.id,
+            bookId: lastOpened.circleDirId,
+            myNpub: npub,
+          )
+          .map((progress) {
+            return HomeDashboard(
+              stats: stats,
+              circles: circles.toList(),
+              lastOpenedCircleBook: lastOpened,
+              lastOpenedProgress: progress?.progressPercentage,
+              lastOpenedPage: progress?.pageIndex,
+            );
+          });
     });
   }
 
@@ -106,14 +106,5 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
     await _prefs.setString('last_opened_$npub', circleBookId);
     _changeController.add(null);
-  }
-
-  Future<HomeDashboardStats> _fetchStats() async {
-    await _stats.load();
-    return HomeDashboardStats(
-      dayStreak: _stats.streak,
-      satsEarned: _stats.satsEarned,
-      booksRead: _stats.booksRead,
-    );
   }
 }

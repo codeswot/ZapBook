@@ -1,238 +1,128 @@
 import 'dart:async';
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
-import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/config/zapbook_config.dart';
+import 'package:logging/logging.dart' as logging;
+import 'package:marmot_dart/marmot_dart.dart';
 
-import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
 class ReadingStatsService {
   ReadingStatsService(
-    this._ndk,
-    this._cache,
     this._progressDao,
+    this._statsDao,
     this._identity,
     this._earnings,
+    this._marmot,
+    this._envelope,
   );
-  final Ndk _ndk;
-  final NostrCacheStore _cache;
+
   final CircleProgressDao _progressDao;
+  final ReadingStatsDao _statsDao;
   final IdentityLocalDataSource _identity;
   final ZapEarningsService _earnings;
+  final Marmot _marmot;
+  final GroupEnvelopeService _envelope;
 
-  static const _statsKind = 30078;
-  static const _statsTag = 'zapbook:stats';
-  static const _rawTag = 'zapbook:stats:raw';
+  final _log = logging.Logger('ReadingStatsService');
 
-  final _milestoneDates = <String>{};
-  String? _lastPublishDate;
   bool _loaded = false;
-  int _booksRead = 0;
-  int _milestones = 0;
-
-  int get booksRead => _booksRead;
-  int get milestones => _milestones;
-  int get satsEarned => _earnings.totalEarned.value;
-  int satsEarnedForCircle(String circleId) =>
-      _earnings.earnedForCircle(circleId);
-  ValueListenable<int> get satsEarnedListenable => _earnings.totalEarned;
-
-  Future<void> syncBookStats() async {
-    final npub = await _identity.readNpub();
-    if (npub == null || npub.isEmpty) return;
-    _booksRead = await _progressDao.countCompletedBooks(npub);
-    _milestones = await _progressDao.sumMilestonesReached(npub);
-  }
-
-  int? _cachedStreak;
-  int? _cachedStreakDatesLength;
-  String? _cachedStreakToday;
-
-  int get streak {
-    final dates = _milestoneDates;
-    if (dates.isEmpty) return 0;
-
-    final today = _today();
-    if (_cachedStreak != null &&
-        _cachedStreakDatesLength == dates.length &&
-        _cachedStreakToday == today) {
-      return _cachedStreak!;
-    }
-
-    final sorted = dates.toList()..sort();
-    final yesterday = _dayOffset(-1);
-    final lastDate = sorted.last;
-
-    int count = 0;
-    if (lastDate == today || lastDate == yesterday) {
-      var expected = lastDate;
-      for (var i = sorted.length - 1; i >= 0; i--) {
-        if (sorted[i] == expected) {
-          count++;
-          expected = _dayBefore(expected);
-        } else {
-          break;
-        }
-      }
-    }
-
-    _cachedStreak = count;
-    _cachedStreakDatesLength = dates.length;
-    _cachedStreakToday = today;
-
-    return count;
-  }
 
   Future<void> load() async {
     if (_loaded) return;
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return;
-
-    final events = _cache.loadEvents(pubKeys: [pubkey], kinds: [_statsKind]);
-
-    Map<String, dynamic>? json;
-    for (final e in events) {
-      final dTag = e.tags.where((t) => t.length >= 2 && t[0] == 'd');
-      if (dTag.isEmpty) continue;
-      final tag = dTag.first[1];
-      if (tag == _rawTag) {
-        try {
-          json = jsonDecode(e.content) as Map<String, dynamic>;
-        } on Object {
-          continue;
-        }
-        break;
-      }
-      if (tag == _statsTag && json == null) {
-        final account = _ndk.accounts.getLoggedAccount();
-        if (account == null) continue;
-        final plaintext = await account.signer.decryptNip44(
-          ciphertext: e.content,
-          senderPubKey: pubkey,
-        );
-        if (plaintext != null) {
-          json = jsonDecode(plaintext) as Map<String, dynamic>;
-        }
-      }
-    }
-
-    if (json != null) {
-      _lastPublishDate = json['last_publish_date'] as String?;
-      _milestoneDates
-        ..clear()
-        ..addAll((json['milestone_dates'] as List?)?.cast<String>() ?? []);
-    }
-
     _loaded = true;
-
-    unawaited(syncBookStats());
     unawaited(_earnings.start());
   }
 
-  void _writeCache() {
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return;
-    final event = Nip01Event(
-      pubKey: pubkey,
-      kind: _statsKind,
-      tags: [
-        ['d', _rawTag],
-      ],
-      content: jsonEncode({
-        'last_publish_date': _lastPublishDate,
-        'milestone_dates': _milestoneDates.toList(),
-      }),
-      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    );
-    _cache.saveEvent(event);
+  Stream<ReadingStatsRecord?> watchStats() async* {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) {
+      yield null;
+      return;
+    }
+    yield* _statsDao.watchStats(npub);
   }
 
-  Future<void> _syncToRelays() async {
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return;
-    final account = _ndk.accounts.getLoggedAccount();
-    if (account == null) return;
-
-    final plaintext = jsonEncode({
-      'last_publish_date': _lastPublishDate,
-      'milestone_dates': _milestoneDates.toList(),
-    });
-    final encrypted = await account.signer.encryptNip44(
-      plaintext: plaintext,
-      recipientPubKey: pubkey,
-    );
-    if (encrypted == null) return;
-
-    final event = Nip01Event(
-      pubKey: pubkey,
-      kind: _statsKind,
-      tags: [
-        ['d', _statsTag],
-      ],
-      content: encrypted,
-      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    );
-    _cache.saveEvent(event);
-    _ndk.broadcast.broadcast(
-      nostrEvent: event,
-      specificRelays: ZapbookConfig.broadcastRelays,
-    );
+  Future<ReadingStatsRecord?> getStats() async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return null;
+    return _statsDao.getStats(npub);
   }
 
-  void recordMilestone() {
-    _milestoneDates.add(_today());
-    _writeCache();
-    unawaited(_syncToRelays());
+  Future<int> getMilestones() async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return 0;
+    return _progressDao.sumMilestonesReached(npub);
   }
 
-  Future<void> publishDailyHeartbeat() async {
+  Future<void> recordProgressMade(String groupId) async {
+    final npub = await _identity.readNpub();
+    if (npub == null || npub.isEmpty) return;
+
     final today = _today();
-    if (_lastPublishDate == today) return;
-    final pubkey = _ndk.accounts.getPublicKey();
-    if (pubkey == null) return;
+    final yesterday = _dayOffset(-1);
 
-    final content = jsonEncode({
-      'streak': streak,
-      'books_read': booksRead,
-      'sats_earned': satsEarned,
-    });
+    final currentStats = await _statsDao.getStats(npub);
 
-    final event = Nip01Event(
-      pubKey: pubkey,
-      kind: _statsKind,
-      tags: [
-        ['d', 'zapbook:daily:$today'],
-      ],
-      content: content,
-      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    int newStreak = currentStats?.streak ?? 0;
+    final lastActivity = currentStats?.lastActivityDate;
+
+    if (lastActivity == today) {
+      return;
+    }
+
+    if (lastActivity == yesterday) {
+      newStreak += 1;
+    } else {
+      newStreak = 1;
+    }
+
+    final record = ReadingStatsRecord(
+      pubKey: npub,
+      streak: newStreak,
+      lastActivityDate: today,
+      booksRead: await _progressDao.countCompletedBooks(npub),
+      satsEarned: _earnings.totalEarned.value,
+      updatedAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
 
-    _ndk.broadcast.broadcast(
-      nostrEvent: event,
-      specificRelays: ZapbookConfig.broadcastRelays,
-    );
+    await _statsDao.upsertStats(record);
 
-    _lastPublishDate = today;
-    _writeCache();
+    await _broadcastStats(groupId, record);
+  }
+
+  Future<void> _broadcastStats(
+    String groupId,
+    ReadingStatsRecord record,
+  ) async {
+    try {
+      final payload = {
+        'type': AppMessageTypes.readingStats,
+        'streak': record.streak,
+        'lastActivityDate': record.lastActivityDate,
+        'booksRead': record.booksRead,
+        'satsEarned': record.satsEarned,
+      };
+
+      final event = await _marmot.sendStructured(
+        record.pubKey,
+        groupId,
+        payload,
+      );
+      await _envelope.publish(event);
+    } on Object catch (error, stack) {
+      _log.warning('Publish stats failed', error, stack);
+    }
   }
 
   String _today() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
   String _dayOffset(int offset) {
     final d = DateTime.now().toUtc().add(Duration(days: offset));
-    return d.toIso8601String().substring(0, 10);
-  }
-
-  String _dayBefore(String date) {
-    final d = DateTime.parse(
-      '${date}T00:00:00Z',
-    ).subtract(const Duration(days: 1));
     return d.toIso8601String().substring(0, 10);
   }
 }

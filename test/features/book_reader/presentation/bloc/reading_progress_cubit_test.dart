@@ -45,7 +45,6 @@ void main() {
   late MockMilestoneService mockMilestone;
   late MockWatchMyReadingProgressUseCase mockWatchProgress;
   late MockTouchDashboardBookOpened mockTouchOpened;
-  late MockReadingStatsService mockStats;
 
   setUpAll(() {
     registerFallbackValue(FakeReadingState());
@@ -56,7 +55,6 @@ void main() {
     mockMilestone = MockMilestoneService();
     mockWatchProgress = MockWatchMyReadingProgressUseCase();
     mockTouchOpened = MockTouchDashboardBookOpened();
-    mockStats = MockReadingStatsService();
 
     when(() => mockTouchOpened(any())).thenAnswer((_) async {});
 
@@ -74,7 +72,6 @@ void main() {
       mockRepo,
       mockWatchProgress,
       mockMilestone,
-      mockStats,
       mockTouchOpened,
     )..open(
       _handle(),

@@ -4,7 +4,7 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
-import 'package:zapbook/core/services/decoded_message_cache.dart';
+
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
@@ -21,7 +21,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     this._session,
     this._stats,
     this._reloader,
-    this._cache,
   );
 
   final IdentityLocalDataSource _identityLocal;
@@ -30,13 +29,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final NostrSession _session;
   final ReadingStatsService _stats;
   final SessionReloader _reloader;
-  final DecodedMessageCache _cache;
 
   @override
   Future<UserProfile> load() async {
     final npub = await _identityLocal.readNpub() ?? '';
 
-    await _stats.syncBookStats();
+    final statsRecord = await _stats.getStats();
 
     final fallbackAvatar = ProfileMetaGenerator.generate(seed: npub).avatar;
     final fallbackName = npub.toNpubShort();
@@ -54,11 +52,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
           ? fetchedPicture
           : fallbackAvatar,
       lightningAddress: metadata?.lud16 ?? '',
-      satsEarned: _stats.satsEarned,
-      dayStreak: _stats.streak,
-      booksRead: _stats.booksRead,
-      milestones: _stats.milestones,
-      joinedYear: DateTime.now().year,
+      satsEarned: statsRecord?.satsEarned ?? 0,
+      dayStreak: statsRecord?.streak ?? 0,
+      booksRead: statsRecord?.booksRead ?? 0,
+      milestones: await _stats.getMilestones(),
     );
   }
 
@@ -80,7 +77,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<void> signOut() async {
     await _identityLocal.clear();
     await _onboardingLocal.clear();
-    _cache.clear();
+
     await _reloader.reload();
   }
 }

@@ -1,85 +1,73 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
-import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:marmot_dart/marmot_dart.dart';
+
 import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:zapbook/core/services/group_envelope_service.dart';
 
-class MockNdk extends Mock implements Ndk {}
+class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
-class MockAccounts extends Mock implements Accounts {}
-
-class MockBroadcast extends Mock implements Broadcast {}
-
-class MockSigner extends Mock implements Bip340EventSigner {}
-
-class MockNostrCacheStore extends Mock implements NostrCacheStore {}
+class MockReadingStatsDao extends Mock implements ReadingStatsDao {}
 
 class MockIdentityLocalDataSource extends Mock
     implements IdentityLocalDataSource {}
 
-class MockCircleProgressDao extends Mock implements CircleProgressDao {}
-
 class MockZapEarningsService extends Mock implements ZapEarningsService {}
 
-class FakeNip01Event extends Fake implements Nip01Event {}
+class MockMarmot extends Mock implements Marmot {}
 
-class MockNdkBroadcastResponse extends Mock implements NdkBroadcastResponse {}
+class MockGroupEnvelopeService extends Mock implements GroupEnvelopeService {}
+
+class FakeReadingStatsRecord extends Fake implements ReadingStatsRecord {}
 
 void main() {
-  late MockNdk mockNdk;
-  late MockAccounts mockAccounts;
-  late MockBroadcast mockBroadcast;
-  late MockSigner mockSigner;
-
-  late MockNostrCacheStore mockCache;
-  late MockIdentityLocalDataSource mockIdentity;
   late MockCircleProgressDao mockProgressDao;
+  late MockReadingStatsDao mockStatsDao;
+  late MockIdentityLocalDataSource mockIdentity;
   late MockZapEarningsService mockEarnings;
+  late MockMarmot mockMarmot;
+  late MockGroupEnvelopeService mockEnvelope;
+
   late ReadingStatsService service;
 
   setUpAll(() {
-    registerFallbackValue(FakeNip01Event());
+    registerFallbackValue(FakeReadingStatsRecord());
   });
 
   setUp(() {
-    mockNdk = MockNdk();
-    mockAccounts = MockAccounts();
-    mockBroadcast = MockBroadcast();
-    mockSigner = MockSigner();
-
-    when(() => mockNdk.accounts).thenReturn(mockAccounts);
-    when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
-
-    mockCache = MockNostrCacheStore();
-    mockIdentity = MockIdentityLocalDataSource();
     mockProgressDao = MockCircleProgressDao();
+    mockStatsDao = MockReadingStatsDao();
+    mockIdentity = MockIdentityLocalDataSource();
     mockEarnings = MockZapEarningsService();
+    mockMarmot = MockMarmot();
+    mockEnvelope = MockGroupEnvelopeService();
 
-    // Default earnings stubs
+    when(
+      () => mockIdentity.readNpub(),
+    ).thenAnswer((_) => Future.value('pubkey1'));
     when(() => mockEarnings.totalEarned).thenReturn(ValueNotifier<int>(100));
     when(() => mockEarnings.earnedForCircle(any())).thenReturn(50);
-    when(() => mockEarnings.start()).thenAnswer((_) async {});
-
-    // Default progress stubs
-    when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'pubkey1');
+    when(() => mockEarnings.start()).thenAnswer((_) => Future.value());
     when(
       () => mockProgressDao.countCompletedBooks(any()),
-    ).thenAnswer((_) async => 5);
+    ).thenAnswer((_) => Future.value(5));
     when(
       () => mockProgressDao.sumMilestonesReached(any()),
-    ).thenAnswer((_) async => 10);
+    ).thenAnswer((_) => Future.value(10));
 
     service = ReadingStatsService(
-      mockNdk,
-      mockCache,
       mockProgressDao,
+      mockStatsDao,
       mockIdentity,
       mockEarnings,
+      mockMarmot,
+      mockEnvelope,
     );
   });
 
@@ -95,197 +83,148 @@ void main() {
       .toIso8601String()
       .substring(0, 10);
 
-  test('properties return values from dependencies', () async {
-    await service.syncBookStats();
-    expect(service.booksRead, 5);
-    expect(service.milestones, 10);
-    expect(service.satsEarned, 100);
-    expect(service.satsEarnedForCircle('test-circle'), 50);
-    expect(service.satsEarnedListenable, isA<ValueNotifier<int>>());
+  test('getStats fetches from stats dao', () async {
+    final record = ReadingStatsRecord(
+      pubKey: 'pubkey1',
+      streak: 3,
+      lastActivityDate: today(),
+      booksRead: 5,
+      satsEarned: 100,
+      updatedAt: 123456789,
+    );
+    when(
+      () => mockStatsDao.getStats('pubkey1'),
+    ).thenAnswer((_) async => record);
+    final stats = await service.getStats();
+    expect(stats, record);
+    verify(() => mockStatsDao.getStats('pubkey1')).called(1);
   });
 
-  test('syncBookStats fetches from dao', () async {
-    await service.syncBookStats();
-    verify(() => mockProgressDao.countCompletedBooks(any())).called(1);
-    verify(() => mockProgressDao.sumMilestonesReached(any())).called(1);
+  test('getMilestones fetches from progress dao', () async {
+    final milestones = await service.getMilestones();
+    expect(milestones, 10);
+    verify(() => mockProgressDao.sumMilestonesReached('pubkey1')).called(1);
   });
 
   test(
-    'streak calculates correctly from milestone dates after recording',
+    'recordProgressMade increments streak if last activity was yesterday',
     () async {
-      expect(service.streak, 0);
-      when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-      when(
-        () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
-      ).thenReturn([
-        Nip01Event(
+      when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
+        (_) async => ReadingStatsRecord(
           pubKey: 'pubkey1',
-          kind: 30078,
-          tags: [
-            ['d', 'zapbook:stats:raw'],
-          ],
-          content: jsonEncode({
-            'last_publish_date': dayBeforeYesterday(),
-            'milestone_dates': [dayBeforeYesterday(), yesterday(), today()],
-          }),
-          createdAt: 1000,
+          streak: 3,
+          lastActivityDate: yesterday(),
+          booksRead: 5,
+          satsEarned: 100,
+          updatedAt: 123456789,
         ),
-      ]);
+      );
+      when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
+      when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+        (_) async =>
+            '{"pubkey": "a", "kind": 1, "tags": [], "content": "", "created_at": 0}',
+      );
+      when(() => mockEnvelope.publish(any())).thenAnswer((_) async {});
 
-      await service.load();
-      expect(service.streak, 3);
+      await service.recordProgressMade('group1');
+
+      final recordCapture = verify(
+        () => mockStatsDao.upsertStats(captureAny()),
+      ).captured;
+      final ReadingStatsRecord record =
+          recordCapture.first as ReadingStatsRecord;
+
+      expect(record.streak, 4);
+      expect(record.lastActivityDate, today());
+      expect(record.booksRead, 5);
+      expect(record.satsEarned, 100);
+
+      verify(
+        () => mockMarmot.sendStructured('pubkey1', 'group1', any()),
+      ).called(1);
+      verify(() => mockEnvelope.publish(any())).called(1);
     },
   );
 
-  test('load parses raw cache event and starts earnings', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-    when(
-      () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
-    ).thenReturn([
-      Nip01Event(
-        pubKey: 'pubkey1',
-        kind: 30078,
-        tags: [
-          ['d', 'zapbook:stats:raw'],
-        ],
-        content: jsonEncode({
-          'last_publish_date': '2024-01-01',
-          'milestone_dates': ['2024-01-01', '2024-01-02'],
-        }),
-        createdAt: 1000,
-      ),
-    ]);
+  test(
+    'recordProgressMade resets streak if last activity was before yesterday',
+    () async {
+      when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
+        (_) async => ReadingStatsRecord(
+          pubKey: 'pubkey1',
+          streak: 3,
+          lastActivityDate: dayBeforeYesterday(),
+          booksRead: 5,
+          satsEarned: 100,
+          updatedAt: 123456789,
+        ),
+      );
+      when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
+      when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
+        (_) async =>
+            '{"pubkey": "a", "kind": 1, "tags": [], "content": "", "created_at": 0}',
+      );
+      when(() => mockEnvelope.publish(any())).thenAnswer((_) async {});
 
-    await service.load();
-    verify(() => mockEarnings.start()).called(1);
+      await service.recordProgressMade('group1');
+
+      final recordCapture = verify(
+        () => mockStatsDao.upsertStats(captureAny()),
+      ).captured;
+      final ReadingStatsRecord record =
+          recordCapture.first as ReadingStatsRecord;
+
+      expect(record.streak, 1);
+      expect(record.lastActivityDate, today());
+
+      verify(
+        () => mockMarmot.sendStructured('pubkey1', 'group1', any()),
+      ).called(1);
+      verify(() => mockEnvelope.publish(any())).called(1);
+    },
+  );
+
+  test('recordProgressMade does nothing if already recorded today', () async {
+    when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
+      (_) async => ReadingStatsRecord(
+        pubKey: 'pubkey1',
+        streak: 3,
+        lastActivityDate: today(),
+        booksRead: 5,
+        satsEarned: 100,
+        updatedAt: 123456789,
+      ),
+    );
+
+    await service.recordProgressMade('group1');
+
+    verifyNever(() => mockStatsDao.upsertStats(any()));
+    verifyNever(() => mockMarmot.sendStructured(any(), any(), any()));
+    verifyNever(() => mockEnvelope.publish(any()));
   });
 
-  test('load decrypts remote event if raw is not found', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-    when(
-      () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
-    ).thenReturn([
-      Nip01Event(
-        pubKey: 'pubkey1',
-        kind: 30078,
-        tags: [
-          ['d', 'zapbook:stats'],
-        ],
-        content: 'encrypted_content',
-        createdAt: 1000,
-      ),
-    ]);
-
-    final account = Account(
-      type: AccountType.privateKey,
-      signer: mockSigner,
-      pubkey: 'pubkey1',
+  test('watchStats yields current stats', () async {
+    final record = ReadingStatsRecord(
+      pubKey: 'pubkey1',
+      streak: 5,
+      booksRead: 0,
+      satsEarned: 0,
+      updatedAt: 0,
     );
-    when(() => mockAccounts.getLoggedAccount()).thenReturn(account);
+    final controller = StreamController<ReadingStatsRecord?>();
     when(
-      () => mockSigner.decryptNip44(
-        ciphertext: 'encrypted_content',
-        senderPubKey: 'pubkey1',
-      ),
-    ).thenAnswer(
-      (_) async => jsonEncode({
-        'last_publish_date': '2024-01-01',
-        'milestone_dates': ['2024-01-01'],
-      }),
-    );
+      () => mockStatsDao.watchStats('pubkey1'),
+    ).thenAnswer((_) => controller.stream);
 
-    await service.load();
-    verify(() => mockEarnings.start()).called(1);
-  });
+    final stream = service.watchStats();
 
-  test('recordMilestone writes to cache and syncs to relays', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-    when(
-      () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
-    ).thenReturn([]);
-    when(() => mockCache.saveEvent(any())).thenReturn(null);
+    expect(stream, emitsInOrder([null, record, null]));
 
-    final account = Account(
-      type: AccountType.privateKey,
-      signer: mockSigner,
-      pubkey: 'pubkey1',
-    );
-    when(() => mockAccounts.getLoggedAccount()).thenReturn(account);
-    when(
-      () => mockSigner.encryptNip44(
-        plaintext: any(named: 'plaintext'),
-        recipientPubKey: 'pubkey1',
-      ),
-    ).thenAnswer((_) async => 'encrypted_content');
-    when(
-      () => mockBroadcast.broadcast(
-        nostrEvent: any(named: 'nostrEvent'),
-        specificRelays: any(named: 'specificRelays'),
-      ),
-    ).thenReturn(MockNdkBroadcastResponse());
+    controller.add(null);
+    controller.add(record);
+    controller.add(null);
 
-    await service.load(); // Load first to enable _loaded
-    service.recordMilestone();
-
-    // Give async time to process unawaited syncToRelays
     await Future.delayed(Duration.zero);
-
-    verify(
-      () => mockCache.saveEvent(any()),
-    ).called(2); // Once for raw (sync), once for encrypted
-    verify(
-      () => mockBroadcast.broadcast(
-        nostrEvent: any(named: 'nostrEvent'),
-        specificRelays: any(named: 'specificRelays'),
-      ),
-    ).called(1);
-  });
-
-  test('publishDailyHeartbeat broadcasts event and updates cache', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-    when(
-      () => mockBroadcast.broadcast(
-        nostrEvent: any(named: 'nostrEvent'),
-        specificRelays: any(named: 'specificRelays'),
-      ),
-    ).thenReturn(MockNdkBroadcastResponse());
-    when(() => mockCache.saveEvent(any())).thenReturn(null);
-
-    await service.publishDailyHeartbeat();
-
-    verify(
-      () => mockBroadcast.broadcast(
-        nostrEvent: any(named: 'nostrEvent'),
-        specificRelays: any(named: 'specificRelays'),
-      ),
-    ).called(1);
-    verify(() => mockCache.saveEvent(any())).called(1);
-  });
-
-  test('publishDailyHeartbeat skips if already published today', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
-    when(
-      () => mockCache.loadEvents(pubKeys: ['pubkey1'], kinds: [30078]),
-    ).thenReturn([
-      Nip01Event(
-        pubKey: 'pubkey1',
-        kind: 30078,
-        tags: [
-          ['d', 'zapbook:stats:raw'],
-        ],
-        content: jsonEncode({'last_publish_date': today()}),
-        createdAt: 1000,
-      ),
-    ]);
-
-    await service.load();
-    await service.publishDailyHeartbeat();
-
-    verifyNever(
-      () => mockBroadcast.broadcast(
-        nostrEvent: any(named: 'nostrEvent'),
-        specificRelays: any(named: 'specificRelays'),
-      ),
-    );
+    await controller.close();
   });
 }

@@ -43,6 +43,7 @@ class AppDatabase {
     _createBookPagesTable(db);
     _createCheersFeedTable(db);
     _createCircleMemberProgressTable(db);
+    _createReadingStatsTable(db);
 
     return _db = db;
   }
@@ -54,6 +55,19 @@ class AppDatabase {
         page_index INTEGER NOT NULL,
         json TEXT NOT NULL,
         PRIMARY KEY (book_id, page_index)
+      )
+    ''');
+  }
+
+  void _createReadingStatsTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS reading_stats (
+        pub_key TEXT PRIMARY KEY,
+        streak INTEGER NOT NULL DEFAULT 0,
+        last_activity_date TEXT,
+        books_read INTEGER NOT NULL DEFAULT 0,
+        sats_earned INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL
       )
     ''');
   }

@@ -6,6 +6,7 @@ import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 
@@ -14,6 +15,7 @@ class MessageRouterService {
   final MarmotSyncService _marmotSyncService;
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
+  final ReadingStatsDao _readingStatsDao;
 
   final _log = logging.Logger('MessageRouterService');
   StreamSubscription<MarmotMessage>? _messageSub;
@@ -22,6 +24,7 @@ class MessageRouterService {
     this._marmotSyncService,
     this._cheersDao,
     this._circleProgressDao,
+    this._readingStatsDao,
   ) {
     initialize();
   }
@@ -49,6 +52,7 @@ class MessageRouterService {
             pubKey: next.pubKey,
           );
           await _circleProgressDao.upsertProgress(next);
+
           final cheer = CheersActivityMessage.cheerFromProgress(
             id: parsed.id,
             actorNpub: parsed.senderNpub,
@@ -60,11 +64,14 @@ class MessageRouterService {
           if (cheer != null) {
             await _cheersDao.saveActivity(cheer);
           }
+
         case CheersMessage() || ZapSentMessage():
           final activity = CheersActivityMessage.fromAppMessage(parsed);
-          if (activity != null) {
-            await _cheersDao.saveActivity(activity);
-          }
+          await _cheersDao.saveActivity(activity);
+
+        case ReadingStatsMessage():
+          final record = ReadingStatsRecord.fromAppMessage(parsed);
+          await _readingStatsDao.upsertStats(record);
         case InitialBookMessage() ||
             BookCompletedMessage() ||
             ZapNudgeMessage() ||

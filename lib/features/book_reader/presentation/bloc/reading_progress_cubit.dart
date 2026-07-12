@@ -8,7 +8,6 @@ import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart';
 import 'package:zapbook/core/domain/entities/reading_progress.dart';
 
 import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
 import 'package:zapbook/features/book_reader/domain/reading_engine.dart';
 import 'package:zapbook/features/home/domain/usecases/touch_dashboard_book_opened.dart';
@@ -24,14 +23,12 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
     this._localReadingProgressStore,
     this._watchProgressUseCase,
     this._milestoneService,
-    this._statsService,
     this._touchOpened,
   ) : super(const ReadingProgressState());
 
   final ReadingProgressLocalStore _localReadingProgressStore;
   final WatchMyReadingProgressUseCase _watchProgressUseCase;
   final MilestoneService _milestoneService;
-  final ReadingStatsService _statsService;
   final TouchDashboardBookOpened _touchOpened;
 
   late final ReadingEngine _engine;
@@ -157,7 +154,6 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
       if (effect is MilestoneReached) {
         _save();
         _report();
-        _statsService.recordMilestone();
       }
       if (effect is BookCompleted) {
         _save();

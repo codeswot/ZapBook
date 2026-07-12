@@ -57,7 +57,6 @@ void main() {
     dayStreak: 0,
     booksRead: 0,
     milestones: 0,
-    joinedYear: 2024,
   );
 
   setUp(() {

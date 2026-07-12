@@ -8,6 +8,7 @@ abstract class AppMessageTypes {
   static const zapNudge = 'zapbook.zap.nudge';
   static const zapReady = 'zapbook.zap.ready';
   static const zapSent = 'zapbook.zap.sent';
+  static const readingStats = 'zapbook.reading.stats';
 }
 
 sealed class AppMessage {
@@ -42,6 +43,8 @@ sealed class AppMessage {
           return ZapReadyMessage(message, decoded);
         case AppMessageTypes.zapSent:
           return ZapSentMessage(message, decoded);
+        case AppMessageTypes.readingStats:
+          return ReadingStatsMessage(message, decoded);
         default:
           return null;
       }
@@ -91,4 +94,10 @@ class ZapSentMessage extends AppMessage {
   final Map<String, dynamic> payload;
 
   const ZapSentMessage(super.message, this.payload);
+}
+
+class ReadingStatsMessage extends AppMessage {
+  final Map<String, dynamic> payload;
+
+  const ReadingStatsMessage(super.message, this.payload);
 }

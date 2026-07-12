@@ -16,7 +16,7 @@ Future<void> startSession() async {
     await _publishPendingProfile();
   }
   final stats = getIt<ReadingStatsService>();
-  unawaited(stats.load().then((_) => stats.publishDailyHeartbeat()));
+  unawaited(stats.load());
 }
 
 Future<void> _publishPendingProfile() async {

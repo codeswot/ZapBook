@@ -13,7 +13,8 @@ class CircleProgressDao {
 
   CircleProgressDao(this._db);
 
-  Future<void> upsertProgress(CircleMemberProgress progress) async {
+  Future<void> upsertProgress(CircleMemberProgress? progress) async {
+    if (progress == null) return;
     try {
       final database = await _db.open();
       final stmt = database.prepare('''

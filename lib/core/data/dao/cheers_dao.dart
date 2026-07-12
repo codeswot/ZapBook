@@ -78,7 +78,8 @@ class CheersDao {
     }
   }
 
-  Future<void> saveActivity(CheersActivityMessage activity) async {
+  Future<void> saveActivity(CheersActivityMessage? activity) async {
+    if (activity == null) return;
     try {
       final db = await _appDatabase.open();
       db.execute(

@@ -22,6 +22,7 @@ import 'package:zapbook/core/data/cache/nostr_cache_store.dart' as _i68;
 import 'package:zapbook/core/data/dao/cheers_dao.dart' as _i826;
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart' as _i107;
 import 'package:zapbook/core/data/dao/page_dao.dart' as _i50;
+import 'package:zapbook/core/data/dao/reading_stats_dao.dart' as _i583;
 import 'package:zapbook/core/data/datasources/circle_progress_data_source.dart'
     as _i220;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
@@ -68,7 +69,6 @@ import 'package:zapbook/core/services/circle_share_service.dart' as _i455;
 import 'package:zapbook/core/services/circle_store_service.dart' as _i821;
 import 'package:zapbook/core/services/clipboard_service.dart' as _i1053;
 import 'package:zapbook/core/services/contact_service.dart' as _i244;
-import 'package:zapbook/core/services/decoded_message_cache.dart' as _i118;
 import 'package:zapbook/core/services/density_service.dart' as _i740;
 import 'package:zapbook/core/services/file_hasher.dart' as _i917;
 import 'package:zapbook/core/services/file_logger_service.dart' as _i199;
@@ -239,9 +239,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i571.AppRouter>(() => _i571.AppRouter());
     gh.lazySingleton<_i1053.ClipboardService>(() => _i1053.ClipboardService());
-    gh.lazySingleton<_i118.DecodedMessageCache>(
-      () => _i118.DecodedMessageCache(),
-    );
     gh.lazySingleton<_i740.DensityService>(() => _i740.DensityService());
     gh.lazySingleton<_i917.FileHasher>(() => const _i917.FileHasher());
     gh.lazySingleton<_i199.FileLoggerService>(() => _i199.FileLoggerService());
@@ -263,6 +260,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i107.CircleProgressDao>(
       () => _i107.CircleProgressDao(gh<_i708.AppDatabase>()),
+    );
+    gh.lazySingleton<_i583.ReadingStatsDao>(
+      () => _i583.ReadingStatsDao(gh<_i708.AppDatabase>()),
     );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),
@@ -317,14 +317,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i59.CircleProgressRepository>(
       () => _i59.CircleProgressRepository(gh<_i220.CircleProgressDataSource>()),
-    );
-    gh.lazySingleton<_i718.ZapNudgeService>(
-      () => _i718.ZapNudgeService(
-        gh<_i970.Marmot>(),
-        gh<_i857.Ndk>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i118.DecodedMessageCache>(),
-      ),
     );
     gh.factoryParam<
       _i405.BookWizardCubit,
@@ -387,6 +379,13 @@ extension GetItInjectableX on _i174.GetIt {
       ),
       dispose: (i) => i.dispose(),
     );
+    gh.lazySingleton<_i718.ZapNudgeService>(
+      () => _i718.ZapNudgeService(
+        gh<_i970.Marmot>(),
+        gh<_i857.Ndk>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
     );
@@ -436,11 +435,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i397.KeyPackageService>(),
       ),
     );
-    gh.lazySingleton<_i223.MessageRouterService>(
-      () => _i223.MessageRouterService(
-        gh<_i140.MarmotSyncService>(),
-        gh<_i826.CheersDao>(),
+    gh.lazySingleton<_i182.ReadingStatsService>(
+      () => _i182.ReadingStatsService(
         gh<_i107.CircleProgressDao>(),
+        gh<_i583.ReadingStatsDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i240.ZapEarningsService>(),
+        gh<_i970.Marmot>(),
+        gh<_i394.GroupEnvelopeService>(),
       ),
     );
     gh.lazySingleton<_i379.BookIngestionRepository>(
@@ -452,15 +454,6 @@ extension GetItInjectableX on _i174.GetIt {
         writer: gh<_i1.ZbfWriter>(),
       ),
     );
-    gh.lazySingleton<_i182.ReadingStatsService>(
-      () => _i182.ReadingStatsService(
-        gh<_i857.Ndk>(),
-        gh<_i68.NostrCacheStore>(),
-        gh<_i107.CircleProgressDao>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i240.ZapEarningsService>(),
-      ),
-    );
     gh.factory<_i341.CompleteOnboarding>(
       () => _i341.CompleteOnboarding(
         gh<_i63.IdentityRepository>(),
@@ -468,17 +461,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i803.SessionReloader>(),
       ),
     );
-    gh.lazySingleton<_i31.MilestoneService>(
-      () => _i31.MilestoneService(
-        gh<_i970.Marmot>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i394.GroupEnvelopeService>(),
-        gh<_i107.CircleProgressDao>(),
-        gh<_i826.CheersDao>(),
-      ),
-    );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i11.NostrService>()),
+    );
+    gh.lazySingleton<_i223.MessageRouterService>(
+      () => _i223.MessageRouterService(
+        gh<_i140.MarmotSyncService>(),
+        gh<_i826.CheersDao>(),
+        gh<_i107.CircleProgressDao>(),
+        gh<_i583.ReadingStatsDao>(),
+      ),
     );
     gh.lazySingleton<_i244.ContactService>(
       () => _i244.ContactService(
@@ -495,22 +487,21 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i140.MarmotSyncService>(),
       ),
     );
+    gh.lazySingleton<_i31.MilestoneService>(
+      () => _i31.MilestoneService(
+        gh<_i970.Marmot>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i394.GroupEnvelopeService>(),
+        gh<_i107.CircleProgressDao>(),
+        gh<_i826.CheersDao>(),
+        gh<_i182.ReadingStatsService>(),
+      ),
+    );
     gh.factory<_i665.DownloadCircleBook>(
       () => _i665.DownloadCircleBook(gh<_i455.CircleShareService>()),
     );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i362.ZapService>()),
-    );
-    gh.lazySingleton<_i582.ProfileRepository>(
-      () => _i160.ProfileRepositoryImpl(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i342.OnboardingLocalDataSource>(),
-        gh<_i1073.NostrSession>(),
-        gh<_i182.ReadingStatsService>(),
-        gh<_i803.SessionReloader>(),
-        gh<_i118.DecodedMessageCache>(),
-      ),
     );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
@@ -533,6 +524,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i709.GenerateIdentity>(),
         gh<_i136.ImportIdentity>(),
         gh<_i341.CompleteOnboarding>(),
+      ),
+    );
+    gh.lazySingleton<_i582.ProfileRepository>(
+      () => _i160.ProfileRepositoryImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i342.OnboardingLocalDataSource>(),
+        gh<_i1073.NostrSession>(),
+        gh<_i182.ReadingStatsService>(),
+        gh<_i803.SessionReloader>(),
       ),
     );
     gh.lazySingleton<_i821.CircleStoreService>(
@@ -707,7 +708,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.ReadingProgressLocalStore>(),
         gh<_i35.WatchMyReadingProgressUseCase>(),
         gh<_i31.MilestoneService>(),
-        gh<_i182.ReadingStatsService>(),
         gh<_i899.TouchDashboardBookOpened>(),
       ),
     );

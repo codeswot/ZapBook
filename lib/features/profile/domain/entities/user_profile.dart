@@ -9,7 +9,6 @@ class UserProfile extends Equatable {
   final int dayStreak;
   final int booksRead;
   final int milestones;
-  final int joinedYear;
 
   const UserProfile({
     required this.npub,
@@ -20,7 +19,6 @@ class UserProfile extends Equatable {
     required this.dayStreak,
     required this.booksRead,
     required this.milestones,
-    required this.joinedYear,
   });
 
   bool get hasLightning => lightningAddress.isNotEmpty;
@@ -35,6 +33,5 @@ class UserProfile extends Equatable {
     dayStreak,
     booksRead,
     milestones,
-    joinedYear,
   ];
 }

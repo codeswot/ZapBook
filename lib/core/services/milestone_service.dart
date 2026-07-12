@@ -13,6 +13,7 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
 
 @lazySingleton
 class MilestoneService {
@@ -22,6 +23,7 @@ class MilestoneService {
     this._envelope,
     this._progressDao,
     this._cheersDao,
+    this._stats,
   );
 
   final Marmot _marmot;
@@ -29,6 +31,7 @@ class MilestoneService {
   final GroupEnvelopeService _envelope;
   final CircleProgressDao _progressDao;
   final CheersDao _cheersDao;
+  final ReadingStatsService _stats;
 
   final _log = logging.Logger('MilestoneService');
 
@@ -150,6 +153,8 @@ class MilestoneService {
     if (cheer != null) {
       await _cheersDao.saveActivity(cheer);
     }
+
+    await _stats.recordProgressMade(groupId);
 
     final report = (
       npub: npub,
