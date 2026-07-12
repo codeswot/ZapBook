@@ -34,7 +34,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<UserProfile> load() async {
     final npub = await _identityLocal.readNpub() ?? '';
 
-    final statsRecord = await _stats.getStats();
+    final statsRecord = await _stats.getStats(null);
 
     final fallbackAvatar = ProfileMetaGenerator.generate(seed: npub).avatar;
     final fallbackName = npub.toNpubShort();

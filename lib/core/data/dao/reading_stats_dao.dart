@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/data/app_database.dart';
-import 'package:zapbook/core/models/app_message.dart';
 
 class ReadingStatsRecord {
   final String pubKey;
@@ -47,16 +46,6 @@ class ReadingStatsRecord {
     );
   }
 
-  factory ReadingStatsRecord.fromAppMessage(ReadingStatsMessage msg) {
-    return ReadingStatsRecord(
-      pubKey: msg.senderNpub,
-      streak: (msg.payload['streak'] as num?)?.toInt() ?? 0,
-      lastActivityDate: msg.payload['lastActivityDate'] as String?,
-      booksRead: (msg.payload['booksRead'] as num?)?.toInt() ?? 0,
-      satsEarned: (msg.payload['satsEarned'] as num?)?.toInt() ?? 0,
-      updatedAt: msg.timestampSecs,
-    );
-  }
 }
 
 @lazySingleton

@@ -18,6 +18,9 @@ class _CacheEntry {
 
 @lazySingleton
 class LnurlService {
+  @factoryMethod
+  static LnurlService create() => LnurlService();
+
   LnurlService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;

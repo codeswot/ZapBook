@@ -45,8 +45,63 @@ class ZapService {
     if (amountSats <= 0) throw ZapException('Amount must be positive');
 
     final amountMillisats = amountSats * 1000;
+    final isDonation = recipientPubkey == ZapbookConfig.npub;
 
-    final payResponse = await _lnurl.resolveLightningAddress(recipientLud16);
+    final feePercent = (isDonation || !_nwc.isConnected) ? 0 : _support.percent;
+    final supportAmount = feePercent > 0
+        ? (amountSats * feePercent / 100).round().clamp(1, amountSats)
+        : 0;
+
+    final mainZapFuture = _prepareZap(
+      lud16: recipientLud16,
+      pubkey: recipientPubkey,
+      targetEventId: targetEventId,
+      amountMillisats: amountMillisats,
+      content: comment ?? gesture.label,
+      circleId: circleId,
+    );
+
+    Future<({String invoice, String zapRequestId})?>? supportZapFuture;
+    if (supportAmount > 0) {
+      supportZapFuture =
+          _prepareZap(
+                lud16: ZapbookConfig.lnAddress,
+                pubkey: ZapbookConfig.npub,
+                targetEventId: '',
+                amountMillisats: supportAmount * 1000,
+                content: 'ZapBook support ($feePercent%)',
+              )
+              .then<({String invoice, String zapRequestId})?>((res) => res)
+              .catchError((error, stack) {
+                _log.warning('Support fee invoice failed', error, stack);
+                return null;
+              });
+    }
+
+    final mainZap = await mainZapFuture;
+    final supportZap = await supportZapFuture;
+
+    return ZapResult(
+      invoice: mainZap.invoice,
+      zapRequestId: mainZap.zapRequestId,
+      amountSats: amountSats,
+      gesture: gesture,
+      recipientPubkey: recipientPubkey,
+      targetEventId: targetEventId,
+      supportInvoice: supportZap?.invoice,
+      supportAmount: supportZap != null ? supportAmount : 0,
+    );
+  }
+
+  Future<({String invoice, String zapRequestId})> _prepareZap({
+    required String lud16,
+    required String pubkey,
+    required String targetEventId,
+    required int amountMillisats,
+    required String content,
+    String? circleId,
+  }) async {
+    final payResponse = await _lnurl.resolveLightningAddress(lud16);
 
     if (amountMillisats < payResponse.minSendable) {
       throw ZapException('Amount below minimum');
@@ -56,63 +111,21 @@ class ZapService {
     }
 
     final (:nostr, :zapRequestId) = await _buildZapRequest(
-      recipientPubkey: recipientPubkey,
+      recipientPubkey: pubkey,
       targetEventId: targetEventId,
       amountMillisats: amountMillisats,
-      content: comment ?? gesture.label,
+      content: content,
       circleId: circleId,
     );
 
     final invoice = await _lnurl.fetchInvoice(
       payResponse: payResponse,
       amountMillisats: amountMillisats,
-      comment: comment ?? gesture.label,
+      comment: content,
       nostr: nostr,
     );
 
-    String? supportInvoice;
-    int supportAmount = 0;
-    final isDonation = recipientPubkey == ZapbookConfig.npub;
-    final feePercent = (isDonation || !_nwc.isConnected) ? 0 : _support.percent;
-    if (feePercent > 0) {
-      supportAmount = (amountSats * feePercent / 100).round().clamp(
-        1,
-        amountSats,
-      );
-      if (supportAmount > 0) {
-        try {
-          final (:nostr, :zapRequestId) = await _buildZapRequest(
-            recipientPubkey: ZapbookConfig.npub,
-            targetEventId: '',
-            amountMillisats: supportAmount * 1000,
-            content: 'ZapBook support ($feePercent%)',
-          );
-          final supportPayResponse = await _lnurl.resolveLightningAddress(
-            ZapbookConfig.lnAddress,
-          );
-          final supportInv = await _lnurl.fetchInvoice(
-            payResponse: supportPayResponse,
-            amountMillisats: supportAmount * 1000,
-            comment: 'ZapBook support ($feePercent%)',
-            nostr: nostr,
-          );
-          supportInvoice = supportInv.pr;
-        } catch (error, stack) {
-          _log.warning('Support fee invoice failed', error, stack);
-        }
-      }
-    }
-
-    return ZapResult(
-      invoice: invoice.pr,
-      zapRequestId: zapRequestId ?? '',
-      amountSats: amountSats,
-      gesture: gesture,
-      recipientPubkey: recipientPubkey,
-      targetEventId: targetEventId,
-      supportInvoice: supportInvoice,
-      supportAmount: supportAmount,
-    );
+    return (invoice: invoice.pr, zapRequestId: zapRequestId ?? '');
   }
 
   Future<({String? nostr, String? zapRequestId})> _buildZapRequest({
@@ -134,7 +147,7 @@ class ZapService {
         : recipientPubkey;
 
     final tags = [
-      ['relays', ..._zapReceiptRelays],
+      ['relays', ...ZapbookConfig.broadcastRelays],
       ['amount', amountMillisats.toString()],
       ['p', recipientHex],
       ['client', 'zapbook'],
@@ -167,25 +180,25 @@ class ZapService {
     return (nostr: nostr, zapRequestId: signed.id);
   }
 
-  static const _zapReceiptRelays = [
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.primal.net',
-  ];
-
-  Future<bool> payZap(ZapResult result) async {
+  Future<ZapStatus> payZap(ZapResult result) async {
     if (_nwc.isConnected) {
       try {
         final response = await _nwc.payInvoice(result.invoice);
-        if (response.preimage != null && response.preimage!.isNotEmpty) {
+        final preimage = response.preimage ?? '';
+        if (preimage.isNotEmpty) {
           if (result.hasSupportZap) {
+            final supportInvoice = result.supportInvoice ?? '';
             try {
-              await _nwc.payInvoice(result.supportInvoice!);
+              if (supportInvoice.isNotEmpty) {
+                await _nwc.payInvoice(supportInvoice);
+              } else {
+                _log.warning('Support payment failed, no invoice');
+              }
             } catch (error, stack) {
               _log.warning('Support payment failed', error, stack);
             }
           }
-          return true;
+          return ZapStatus.paidNwc;
         }
       } catch (error, stack) {
         _log.warning('NWC zap failed', error, stack);
@@ -193,24 +206,19 @@ class ZapService {
     }
 
     final uri = Uri.tryParse('lightning:${result.invoice}');
-    if (uri == null) return false;
+    if (uri == null) return ZapStatus.failed;
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (opened && result.hasSupportZap) {
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      final supportUri = Uri.tryParse('lightning:${result.supportInvoice}');
-      if (supportUri != null) {
-        unawaited(launchUrl(supportUri, mode: LaunchMode.externalApplication));
-      }
-    }
-    return opened;
+    return opened ? ZapStatus.pendingExternal : ZapStatus.failed;
   }
 
-  Future<bool> payWithFallback(String invoice) async {
+  Future<ZapStatus> payWithFallback(String invoice) async {
     if (_nwc.isConnected) {
       try {
         final response = await _nwc.payInvoice(invoice);
-        if (response.preimage != null && response.preimage!.isNotEmpty) {
-          return true;
+        final preimage = response.preimage ?? '';
+
+        if (preimage.isNotEmpty) {
+          return ZapStatus.paidNwc;
         }
       } catch (error, stack) {
         _log.warning(
@@ -222,19 +230,34 @@ class ZapService {
     }
 
     final uri = Uri.tryParse('lightning:$invoice');
-    if (uri == null) return false;
-    return launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (uri == null) return ZapStatus.failed;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    return opened ? ZapStatus.pendingExternal : ZapStatus.failed;
   }
 
-  NdkResponse subscribeToReceipts({required String targetEventId}) {
-    return _ndk.requests.subscription(
+  Stream<bool> waitForReceipt(
+    String zapRequestId, {
+    Duration timeout = const Duration(minutes: 2),
+  }) async* {
+    final response = _ndk.requests.subscription(
       filter: Filter(
         kinds: const [9735],
         tags: {
-          '#e': [targetEventId],
+          '#e': [zapRequestId],
         },
       ),
     );
+
+    try {
+      await for (final _ in response.stream.timeout(timeout)) {
+        yield true;
+        return;
+      }
+    } on TimeoutException {
+      yield false;
+    } finally {
+      _ndk.requests.closeSubscription(response.requestId);
+    }
   }
 }
 
@@ -268,3 +291,5 @@ class ZapException implements Exception {
   @override
   String toString() => 'ZapException: $message';
 }
+
+enum ZapStatus { paidNwc, pendingExternal, failed }

@@ -154,7 +154,7 @@ class MilestoneService {
       await _cheersDao.saveActivity(cheer);
     }
 
-    await _stats.recordProgressMade(groupId);
+    await _stats.recordProgressMade();
 
     final report = (
       npub: npub,

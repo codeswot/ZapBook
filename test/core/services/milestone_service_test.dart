@@ -75,7 +75,7 @@ void main() {
       () => mockProgressDao.upsertProgress(any()),
     ).thenAnswer((_) async => {});
     when(() => mockCheersDao.saveActivity(any())).thenAnswer((_) async => {});
-    when(() => mockStats.recordProgressMade(any())).thenAnswer((_) async => {});
+    when(() => mockStats.recordProgressMade()).thenAnswer((_) async => {});
     when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
       (_) async =>
           '{"pubkey": "a", "kind": 1, "tags": [], "content": "", "created_at": 0}',

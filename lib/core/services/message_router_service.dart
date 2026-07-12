@@ -15,7 +15,6 @@ class MessageRouterService {
   final MarmotSyncService _marmotSyncService;
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
-  final ReadingStatsDao _readingStatsDao;
 
   final _log = logging.Logger('MessageRouterService');
   StreamSubscription<MarmotMessage>? _messageSub;
@@ -24,7 +23,6 @@ class MessageRouterService {
     this._marmotSyncService,
     this._cheersDao,
     this._circleProgressDao,
-    this._readingStatsDao,
   ) {
     initialize();
   }
@@ -69,9 +67,6 @@ class MessageRouterService {
           final activity = CheersActivityMessage.fromAppMessage(parsed);
           await _cheersDao.saveActivity(activity);
 
-        case ReadingStatsMessage():
-          final record = ReadingStatsRecord.fromAppMessage(parsed);
-          await _readingStatsDao.upsertStats(record);
         case InitialBookMessage() ||
             BookCompletedMessage() ||
             ZapNudgeMessage() ||

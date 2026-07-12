@@ -1,13 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:marmot_dart/marmot_dart.dart';
+import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/models/app_message.dart';
-import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
@@ -17,16 +17,14 @@ class ReadingStatsService {
     this._statsDao,
     this._identity,
     this._earnings,
-    this._marmot,
-    this._envelope,
+    this._ndk,
   );
 
   final CircleProgressDao _progressDao;
   final ReadingStatsDao _statsDao;
   final IdentityLocalDataSource _identity;
   final ZapEarningsService _earnings;
-  final Marmot _marmot;
-  final GroupEnvelopeService _envelope;
+  final Ndk _ndk;
 
   final _log = logging.Logger('ReadingStatsService');
 
@@ -47,10 +45,51 @@ class ReadingStatsService {
     yield* _statsDao.watchStats(npub);
   }
 
-  Future<ReadingStatsRecord?> getStats() async {
-    final npub = await _identity.readNpub();
-    if (npub == null || npub.isEmpty) return null;
-    return _statsDao.getStats(npub);
+  Future<ReadingStatsRecord?> getStats(String? requestedNpub) async {
+    final localNpub = await _identity.readNpub();
+    final targetNpub = requestedNpub ?? localNpub;
+    if (targetNpub == null || targetNpub.isEmpty) return null;
+
+    if (targetNpub == localNpub) {
+      return _statsDao.getStats(targetNpub);
+    }
+
+    try {
+      final hex = targetNpub.startsWith('npub')
+          ? Nip19.decode(targetNpub)
+          : targetNpub;
+      final response = _ndk.requests.query(
+        filter: Filter(
+          kinds: const [30000],
+          authors: [hex],
+          tags: const {
+            '#d': ['zapbook_reading_stats'],
+          },
+        ),
+      );
+
+      final events = await response.future;
+      final event = events.firstOrNull;
+      if (event != null && event.content.isNotEmpty) {
+        try {
+          final payload = jsonDecode(event.content);
+          return ReadingStatsRecord(
+            pubKey: targetNpub,
+            streak: payload['streak'] as int? ?? 0,
+            lastActivityDate: payload['lastActivityDate'] as String? ?? '',
+            booksRead: payload['booksRead'] as int? ?? 0,
+            satsEarned: payload['satsEarned'] as int? ?? 0,
+            updatedAt: event.createdAt,
+          );
+        } catch (e, st) {
+          _log.warning('Failed to decode event getStats ', e, st);
+        }
+      }
+    } catch (e, st) {
+      _log.warning('Failed to fetch public stats', e, st);
+    }
+
+    return null;
   }
 
   Future<int> getMilestones() async {
@@ -59,7 +98,7 @@ class ReadingStatsService {
     return _progressDao.sumMilestonesReached(npub);
   }
 
-  Future<void> recordProgressMade(String groupId) async {
+  Future<void> recordProgressMade() async {
     final npub = await _identity.readNpub();
     if (npub == null || npub.isEmpty) return;
 
@@ -91,29 +130,36 @@ class ReadingStatsService {
     );
 
     await _statsDao.upsertStats(record);
-
-    await _broadcastStats(groupId, record);
+    await _broadcastStats(record);
   }
 
-  Future<void> _broadcastStats(
-    String groupId,
-    ReadingStatsRecord record,
-  ) async {
+  Future<void> _broadcastStats(ReadingStatsRecord record) async {
     try {
+      final account = _ndk.accounts.getLoggedAccount();
+      if (account == null || !account.signer.canSign()) return;
+
       final payload = {
-        'type': AppMessageTypes.readingStats,
         'streak': record.streak,
         'lastActivityDate': record.lastActivityDate,
         'booksRead': record.booksRead,
         'satsEarned': record.satsEarned,
       };
 
-      final event = await _marmot.sendStructured(
-        record.pubKey,
-        groupId,
-        payload,
+      final event = Nip01Event(
+        pubKey: account.pubkey,
+        kind: 30000,
+        tags: const [
+          ['d', 'zapbook_reading_stats'],
+        ],
+        content: jsonEncode(payload),
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       );
-      await _envelope.publish(event);
+
+      final signed = await account.signer.sign(event);
+      _ndk.broadcast.broadcast(
+        nostrEvent: signed,
+        specificRelays: ZapbookConfig.broadcastRelays,
+      );
     } on Object catch (error, stack) {
       _log.warning('Publish stats failed', error, stack);
     }
