@@ -4,7 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/lnurl_service.dart';
+import 'package:zapbook/core/models/lnurl_models.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';

@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 
 import 'package:zapbook/core/services/lnurl_service.dart';
+import 'package:zapbook/core/models/lnurl_models.dart';
+import 'package:zapbook/core/utils/bolt11_utils.dart';
 
 class MockClient extends Mock implements http.Client {}
 
@@ -85,13 +87,13 @@ void main() {
     });
 
     test('bolt11AmountMillisats extracts amount', () {
-      final msats = LnurlService.bolt11AmountMillisats('lnbc100n1...');
+      final msats = Bolt11Utils.amountMillisats('lnbc100n1...');
       expect(msats, 10000);
     });
 
     test('bolt11AmountMillisats throws on invalid prefix', () {
       expect(
-        () => LnurlService.bolt11AmountMillisats('invalid'),
+        () => Bolt11Utils.amountMillisats('invalid'),
         throwsA(isA<LnurlException>()),
       );
     });
