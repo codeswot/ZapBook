@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
@@ -5,7 +6,6 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:ndk/domain_layer/entities/ndk_file.dart';
 import 'package:ndk/ndk.dart';
 
 @lazySingleton
@@ -13,35 +13,84 @@ class BlossomService {
   BlossomService(this._ndk);
 
   final Ndk _ndk;
+
   final _log = logging.Logger('BlossomService');
   final http.Client _httpClient = http.Client();
 
   static const List<String> servers = [
-    'https://blossom.primal.net',
+    'https://cdn.satellite.earth',
     'https://blossom.nostr.build',
-    'https://yondar.me',
   ];
 
   Future<String> upload(
     Uint8List bytes, {
     String mimeType = 'application/octet-stream',
   }) async {
-    final results = await _ndk.files.upload(
-      file: NdkFile(data: bytes, mimeType: mimeType),
-      serverUrls: servers,
-    );
+    final account = _ndk.accounts.getLoggedAccount();
 
-    final ok = results
-        .where((r) => r.success && r.descriptor != null)
-        .toList(growable: false);
-    if (ok.isEmpty) {
-      final reason = results.map((r) => r.error).whereType<String>().join('; ');
-      throw Exception('Blossom upload failed: $reason');
+    for (final server in servers) {
+      try {
+        final url = '$server/upload';
+        final request = http.MultipartRequest('PUT', Uri.parse(url));
+
+        if (account != null && account.signer.canSign()) {
+          final payloadHash = sha256.convert(bytes).toString();
+          final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          final expiration = now + 600; // 10 minutes
+
+          final authEvent = Nip01Event(
+            pubKey: account.pubkey,
+            kind: 24242,
+            tags: [
+              ['t', 'upload'],
+              ['t', 'blossom.upload'],
+              ['x', payloadHash],
+              ['expiration', expiration.toString()],
+            ],
+            content: 'blossom.upload',
+            createdAt: now,
+          );
+          final signed = await account.signer.sign(authEvent);
+          final authJson = jsonEncode({
+            'id': signed.id,
+            'pubkey': signed.pubKey,
+            'created_at': signed.createdAt,
+            'kind': signed.kind,
+            'tags': signed.tags,
+            'content': signed.content,
+            'sig': signed.sig,
+          });
+
+          final encodedAuth = base64UrlEncode(utf8.encode(authJson));
+          request.headers['Authorization'] = 'Nostr $encodedAuth';
+        }
+
+        request.headers['User-Agent'] =
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+        if (mimeType.isNotEmpty) {
+          request.headers['Content-Type'] = mimeType;
+        }
+
+        final response = await _httpClient.send(request);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final body = await response.stream.bytesToString();
+          final map = jsonDecode(body) as Map<String, dynamic>;
+          final uploadedUrl = map['url'] as String;
+          _log.info('Uploaded to $server OK');
+          return uploadedUrl;
+        } else {
+          final body = await response.stream.bytesToString();
+          _log.warning(
+            'Upload failed to $server: ${response.statusCode} - $body',
+          );
+        }
+      } catch (e, st) {
+        _log.warning('Upload failed to $server', e, st);
+      }
     }
 
-    final url = ok.first.descriptor!.url;
-    _log.info('Blossom upload OK (${ok.length}/${results.length}) $url');
-    return url;
+    throw Exception('All blossom servers failed to upload');
   }
 
   static const int maxDownloadBytes = 150 * 1024 * 1024;

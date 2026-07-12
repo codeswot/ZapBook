@@ -53,7 +53,7 @@ void main() {
     mockContacts = MockContactService();
     mockCircleProgressDao = MockCircleProgressDao();
     when(
-      () => mockCircleProgressDao.watchProgress(any()),
+      () => mockCircleProgressDao.watchAllProgressByGroupId(any()),
     ).thenAnswer((_) => Stream.value([]));
   });
 

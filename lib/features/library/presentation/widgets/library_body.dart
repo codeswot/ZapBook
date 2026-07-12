@@ -70,7 +70,7 @@ class LibraryBody extends StatelessWidget {
             final hasTextHits =
                 searchQuery.isNotEmpty &&
                 textHits.any(
-                  (hit) => books.any((b) => b.circleDirId == hit.circleBookId),
+                  (hit) => books.any((b) => b.circleDirId == hit.circleDirId),
                 );
 
             if (displayBooks.isEmpty &&

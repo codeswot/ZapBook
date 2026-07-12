@@ -1,59 +1,102 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:logging/logging.dart' as logging;
-import 'package:marmot_dart/marmot_dart.dart';
-import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/config/zapbook_config.dart';
-import 'package:zapbook/core/domain/book_group_naming.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 abstract interface class HomeDashboardDataSource {
   Stream<HomeDashboard> watchDashboard();
   Future<void> touchBookOpened(String circleBookId);
 }
 
-final _log = logging.Logger('HomeDashboardDataSource');
-
 @LazySingleton(as: HomeDashboardDataSource)
 class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   HomeDashboardDataSourceImpl(
-    this._marmot,
-    this._ndk,
     this._identityLocal,
     this._stats,
     this._circleStore,
+    this._progressDao,
+    this._prefs,
   );
 
-  final Marmot _marmot;
-  final Ndk _ndk;
   final IdentityLocalDataSource _identityLocal;
 
   final ReadingStatsService _stats;
   final CircleStoreService _circleStore;
+  final CircleProgressDao _progressDao;
+  final SharedPreferences _prefs;
 
   final _changeController = StreamController<void>.broadcast();
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    return Rx.combineLatest3(
+    return Rx.combineLatest2(
       _circleStore.watchCircleBooks,
-      _circleStore.watchLastOpenedCircleBook,
       _changeController.stream.startWith(null),
-      (circles, lastOpened, _) async {
+      (circles, _) async {
+        final npub = await _identityLocal.readNpub();
         final stats = await _fetchStats();
+
+        CircleBook? lastOpened;
+
+        if (npub != null && npub.isNotEmpty) {
+          final lastOpenedDirId = _prefs.getString('last_opened_$npub');
+          if (lastOpenedDirId != null) {
+            for (final c in circles) {
+              if (c.circleDirId == lastOpenedDirId) {
+                lastOpened = c;
+                break;
+              }
+            }
+          }
+        }
+
+        return (circles, lastOpened, npub, stats);
+      },
+    ).asyncMap((event) => event).switchMap((data) {
+      final circles = data.$1;
+      final lastOpened = data.$2;
+      final npub = data.$3;
+      final stats = data.$4;
+
+      if (lastOpened == null || npub == null) {
+        return Stream.value(
+          HomeDashboard(
+            stats: stats,
+            circles: circles.toList(),
+            lastOpenedCircleBook: lastOpened,
+          ),
+        );
+      }
+
+      return _progressDao.watchAllProgressByGroupId(lastOpened.id).map((
+        progressList,
+      ) {
+        double? progress;
+        int? page;
+        for (final p in progressList) {
+          if (p.pubKey == npub && p.bookId == lastOpened.circleDirId) {
+            progress = p.progressPercentage;
+            page = p.pageIndex;
+            break;
+          }
+        }
         return HomeDashboard(
           stats: stats,
           circles: circles.toList(),
           lastOpenedCircleBook: lastOpened,
+          lastOpenedProgress: progress,
+          lastOpenedPage: page,
         );
-      },
-    ).asyncMap((event) => event);
+      });
+    });
   }
 
   @override
@@ -61,53 +104,8 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     final npub = await _identityLocal.readNpub();
     if (npub == null || npub.isEmpty) return;
 
-    final name = BookGroupNaming.legacyNameFor(circleBookId);
-    final groups = await _marmot.listGroups();
-    MarmotGroup? targetGroup;
-    for (final group in groups) {
-      if (group.name == name) {
-        targetGroup = group;
-        break;
-      }
-    }
-    if (targetGroup == null) return;
-    final groupId = targetGroup.id;
-
-    final payload = {
-      'type': 'zapbook.book.progress',
-      'circleBookId': circleBookId,
-      'lastReadAtMs': DateTime.now().millisecondsSinceEpoch,
-    };
-    final eventJsonStr = await _marmot.sendStructured(npub, groupId, payload);
-
+    await _prefs.setString('last_opened_$npub', circleBookId);
     _changeController.add(null);
-
-    try {
-      final map = jsonDecode(eventJsonStr) as Map<String, dynamic>;
-      final tags = (map['tags'] as List)
-          .map((tag) => (tag as List).map((e) => e.toString()).toList())
-          .toList();
-      String pubKey = map['pubkey'] as String;
-      if (pubKey.startsWith('npub')) {
-        pubKey = Nip19.decode(pubKey);
-      }
-      final nipEvent = Nip01Event(
-        id: map['id'] as String?,
-        pubKey: pubKey,
-        kind: (map['kind'] as num).toInt(),
-        tags: tags,
-        content: map['content'] as String,
-        sig: map['sig'] as String?,
-        createdAt: (map['created_at'] as num).toInt(),
-      );
-
-      _ndk.broadcast.broadcast(
-        nostrEvent: nipEvent,
-        specificRelays: ZapbookConfig.broadcastRelays,
-      );
-    } catch (error, stack) {
-      _log.warning('mark read broadcast failed', error, stack);
-    }
   }
 
   Future<HomeDashboardStats> _fetchStats() async {

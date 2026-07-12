@@ -17,12 +17,16 @@ class HomeContinueReadingCard extends StatelessWidget {
     required this.onTap,
     required this.onBookOpen,
     this.onLongPress,
+    this.progress,
+    this.pageIndex,
   });
 
   final CircleBook book;
   final VoidCallback onTap;
   final VoidCallback onBookOpen;
   final VoidCallback? onLongPress;
+  final double? progress;
+  final int? pageIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +86,10 @@ class HomeContinueReadingCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          book.pageCount > 0
-                              ? 'Page 1 of ${book.pageCount}'
+                          pageIndex != null
+                              ? (book.pageCount > 0
+                                    ? 'Page ${pageIndex! + 1} of ${book.pageCount}'
+                                    : 'Reading: Page ${pageIndex! + 1}')
                               : 'Not started',
                           style: typography.bodyS.copyWith(color: colors.slate),
                         ),
@@ -139,7 +145,7 @@ class HomeContinueReadingCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: AppRadii.br10,
                       child: LinearProgressIndicator(
-                        value: 0.0,
+                        value: progress ?? 0.0,
                         backgroundColor: context.colors.paper4,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           colors.bitcoin,

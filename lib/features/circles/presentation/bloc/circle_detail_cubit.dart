@@ -66,23 +66,21 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     );
 
     _progressSub?.cancel();
-    _progressSub = _progressDao.watchProgress(book.id).listen((progressList) {
-      final s = state;
-      if (s is CircleDetailLoaded) {
-        final newProgress = <String, MemberProgress>{};
-        for (final p in progressList) {
-          if (p.bookId == circleBookId) {
-            newProgress[p.pubKey] = MemberProgress(
-              currentPage: p.pageIndex,
-              currentWordCount: 0,
-              totalWordCount: 1,
-              fraction: p.progressPercentage,
-            );
+    _progressSub = _progressDao
+        .watchProgressByBook(groupId: book.id, bookId: book.circleDirId)
+        .listen((progressList) {
+          final s = state;
+          if (s is CircleDetailLoaded) {
+            final newProgress = <String, MemberProgress>{};
+            for (final p in progressList) {
+              newProgress[p.pubKey] = MemberProgress(
+                currentPage: p.pageIndex,
+                fraction: p.progressPercentage,
+              );
+            }
+            emit(s.copyWith(memberProgress: newProgress));
           }
-        }
-        emit(s.copyWith(memberProgress: newProgress));
-      }
-    });
+        });
 
     unawaited(syncCircleState(book));
   }

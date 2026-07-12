@@ -76,7 +76,7 @@ void main() {
 
     final hits = await index.search('incentive alignment');
     expect(hits, hasLength(1));
-    expect(hits.first.circleBookId, 'b1');
+    expect(hits.first.circleDirId, 'b1');
     expect(hits.first.pageNumber, 2);
     expect(hits.first.snippet, contains(BookSearchIndex.highlightStart));
   });
@@ -97,9 +97,9 @@ void main() {
 
     final all = await index.search('aurora');
     expect(all, hasLength(2));
-    final scoped = await index.search('aurora', circleBookId: 'b3');
+    final scoped = await index.search('aurora', circleDirId: 'b3');
     expect(scoped, hasLength(1));
-    expect(scoped.first.circleBookId, 'b3');
+    expect(scoped.first.circleDirId, 'b3');
   });
 
   test('ensureIndexed is idempotent', () async {

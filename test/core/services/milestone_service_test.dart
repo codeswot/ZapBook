@@ -7,6 +7,11 @@ import 'package:zapbook/core/services/milestone_service.dart';
 import 'package:zapbook/core/services/decoded_message_cache.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
+import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/dao/cheers_dao.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
+import 'package:zapbook/core/models/circle_member_progress.dart';
+
 class MockMarmot extends Mock implements Marmot {}
 
 class MockNdk extends Mock implements Ndk {}
@@ -15,6 +20,8 @@ class MockIdentityLocalDataSource extends Mock
     implements IdentityLocalDataSource {}
 
 class MockDecodedMessageCache extends Mock implements DecodedMessageCache {}
+
+class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 class MockBroadcast extends Mock implements Broadcast {}
 
@@ -26,17 +33,27 @@ class MockMarmotGroup extends Mock implements MarmotGroup {}
 
 class FakeMarmotMessage extends Fake implements MarmotMessage {}
 
+class FakeCircleMemberProgress extends Fake implements CircleMemberProgress {}
+
+class MockCheersDao extends Mock implements CheersDao {}
+
+class FakeCheersActivityMessage extends Fake implements CheersActivityMessage {}
+
 void main() {
   late MilestoneService service;
   late MockMarmot mockMarmot;
   late MockNdk mockNdk;
   late MockIdentityLocalDataSource mockIdentity;
   late MockDecodedMessageCache mockCache;
+  late MockCircleProgressDao mockDao;
+  late MockCheersDao mockCheersDao;
   late MockBroadcast mockBroadcast;
 
   setUpAll(() {
     registerFallbackValue(FakeNip01Event());
     registerFallbackValue(FakeMarmotMessage());
+    registerFallbackValue(FakeCircleMemberProgress());
+    registerFallbackValue(FakeCheersActivityMessage());
   });
 
   setUp(() {
@@ -44,15 +61,33 @@ void main() {
     mockNdk = MockNdk();
     mockIdentity = MockIdentityLocalDataSource();
     mockCache = MockDecodedMessageCache();
+    mockDao = MockCircleProgressDao();
+    mockCheersDao = MockCheersDao();
     mockBroadcast = MockBroadcast();
 
     when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
+    when(() => mockMarmot.listGroups()).thenAnswer((_) async => []);
+    when(
+      () => mockDao.getProgress(
+        groupId: any(named: 'groupId'),
+        bookId: any(named: 'bookId'),
+        pubKey: any(named: 'pubKey'),
+      ),
+    ).thenAnswer((_) async => null);
+    when(() => mockDao.upsertProgress(any())).thenAnswer((_) async => {});
+    when(() => mockCheersDao.saveActivity(any())).thenAnswer((_) async => {});
     when(() => mockIdentity.readNpub()).thenAnswer(
       (_) async =>
           'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
     );
 
-    service = MilestoneService(mockMarmot, mockNdk, mockIdentity, mockCache);
+    service = MilestoneService(
+      mockMarmot,
+      mockIdentity,
+      GroupEnvelopeService(mockNdk, mockIdentity, mockCache),
+      mockDao,
+      mockCheersDao,
+    );
   });
 
   test('ingestMessage processes progress correctly', () {

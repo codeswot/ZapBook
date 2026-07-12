@@ -29,6 +29,8 @@ class CircleBookTile extends StatelessWidget {
       zbfPath: book.zbfPath,
       bookTitle: book.title,
       coverPath: book.coverPath,
+      circleDirId: book.circleDirId,
+      groupId: book.id,
     ).push(context);
   }
 

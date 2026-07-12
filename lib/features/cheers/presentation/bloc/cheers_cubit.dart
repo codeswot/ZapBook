@@ -54,8 +54,9 @@ class CheersCubit extends Cubit<CheersState> {
 
       switch (_activeFilter) {
         case 'Milestones':
-          if (a.type == 'milestone' || a.type == 'notification')
+          if (a.type == 'milestone' || a.type == 'notification') {
             filtered.add(a);
+          }
           break;
         case 'Zaps':
           if (a.type == 'zap' && (a.isMine || a.recipientNpub.isNotEmpty)) {
@@ -63,7 +64,9 @@ class CheersCubit extends Cubit<CheersState> {
           }
           break;
         case 'Notification':
-          if (a.type == 'notification') filtered.add(a);
+          if (a.type == 'notification') {
+            filtered.add(a);
+          }
           break;
         case 'All':
         default:

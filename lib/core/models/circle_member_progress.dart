@@ -30,7 +30,8 @@ class CircleMemberProgress extends Equatable {
       pageIndex: msg.payload['currentPage'] as int? ?? 0,
       progressPercentage: (msg.payload['fraction'] as num?)?.toDouble() ?? 0.0,
       updatedAt: msg.timestampSecs,
-      milestonesReached: (msg.payload['milestonesReached'] as num?)?.toInt() ?? 0,
+      milestonesReached:
+          (msg.payload['milestonesReached'] as num?)?.toInt() ?? 0,
       completed: msg.payload['bookCompleted'] as bool? ?? false,
     );
   }

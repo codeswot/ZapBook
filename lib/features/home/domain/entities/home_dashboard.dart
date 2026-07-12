@@ -21,12 +21,22 @@ final class HomeDashboard extends Equatable {
     required this.stats,
     required this.circles,
     this.lastOpenedCircleBook,
+    this.lastOpenedProgress,
+    this.lastOpenedPage,
   });
 
   final HomeDashboardStats stats;
   final List<CircleBook> circles;
   final CircleBook? lastOpenedCircleBook;
+  final double? lastOpenedProgress;
+  final int? lastOpenedPage;
 
   @override
-  List<Object?> get props => [stats, circles, lastOpenedCircleBook];
+  List<Object?> get props => [
+    stats,
+    circles,
+    lastOpenedCircleBook,
+    lastOpenedProgress,
+    lastOpenedPage,
+  ];
 }

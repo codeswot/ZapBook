@@ -39,11 +39,13 @@ class _HomeView extends StatelessWidget {
         context.read<BookDownloadCubit>().downloadBook(book);
         return;
       }
-      context.read<HomeCubit>().touchBookOpened(book.id);
+      context.read<HomeCubit>().touchBookOpened(book.circleDirId);
       ZbfViewerRoute(
         zbfPath: book.zbfPath,
         bookTitle: book.title,
         coverPath: book.coverPath,
+        circleDirId: book.circleDirId,
+        groupId: book.id,
       ).push(context);
     }
   }
@@ -51,9 +53,9 @@ class _HomeView extends StatelessWidget {
   void _onBookOpen(BuildContext context, CircleBook book) {
     if (!book.isDownloaded) {
       context.read<BookDownloadCubit>().downloadBook(book);
-      context.read<HomeCubit>().touchBookOpened(book.id);
+      context.read<HomeCubit>().touchBookOpened(book.circleDirId);
     } else {
-      context.read<HomeCubit>().touchBookOpened(book.id);
+      context.read<HomeCubit>().touchBookOpened(book.circleDirId);
     }
 
     ZbfViewerRoute(
@@ -170,6 +172,8 @@ class _HomeView extends StatelessWidget {
                             if (currentBook != null)
                               HomeContinueReadingCard(
                                 book: currentBook,
+                                progress: dashboard.lastOpenedProgress,
+                                pageIndex: dashboard.lastOpenedPage,
                                 onTap: () => _onCardTap(context, currentBook),
                                 onBookOpen: () =>
                                     _onBookOpen(context, currentBook),

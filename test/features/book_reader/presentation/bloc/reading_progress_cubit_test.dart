@@ -1,65 +1,93 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/services/quiz_service.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
-import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:reading_progress/reading_progress.dart';
+import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
+import 'package:zapbook/zbf/zbf.dart';
 
 class MockReadingProgressRepository extends Mock
-    implements ReadingProgressRepository {}
+    implements ReadingProgressLocalStore {}
+
+class MockMilestoneService extends Mock implements MilestoneService {}
 
 class MockQuizService extends Mock implements QuizService {}
 
+class MockReadingStatsService extends Mock implements ReadingStatsService {}
+
 class FakeReadingState extends Fake implements ReadingState {}
+
+ZbfBookHandle _handle() {
+  final manifest = BookManifest(
+    id: 'test_book',
+    title: 'Test',
+    author: 'Author',
+    sourceFormat: BookSourceFormat.pdf,
+    pageCount: 3,
+    chapterCount: 3,
+    coverAsset: 'cover.png',
+    createdAt: DateTime.now(),
+    needsAiProcessing: false,
+    pageWords: const [100, 150, 120],
+  );
+  return ZbfBookHandle(dirPath: '', manifest: manifest);
+}
 
 void main() {
   late MockReadingProgressRepository mockRepo;
-  late MockQuizService mockQuizService;
-  late ReadingDeps testDeps;
+  late MockMilestoneService mockMilestone;
+  late MockQuizService mockQuiz;
+  late MockReadingStatsService mockStats;
 
   setUpAll(() {
     registerFallbackValue(FakeReadingState());
   });
 
   setUp(() {
-    mockQuizService = MockQuizService();
     mockRepo = MockReadingProgressRepository();
+    mockMilestone = MockMilestoneService();
+    mockQuiz = MockQuizService();
+    mockStats = MockReadingStatsService();
 
-    testDeps = ReadingDeps(
-      density: const BookDensity(pageWords: [100, 150, 120]),
-      config: const ProgressConfig(),
-    );
+    when(() => mockQuiz.onCompleted).thenAnswer((_) => const Stream.empty());
     when(
-      () => mockQuizService.onCompleted,
-    ).thenAnswer((_) => const Stream.empty());
+      () => mockRepo.saveSnapshot(
+        any(),
+        any(),
+        scrollOffset: any(named: 'scrollOffset'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
-  int fakeClock() => 100000;
-
   ReadingProgressCubit buildCubit() {
-    return ReadingProgressCubit.forDeps(
-      deps: testDeps,
-      circleBookId: 'test_book',
-      clock: fakeClock,
-      repository: mockRepo,
-    );
+    return ReadingProgressCubit(mockRepo, mockMilestone, mockQuiz, mockStats)
+      ..open(_handle(), circleBookId: 'test_book', clock: () => 100000);
   }
 
   group('ReadingProgressCubit', () {
-    test('initial state', () {
+    test('opens to empty progress', () {
       final cubit = buildCubit();
+      expect(cubit.state, const ReadingProgressState());
       expect(cubit.state.wordsRead, 0);
       expect(cubit.totalWords, 370);
       expect(cubit.wordProgress, 0.0);
     });
 
-    test('start opens page and begins timer', () {
+    test('start opens the initial page', () {
       final cubit = buildCubit();
       cubit.start(initialPage: 0);
       expect(cubit.state.currentPage, 0);
     });
 
-    test('restore loads snapshot if available', () async {
+    test('openPage projects the current page', () {
+      final cubit = buildCubit();
+      cubit.openPage(1);
+      expect(cubit.state.currentPage, 1);
+    });
+
+    test('restore seeds engine and projects words read', () async {
       when(() => mockRepo.loadSnapshot('test_book')).thenAnswer(
         (_) async => (
           state: const ReadingState(
@@ -85,29 +113,22 @@ void main() {
       expect(result.page, 0);
       expect(result.scrollOffset, 123.4);
       expect(cubit.state.wordsRead, 50);
-      expect(cubit.state.wpm, 250);
-      expect(cubit.state.pointsBanked, 10);
+      expect(cubit.state.fraction, closeTo(50 / 370, 0.0001));
     });
 
-    test('openPage updates current page', () {
+    test('tick while paused does not advance state', () {
+      final cubit = buildCubit();
+      cubit.start(initialPage: 0);
+      cubit.pause();
+      final afterPause = cubit.state;
+      cubit.tick();
+      expect(cubit.state, afterPause);
+    });
+
+    test('pause saves a dirty session', () {
       final cubit = buildCubit();
       cubit.openPage(1);
-      expect(cubit.state.currentPage, 1);
-    });
-
-    test('pause and resume', () {
-      when(
-        () => mockRepo.saveSnapshot(
-          any(),
-          any(),
-          scrollOffset: any(named: 'scrollOffset'),
-        ),
-      ).thenAnswer((_) async {});
-
-      final cubit = buildCubit();
-      cubit.openPage(1); // dirty the state
       cubit.pause();
-      // Should have called save
       verify(
         () => mockRepo.saveSnapshot(
           any(),
@@ -115,24 +136,12 @@ void main() {
           scrollOffset: any(named: 'scrollOffset'),
         ),
       ).called(1);
-
-      cubit.resume();
-      cubit.tick(); // shouldn't crash
     });
 
     test('closeSession flushes and saves', () {
-      when(
-        () => mockRepo.saveSnapshot(
-          any(),
-          any(),
-          scrollOffset: any(named: 'scrollOffset'),
-        ),
-      ).thenAnswer((_) async {});
-
       final cubit = buildCubit();
       cubit.openPage(0);
       cubit.closeSession();
-
       verify(
         () => mockRepo.saveSnapshot(
           any(),
@@ -142,18 +151,10 @@ void main() {
       ).called(1);
     });
 
-    test('saveScrollOffset sets offset and dirties state', () {
-      when(
-        () => mockRepo.saveSnapshot(
-          any(),
-          any(),
-          scrollOffset: any(named: 'scrollOffset'),
-        ),
-      ).thenAnswer((_) async {});
-
+    test('saveScrollOffset persists the offset on save', () {
       final cubit = buildCubit();
       cubit.saveScrollOffset(50.0);
-      cubit.pause(); // force save
+      cubit.pause();
       verify(
         () => mockRepo.saveSnapshot(any(), any(), scrollOffset: 50.0),
       ).called(1);

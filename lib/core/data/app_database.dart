@@ -124,7 +124,6 @@ class AppDatabase {
       )
     ''');
     _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
-
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_cheers_timestamp ON cheers_feed(timestamp DESC)',
     );

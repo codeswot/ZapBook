@@ -11,5 +11,7 @@ void openBook(BuildContext context, CircleBook book) {
     zbfPath: book.zbfPath,
     bookTitle: book.title,
     coverPath: book.coverPath,
+    circleDirId: book.circleDirId,
+    groupId: book.id,
   ).push(context);
 }

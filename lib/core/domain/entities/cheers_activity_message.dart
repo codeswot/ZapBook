@@ -35,9 +35,7 @@ final class CheersActivityMessage extends Equatable {
     required CircleMemberProgress next,
     String? bookTitle,
   }) {
-    final timestamp = DateTime.fromMillisecondsSinceEpoch(
-      timestampSecs * 1000,
-    );
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(timestampSecs * 1000);
     final prevCompleted = previous?.completed ?? false;
     final prevMilestones = previous?.milestonesReached ?? 0;
 

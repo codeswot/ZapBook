@@ -24,7 +24,7 @@ class BookTextSearchResults extends StatelessWidget {
     final typography = context.typography;
     final byId = {for (final book in books) book.id: book};
     final visible = hits
-        .where((hit) => byId.containsKey(hit.circleBookId))
+        .where((hit) => byId.containsKey(hit.circleDirId))
         .toList();
     if (visible.isEmpty) return const SizedBox.shrink();
 
@@ -43,7 +43,7 @@ class BookTextSearchResults extends StatelessWidget {
           ),
         ),
         for (final hit in visible)
-          _SearchHitTile(hit: hit, book: byId[hit.circleBookId]!, query: query),
+          _SearchHitTile(hit: hit, book: byId[hit.circleDirId]!, query: query),
       ],
     );
   }
@@ -72,6 +72,8 @@ class _SearchHitTile extends StatelessWidget {
         zbfPath: book.zbfPath,
         page: hit.pageNumber - 1,
         query: query,
+        circleDirId: book.circleDirId,
+        groupId: book.id,
       ).push(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),

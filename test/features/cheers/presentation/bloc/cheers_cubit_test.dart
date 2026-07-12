@@ -11,6 +11,7 @@ import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 
 class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
+
 class MockZapNudgeService extends Mock implements ZapNudgeService {}
 
 class FakeNostrService extends Fake implements NostrService {
@@ -60,11 +61,7 @@ void main() {
   });
 
   CheersCubit createCubit() {
-    return CheersCubit(
-      watchCheersActivities,
-      nudgeService,
-      nostrService,
-    );
+    return CheersCubit(watchCheersActivities, nudgeService, nostrService);
   }
 
   test('initial state is CheersLoading', () {

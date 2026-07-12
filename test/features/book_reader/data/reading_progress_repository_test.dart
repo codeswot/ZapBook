@@ -4,7 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
 import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_repository.dart';
+import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
 
 class MockNdk extends Mock implements Ndk {}
 
@@ -23,7 +23,7 @@ class FakeNip01Event extends Fake implements Nip01Event {}
 class FakeNdkBroadcastResponse extends Fake implements NdkBroadcastResponse {}
 
 void main() {
-  late ReadingProgressRepository repository;
+  late ReadingProgressLocalStore repository;
   late MockNdk mockNdk;
   late MockAccounts mockAccounts;
   late MockBroadcast mockBroadcast;
@@ -47,7 +47,7 @@ void main() {
     when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
     when(() => mockAccount.signer).thenReturn(mockSigner);
 
-    repository = ReadingProgressRepository(mockNdk, mockCache);
+    repository = ReadingProgressLocalStore(mockNdk, mockCache);
   });
 
   test('saveSnapshot saves encrypted reading progress', () async {

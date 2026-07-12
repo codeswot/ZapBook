@@ -12,16 +12,9 @@ class CircleDetailLoading extends CircleDetailState {
 }
 
 class MemberProgress {
-  const MemberProgress({
-    required this.currentPage,
-    required this.currentWordCount,
-    required this.totalWordCount,
-    required this.fraction,
-  });
+  const MemberProgress({required this.currentPage, required this.fraction});
 
   final int currentPage;
-  final int currentWordCount;
-  final int totalWordCount;
   final double fraction;
 }
 
