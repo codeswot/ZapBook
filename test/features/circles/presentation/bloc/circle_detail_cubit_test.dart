@@ -100,11 +100,12 @@ void main() {
       expect(state.book, testBook);
       expect(state.myNpub, 'npub1me');
       expect(state.members.length, 2);
-      expect(state.members.first.npub, 'npub1me');
-      expect(state.members.first.isSelf, true);
-      expect(state.members.first.isFollow, true);
-      expect(state.members.last.isSelf, false);
-      expect(state.members.last.isFollow, false);
+      expect(state.members.last.npub, 'npub1me');
+      expect(state.members.last.isSelf, true);
+      expect(state.members.last.isFollow, true);
+      expect(state.members.first.npub, 'npub1other');
+      expect(state.members.first.isSelf, false);
+      expect(state.members.first.isFollow, false);
     });
 
     test('removeMember removes and refreshes', () async {

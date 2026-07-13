@@ -43,12 +43,13 @@ class BlossomService {
             pubKey: account.pubkey,
             kind: 24242,
             tags: [
+              ['u', url],
+              ['method', 'PUT'],
               ['t', 'upload'],
-              ['t', 'blossom.upload'],
               ['x', payloadHash],
               ['expiration', expiration.toString()],
             ],
-            content: 'blossom.upload',
+            content: 'Upload blossom',
             createdAt: now,
           );
           final signed = await account.signer.sign(authEvent);
@@ -62,7 +63,7 @@ class BlossomService {
             'sig': signed.sig,
           });
 
-          final encodedAuth = base64UrlEncode(utf8.encode(authJson));
+          final encodedAuth = base64Encode(utf8.encode(authJson));
           request.headers['Authorization'] = 'Nostr $encodedAuth';
         }
 

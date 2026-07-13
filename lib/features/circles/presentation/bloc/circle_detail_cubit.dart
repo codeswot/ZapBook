@@ -40,16 +40,33 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     final myNpub = await _identityLocal.readNpub() ?? '';
 
     final circleMembers = await _circleStore.getCircleMembers(circleBookId);
-    final members = circleMembers
-        .map(
-          (member) => MemberEntry(
-            npub: member.npub,
-            contact: member,
-            isSelf: member.npub == myNpub,
-            isFollow: member.isFollow,
-          ),
-        )
-        .toList();
+
+    MemberEntry? selfEntry;
+    final otherMembers = <MemberEntry>[];
+
+    for (final member in circleMembers) {
+      final isSelf = member.npub == myNpub;
+      final entry = MemberEntry(
+        npub: member.npub,
+        contact: member,
+        isSelf: isSelf,
+        isFollow: member.isFollow,
+      );
+
+      if (isSelf) {
+        selfEntry = entry;
+      } else {
+        otherMembers.add(entry);
+      }
+    }
+
+    otherMembers.sort((a, b) {
+      return a.contact.label.toLowerCase().compareTo(
+        b.contact.label.toLowerCase(),
+      );
+    });
+
+    final members = [...otherMembers, ?selfEntry];
 
     emit(
       CircleDetailLoaded(
