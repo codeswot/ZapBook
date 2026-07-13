@@ -1,18 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart'
     show MemberProgress;
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_progress_bar.dart';
-import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
-import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
-import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
-import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/features/circles/presentation/widgets/reader_zap_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
@@ -42,76 +35,13 @@ class CircleReaderTile extends StatelessWidget {
 
   void _showZapSheet(BuildContext context) {
     if (isYou) return;
-    final colors = context.colors;
-    final typography = context.typography;
-    ZapSheet.show(
-      context: context,
-      header: Row(
-        children: [
-          AppProfileAvatar(url: entry.contact.picture ?? '', size: 48),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Zap ${entry.contact.label}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.h3.copyWith(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Reading $bookTitle',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.bodyS.copyWith(color: colors.slate),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      onZapSelected: (gesture, amount, message) =>
-          _handleZap(context, gesture, amount, message),
+    ReaderZapSheet.show(
+      context,
+      reader: entry.contact,
+      circleId: circleBookId,
+      circleBookTitle: bookTitle,
     );
-  }
-
-  Future<void> _handleZap(
-    BuildContext context,
-    ZapGesture gesture,
-    int amount,
-    String? comment,
-  ) async {
-    final messenger = context.toast;
-    final cubit = context.read<CircleDetailCubit>();
-    final lud16 = entry.contact.lud16;
-    if (lud16 == null || lud16.isEmpty) {
-      await cubit.nudgeReader(circleBookId: circleBookId, toNpub: entry.npub);
-      if (!context.mounted) return;
-      await ZapNudgeSheet.show(
-        context,
-        title: "${entry.contact.label} can't be zapped yet",
-        message:
-            "${entry.contact.label} hasn't set up their lightning wallet. "
-            "We've let them know — you'll get a heads-up in Cheers when "
-            'they\'re ready.',
-      );
-      return;
-    }
-
-    await cubit.zapMember(
-      entry: entry,
-      gesture: gesture,
-      amount: amount,
-      comment: comment,
-      onSuccess: (msg) => messenger.showSuccess(msg),
-      onError: (msg) => messenger.showError(msg),
-    );
+    return;
   }
 
   @override

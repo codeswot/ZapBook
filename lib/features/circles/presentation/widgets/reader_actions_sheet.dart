@@ -7,9 +7,7 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.d
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
-import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
-import 'package:zapbook/core/presentation/widgets/app_toast.dart';
+import 'package:zapbook/features/circles/presentation/widgets/reader_zap_sheet.dart';
 import 'package:zapbook/theme/app_radii.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
@@ -68,66 +66,13 @@ class ReaderActionsSheet extends StatelessWidget {
   }
 
   void _showZapSheet(BuildContext context) {
-    final colors = context.colors;
-    final typography = context.typography;
-    ZapSheet.show(
-      context: context,
-      header: Row(
-        children: [
-          AppProfileAvatar(url: entry.contact.picture ?? '', size: 48),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Zap ${entry.contact.label}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.h3.copyWith(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Reading $bookTitle',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.bodyS.copyWith(color: colors.slate),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      onZapSelected: (gesture, amount, message) =>
-          _handleZap(context, gesture, amount, message),
+    ReaderZapSheet.show(
+      context,
+      reader: entry.contact,
+      circleId: circleBookId,
+      circleBookTitle: bookTitle,
     );
-  }
-
-  Future<void> _handleZap(
-    BuildContext context,
-    ZapGesture gesture,
-    int amount,
-    String? comment,
-  ) async {
-    final messenger = context.toast;
-    final lud16 = entry.contact.lud16;
-    if (lud16 == null || lud16.isEmpty) {
-      messenger.showError('${entry.contact.label} has no lightning address');
-      return;
-    }
-
-    await cubit.zapMember(
-      entry: entry,
-      gesture: gesture,
-      amount: amount,
-      comment: comment,
-      onSuccess: (msg) => messenger.showSuccess(msg),
-      onError: (msg) => messenger.showError(msg),
-    );
+    return;
   }
 
   @override

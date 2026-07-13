@@ -43,23 +43,18 @@ class _CheersViewState extends State<CheersView> {
         _scrollController.position.maxScrollExtent - 200) {}
   }
 
-  void _showZapSheet(
-    BuildContext context,
-    CheersActivity activity,
-    String actorName,
-    String? actorAvatar,
-    String bookTitle,
-  ) {
+  void _showZapSheet(BuildContext context, CheersActivity activity) {
     if (activity.isMine) {
       return;
     }
     final colors = context.colors;
     final typography = context.typography;
+    final bookCircleTitle = activity.bookCircleTitle ?? '';
     ZapSheet.show(
       context: context,
       header: Row(
         children: [
-          AppProfileAvatar(url: actorAvatar ?? '', size: 48),
+          AppProfileAvatar(url: activity.recipientProfilePictureUrl, size: 48),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -67,7 +62,7 @@ class _CheersViewState extends State<CheersView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Zap $actorName',
+                  'Zap ${activity.recipientDisplayName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: typography.h3.copyWith(
@@ -82,10 +77,10 @@ class _CheersViewState extends State<CheersView> {
                   overflow: TextOverflow.ellipsis,
                   style: typography.bodyS.copyWith(color: colors.slate),
                 ),
-                if (bookTitle.isNotEmpty) ...[
+                if (bookCircleTitle.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    bookTitle,
+                    bookCircleTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: typography.body.copyWith(color: colors.slate2),
@@ -101,7 +96,6 @@ class _CheersViewState extends State<CheersView> {
           activity: activity,
           gesture: gesture,
           amount: amount,
-          actorName: actorName,
           comment: message,
         );
       },
@@ -314,26 +308,14 @@ class _CheersViewState extends State<CheersView> {
                           activity: item,
                           onTap: (actorName, actorAvatar, bookTitle) {
                             if (item.type == 'zap_nudge') {
-                              context.read<CheersCubit>().performNudge(
-                                item,
-                                actorName,
-                              );
+                              context.read<CheersCubit>().performNudge(item);
                             } else {
-                              _showZapSheet(
-                                context,
-                                item,
-                                actorName,
-                                actorAvatar,
-                                bookTitle,
-                              );
+                              _showZapSheet(context, item);
                             }
                           },
                           onLongPress: (actorName, actorAvatar, bookTitle) {
                             if (item.type == 'zap_nudge') {
-                              context.read<CheersCubit>().performNudge(
-                                item,
-                                actorName,
-                              );
+                              context.read<CheersCubit>().performNudge(item);
                             } else if (item.type != 'zap') {
                               _showLongPressMenu(
                                 context,
@@ -352,7 +334,6 @@ class _CheersViewState extends State<CheersView> {
                               activity: item,
                               gesture: gesture,
                               amount: gesture.sats ?? 21,
-                              actorName: actorName,
                             );
                           },
                         );

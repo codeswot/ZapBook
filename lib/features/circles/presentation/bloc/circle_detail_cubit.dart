@@ -4,11 +4,9 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 import 'dart:async';
 
-import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
@@ -88,36 +86,6 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> refresh(String circleBookId) => load(circleBookId);
 
   void open(String circleBookId) {}
-
-  Future<ZapResult> sendReaderZap({
-    required String recipientLud16,
-    required String recipientPubkey,
-    required ZapGesture gesture,
-    required int amount,
-    String? comment,
-  }) async => throw UnimplementedError();
-
-  Future<bool> payZap(ZapResult result) async => false;
-
-  Future<void> zapMember({
-    required MemberEntry entry,
-    required ZapGesture gesture,
-    required int amount,
-    String? comment,
-    required void Function(String message) onSuccess,
-    required void Function(String message) onError,
-  }) async {}
-
-  Future<void> notifyZapSent({
-    required String recipientNpub,
-    required int amount,
-    required String reactionType,
-  }) async {}
-
-  Future<void> nudgeReader({
-    required String circleBookId,
-    required String toNpub,
-  }) async {}
 
   Future<void> removeMember(String circleBookId, String npub) async {
     final currentState = state;

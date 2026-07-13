@@ -100,7 +100,6 @@ class CheersLongPressSheet extends StatelessWidget {
                   activity: activity,
                   amount: 21,
                   gesture: ZapGesture.thumbsUp,
-                  actorName: actorName,
                 );
               },
             ),
@@ -115,7 +114,6 @@ class CheersLongPressSheet extends StatelessWidget {
                   activity: activity,
                   amount: 210,
                   gesture: ZapGesture.fire,
-                  actorName: actorName,
                 );
               },
             ),

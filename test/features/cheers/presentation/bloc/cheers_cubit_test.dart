@@ -4,15 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/services/nostr_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 
 class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
 
 class MockZapNudgeService extends Mock implements ZapNudgeService {}
+
+class MockZapService extends Mock implements ZapService {}
 
 class FakeNostrService extends Fake implements NostrService {
   @override
@@ -38,9 +42,25 @@ class FakeNostrServiceWithLud16 extends Fake implements NostrService {
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(ZapGesture.clap);
+    registerFallbackValue(ZapType.profile);
+    registerFallbackValue(
+      const ZapResult(
+        invoice: 'invoice',
+        zapRequestId: 'req',
+        amountSats: 21,
+        gesture: ZapGesture.clap,
+        recipientPubkey: 'pubkey',
+        targetActivitytId: 'targetId',
+      ),
+    );
+  });
+
   late MockWatchCheersActivities watchCheersActivities;
   late MockZapNudgeService nudgeService;
   late NostrService nostrService;
+  late MockZapService zapService;
 
   late StreamController<List<CheersActivity>> activitiesController;
 
@@ -48,6 +68,7 @@ void main() {
     watchCheersActivities = MockWatchCheersActivities();
     nudgeService = MockZapNudgeService();
     nostrService = FakeNostrService();
+    zapService = MockZapService();
 
     activitiesController = StreamController<List<CheersActivity>>.broadcast();
 
@@ -61,7 +82,12 @@ void main() {
   });
 
   CheersCubit createCubit() {
-    return CheersCubit(watchCheersActivities, nudgeService, nostrService);
+    return CheersCubit(
+      watchCheersActivities,
+      nudgeService,
+      nostrService,
+      zapService,
+    );
   }
 
   test('initial state is CheersLoading', () {
@@ -190,7 +216,6 @@ void main() {
         senderProfilePictureUrl: '',
       );
       await cubit.performZap(
-        actorName: 'Test',
         activity: mineActivity,
         gesture: ZapGesture.thumbsUp,
         amount: 10,
@@ -209,7 +234,6 @@ void main() {
       ).thenAnswer((_) => Future.value());
 
       await cubit.performZap(
-        actorName: 'Test',
         activity: activity,
         gesture: ZapGesture.thumbsUp,
         amount: 10,
@@ -217,5 +241,58 @@ void main() {
 
       expect(cubit.state, isA<CheersNudgeRequired>());
     });
+
+    test(
+      'performs zap and emits CheersZapSuccess when lud16 is present',
+      () async {
+        createCubit();
+
+        nostrService = FakeNostrServiceWithLud16();
+
+        // Need a new cubit with the mocked nostrService
+        final validCubit = CheersCubit(
+          watchCheersActivities,
+          nudgeService,
+          nostrService,
+          zapService,
+        );
+
+        when(
+          () => zapService.send(
+            recipientLud16: any(named: 'recipientLud16'),
+            recipientPubkey: any(named: 'recipientPubkey'),
+            targetActivitytId: any(named: 'targetActivitytId'),
+            gesture: any(named: 'gesture'),
+            customSats: any(named: 'customSats'),
+            comment: any(named: 'comment'),
+            zapType: any(named: 'zapType'),
+          ),
+        ).thenAnswer(
+          (_) async => const ZapResult(
+            invoice: 'pr123',
+            zapRequestId: 'req123',
+            amountSats: 21,
+            gesture: ZapGesture.clap,
+            recipientPubkey: 'testPubkey',
+            targetActivitytId: 'targetId',
+          ),
+        );
+
+        when(
+          () => zapService.payZap(any()),
+        ).thenAnswer((_) async => ZapStatus.paidNwc);
+
+        await validCubit.performZap(
+          activity: activity,
+          gesture: ZapGesture.clap,
+          amount: 21,
+          comment: 'Nice!',
+        );
+
+        expect(validCubit.state, isA<CheersZapSuccess>());
+        final state = validCubit.state as CheersZapSuccess;
+        expect(state.message, contains('21'));
+      },
+    );
   });
 }
