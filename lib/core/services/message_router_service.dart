@@ -6,7 +6,6 @@ import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
 import 'package:zapbook/core/data/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
-import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 

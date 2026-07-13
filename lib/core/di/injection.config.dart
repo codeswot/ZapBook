@@ -22,6 +22,7 @@ import 'package:zapbook/core/data/dao/cheers_dao.dart' as _i826;
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart' as _i107;
 import 'package:zapbook/core/data/dao/page_dao.dart' as _i50;
 import 'package:zapbook/core/data/dao/reading_stats_dao.dart' as _i583;
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart' as _i1047;
 import 'package:zapbook/core/data/datasources/circle_progress_data_source.dart'
     as _i220;
 import 'package:zapbook/core/data/datasources/genre_datasource.dart' as _i850;
@@ -266,6 +267,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i583.ReadingStatsDao>(
       () => _i583.ReadingStatsDao(gh<_i708.AppDatabase>()),
+    );
+    gh.lazySingleton<_i1047.ZapSatsEarningsDao>(
+      () => _i1047.ZapSatsEarningsDao(gh<_i708.AppDatabase>()),
     );
     await gh.lazySingletonAsync<_i857.Ndk>(
       () => nostrModule.ndk(gh<_i68.NostrCacheStore>()),

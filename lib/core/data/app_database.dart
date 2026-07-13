@@ -44,6 +44,7 @@ class AppDatabase {
     _createCheersFeedTable(db);
     _createCircleMemberProgressTable(db);
     _createReadingStatsTable(db);
+    _createZapSatsEarningsTable(db);
 
     return _db = db;
   }
@@ -140,6 +141,22 @@ class AppDatabase {
     _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_cheers_timestamp ON cheers_feed(timestamp DESC)',
+    );
+  }
+
+  void _createZapSatsEarningsTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS zap_sats_earnings (
+        id TEXT PRIMARY KEY,
+        sender_npub TEXT NOT NULL,
+        activity_id TEXT NOT NULL,
+        zap_type TEXT NOT NULL,
+        sats INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL
+      )
+    ''');
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_zap_sats_earnings_timestamp ON zap_sats_earnings(timestamp DESC)',
     );
   }
 

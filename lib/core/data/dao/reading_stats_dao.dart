@@ -16,7 +16,7 @@ class ReadingStatsRecord {
     required this.streak,
     this.lastActivityDate,
     required this.booksRead,
-    required this.satsEarned,
+    this.satsEarned = 0,
     required this.updatedAt,
   });
 
@@ -41,7 +41,7 @@ class ReadingStatsRecord {
       streak: (row['streak'] as num).toInt(),
       lastActivityDate: row['last_activity_date'] as String?,
       booksRead: (row['books_read'] as num).toInt(),
-      satsEarned: (row['sats_earned'] as num).toInt(),
+      satsEarned: (row['sats_earned'] as num?)?.toInt() ?? 0,
       updatedAt: (row['updated_at'] as num).toInt(),
     );
   }
@@ -62,13 +62,12 @@ class ReadingStatsDao {
       final database = await _db.open();
       final stmt = database.prepare('''
         INSERT INTO reading_stats (
-          pub_key, streak, last_activity_date, books_read, sats_earned, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          pub_key, streak, last_activity_date, books_read, updated_at
+        ) VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(pub_key) DO UPDATE SET
           streak = excluded.streak,
           last_activity_date = excluded.last_activity_date,
           books_read = excluded.books_read,
-          sats_earned = excluded.sats_earned,
           updated_at = excluded.updated_at
         WHERE excluded.updated_at > reading_stats.updated_at
       ''');
@@ -78,7 +77,6 @@ class ReadingStatsDao {
         stats.streak,
         stats.lastActivityDate,
         stats.booksRead,
-        stats.satsEarned,
         stats.updatedAt,
       ]);
 
