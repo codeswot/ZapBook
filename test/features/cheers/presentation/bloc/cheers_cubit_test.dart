@@ -101,8 +101,10 @@ void main() {
     final activity = CheersActivity(
       id: '1',
       groupId: 'g1',
-      senderNpub: 'actor',
-      recipientNpub: '',
+      senderNpub:
+          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+      recipientNpub:
+          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
       targetId: '',
       targetDescription: 'desc',
       timestamp: DateTime.now(),
@@ -132,8 +134,10 @@ void main() {
       CheersActivity(
         id: '1',
         groupId: 'g1',
-        senderNpub: 's',
-        recipientNpub: '',
+        senderNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+        recipientNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'd',
         timestamp: DateTime.now(),
@@ -149,8 +153,10 @@ void main() {
       CheersActivity(
         id: '2',
         groupId: 'g1',
-        senderNpub: 'actor',
-        recipientNpub: 'recipient',
+        senderNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+        recipientNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'desc',
         timestamp: DateTime.now(),
@@ -183,7 +189,8 @@ void main() {
       groupId: 'g1',
       senderNpub:
           'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      recipientNpub: '',
+      recipientNpub:
+          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
       targetId: '',
       targetDescription: 'desc',
       timestamp: DateTime.now(),
@@ -203,7 +210,8 @@ void main() {
         groupId: 'g1',
         senderNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        recipientNpub: '',
+        recipientNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'desc',
         timestamp: DateTime.now(),

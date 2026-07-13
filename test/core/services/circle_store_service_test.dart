@@ -129,12 +129,6 @@ void main() {
     verify(() => fileStore.deleteBook('dir1')).called(1);
   });
 
-  test('syncCircleState calls groupStore', () async {
-    when(() => groupStore.syncGroupState(any())).thenAnswer((_) async {});
-    await service.syncCircleState('g1');
-    verify(() => groupStore.syncGroupState('g1')).called(1);
-  });
-
   test('leaveCircleBook calls groupStore', () async {
     when(() => groupStore.leaveGroup(any())).thenAnswer((_) async {});
     final mockBook = CircleBook(

@@ -305,10 +305,6 @@ class CircleStoreService {
     }
   }
 
-  Future<void> syncCircleState(String marmotGroupId) async {
-    await _groupStore.syncGroupState(marmotGroupId);
-  }
-
   Future<GroupImagePrepared> prepareCover({
     required Uint8List coverBytes,
   }) async {

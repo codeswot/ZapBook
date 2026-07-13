@@ -79,8 +79,6 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
             emit(s.copyWith(memberProgress: newProgress));
           }
         });
-
-    unawaited(syncCircleState(book));
   }
 
   Future<void> refresh(String circleBookId) => load(circleBookId);
@@ -114,12 +112,6 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     await _circleStore.leaveCircleBook(circleBook);
     await _circleStore.deleteCircleBook(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
-  }
-
-  Future<void> syncCircleState(CircleBook circleBook) async {
-    final s = state;
-    if (s is! CircleDetailLoaded) return;
-    await _circleStore.syncCircleState(circleBook.id);
   }
 
   Future<void> dissolve(CircleBook circleBook) async {

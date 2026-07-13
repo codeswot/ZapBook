@@ -91,9 +91,6 @@ void main() {
           ),
         ],
       );
-      when(
-        () => mockCircleStore.syncCircleState('book1'),
-      ).thenAnswer((_) async {});
 
       final cubit = buildCubit();
       await cubit.load('book1');
@@ -108,8 +105,6 @@ void main() {
       expect(state.members.first.isFollow, true);
       expect(state.members.last.isSelf, false);
       expect(state.members.last.isFollow, false);
-
-      verify(() => mockCircleStore.syncCircleState('book1')).called(1);
     });
 
     test('removeMember removes and refreshes', () async {
@@ -118,9 +113,7 @@ void main() {
       when(
         () => mockCircleStore.getCircleMembers('book1'),
       ).thenAnswer((_) async => []);
-      when(
-        () => mockCircleStore.syncCircleState('book1'),
-      ).thenAnswer((_) async {});
+
       when(
         () => mockCircleStore.removeCircleMember('book1', 'npub1other'),
       ).thenAnswer((_) async {});
@@ -143,9 +136,7 @@ void main() {
       when(
         () => mockCircleStore.getCircleMembers('book1'),
       ).thenAnswer((_) async => []);
-      when(
-        () => mockCircleStore.syncCircleState('book1'),
-      ).thenAnswer((_) async {});
+
       when(
         () => mockContacts.add('npub1other'),
       ).thenAnswer((_) async => const Contact(npub: 'npub1other'));
@@ -169,9 +160,7 @@ void main() {
       when(
         () => mockCircleStore.getCircleMembers('book1'),
       ).thenAnswer((_) async => []);
-      when(
-        () => mockCircleStore.syncCircleState('book1'),
-      ).thenAnswer((_) async {});
+
       when(
         () => mockCircleStore.leaveCircleBook(testBook),
       ).thenAnswer((_) async {});
@@ -195,9 +184,7 @@ void main() {
       when(
         () => mockCircleStore.getCircleMembers('book1'),
       ).thenAnswer((_) async => []);
-      when(
-        () => mockCircleStore.syncCircleState('book1'),
-      ).thenAnswer((_) async {});
+
       when(
         () => mockCircleStore.deleteCircleBook(testBook),
       ).thenAnswer((_) async {});
