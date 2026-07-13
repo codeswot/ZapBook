@@ -8,7 +8,6 @@ class ReadingStatsRecord {
   final int streak;
   final String? lastActivityDate;
   final int booksRead;
-  final int satsEarned;
   final int updatedAt;
 
   ReadingStatsRecord({
@@ -16,7 +15,6 @@ class ReadingStatsRecord {
     required this.streak,
     this.lastActivityDate,
     required this.booksRead,
-    this.satsEarned = 0,
     required this.updatedAt,
   });
 
@@ -41,11 +39,9 @@ class ReadingStatsRecord {
       streak: (row['streak'] as num).toInt(),
       lastActivityDate: row['last_activity_date'] as String?,
       booksRead: (row['books_read'] as num).toInt(),
-      satsEarned: (row['sats_earned'] as num?)?.toInt() ?? 0,
       updatedAt: (row['updated_at'] as num).toInt(),
     );
   }
-
 }
 
 @lazySingleton

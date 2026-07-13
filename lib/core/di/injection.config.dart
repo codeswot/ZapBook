@@ -308,6 +308,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i400.PerformanceCubit>(
       () => _i400.PerformanceCubit(gh<_i39.PerformanceService>()),
     );
+    gh.lazySingleton<_i240.ZapEarningsService>(
+      () => _i240.ZapEarningsService(
+        gh<_i857.Ndk>(),
+        gh<_i1047.ZapSatsEarningsDao>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i397.KeyPackageService>(
       () => _i397.KeyPackageService(
         gh<_i970.Marmot>(),
@@ -331,6 +338,9 @@ extension GetItInjectableX on _i174.GetIt {
         initialData,
         gh<_i1034.FilePickerService>(),
       ),
+    );
+    gh.factory<_i362.EarningsCubit>(
+      () => _i362.EarningsCubit(gh<_i1047.ZapSatsEarningsDao>()),
     );
     gh.lazySingleton<_i148.NostrSignerSource>(
       () => _i429.LocalKeySignerSource(gh<_i603.IdentityLocalDataSource>()),
@@ -360,10 +370,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i394.GroupEnvelopeService>(
       () => _i394.GroupEnvelopeService(gh<_i857.Ndk>()),
-    );
-    gh.lazySingleton<_i240.ZapEarningsService>(
-      () => _i240.ZapEarningsService(gh<_i857.Ndk>()),
-      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i63.IdentityRepository>(
       () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
@@ -434,8 +440,11 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i582.ZapSupportService>(),
       ),
     );
-    gh.factory<_i362.EarningsCubit>(
-      () => _i362.EarningsCubit(gh<_i240.ZapEarningsService>()),
+    gh.factory<_i469.DonateCubit>(
+      () => _i469.DonateCubit(
+        gh<_i362.ZapService>(),
+        gh<_i1053.ClipboardService>(),
+      ),
     );
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
@@ -502,9 +511,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i665.DownloadCircleBook>(
       () => _i665.DownloadCircleBook(gh<_i455.CircleShareService>()),
-    );
-    gh.factory<_i469.DonateCubit>(
-      () => _i469.DonateCubit(gh<_i362.ZapService>()),
     );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),

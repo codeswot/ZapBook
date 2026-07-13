@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
@@ -10,9 +9,13 @@ import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+
 class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 class MockReadingStatsDao extends Mock implements ReadingStatsDao {}
+
+class MockZapSatsEarningsDao extends Mock implements ZapSatsEarningsDao {}
 
 class MockIdentityLocalDataSource extends Mock
     implements IdentityLocalDataSource {}
@@ -20,19 +23,27 @@ class MockIdentityLocalDataSource extends Mock
 class MockZapEarningsService extends Mock implements ZapEarningsService {}
 
 class MockNdk extends Mock implements Ndk {}
+
 class MockRequests extends Mock implements Requests {}
+
 class MockBroadcast extends Mock implements Broadcast {}
+
 class MockAccounts extends Mock implements Accounts {}
+
 class MockAccount extends Mock implements Account {}
+
 class MockSigner extends Mock implements EventSigner {}
 
 class FakeReadingStatsRecord extends Fake implements ReadingStatsRecord {}
+
 class FakeFilter extends Fake implements Filter {}
+
 class FakeNip01Event extends Fake implements Nip01Event {}
 
 void main() {
   late MockCircleProgressDao mockProgressDao;
   late MockReadingStatsDao mockStatsDao;
+  late MockZapSatsEarningsDao mockEarningsDao;
   late MockIdentityLocalDataSource mockIdentity;
   late MockZapEarningsService mockEarnings;
   late MockNdk mockNdk;
@@ -53,6 +64,7 @@ void main() {
   setUp(() {
     mockProgressDao = MockCircleProgressDao();
     mockStatsDao = MockReadingStatsDao();
+    mockEarningsDao = MockZapSatsEarningsDao();
     mockIdentity = MockIdentityLocalDataSource();
     mockEarnings = MockZapEarningsService();
     mockNdk = MockNdk();
@@ -66,16 +78,24 @@ void main() {
     when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
     when(() => mockNdk.accounts).thenReturn(mockAccounts);
 
-    when(() => mockIdentity.readNpub()).thenAnswer((_) => Future.value('pubkey1'));
-    when(() => mockEarnings.totalEarned).thenReturn(ValueNotifier<int>(100));
-    when(() => mockEarnings.earnedForCircle(any())).thenReturn(50);
+    when(
+      () => mockIdentity.readNpub(),
+    ).thenAnswer((_) => Future.value('pubkey1'));
+    when(
+      () => mockEarningsDao.getTotalSats(),
+    ).thenAnswer((_) => Future.value(100));
     when(() => mockEarnings.start()).thenAnswer((_) => Future.value());
-    when(() => mockProgressDao.countCompletedBooks(any())).thenAnswer((_) => Future.value(5));
-    when(() => mockProgressDao.sumMilestonesReached(any())).thenAnswer((_) => Future.value(10));
+    when(
+      () => mockProgressDao.countCompletedBooks(any()),
+    ).thenAnswer((_) => Future.value(5));
+    when(
+      () => mockProgressDao.sumMilestonesReached(any()),
+    ).thenAnswer((_) => Future.value(10));
 
     service = ReadingStatsService(
       mockProgressDao,
       mockStatsDao,
+      mockEarningsDao,
       mockIdentity,
       mockEarnings,
       mockNdk,
@@ -100,10 +120,11 @@ void main() {
       streak: 3,
       lastActivityDate: today(),
       booksRead: 5,
-      satsEarned: 100,
       updatedAt: 123456789,
     );
-    when(() => mockStatsDao.getStats('pubkey1')).thenAnswer((_) async => record);
+    when(
+      () => mockStatsDao.getStats('pubkey1'),
+    ).thenAnswer((_) async => record);
     final stats = await service.getStats(null);
     expect(stats, record);
     verify(() => mockStatsDao.getStats('pubkey1')).called(1);
@@ -115,65 +136,88 @@ void main() {
     verify(() => mockProgressDao.sumMilestonesReached('pubkey1')).called(1);
   });
 
-  test('recordProgressMade increments streak if last activity was yesterday', () async {
-    when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
-      (_) async => ReadingStatsRecord(
-        pubKey: 'pubkey1',
-        streak: 3,
-        lastActivityDate: yesterday(),
-        booksRead: 5,
-        satsEarned: 100,
-        updatedAt: 123456789,
-      ),
-    );
-    when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
-    when(() => mockAccounts.getLoggedAccount()).thenReturn(mockAccount);
-    when(() => mockAccount.signer).thenReturn(mockSigner);
-    when(() => mockAccount.pubkey).thenReturn('pubkey1');
-    when(() => mockSigner.canSign()).thenReturn(true);
-    when(() => mockSigner.sign(any())).thenAnswer((_) async => Nip01Event(pubKey: '', kind: 1, tags: [], content: ''));
+  test(
+    'recordProgressMade increments streak if last activity was yesterday',
+    () async {
+      when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
+        (_) async => ReadingStatsRecord(
+          pubKey: 'pubkey1',
+          streak: 3,
+          lastActivityDate: yesterday(),
+          booksRead: 5,
+          updatedAt: 123456789,
+        ),
+      );
+      when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
+      when(() => mockAccounts.getLoggedAccount()).thenReturn(mockAccount);
+      when(() => mockAccount.signer).thenReturn(mockSigner);
+      when(() => mockAccount.pubkey).thenReturn('pubkey1');
+      when(() => mockSigner.canSign()).thenReturn(true);
+      when(() => mockSigner.sign(any())).thenAnswer(
+        (_) async => Nip01Event(pubKey: '', kind: 1, tags: [], content: ''),
+      );
 
-    await service.recordProgressMade();
+      await service.recordProgressMade();
 
-    final recordCapture = verify(() => mockStatsDao.upsertStats(captureAny())).captured;
-    final ReadingStatsRecord record = recordCapture.first as ReadingStatsRecord;
+      final recordCapture = verify(
+        () => mockStatsDao.upsertStats(captureAny()),
+      ).captured;
+      final ReadingStatsRecord record =
+          recordCapture.first as ReadingStatsRecord;
 
-    expect(record.streak, 4);
-    expect(record.lastActivityDate, today());
-    expect(record.booksRead, 5);
-    expect(record.satsEarned, 100);
+      expect(record.streak, 4);
+      expect(record.lastActivityDate, today());
+      expect(record.booksRead, 5);
 
-    verify(() => mockBroadcast.broadcast(nostrEvent: any(named: 'nostrEvent'), specificRelays: any(named: 'specificRelays'))).called(1);
-  });
+      verify(
+        () => mockBroadcast.broadcast(
+          nostrEvent: any(named: 'nostrEvent'),
+          specificRelays: any(named: 'specificRelays'),
+        ),
+      ).called(1);
+    },
+  );
 
-  test('recordProgressMade resets streak if last activity was before yesterday', () async {
-    when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
-      (_) async => ReadingStatsRecord(
-        pubKey: 'pubkey1',
-        streak: 3,
-        lastActivityDate: dayBeforeYesterday(),
-        booksRead: 5,
-        satsEarned: 100,
-        updatedAt: 123456789,
-      ),
-    );
-    when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
-    when(() => mockAccounts.getLoggedAccount()).thenReturn(mockAccount);
-    when(() => mockAccount.signer).thenReturn(mockSigner);
-    when(() => mockAccount.pubkey).thenReturn('pubkey1');
-    when(() => mockSigner.canSign()).thenReturn(true);
-    when(() => mockSigner.sign(any())).thenAnswer((_) async => Nip01Event(pubKey: '', kind: 1, tags: [], content: ''));
+  test(
+    'recordProgressMade resets streak if last activity was before yesterday',
+    () async {
+      when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
+        (_) async => ReadingStatsRecord(
+          pubKey: 'pubkey1',
+          streak: 3,
+          lastActivityDate: dayBeforeYesterday(),
+          booksRead: 5,
+          updatedAt: 123456789,
+        ),
+      );
+      when(() => mockStatsDao.upsertStats(any())).thenAnswer((_) async {});
+      when(() => mockAccounts.getLoggedAccount()).thenReturn(mockAccount);
+      when(() => mockAccount.signer).thenReturn(mockSigner);
+      when(() => mockAccount.pubkey).thenReturn('pubkey1');
+      when(() => mockSigner.canSign()).thenReturn(true);
+      when(() => mockSigner.sign(any())).thenAnswer(
+        (_) async => Nip01Event(pubKey: '', kind: 1, tags: [], content: ''),
+      );
 
-    await service.recordProgressMade();
+      await service.recordProgressMade();
 
-    final recordCapture = verify(() => mockStatsDao.upsertStats(captureAny())).captured;
-    final ReadingStatsRecord record = recordCapture.first as ReadingStatsRecord;
+      final recordCapture = verify(
+        () => mockStatsDao.upsertStats(captureAny()),
+      ).captured;
+      final ReadingStatsRecord record =
+          recordCapture.first as ReadingStatsRecord;
 
-    expect(record.streak, 1);
-    expect(record.lastActivityDate, today());
+      expect(record.streak, 1);
+      expect(record.lastActivityDate, today());
 
-    verify(() => mockBroadcast.broadcast(nostrEvent: any(named: 'nostrEvent'), specificRelays: any(named: 'specificRelays'))).called(1);
-  });
+      verify(
+        () => mockBroadcast.broadcast(
+          nostrEvent: any(named: 'nostrEvent'),
+          specificRelays: any(named: 'specificRelays'),
+        ),
+      ).called(1);
+    },
+  );
 
   test('recordProgressMade does nothing if already recorded today', () async {
     when(() => mockStatsDao.getStats('pubkey1')).thenAnswer(
@@ -182,7 +226,6 @@ void main() {
         streak: 3,
         lastActivityDate: today(),
         booksRead: 5,
-        satsEarned: 100,
         updatedAt: 123456789,
       ),
     );
@@ -190,7 +233,12 @@ void main() {
     await service.recordProgressMade();
 
     verifyNever(() => mockStatsDao.upsertStats(any()));
-    verifyNever(() => mockBroadcast.broadcast(nostrEvent: any(named: 'nostrEvent'), specificRelays: any(named: 'specificRelays')));
+    verifyNever(
+      () => mockBroadcast.broadcast(
+        nostrEvent: any(named: 'nostrEvent'),
+        specificRelays: any(named: 'specificRelays'),
+      ),
+    );
   });
 
   test('watchStats yields current stats', () async {
@@ -198,11 +246,12 @@ void main() {
       pubKey: 'pubkey1',
       streak: 5,
       booksRead: 0,
-      satsEarned: 0,
       updatedAt: 0,
     );
     final controller = StreamController<ReadingStatsRecord?>();
-    when(() => mockStatsDao.watchStats('pubkey1')).thenAnswer((_) => controller.stream);
+    when(
+      () => mockStatsDao.watchStats('pubkey1'),
+    ).thenAnswer((_) => controller.stream);
 
     final stream = service.watchStats();
 

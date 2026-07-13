@@ -5,14 +5,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/lnurl_models.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 
 class MockZapService extends Mock implements ZapService {}
 
+class MockClipboardService extends Mock implements ClipboardService {}
+
 void main() {
   late MockZapService zapService;
+  late MockClipboardService clipboardService;
 
   const tZapResult = ZapResult(
     invoice: 'lnbc1...',
@@ -20,14 +24,20 @@ void main() {
     amountSats: 2100,
     gesture: ZapGesture.rocket,
     recipientPubkey: 'pubkey',
-    targetEventId: 'event',
+    targetActivitytId: 'event',
   );
 
   setUp(() {
     zapService = MockZapService();
+    clipboardService = MockClipboardService();
+
+    when(
+      () => zapService.payWithFallback(any()),
+    ).thenAnswer((_) async => ZapStatus.paidNwc);
+    when(() => clipboardService.copy(any())).thenAnswer((_) async {});
   });
 
-  DonateCubit buildCubit() => DonateCubit(zapService);
+  DonateCubit buildCubit() => DonateCubit(zapService, clipboardService);
 
   group('DonateCubit', () {
     test('initial state is DonateReady', () {
@@ -82,6 +92,7 @@ void main() {
             comment: 'ZapBook To the moon!',
           ),
         ).called(1);
+        verify(() => zapService.payWithFallback('lnbc1...')).called(1);
       },
     );
 
@@ -123,6 +134,31 @@ void main() {
         verify(
           () => zapService.donate(amountSats: 100, comment: 'gift'),
         ).called(1);
+        verify(() => zapService.payWithFallback('lnbc1...')).called(1);
+      },
+    );
+
+    blocTest<DonateCubit, DonateState>(
+      'sendGift copies invoice if payment fails',
+      build: buildCubit,
+      act: (cubit) async {
+        when(
+          () => zapService.donate(amountSats: 100, comment: 'gift'),
+        ).thenAnswer((_) async => tZapResult);
+        when(
+          () => zapService.payWithFallback('lnbc1...'),
+        ).thenAnswer((_) async => ZapStatus.failed);
+        await cubit.sendGift(100, 'gift');
+      },
+      expect: () => [
+        const DonateLoading(showGift: false),
+        const DonateFailure(
+          showGift: false,
+          userMessage: 'Could not open wallet. Invoice copied to clipboard.',
+        ),
+      ],
+      verify: (_) {
+        verify(() => clipboardService.copy('lnbc1...')).called(1);
       },
     );
 

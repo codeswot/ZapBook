@@ -47,7 +47,7 @@ class ReaderZapSheet extends StatelessWidget {
       final result = await zap.send(
         recipientLud16: lud16,
         recipientPubkey: '',
-        targetEventId: '',
+        targetActivitytId: '',
         gesture: gesture,
       );
       final support = result.hasSupportZap

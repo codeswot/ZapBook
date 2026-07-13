@@ -1,12 +1,13 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
+import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_tile.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
@@ -17,11 +18,14 @@ import 'package:go_router/go_router.dart';
 class MockProfileCubit extends MockCubit<ProfileState>
     implements ProfileCubit {}
 
-class MockZapService extends Mock implements ZapService {}
+class MockDonateCubit extends MockCubit<DonateState> implements DonateCubit {}
+
+class MockClipboardService extends Mock implements ClipboardService {}
 
 void main() {
   late MockProfileCubit profileCubit;
-  late MockZapService zapService;
+  late MockDonateCubit donateCubit;
+  late MockClipboardService clipboardService;
 
   setUpAll(() {
     registerFallbackValue(const ProfileLoading());
@@ -30,7 +34,8 @@ void main() {
 
   setUp(() async {
     profileCubit = MockProfileCubit();
-    zapService = MockZapService();
+    donateCubit = MockDonateCubit();
+    clipboardService = MockClipboardService();
 
     when(() => profileCubit.donationRecipient).thenReturn('test@example.com');
     when(() => profileCubit.isNwcConnected).thenReturn(false);
@@ -51,27 +56,15 @@ void main() {
       ),
     );
 
+    when(() => clipboardService.copy(any())).thenAnswer((_) async {});
+    when(() => donateCubit.state).thenReturn(const DonateReady());
+
     await GetIt.I.reset();
-    GetIt.I.registerSingleton<ZapService>(zapService);
-
-    String? clipboardText;
-
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
-          if (methodCall.method == 'Clipboard.setData') {
-            clipboardText = methodCall.arguments['text'];
-            return null;
-          }
-          if (methodCall.method == 'Clipboard.getData') {
-            return {'text': clipboardText ?? 'test@example.com'};
-          }
-          return null;
-        });
+    GetIt.I.registerSingleton<DonateCubit>(donateCubit);
+    GetIt.I.registerSingleton<ClipboardService>(clipboardService);
   });
 
   tearDown(() async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null);
     await GetIt.I.reset();
   });
 
@@ -142,24 +135,9 @@ void main() {
   });
 
   testWidgets('zaps successfully through ZapSheet', (tester) async {
-    when(
-      () => zapService.donate(
-        amountSats: any(named: 'amountSats'),
-        comment: any(named: 'comment'),
-      ),
-    ).thenAnswer(
-      (_) async => const ZapResult(
-        invoice: 'lnbc1...',
-        zapRequestId: 'zapRequestId',
-        amountSats: 2100,
-        gesture: ZapGesture.rocket,
-        recipientPubkey: 'recipient',
-        targetEventId: 'event',
-      ),
-    );
-    when(
-      () => zapService.payWithFallback('lnbc1...'),
-    ).thenAnswer((_) async => ZapStatus.paidNwc);
+    when(() => donateCubit.sendGift(any(), any())).thenAnswer((_) async {
+      when(() => donateCubit.state).thenReturn(const DonateSuccess('lnbc1...'));
+    });
 
     await tester.pumpWidget(createWidgetUnderTest());
 
@@ -171,35 +149,21 @@ void main() {
     await tester.tap(find.text('🚀').first);
     await tester.pump();
 
-    verify(
-      () =>
-          zapService.donate(amountSats: 2100, comment: 'ZapBook To the moon!'),
-    ).called(1);
-    verify(() => zapService.payWithFallback('lnbc1...')).called(1);
+    verify(() => donateCubit.sendGift(2100, 'ZapBook To the moon!')).called(1);
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
   });
 
   testWidgets('zaps unsuccessfully copies invoice', (tester) async {
-    when(
-      () => zapService.donate(
-        amountSats: any(named: 'amountSats'),
-        comment: any(named: 'comment'),
-      ),
-    ).thenAnswer(
-      (_) async => const ZapResult(
-        invoice: 'lnbc1...',
-        zapRequestId: 'zapRequestId',
-        amountSats: 2100,
-        gesture: ZapGesture.rocket,
-        recipientPubkey: 'recipient',
-        targetEventId: 'event',
-      ),
-    );
-    when(
-      () => zapService.payWithFallback('lnbc1...'),
-    ).thenAnswer((_) async => ZapStatus.failed);
+    when(() => donateCubit.sendGift(any(), any())).thenAnswer((_) async {
+      when(() => donateCubit.state).thenReturn(
+        const DonateFailure(
+          showGift: false,
+          userMessage: 'Could not open wallet. Invoice copied to clipboard.',
+        ),
+      );
+    });
 
     await tester.pumpWidget(createWidgetUnderTest());
 
@@ -209,15 +173,7 @@ void main() {
     await tester.tap(find.text('🚀').first);
     await tester.pump();
 
-    verify(
-      () =>
-          zapService.donate(amountSats: 2100, comment: 'ZapBook To the moon!'),
-    ).called(1);
-    verify(() => zapService.payWithFallback('lnbc1...')).called(1);
-
-    // Clipboard should contain invoice
-    final clipboardData = await Clipboard.getData('text/plain');
-    expect(clipboardData?.text, 'lnbc1...');
+    verify(() => donateCubit.sendGift(2100, 'ZapBook To the moon!')).called(1);
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
@@ -226,11 +182,16 @@ void main() {
   testWidgets('copy recipient lightning address', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest());
 
-    await tester.tap(find.text('test@example.com').first);
+    // 1. Tap the tile to open the sheet
+    await tester.tap(find.text('Support ZapBook'));
+    await tester.pumpAndSettle();
+
+    // 2. Tap the copy button inside the sheet.
+    // The sheet shows the recipient address, tapping it triggers the copy.
+    await tester.tap(find.text('test@example.com').last);
     await tester.pump();
 
-    final clipboardData = await Clipboard.getData('text/plain');
-    expect(clipboardData?.text, 'test@example.com');
+    verify(() => clipboardService.copy('test@example.com')).called(1);
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();

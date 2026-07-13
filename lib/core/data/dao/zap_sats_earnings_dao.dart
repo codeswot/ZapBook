@@ -3,11 +3,24 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/data/app_database.dart';
 
+enum ZapType {
+  profile,
+  circle,
+  milestone;
+
+  static ZapType fromString(String value) {
+    return ZapType.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => ZapType.profile,
+    );
+  }
+}
+
 class ZapSatsEarningsRecord {
   final String id;
   final String senderNpub;
   final String activityId;
-  final String zapType;
+  final ZapType zapType;
   final int sats;
   final int timestamp;
 
@@ -25,7 +38,7 @@ class ZapSatsEarningsRecord {
       id: row['id'] as String,
       senderNpub: row['sender_npub'] as String,
       activityId: row['activity_id'] as String,
-      zapType: row['zap_type'] as String,
+      zapType: ZapType.fromString(row['zap_type'] as String),
       sats: (row['sats'] as num).toInt(),
       timestamp: (row['timestamp'] as num).toInt(),
     );
@@ -54,7 +67,7 @@ class ZapSatsEarningsDao {
         record.id,
         record.senderNpub,
         record.activityId,
-        record.zapType,
+        record.zapType.name,
         record.sats,
         record.timestamp,
       ]);
@@ -84,6 +97,21 @@ class ZapSatsEarningsDao {
     }
   }
 
+  Future<int?> getLastZapTimestamp() async {
+    try {
+      final database = await _db.open();
+      final resultSet = database.select(
+        'SELECT MAX(timestamp) as last_ts FROM zap_sats_earnings',
+      );
+      if (resultSet.isEmpty) return null;
+      final ts = resultSet.first['last_ts'];
+      return ts != null ? (ts as num).toInt() : null;
+    } catch (e) {
+      _log.warning('Failed to get last zap timestamp', e);
+      return null;
+    }
+  }
+
   Stream<int> watchTotalSats() {
     late StreamController<int> controller;
 
@@ -98,9 +126,7 @@ class ZapSatsEarningsDao {
       }
     }
 
-    controller = StreamController<int>.broadcast(
-      onListen: emit,
-    );
+    controller = StreamController<int>.broadcast(onListen: emit);
 
     final sub = _changeController.stream.listen((_) => emit());
 
@@ -142,9 +168,7 @@ class ZapSatsEarningsDao {
       }
     }
 
-    controller = StreamController<int>.broadcast(
-      onListen: emit,
-    );
+    controller = StreamController<int>.broadcast(onListen: emit);
 
     final sub = _changeController.stream.listen((_) => emit());
 

@@ -8,13 +8,15 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/lnurl_models.dart';
 import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 
 @injectable
 class DonateCubit extends Cubit<DonateState> {
-  DonateCubit(this._zap) : super(const DonateReady());
+  DonateCubit(this._zap, this._clipboard) : super(const DonateReady());
 
   final ZapService _zap;
+  final ClipboardService _clipboard;
   final _log = logging.Logger('DonateCubit');
 
   String get recipient => ZapbookConfig.lnAddress;
@@ -51,7 +53,7 @@ class DonateCubit extends Cubit<DonateState> {
         amountSats: gesture.sats!,
         comment: _donationMessages[gesture] ?? gesture.label,
       );
-      emit(DonateSuccess(result.invoice));
+      await _processPayment(result.invoice, gesture.sats!, showGift);
     } on Exception catch (e, stack) {
       _log.warning('Preset zap failed', e, stack);
       emit(DonateFailure(showGift: showGift, userMessage: _userMessage(e)));
@@ -71,10 +73,25 @@ class DonateCubit extends Cubit<DonateState> {
         amountSats: sats,
         comment: (comment != null && comment.isNotEmpty) ? comment : null,
       );
-      emit(DonateSuccess(result.invoice));
+      await _processPayment(result.invoice, sats, showGift);
     } on Exception catch (e, stack) {
       _log.warning('Gift zap failed', e, stack);
       emit(DonateFailure(showGift: showGift, userMessage: _userMessage(e)));
+    }
+  }
+
+  Future<void> _processPayment(String invoice, int sats, bool showGift) async {
+    final status = await _zap.payWithFallback(invoice);
+    if (status == ZapStatus.failed) {
+      await _clipboard.copy(invoice);
+      emit(
+        DonateFailure(
+          showGift: showGift,
+          userMessage: 'Could not open wallet. Invoice copied to clipboard.',
+        ),
+      );
+    } else {
+      emit(DonateSuccess(invoice));
     }
   }
 

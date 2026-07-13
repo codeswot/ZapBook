@@ -1,23 +1,30 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 
 @injectable
 class EarningsCubit extends Cubit<int> {
-  EarningsCubit(this._earnings) : super(_earnings.totalEarned.value) {
-    _earnings.totalEarned.addListener(_onChanged);
+  EarningsCubit(this._earningsDao) : super(0) {
+    _init();
   }
 
-  final ZapEarningsService _earnings;
+  final ZapSatsEarningsDao _earningsDao;
+  StreamSubscription<int>? _sub;
 
-  void _onChanged() {
-    if (!isClosed) emit(_earnings.totalEarned.value);
+  void _init() async {
+    final initial = await _earningsDao.getTotalSats();
+    if (!isClosed) emit(initial);
+
+    _sub = _earningsDao.watchTotalSats().listen((total) {
+      if (!isClosed) emit(total);
+    });
   }
 
   @override
   Future<void> close() {
-    _earnings.totalEarned.removeListener(_onChanged);
+    _sub?.cancel();
     return super.close();
   }
 }

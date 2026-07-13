@@ -83,7 +83,6 @@ class ReadingStatsService {
             streak: payload['streak'] as int? ?? 0,
             lastActivityDate: payload['lastActivityDate'] as String? ?? '',
             booksRead: payload['booksRead'] as int? ?? 0,
-            satsEarned: payload['satsEarned'] as int? ?? 0,
             updatedAt: event.createdAt,
           );
         } catch (e, st) {
@@ -146,7 +145,6 @@ class ReadingStatsService {
         'streak': record.streak,
         'lastActivityDate': record.lastActivityDate,
         'booksRead': record.booksRead,
-        'satsEarned': await getTotalSatsEarned(),
       };
 
       final event = Nip01Event(

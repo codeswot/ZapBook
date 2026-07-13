@@ -10,6 +10,7 @@ import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/lnurl_service.dart';
 import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/services/zap_support_service.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 
 import 'package:logging/logging.dart' as logging;
 
@@ -26,7 +27,7 @@ class ZapService {
   Future<ZapResult> donate({required int amountSats, String? comment}) => send(
     recipientLud16: ZapbookConfig.lnAddress,
     recipientPubkey: ZapbookConfig.npub,
-    targetEventId: '',
+    targetActivitytId: ZapbookConfig.npub,
     gesture: ZapGesture.gift,
     customSats: amountSats,
     comment: comment,
@@ -35,11 +36,11 @@ class ZapService {
   Future<ZapResult> send({
     required String recipientLud16,
     required String recipientPubkey,
-    required String targetEventId,
+    required String targetActivitytId,
     required ZapGesture gesture,
     int? customSats,
     String? comment,
-    String? circleId,
+    ZapType zapType = ZapType.profile,
   }) async {
     final amountSats = gesture.sats ?? customSats ?? 21;
     if (amountSats <= 0) throw ZapException('Amount must be positive');
@@ -55,10 +56,10 @@ class ZapService {
     final mainZapFuture = _prepareZap(
       lud16: recipientLud16,
       pubkey: recipientPubkey,
-      targetEventId: targetEventId,
+      targetActivitytId: targetActivitytId,
+      zapType: zapType,
       amountMillisats: amountMillisats,
       content: comment ?? gesture.label,
-      circleId: circleId,
     );
 
     Future<({String invoice, String zapRequestId})?>? supportZapFuture;
@@ -67,7 +68,7 @@ class ZapService {
           _prepareZap(
                 lud16: ZapbookConfig.lnAddress,
                 pubkey: ZapbookConfig.npub,
-                targetEventId: '',
+                targetActivitytId: ZapbookConfig.npub,
                 amountMillisats: supportAmount * 1000,
                 content: 'ZapBook support ($feePercent%)',
               )
@@ -87,7 +88,7 @@ class ZapService {
       amountSats: amountSats,
       gesture: gesture,
       recipientPubkey: recipientPubkey,
-      targetEventId: targetEventId,
+      targetActivitytId: targetActivitytId,
       supportInvoice: supportZap?.invoice,
       supportAmount: supportZap != null ? supportAmount : 0,
     );
@@ -96,10 +97,10 @@ class ZapService {
   Future<({String invoice, String zapRequestId})> _prepareZap({
     required String lud16,
     required String pubkey,
-    required String targetEventId,
+    required String targetActivitytId,
     required int amountMillisats,
     required String content,
-    String? circleId,
+    ZapType zapType = ZapType.profile,
   }) async {
     final payResponse = await _lnurl.resolveLightningAddress(lud16);
 
@@ -112,10 +113,10 @@ class ZapService {
 
     final (:nostr, :zapRequestId) = await _buildZapRequest(
       recipientPubkey: pubkey,
-      targetEventId: targetEventId,
+      targetEventId: targetActivitytId,
+      zapType: zapType,
       amountMillisats: amountMillisats,
       content: content,
-      circleId: circleId,
     );
 
     final invoice = await _lnurl.fetchInvoice(
@@ -133,7 +134,7 @@ class ZapService {
     required String targetEventId,
     required int amountMillisats,
     required String content,
-    String? circleId,
+    ZapType zapType = ZapType.profile,
   }) async {
     final account = _ndk.accounts.getLoggedAccount();
     if (account == null ||
@@ -152,12 +153,10 @@ class ZapService {
       ['p', recipientHex],
       ['client', 'zapbook'],
     ];
-    if (targetEventId.isNotEmpty) {
+    if (zapType != ZapType.profile && targetEventId.isNotEmpty) {
       tags.add([targetEventId.contains(':') ? 'a' : 'e', targetEventId]);
     }
-    if (circleId != null && circleId.isNotEmpty) {
-      tags.add(['circle', circleId]);
-    }
+    tags.add(['zapType', zapType.name]);
 
     final request = Nip01Event(
       pubKey: account.pubkey,
@@ -267,7 +266,7 @@ class ZapResult {
   final int amountSats;
   final ZapGesture gesture;
   final String recipientPubkey;
-  final String targetEventId;
+  final String targetActivitytId;
   final String? supportInvoice;
   final int supportAmount;
 
@@ -279,7 +278,7 @@ class ZapResult {
     required this.amountSats,
     required this.gesture,
     required this.recipientPubkey,
-    required this.targetEventId,
+    required this.targetActivitytId,
     this.supportInvoice,
     this.supportAmount = 0,
   });

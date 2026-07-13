@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
+import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
@@ -39,7 +40,7 @@ class ProfileDonateTile extends StatelessWidget {
               const SizedBox(height: 8),
               BouncingInteractiveWidget(
                 onTap: () {
-                  Clipboard.setData(ClipboardData(text: recipient));
+                  getIt<ClipboardService>().copy(recipient);
                   context.toast.showInfo(
                     'Lightning address copied',
                     rootNavigator: true,
@@ -194,22 +195,22 @@ class ProfileDonateTile extends StatelessWidget {
     String? comment,
   ) async {
     final messenger = context.toast;
+    final cubit = getIt<DonateCubit>();
 
-    try {
-      final zap = getIt<ZapService>();
-      final result = await zap.donate(
-        amountSats: amount,
-        comment: comment ?? _donationMessages[gesture] ?? gesture.label,
-      );
-      final status = await zap.payWithFallback(result.invoice);
-      if (status == ZapStatus.failed) {
-        await Clipboard.setData(ClipboardData(text: result.invoice));
-        messenger.showInfo('Invoice copied to clipboard');
+    await cubit.sendGift(
+      amount,
+      comment ?? _donationMessages[gesture] ?? gesture.label,
+    );
+
+    final state = cubit.state;
+    if (state is DonateSuccess) {
+      messenger.showSuccess('Zapping $amount sats to support ZapBook');
+    } else if (state is DonateFailure) {
+      if (state.userMessage.contains('copied')) {
+        messenger.showInfo(state.userMessage);
       } else {
-        messenger.showSuccess('Zapping $amount sats to support ZapBook');
+        messenger.showError(state.userMessage);
       }
-    } catch (_) {
-      messenger.showError('Could not send donation');
     }
   }
 
