@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
@@ -21,6 +22,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     this._session,
     this._stats,
     this._reloader,
+    this._earningsDao,
   );
 
   final IdentityLocalDataSource _identityLocal;
@@ -29,6 +31,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final NostrSession _session;
   final ReadingStatsService _stats;
   final SessionReloader _reloader;
+  final ZapSatsEarningsDao _earningsDao;
 
   @override
   Future<UserProfile> load() async {
@@ -52,7 +55,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           ? fetchedPicture
           : fallbackAvatar,
       lightningAddress: metadata?.lud16 ?? '',
-      satsEarned: statsRecord?.satsEarned ?? 0,
+      satsEarned: await _earningsDao.getTotalSats(),
       dayStreak: statsRecord?.effectiveStreak ?? 0,
       booksRead: statsRecord?.booksRead ?? 0,
       milestones: await _stats.getMilestones(),

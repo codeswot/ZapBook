@@ -8,6 +8,7 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton
@@ -15,6 +16,7 @@ class ReadingStatsService {
   ReadingStatsService(
     this._progressDao,
     this._statsDao,
+    this._earningsDao,
     this._identity,
     this._earnings,
     this._ndk,
@@ -22,6 +24,7 @@ class ReadingStatsService {
 
   final CircleProgressDao _progressDao;
   final ReadingStatsDao _statsDao;
+  final ZapSatsEarningsDao _earningsDao;
   final IdentityLocalDataSource _identity;
   final ZapEarningsService _earnings;
   final Ndk _ndk;
@@ -35,6 +38,8 @@ class ReadingStatsService {
     _loaded = true;
     unawaited(_earnings.start());
   }
+
+  Future<int> getTotalSatsEarned() => _earningsDao.getTotalSats();
 
   Stream<ReadingStatsRecord?> watchStats() async* {
     final npub = await _identity.readNpub();
@@ -125,7 +130,6 @@ class ReadingStatsService {
       streak: newStreak,
       lastActivityDate: today,
       booksRead: await _progressDao.countCompletedBooks(npub),
-      satsEarned: _earnings.totalEarned.value,
       updatedAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
 
@@ -142,7 +146,7 @@ class ReadingStatsService {
         'streak': record.streak,
         'lastActivityDate': record.lastActivityDate,
         'booksRead': record.booksRead,
-        'satsEarned': record.satsEarned,
+        'satsEarned': await getTotalSatsEarned(),
       };
 
       final event = Nip01Event(

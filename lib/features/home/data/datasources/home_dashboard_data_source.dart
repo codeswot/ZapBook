@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
@@ -23,6 +24,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
     this._stats,
     this._circleStore,
     this._progressDao,
+    this._earningsDao,
     this._prefs,
   );
 
@@ -31,20 +33,22 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
   final ReadingStatsService _stats;
   final CircleStoreService _circleStore;
   final CircleProgressDao _progressDao;
+  final ZapSatsEarningsDao _earningsDao;
   final SharedPreferences _prefs;
 
   final _changeController = StreamController<void>.broadcast();
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    return Rx.combineLatest3(
+    return Rx.combineLatest4(
       _circleStore.watchCircleBooks,
       _stats.watchStats(),
+      _earningsDao.watchTotalSats(),
       _changeController.stream.startWith(null),
-      (circles, statsRecord, _) async {
+      (circles, statsRecord, satsEarned, _) async {
         final stats = HomeDashboardStats(
           dayStreak: statsRecord?.effectiveStreak ?? 0,
-          satsEarned: statsRecord?.satsEarned ?? 0,
+          satsEarned: satsEarned,
           booksRead: statsRecord?.booksRead ?? 0,
         );
 

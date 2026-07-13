@@ -201,8 +201,8 @@ class ProfileDonateTile extends StatelessWidget {
         amountSats: amount,
         comment: comment ?? _donationMessages[gesture] ?? gesture.label,
       );
-      final launched = await zap.payWithFallback(result.invoice);
-      if (!launched) {
+      final status = await zap.payWithFallback(result.invoice);
+      if (status == ZapStatus.failed) {
         await Clipboard.setData(ClipboardData(text: result.invoice));
         messenger.showInfo('Invoice copied to clipboard');
       } else {

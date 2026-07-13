@@ -159,7 +159,7 @@ void main() {
     );
     when(
       () => zapService.payWithFallback('lnbc1...'),
-    ).thenAnswer((_) async => true);
+    ).thenAnswer((_) async => ZapStatus.paidNwc);
 
     await tester.pumpWidget(createWidgetUnderTest());
 
@@ -199,7 +199,7 @@ void main() {
     );
     when(
       () => zapService.payWithFallback('lnbc1...'),
-    ).thenAnswer((_) async => false);
+    ).thenAnswer((_) async => ZapStatus.failed);
 
     await tester.pumpWidget(createWidgetUnderTest());
 
