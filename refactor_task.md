@@ -27,22 +27,22 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Profile
 
-- [ ] **Domain**
-  - [ ] `entities/` (Profile specific entities)
-  - [ ] `repositories/` (`ProfileRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `LoadUserProfileUseCase.dart`
-    - [ ] `UpdateUserProfileUseCase.dart`
-    - [ ] `SignOutUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/`
-    - [ ] `ProfileLocalDataSource.dart` (reads from local DB)
-    - [ ] `ProfileRemoteDataSource.dart` (reads from Nostr)
-  - [ ] `repositories/` (`ProfileRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`ProfileCubit.dart` - *Depends only on UseCases*)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (Profile specific entities)
+  - [x] `repositories/` (`ProfileRepository` interface)
+  - [x] `usecases/`
+    - [x] `LoadUserProfileUseCase.dart`
+    - [x] `UpdateUserProfileUseCase.dart`
+    - [x] `SignOutUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/`
+    - [x] `ProfileLocalDataSource.dart` (reads from local DB)
+    - [x] `ProfileRemoteDataSource.dart` (reads from Nostr)
+  - [x] `repositories/` (`ProfileRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`ProfileCubit.dart` - *Depends only on UseCases*)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Home (Dashboard)
 
