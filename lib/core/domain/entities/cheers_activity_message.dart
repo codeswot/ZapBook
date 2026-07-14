@@ -1,6 +1,6 @@
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:equatable/equatable.dart';
-import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 
 final class CheersActivityMessage extends Equatable {

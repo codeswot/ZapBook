@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/data/infrastructure/marmot_sync_service.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';

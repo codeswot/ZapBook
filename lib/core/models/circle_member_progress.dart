@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 
 class CircleMemberProgress extends Equatable {
   final String id;

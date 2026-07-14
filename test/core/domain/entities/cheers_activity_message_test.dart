@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
-import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'dart:convert';

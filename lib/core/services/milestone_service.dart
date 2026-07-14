@@ -10,7 +10,7 @@ import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/milestone_book_session.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/models/app_message.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
