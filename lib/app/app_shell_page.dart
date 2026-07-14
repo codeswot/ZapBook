@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart';
-import 'package:zapbook/core/router/app_router.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart';
 import 'package:zapbook/features/heads_up/presentation/widgets/app_headsup_banner.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';

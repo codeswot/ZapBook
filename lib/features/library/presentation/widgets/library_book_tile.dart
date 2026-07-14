@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/core/router/app_router.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 import 'package:zapbook/core/presentation/widgets/book_actions_sheet.dart';

@@ -62,7 +62,7 @@ import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart'
     as _i362;
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart'
     as _i400;
-import 'package:zapbook/core/router/app_router.dart' as _i571;
+import 'package:zapbook/core/presentation/router/app_router.dart' as _i571;
 import 'package:zapbook/core/data/infrastructure/app_info_service.dart' as _i19;
 import 'package:zapbook/core/data/infrastructure/blossom_service.dart' as _i873;
 import 'package:zapbook/core/services/circle_share_service.dart' as _i455;

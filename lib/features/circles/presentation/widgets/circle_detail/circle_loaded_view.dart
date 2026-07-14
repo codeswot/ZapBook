@@ -6,7 +6,7 @@ import 'package:zapbook/core/presentation/bloc/book_download/book_download_state
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
-import 'package:zapbook/core/router/app_router.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
