@@ -83,8 +83,8 @@ class CheersDataSourceImpl implements CheersDataSource {
         return CheersActivity(
           id: msg.id,
           groupId: circle?.id ?? msg.groupId ?? '',
-          senderNpub: msg.actorNpub,
-          recipientNpub: msg.zapRecipientNpub ?? '',
+          actorNpub: msg.actorNpub,
+          otherPartyNpub: msg.zapRecipientNpub ?? '',
           targetId: msg.zapTargetId ?? '',
           targetDescription:
               msg.zapTargetDescription ?? msg.activityDescription,

@@ -70,7 +70,7 @@ class CheersCubit extends Cubit<CheersState> {
           break;
         case 'Zaps':
           if (a.type == CheersActivityType.zap &&
-              (a.isMine || a.recipientNpub.isNotEmpty)) {
+              (a.isMine || a.otherPartyNpub.isNotEmpty)) {
             filtered.add(a);
           }
           break;
@@ -99,12 +99,12 @@ class CheersCubit extends Cubit<CheersState> {
     if (activity.isMine) return;
 
     try {
-      final pubkey = Nip19.decode(activity.recipientNpub);
+      final pubkey = Nip19.decode(activity.actorNpub);
       final lud16 = await _lookupLud16(pubkey);
 
       if (lud16 == null || lud16.isEmpty) {
         unawaited(
-          _nudge(groupId: activity.groupId, toNpub: activity.recipientNpub),
+          _nudge(groupId: activity.groupId, toNpub: activity.actorNpub),
         );
         emit(
           CheersNudgeRequired(
@@ -175,7 +175,7 @@ class CheersCubit extends Cubit<CheersState> {
       await _nudgeReady(
         groupId: activity.groupId,
         nudgeId: activity.nudgeId ?? '',
-        toNpub: activity.senderNpub,
+        toNpub: activity.actorNpub,
       );
       emit(
         CheersNudgeSuccess("Buzzed ${activity.actorName} — you're all set!"),

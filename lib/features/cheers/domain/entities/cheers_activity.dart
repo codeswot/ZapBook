@@ -3,8 +3,8 @@ import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 class CheersActivity {
   final String id;
   final String groupId;
-  final String senderNpub;
-  final String recipientNpub;
+  final String actorNpub;
+  final String otherPartyNpub;
   final String otherPartyName;
   final String otherPartyPicture;
   final String actorName;
@@ -29,8 +29,8 @@ class CheersActivity {
   CheersActivity({
     required this.id,
     required this.groupId,
-    required this.senderNpub,
-    required this.recipientNpub,
+    required this.actorNpub,
+    required this.otherPartyNpub,
     required this.targetId,
     required this.targetDescription,
     required this.timestamp,

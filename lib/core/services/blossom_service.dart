@@ -35,7 +35,6 @@ class BlossomService {
   ];
 
   static const int maxDownloadBytes = 150 * _bytesPerMegabyte;
-
   static const int _bytesPerMegabyte = 1024 * 1024;
   static const int _blossomAuthKind = 24242;
   static const String _uploadAction = 'upload';

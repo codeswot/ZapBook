@@ -79,10 +79,10 @@ class CircleProgressDao {
     try {
       final database = await _db.open();
       final stmt = database.prepare(
-        'UPDATE circle_member_progress SET id = ? WHERE id = ?'
+        'UPDATE circle_member_progress SET id = ? WHERE id = ?',
       );
       stmt.execute([newId, oldId]);
-      stmt.dispose();
+      stmt.close();
       _changeController.add(null);
     } catch (e, st) {
       _log.warning('replaceId error', e, st);

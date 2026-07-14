@@ -68,7 +68,6 @@ class MessageRouterService {
             ZapNudgeMessage() ||
             ZapReadyMessage():
           final activity = CheersActivityMessage.fromAppMessage(parsed);
-
           await _cheersDao.saveActivity(activity);
 
         case InitialBookMessage() || BookCompletedMessage():

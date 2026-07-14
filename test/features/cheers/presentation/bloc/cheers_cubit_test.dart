@@ -108,9 +108,9 @@ void main() {
     final activity = CheersActivity(
       id: '1',
       groupId: 'g1',
-      senderNpub:
+      actorNpub:
           'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      recipientNpub:
+      otherPartyNpub:
           'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
       targetId: '',
       targetDescription: 'desc',
@@ -141,9 +141,9 @@ void main() {
       CheersActivity(
         id: '1',
         groupId: 'g1',
-        senderNpub:
+        actorNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        recipientNpub:
+        otherPartyNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'd',
@@ -160,9 +160,9 @@ void main() {
       CheersActivity(
         id: '2',
         groupId: 'g1',
-        senderNpub:
+        actorNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        recipientNpub:
+        otherPartyNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'desc',
@@ -194,9 +194,9 @@ void main() {
     final activity = CheersActivity(
       id: 'group1:npub123',
       groupId: 'g1',
-      senderNpub:
+      actorNpub:
           'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      recipientNpub:
+      otherPartyNpub:
           'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
       targetId: '',
       targetDescription: 'desc',
@@ -215,9 +215,9 @@ void main() {
       final mineActivity = CheersActivity(
         id: 'group1:npub123',
         groupId: 'g1',
-        senderNpub:
+        actorNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        recipientNpub:
+        otherPartyNpub:
             'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
         targetId: '',
         targetDescription: 'desc',
