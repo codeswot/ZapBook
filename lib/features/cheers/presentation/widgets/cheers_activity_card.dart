@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_reaction_pill.dart';
 import 'package:zapbook/theme/app_radii.dart';
@@ -35,11 +36,9 @@ class CheersActivityCard extends StatelessWidget {
   });
 
   final CheersActivity activity;
-  final void Function(String actorName, String? actorAvatar, String bookTitle)
-  onTap;
+  final VoidCallback onTap;
   final void Function(ZapGesture gesture, String actorName) onReactionTap;
-  final void Function(String actorName, String? actorAvatar, String bookTitle)?
-  onLongPress;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -48,34 +47,22 @@ class CheersActivityCard extends StatelessWidget {
     final activity = this.activity;
 
     final isNotice =
-        activity.type == 'zap_nudge' || activity.type == 'zap_ready';
-    final isZap = activity.type == 'zap';
+        activity.type == CheersActivityType.zapNudge ||
+        activity.type == CheersActivityType.zapReady;
+    final isZap = activity.type == CheersActivityType.zap;
 
     final hasReactions = ZapGesture.values.any(
       (g) => _getGestureCount(activity, g) > 0,
     );
 
-    final actorName = activity.isMine
-        ? 'You'
-        : (activity.senderDisplayName.isNotEmpty
-              ? activity.senderDisplayName
-              : 'Someone');
-    final actorAvatar = activity.isMine
-        ? null
-        : activity.senderProfilePictureUrl;
+    final actorName = activity.actorName;
+    final actorAvatar = activity.actorPicture;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: BouncingInteractiveWidget(
-        onTap: () =>
-            onTap(actorName, actorAvatar, activity.bookCircleTitle ?? ''),
-        onLongPress: onLongPress != null
-            ? () => onLongPress!(
-                actorName,
-                actorAvatar,
-                activity.bookCircleTitle ?? '',
-              )
-            : null,
+        onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -92,7 +79,7 @@ class CheersActivityCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppProfileAvatar(url: actorAvatar ?? '', size: 40),
+                  AppProfileAvatar(url: actorAvatar, size: 40),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -127,7 +114,7 @@ class CheersActivityCard extends StatelessWidget {
                         if (activity.bookCircleTitle?.isNotEmpty == true) ...[
                           const SizedBox(height: 4),
                           Text(
-                            activity.bookCircleTitle!,
+                            activity.bookCircleTitle ?? '',
                             style: typography.caption.copyWith(
                               color: colors.slate,
                               fontWeight: FontWeight.w600,
@@ -146,21 +133,11 @@ class CheersActivityCard extends StatelessWidget {
                     activity: activity,
                     onReactionTap: (gesture) =>
                         onReactionTap(gesture, actorName),
-                    onTap: () => onTap(
-                      actorName,
-                      actorAvatar,
-                      activity.bookCircleTitle ?? '',
-                    ),
+                    onTap: onTap,
                     isMine: activity.isMine,
                   )
                 else if (!activity.isMine)
-                  _EmptyReactions(
-                    onTap: () => onTap(
-                      actorName,
-                      actorAvatar,
-                      activity.bookCircleTitle ?? '',
-                    ),
-                  ),
+                  _EmptyReactions(onTap: onTap),
               ],
             ],
           ),

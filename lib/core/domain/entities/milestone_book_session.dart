@@ -7,6 +7,7 @@ typedef MilestoneSnapshot = ({
   bool completed,
 });
 typedef MilestoneReport = ({
+  String localId,
   String npub,
   String groupId,
   double fraction,

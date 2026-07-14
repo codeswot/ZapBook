@@ -63,14 +63,16 @@ class MessageRouterService {
             await _cheersDao.saveActivity(cheer);
           }
 
-        case CheersMessage() || ZapSentMessage():
-          final activity = CheersActivityMessage.fromAppMessage(parsed);
-          await _cheersDao.saveActivity(activity);
-
-        case InitialBookMessage() ||
-            BookCompletedMessage() ||
+        case CheersMessage() ||
+            ZapSentMessage() ||
             ZapNudgeMessage() ||
             ZapReadyMessage():
+          print("OBO TEST ${parsed}");
+          final activity = CheersActivityMessage.fromAppMessage(parsed);
+          print("OBO i de $activity");
+          await _cheersDao.saveActivity(activity);
+
+        case InitialBookMessage() || BookCompletedMessage():
           break;
       }
     } on Object catch (error, stack) {

@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:equatable/equatable.dart';
 import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
@@ -47,7 +48,7 @@ final class CheersActivityMessage extends Equatable {
         groupId: groupId,
         activityDescription: 'Finished the book',
         timestamp: timestamp,
-        type: 'milestone',
+        type: CheersActivityType.milestone,
         isUnread: true,
         bookTitle: bookTitle,
       );
@@ -64,9 +65,10 @@ final class CheersActivityMessage extends Equatable {
         activityDescription:
             'Milestone ${next.milestonesReached}: page ${next.pageIndex}$pctStr',
         timestamp: timestamp,
-        type: 'milestone',
+        type: CheersActivityType.milestone,
         isUnread: true,
         bookTitle: bookTitle,
+        zapTargetId: next.id,
       );
     }
 
@@ -90,7 +92,7 @@ final class CheersActivityMessage extends Equatable {
         activityDescription:
             msg.payload['message'] as String? ?? 'Sent a cheer',
         timestamp: timestamp,
-        type: 'cheer',
+        type: CheersActivityType.cheer,
         isUnread: true,
         clapCount: msg.payload['clapCount'] as int? ?? 0,
         fireCount: msg.payload['fireCount'] as int? ?? 0,
@@ -110,7 +112,7 @@ final class CheersActivityMessage extends Equatable {
         activityDescription:
             msg.payload['description'] as String? ?? 'Sent a zap',
         timestamp: timestamp,
-        type: 'zap',
+        type: CheersActivityType.zap,
         isUnread: true,
         zapAmount: msg.payload['amount'] as int?,
         zapReaction: msg.payload['reaction'] as String?,
@@ -131,7 +133,7 @@ final class CheersActivityMessage extends Equatable {
         activityDescription:
             'wants to zap you, but your receiving address isn\'t set. Set it in your profile, then tap to buzz them.',
         timestamp: timestamp,
-        type: 'zap_nudge',
+        type: CheersActivityType.zapNudge,
         isUnread: true,
         nudgeId: nudgeId,
         bookTitle: bookTitle,
@@ -147,7 +149,7 @@ final class CheersActivityMessage extends Equatable {
         groupId: msg.groupId,
         activityDescription: 'set up their wallet — zap them!',
         timestamp: timestamp,
-        type: 'zap_ready',
+        type: CheersActivityType.zapReady,
         isUnread: true,
         nudgeId: nudgeId,
         bookTitle: bookTitle,
@@ -163,7 +165,7 @@ final class CheersActivityMessage extends Equatable {
   final String? groupId;
   final String activityDescription;
   final DateTime timestamp;
-  final String type;
+  final CheersActivityType type;
   final bool isUnread;
   final String? nudgeId;
   final int thumbsUpCount;

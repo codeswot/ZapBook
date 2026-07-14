@@ -1,18 +1,20 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
+
 class CheersActivity {
   final String id;
   final String groupId;
   final String senderNpub;
   final String recipientNpub;
-  final String recipientDisplayName;
-  final String recipientProfilePictureUrl;
-  final String senderDisplayName;
-  final String senderProfilePictureUrl;
+  final String otherPartyName;
+  final String otherPartyPicture;
+  final String actorName;
+  final String actorPicture;
   final String? bookId;
   final String targetId;
   final String targetDescription;
   final DateTime timestamp;
   final String? bookCircleTitle;
-  final String type;
+  final CheersActivityType type;
   final bool isUnread;
   final String? nudgeId;
   final int thumbsUpCount;
@@ -44,10 +46,10 @@ class CheersActivity {
     this.zapAmount,
     this.zapReaction,
     this.bookCircleTitle,
-    required this.recipientDisplayName,
-    required this.recipientProfilePictureUrl,
-    required this.senderDisplayName,
-    required this.senderProfilePictureUrl,
+    required this.otherPartyName,
+    required this.otherPartyPicture,
+    required this.actorName,
+    required this.actorPicture,
     this.bookId,
   });
 }

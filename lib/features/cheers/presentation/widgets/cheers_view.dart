@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,13 +6,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
+import 'package:zapbook/features/cheers/presentation/cheers_zap_sheet.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart';
-import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
-import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_long_press_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 
@@ -47,74 +47,13 @@ class _CheersViewState extends State<CheersView> {
     if (activity.isMine) {
       return;
     }
-    final colors = context.colors;
-    final typography = context.typography;
-    final bookCircleTitle = activity.bookCircleTitle ?? '';
-    ZapSheet.show(
-      context: context,
-      header: Row(
-        children: [
-          AppProfileAvatar(url: activity.recipientProfilePictureUrl, size: 48),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Zap ${activity.recipientDisplayName}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.h3.copyWith(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${activity.targetDescription}:',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typography.bodyS.copyWith(color: colors.slate),
-                ),
-                if (bookCircleTitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    bookCircleTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: typography.body.copyWith(color: colors.slate2),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-      onZapSelected: (gesture, amount, message) {
-        context.read<CheersCubit>().performZap(
-          activity: activity,
-          gesture: gesture,
-          amount: amount,
-          comment: message,
-        );
-      },
-    );
+    CheersZapSheet.show(context, activity: activity);
   }
 
-  void _showLongPressMenu(
-    BuildContext context,
-    CheersActivity activity,
-    String actorName,
-    String? actorAvatar,
-    String bookTitle,
-  ) {
+  void _showLongPressMenu(BuildContext context, CheersActivity activity) {
     CheersLongPressSheet.show(
       context,
       activity: activity,
-      actorName: actorName,
-      actorAvatar: actorAvatar,
-      bookTitle: bookTitle,
       cubit: context.read<CheersCubit>(),
     );
   }
@@ -306,24 +245,18 @@ class _CheersViewState extends State<CheersView> {
                         final item = filtered[index];
                         return CheersActivityCard(
                           activity: item,
-                          onTap: (actorName, actorAvatar, bookTitle) {
-                            if (item.type == 'zap_nudge') {
+                          onTap: () {
+                            if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);
                             } else {
                               _showZapSheet(context, item);
                             }
                           },
-                          onLongPress: (actorName, actorAvatar, bookTitle) {
-                            if (item.type == 'zap_nudge') {
+                          onLongPress: () {
+                            if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);
-                            } else if (item.type != 'zap') {
-                              _showLongPressMenu(
-                                context,
-                                item,
-                                actorName,
-                                actorAvatar,
-                                bookTitle,
-                              );
+                            } else if (item.type != CheersActivityType.zap) {
+                              _showLongPressMenu(context, item);
                             }
                           },
                           onReactionTap: (gesture, actorName) {

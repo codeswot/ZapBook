@@ -21,7 +21,9 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
+  int idCounter = 0;
   CircleMemberProgress createProgress({
+    String? id,
     required String groupId,
     required String bookId,
     required String pubKey,
@@ -31,7 +33,9 @@ void main() {
     int milestonesReached = 0,
     bool completed = false,
   }) {
+    idCounter++;
     return CircleMemberProgress(
+      id: id ?? "dummy-id-$idCounter",
       groupId: groupId,
       pubKey: pubKey,
       bookId: bookId,

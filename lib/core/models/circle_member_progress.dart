@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:zapbook/core/models/app_message.dart';
 
 class CircleMemberProgress extends Equatable {
+  final String id;
   final String groupId;
   final String pubKey;
   final String bookId;
@@ -12,6 +13,7 @@ class CircleMemberProgress extends Equatable {
   final bool completed;
 
   const CircleMemberProgress({
+    required this.id,
     required this.groupId,
     required this.pubKey,
     required this.bookId,
@@ -24,6 +26,7 @@ class CircleMemberProgress extends Equatable {
 
   factory CircleMemberProgress.fromAppMessage(BookProgressMessage msg) {
     return CircleMemberProgress(
+      id: msg.id,
       groupId: msg.groupId,
       pubKey: msg.senderNpub,
       bookId: msg.payload['circleDirId'] as String? ?? '',
@@ -38,6 +41,7 @@ class CircleMemberProgress extends Equatable {
 
   factory CircleMemberProgress.fromRow(Map<String, dynamic> row) {
     return CircleMemberProgress(
+      id: row['id'] as String,
       groupId: row['group_id'] as String,
       pubKey: row['pub_key'] as String,
       bookId: row['book_id'] as String,
@@ -51,6 +55,7 @@ class CircleMemberProgress extends Equatable {
 
   @override
   List<Object?> get props => [
+    id,
     groupId,
     pubKey,
     bookId,

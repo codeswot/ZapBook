@@ -137,6 +137,8 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_members_cubit.
     as _i688;
 import 'package:zapbook/features/circles/presentation/bloc/circles_cubit.dart'
     as _i761;
+import 'package:zapbook/features/circles/presentation/bloc/reader_zap_cubit.dart'
+    as _i492;
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart'
     as _i620;
 import 'package:zapbook/features/heads_up/presentation/cubit/heads_up_cubit.dart'
@@ -167,8 +169,6 @@ import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart'
     as _i107;
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart'
     as _i696;
-import 'package:zapbook/features/circles/presentation/bloc/reader_zap_cubit.dart'
-    as _i407;
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i405;
 import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
@@ -514,8 +514,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i665.DownloadCircleBook>(
       () => _i665.DownloadCircleBook(gh<_i455.CircleShareService>()),
     );
-    gh.factory<_i407.ReaderZapCubit>(
-      () => _i407.ReaderZapCubit(
+    gh.factory<_i492.ReaderZapCubit>(
+      () => _i492.ReaderZapCubit(
         gh<_i362.ZapService>(),
         gh<_i718.ZapNudgeService>(),
       ),
@@ -709,6 +709,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i718.ZapNudgeService>(),
         gh<_i11.NostrService>(),
         gh<_i362.ZapService>(),
+        gh<_i1053.ClipboardService>(),
       ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(

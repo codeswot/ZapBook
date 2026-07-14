@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +29,7 @@ void main() {
 
       activityDescription: 'Shared a book',
       timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMillis),
-      type: 'cheer',
+      type: CheersActivityType.cheer,
       isUnread: false,
       thumbsUpCount: 1,
       clapCount: 0,
@@ -46,7 +47,7 @@ void main() {
     final activities = await store.loadActivities();
     expect(activities.length, 1);
     expect(activities.first.id, 'act1');
-    expect(activities.first.type, 'cheer');
+    expect(activities.first.type, CheersActivityType.cheer);
   });
 
   test('watchActivities emits on save', () async {

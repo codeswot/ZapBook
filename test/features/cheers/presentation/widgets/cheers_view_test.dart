@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -73,13 +74,13 @@ void main() {
         targetId: '',
         targetDescription: 'description',
         timestamp: DateTime.now(),
-        type: 'zap',
+        type: CheersActivityType.zap,
         isUnread: false,
         isMine: false,
-        recipientDisplayName: '',
-        recipientProfilePictureUrl: '',
-        senderDisplayName: 'Alice',
-        senderProfilePictureUrl: '',
+        otherPartyName: '',
+        otherPartyPicture: '',
+        actorName: 'Alice',
+        actorPicture: '',
         bookId: 'cb1',
         zapAmount: 100,
       );

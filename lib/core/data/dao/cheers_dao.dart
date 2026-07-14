@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:async';
 
 import 'package:injectable/injectable.dart';
@@ -57,7 +58,7 @@ class CheersDao {
           timestamp: DateTime.fromMillisecondsSinceEpoch(
             row['timestamp'] as int,
           ),
-          type: row['type'] as String,
+          type: CheersActivityType.fromString(row['type'] as String),
           isUnread: (row['is_unread'] as int) == 1,
           nudgeId: row['nudge_id'] as String?,
           thumbsUpCount: row['thumbs_up_count'] as int,
@@ -98,7 +99,7 @@ class CheersDao {
           activity.groupId,
           activity.activityDescription,
           activity.timestamp.millisecondsSinceEpoch,
-          activity.type,
+          activity.type.value,
           activity.isUnread ? 1 : 0,
           activity.nudgeId,
           activity.thumbsUpCount,

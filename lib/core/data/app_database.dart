@@ -74,8 +74,18 @@ class AppDatabase {
   }
 
   void _createCircleMemberProgressTable(Database db) {
+    final info = db.select('PRAGMA table_info(circle_member_progress)');
+    final hasId = info.any((row) => row['name'] == 'id');
+
+    if (info.isNotEmpty && !hasId) {
+      db.execute(
+        'ALTER TABLE circle_member_progress RENAME TO circle_member_progress_old',
+      );
+    }
+
     db.execute('''
       CREATE TABLE IF NOT EXISTS circle_member_progress (
+        id TEXT PRIMARY KEY,
         group_id TEXT NOT NULL,
         pub_key TEXT NOT NULL,
         book_id TEXT NOT NULL,
@@ -83,10 +93,24 @@ class AppDatabase {
         progress_percentage REAL NOT NULL,
         updated_at INTEGER NOT NULL,
         milestones_reached INTEGER NOT NULL DEFAULT 0,
-        completed INTEGER NOT NULL DEFAULT 0,
-        PRIMARY KEY (group_id, pub_key, book_id)
+        completed INTEGER NOT NULL DEFAULT 0
       )
     ''');
+
+    if (info.isNotEmpty && !hasId) {
+      db.execute('''
+        INSERT INTO circle_member_progress (
+          id, group_id, pub_key, book_id, page_index, 
+          progress_percentage, updated_at, milestones_reached, completed
+        )
+        SELECT 
+          lower(hex(randomblob(16))), group_id, pub_key, book_id, page_index, 
+          progress_percentage, updated_at, milestones_reached, completed
+        FROM circle_member_progress_old
+      ''');
+      db.execute('DROP TABLE circle_member_progress_old');
+    }
+
     _addColumnIfMissing(
       db,
       'circle_member_progress',

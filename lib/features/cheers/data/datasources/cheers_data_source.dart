@@ -43,6 +43,7 @@ class CheersDataSourceImpl implements CheersDataSource {
           if (msg.actorNpub.isNpub == true) msg.actorNpub,
           if (msg.zapRecipientNpub?.isNpub == true) msg.zapRecipientNpub!,
         ],
+        if (myNpub != null && myNpub.isNpub == true) myNpub,
       };
 
       final contactsMap = <String, Contact>{};
@@ -64,10 +65,20 @@ class CheersDataSourceImpl implements CheersDataSource {
             ? contactsMap[msg.zapRecipientNpub!]
             : null;
 
-        final isMine = msg.type == 'mine' || msg.actorNpub == myNpub;
+        final isMine = msg.actorNpub == myNpub;
 
         final recName = recipientContact?.displayName;
         final senderName = senderContact?.displayName;
+
+        final finalActorName = isMine
+            ? 'You'
+            : (senderName != null && senderName.isNotEmpty
+                  ? senderName
+                  : 'Someone');
+
+        final finalActorAvatar = isMine
+            ? contactsMap[myNpub]?.picture ?? ''
+            : senderContact?.picture ?? '';
 
         return CheersActivity(
           id: msg.id,
@@ -90,14 +101,12 @@ class CheersDataSourceImpl implements CheersDataSource {
           zapAmount: msg.zapAmount,
           zapReaction: msg.zapReaction,
           bookCircleTitle: circle?.title,
-          recipientDisplayName: recName != null && recName.isNotEmpty
+          otherPartyName: recName != null && recName.isNotEmpty
               ? recName
               : msg.zapRecipientNpub?.toNpubShort() ?? '',
-          recipientProfilePictureUrl: recipientContact?.picture ?? '',
-          senderDisplayName: senderName != null && senderName.isNotEmpty
-              ? senderName
-              : msg.actorNpub.toNpubShort(),
-          senderProfilePictureUrl: senderContact?.picture ?? '',
+          otherPartyPicture: recipientContact?.picture ?? '',
+          actorName: finalActorName,
+          actorPicture: finalActorAvatar,
           bookId: msg.circleBookId,
         );
       }).toList();

@@ -130,6 +130,7 @@ class MilestoneService {
       pubKey: npub,
     );
     final next = CircleMemberProgress(
+      id: const Uuid().v4(),
       groupId: groupId,
       pubKey: npub,
       bookId: circleDirId,
@@ -157,6 +158,7 @@ class MilestoneService {
     await _stats.recordProgressMade();
 
     final report = (
+      localId: next.id,
       npub: npub,
       groupId: groupId,
       fraction: fraction,
@@ -201,12 +203,15 @@ class MilestoneService {
     };
 
     try {
-      final event = await _marmot.sendStructured(
+      final eventId = await _marmot.sendStructured(
         report.npub,
         report.groupId,
         payload,
       );
-      await _envelope.publish(event);
+
+      await _progressDao.replaceId(report.localId, eventId);
+
+      await _envelope.publish(eventId);
     } on Object catch (error, stack) {
       _log.warning('Publish progress failed', error, stack);
     }

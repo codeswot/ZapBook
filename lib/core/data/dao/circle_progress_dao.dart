@@ -17,12 +17,37 @@ class CircleProgressDao {
     if (progress == null) return;
     try {
       final database = await _db.open();
+
+      final latestResult = database.select(
+        '''
+        SELECT milestones_reached, completed
+        FROM circle_member_progress
+        WHERE group_id = ? AND book_id = ? AND pub_key = ?
+        ORDER BY updated_at DESC
+        LIMIT 1
+      ''',
+        [progress.groupId, progress.bookId, progress.pubKey],
+      );
+
+      int finalMilestones = progress.milestonesReached;
+      bool finalCompleted = progress.completed;
+
+      if (latestResult.isNotEmpty) {
+        final existingMilestones =
+            latestResult.first['milestones_reached'] as int;
+        final existingCompleted = (latestResult.first['completed'] as int) == 1;
+        if (existingMilestones > finalMilestones) {
+          finalMilestones = existingMilestones;
+        }
+        if (existingCompleted) finalCompleted = true;
+      }
+
       final stmt = database.prepare('''
         INSERT INTO circle_member_progress (
-          group_id, pub_key, book_id, page_index, progress_percentage,
+         id, group_id, pub_key, book_id, page_index, progress_percentage,
           updated_at, milestones_reached, completed
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(group_id, pub_key, book_id) DO UPDATE SET
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
           page_index = excluded.page_index,
           progress_percentage = excluded.progress_percentage,
           updated_at = excluded.updated_at,
@@ -32,20 +57,35 @@ class CircleProgressDao {
       ''');
 
       stmt.execute([
+        progress.id,
         progress.groupId,
         progress.pubKey,
         progress.bookId,
         progress.pageIndex,
         progress.progressPercentage,
         progress.updatedAt,
-        progress.milestonesReached,
-        progress.completed ? 1 : 0,
+        finalMilestones,
+        finalCompleted ? 1 : 0,
       ]);
 
       stmt.close();
       _changeController.add(null);
-    } on Object catch (error, stack) {
-      _log.warning('Failed to upsert progress', error, stack);
+    } catch (e, st) {
+      _log.warning('upsertProgress error', e, st);
+    }
+  }
+
+  Future<void> replaceId(String oldId, String newId) async {
+    try {
+      final database = await _db.open();
+      final stmt = database.prepare(
+        'UPDATE circle_member_progress SET id = ? WHERE id = ?'
+      );
+      stmt.execute([newId, oldId]);
+      stmt.dispose();
+      _changeController.add(null);
+    } catch (e, st) {
+      _log.warning('replaceId error', e, st);
     }
   }
 
@@ -60,9 +100,11 @@ class CircleProgressDao {
         final database = await _db.open();
         final resultSet = database.select(
           '''
-          SELECT * FROM circle_member_progress
-          WHERE group_id = ? AND book_id = ?
-          ORDER BY updated_at DESC
+          SELECT * FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY pub_key ORDER BY updated_at DESC) as rn
+            FROM circle_member_progress
+            WHERE group_id = ? AND book_id = ?
+          ) WHERE rn = 1
           ''',
           [groupId, bookId],
         );
@@ -100,9 +142,11 @@ class CircleProgressDao {
         final database = await _db.open();
         final resultSet = database.select(
           '''
-          SELECT * FROM circle_member_progress
-          WHERE group_id = ?
-          ORDER BY updated_at DESC
+          SELECT * FROM (
+            SELECT *, ROW_NUMBER() OVER(PARTITION BY pub_key, book_id ORDER BY updated_at DESC) as rn
+            FROM circle_member_progress
+            WHERE group_id = ?
+          ) WHERE rn = 1
           ''',
           [groupId],
         );
@@ -146,6 +190,7 @@ class CircleProgressDao {
           '''
           SELECT * FROM circle_member_progress
           WHERE group_id = ? AND book_id = ? AND pub_key = ?
+          ORDER BY updated_at DESC LIMIT 1
           ''',
           [groupId, bookId, myNpub],
         );
@@ -187,6 +232,7 @@ class CircleProgressDao {
         '''
         SELECT * FROM circle_member_progress
         WHERE group_id = ? AND book_id = ? AND pub_key = ?
+        ORDER BY updated_at DESC LIMIT 1
         ''',
         [groupId, bookId, pubKey],
       );
@@ -220,9 +266,12 @@ class CircleProgressDao {
       final database = await _db.open();
       final resultSet = database.select(
         '''
-        SELECT COALESCE(SUM(milestones_reached), 0) AS s
-        FROM circle_member_progress
-        WHERE pub_key = ?
+        SELECT COALESCE(SUM(max_milestones), 0) AS s FROM (
+          SELECT MAX(milestones_reached) AS max_milestones
+          FROM circle_member_progress
+          WHERE pub_key = ?
+          GROUP BY book_id
+        )
         ''',
         [pubKey],
       );

@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:async';
 import 'package:ndk/ndk.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,12 +12,15 @@ import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/services/clipboard_service.dart';
 
 class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
 
 class MockZapNudgeService extends Mock implements ZapNudgeService {}
 
 class MockZapService extends Mock implements ZapService {}
+
+class MockClipboardService extends Mock implements ClipboardService {}
 
 class FakeNostrService extends Fake implements NostrService {
   @override
@@ -61,6 +65,7 @@ void main() {
   late MockZapNudgeService nudgeService;
   late NostrService nostrService;
   late MockZapService zapService;
+  late MockClipboardService clipboardService;
 
   late StreamController<List<CheersActivity>> activitiesController;
 
@@ -69,6 +74,7 @@ void main() {
     nudgeService = MockZapNudgeService();
     nostrService = FakeNostrService();
     zapService = MockZapService();
+    clipboardService = MockClipboardService();
 
     activitiesController = StreamController<List<CheersActivity>>.broadcast();
 
@@ -87,6 +93,7 @@ void main() {
       nudgeService,
       nostrService,
       zapService,
+      clipboardService,
     );
   }
 
@@ -108,13 +115,13 @@ void main() {
       targetId: '',
       targetDescription: 'desc',
       timestamp: DateTime.now(),
-      type: 'zap',
+      type: CheersActivityType.zap,
       isUnread: false,
       isMine: false,
-      recipientDisplayName: '',
-      recipientProfilePictureUrl: '',
-      senderDisplayName: '',
-      senderProfilePictureUrl: '',
+      otherPartyName: '',
+      otherPartyPicture: '',
+      actorName: '',
+      actorPicture: '',
       zapAmount: 100,
     );
     activitiesController.add([activity]);
@@ -141,13 +148,13 @@ void main() {
         targetId: '',
         targetDescription: 'd',
         timestamp: DateTime.now(),
-        type: 't',
+        type: CheersActivityType.unknown,
         isUnread: false,
         isMine: false,
-        recipientDisplayName: '',
-        recipientProfilePictureUrl: '',
-        senderDisplayName: '',
-        senderProfilePictureUrl: '',
+        otherPartyName: '',
+        otherPartyPicture: '',
+        actorName: '',
+        actorPicture: '',
         zapAmount: 100,
       ),
       CheersActivity(
@@ -160,13 +167,13 @@ void main() {
         targetId: '',
         targetDescription: 'desc',
         timestamp: DateTime.now(),
-        type: 'zap',
+        type: CheersActivityType.zap,
         isUnread: false,
         isMine: false,
-        recipientDisplayName: '',
-        recipientProfilePictureUrl: '',
-        senderDisplayName: '',
-        senderProfilePictureUrl: '',
+        otherPartyName: '',
+        otherPartyPicture: '',
+        actorName: '',
+        actorPicture: '',
         zapAmount: 50,
       ),
     ];
@@ -180,7 +187,7 @@ void main() {
     final state = cubit.state as CheersLoaded;
     expect(state.activeFilter, 'Zaps');
     expect(state.activities.length, 1);
-    expect(state.activities.first.type, 'zap');
+    expect(state.activities.first.type, CheersActivityType.zap);
   });
 
   group('performZap', () {
@@ -194,13 +201,13 @@ void main() {
       targetId: '',
       targetDescription: 'desc',
       timestamp: DateTime.now(),
-      type: 'milestone',
+      type: CheersActivityType.milestone,
       isUnread: false,
       isMine: false,
-      recipientDisplayName: '',
-      recipientProfilePictureUrl: '',
-      senderDisplayName: '',
-      senderProfilePictureUrl: '',
+      otherPartyName: '',
+      otherPartyPicture: '',
+      actorName: '',
+      actorPicture: '',
     );
 
     test('ignores mine activities', () async {
@@ -215,13 +222,13 @@ void main() {
         targetId: '',
         targetDescription: 'desc',
         timestamp: DateTime.now(),
-        type: 'zap',
+        type: CheersActivityType.zap,
         isUnread: false,
         isMine: true,
-        recipientDisplayName: '',
-        recipientProfilePictureUrl: '',
-        senderDisplayName: '',
-        senderProfilePictureUrl: '',
+        otherPartyName: '',
+        otherPartyPicture: '',
+        actorName: '',
+        actorPicture: '',
       );
       await cubit.performZap(
         activity: mineActivity,
@@ -263,6 +270,7 @@ void main() {
           nudgeService,
           nostrService,
           zapService,
+          clipboardService,
         );
 
         when(

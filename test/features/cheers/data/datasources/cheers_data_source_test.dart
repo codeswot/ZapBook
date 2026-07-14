@@ -1,3 +1,4 @@
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -60,7 +61,7 @@ void main() {
         actorNpub: 'npub1${'a' * 58}',
         activityDescription: 'Cheered',
         timestamp: now,
-        type: 'cheer',
+        type: CheersActivityType.cheer,
         zapRecipientNpub: 'npub1${'b' * 58}',
         isUnread: false,
       );
@@ -101,8 +102,8 @@ void main() {
       final activity = activities.first;
       expect(activity.id, '1');
       expect(activity.bookCircleTitle, 'Test Circle');
-      expect(activity.senderDisplayName, 'Alice');
-      expect(activity.recipientDisplayName, 'Bob');
+      expect(activity.actorName, 'Alice');
+      expect(activity.otherPartyName, 'Bob');
       expect(activity.targetDescription, 'Cheered');
       expect(activity.isMine, false);
     });
@@ -115,7 +116,7 @@ void main() {
         actorNpub: 'npub1my',
         activityDescription: 'Cheered',
         timestamp: now,
-        type: 'cheer',
+        type: CheersActivityType.cheer,
         isUnread: false,
       );
 
@@ -134,10 +135,7 @@ void main() {
       final activity = activities.first;
       expect(activity.id, '1');
       expect(activity.bookCircleTitle, isNull);
-      expect(
-        activity.senderDisplayName,
-        startsWith('npub1'),
-      ); // Fallback to npub
+      expect(activity.actorName, 'You'); // Is mine, so it's 'You'
       expect(activity.isMine, true);
     });
 

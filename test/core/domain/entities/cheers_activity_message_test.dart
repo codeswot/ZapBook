@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/app_message.dart';
@@ -12,6 +13,7 @@ void main() {
   group('CheersActivityMessage', () {
     test('cheerFromProgress completed book', () {
       final next = const CircleMemberProgress(
+        id: "dummy-id",
         groupId: 'g1',
         pubKey: 'p1',
         bookId: 'b1',
@@ -31,13 +33,14 @@ void main() {
       );
 
       expect(msg, isNotNull);
-      expect(msg!.type, 'milestone');
+      expect(msg!.type, CheersActivityType.milestone);
       expect(msg.activityDescription, 'Finished the book');
       expect(msg.isUnread, true);
     });
 
     test('cheerFromProgress milestone reached', () {
       final prev = const CircleMemberProgress(
+        id: "dummy-id",
         groupId: 'g1',
         pubKey: 'p1',
         bookId: 'b1',
@@ -47,6 +50,7 @@ void main() {
         milestonesReached: 1,
       );
       final next = const CircleMemberProgress(
+        id: "dummy-id",
         groupId: 'g1',
         pubKey: 'p1',
         bookId: 'b1',
@@ -66,12 +70,13 @@ void main() {
       );
 
       expect(msg, isNotNull);
-      expect(msg!.type, 'milestone');
+      expect(msg!.type, CheersActivityType.milestone);
       expect(msg.activityDescription, 'Milestone 2: page 10 (60.0%)');
     });
 
     test('cheerFromProgress returns null if nothing changed', () {
       final next = const CircleMemberProgress(
+        id: "dummy-id",
         groupId: 'g1',
         pubKey: 'p1',
         bookId: 'b1',
@@ -114,7 +119,7 @@ void main() {
 
       final msg = CheersActivityMessage.fromAppMessage(appMsg!);
       expect(msg, isNotNull);
-      expect(msg!.type, 'cheer');
+      expect(msg!.type, CheersActivityType.cheer);
       expect(msg.activityDescription, 'Good job!');
       expect(msg.clapCount, 2);
     });
@@ -131,7 +136,7 @@ void main() {
 
       final msg = CheersActivityMessage.fromAppMessage(appMsg!);
       expect(msg, isNotNull);
-      expect(msg!.type, 'zap');
+      expect(msg!.type, CheersActivityType.zap);
       expect(msg.zapAmount, 1000);
       expect(msg.zapReaction, '⚡');
     });
@@ -146,7 +151,7 @@ void main() {
 
       final msg = CheersActivityMessage.fromAppMessage(appMsg!);
       expect(msg, isNotNull);
-      expect(msg!.type, 'zap_nudge');
+      expect(msg!.type, CheersActivityType.zapNudge);
       expect(msg.nudgeId, 'n1');
     });
 
@@ -160,7 +165,7 @@ void main() {
 
       final msg = CheersActivityMessage.fromAppMessage(appMsg!);
       expect(msg, isNotNull);
-      expect(msg!.type, 'zap_ready');
+      expect(msg!.type, CheersActivityType.zapReady);
       expect(msg.nudgeId, 'n1');
     });
 
