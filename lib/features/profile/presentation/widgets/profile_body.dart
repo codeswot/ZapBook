@@ -17,7 +17,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_car
 import 'package:zapbook/features/profile/presentation/widgets/account_switch_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_nwc_connect_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_nwc_connected_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/data/infrastructure/file_logger_service.dart';

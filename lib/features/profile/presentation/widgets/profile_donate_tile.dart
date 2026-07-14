@@ -11,7 +11,7 @@ import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.da
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class ProfileDonateTile extends StatelessWidget {
   const ProfileDonateTile({super.key});

@@ -8,7 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
 import 'package:zapbook/core/data/search/book_vector_index.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 

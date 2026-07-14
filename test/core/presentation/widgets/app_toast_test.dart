@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 void main() {
   Widget buildTestApp({required Widget child}) {

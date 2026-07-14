@@ -13,7 +13,7 @@ import 'package:zapbook/features/cheers/presentation/widgets/cheers_shimmer.dart
 import 'package:zapbook/core/presentation/widgets/zap_nudge_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_long_press_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CheersView extends StatefulWidget {
   const CheersView({super.key});

@@ -6,8 +6,8 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.da
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_state.dart';
 import 'package:zapbook/core/services/performance_service.dart';
-import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/reading_style.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 class MockPerformanceCubit extends Mock implements PerformanceCubit {}

@@ -8,7 +8,7 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.d
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_detail_shimmer.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_error_view.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_loaded_view.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CircleDetailPage extends StatelessWidget {
   const CircleDetailPage({super.key, required this.circleBookId});

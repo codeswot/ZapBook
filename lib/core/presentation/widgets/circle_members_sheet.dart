@@ -6,7 +6,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_chrome_slot.dart';
 
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
@@ -24,7 +24,7 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_search_
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_opening_scaffold.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_page_view.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
-import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/theme/reading_style.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({

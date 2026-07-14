@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class BookDownloadOverlay extends StatelessWidget {
   const BookDownloadOverlay({

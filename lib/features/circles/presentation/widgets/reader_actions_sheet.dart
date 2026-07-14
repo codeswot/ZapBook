@@ -8,8 +8,8 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.
     show MemberEntry;
 import 'package:zapbook/core/presentation/widgets/circle_confirm_sheet.dart';
 import 'package:zapbook/features/circles/presentation/widgets/reader_zap_sheet.dart';
-import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_radii.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';

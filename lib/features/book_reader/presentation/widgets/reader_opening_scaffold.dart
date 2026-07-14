@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_chrome_slot.dart';

@@ -7,7 +7,7 @@ import 'package:zapbook/features/cheers/presentation/widgets/cheers_view.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_card.dart';
 import 'package:get_it/get_it.dart';
 import 'package:zapbook/core/data/database/app_database.dart';

@@ -7,7 +7,7 @@ import 'package:zapbook/features/library/presentation/widgets/continue_reading_c
 import 'package:zapbook/features/library/presentation/widgets/library_book_tile.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_processing_tile.dart';
 import 'package:zapbook/features/library/presentation/widgets/book_text_search_results.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class Shelf extends StatelessWidget {
   const Shelf({

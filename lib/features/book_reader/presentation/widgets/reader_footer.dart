@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
-import 'package:zapbook/core/theme/theme_cubit.dart';
+import 'package:zapbook/core/presentation/theme/theme_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_progress.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_font_sheet.dart';
 

@@ -12,7 +12,7 @@ import 'package:zapbook/features/library/presentation/widgets/library_processing
 import 'package:zapbook/features/library/presentation/widgets/shelf.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class LibraryBody extends StatelessWidget {
   const LibraryBody({super.key, required this.searchQuery});

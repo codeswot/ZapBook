@@ -6,7 +6,7 @@ import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class NpubPreview extends StatefulWidget {
   final String npub;

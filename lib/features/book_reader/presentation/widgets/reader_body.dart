@@ -9,7 +9,7 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/data/paragraph_merger.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_block_view.dart';
-import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/theme/reading_style.dart';
 
 enum ReaderPullEdge { top, bottom }
 

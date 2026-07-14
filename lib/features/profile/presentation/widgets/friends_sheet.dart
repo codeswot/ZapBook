@@ -6,7 +6,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';

@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
 import 'package:zapbook/core/presentation/widgets/pulsing_blurhash.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
-import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/theme/app_radii.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_radii.dart';
 
 enum AppBookCoverHue { orange, purple, mint, sky }
 

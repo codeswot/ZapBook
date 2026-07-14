@@ -14,7 +14,7 @@ import 'package:zapbook/features/home/presentation/widgets/home_stats_row.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_up_next_row.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_shimmer.dart';
 import 'package:zapbook/core/presentation/widgets/book_actions_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

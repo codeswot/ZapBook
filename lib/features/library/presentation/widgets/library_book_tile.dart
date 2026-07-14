@@ -10,7 +10,7 @@ import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/core/presentation/widgets/book_download_overlay.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CircleBookTile extends StatelessWidget {
   const CircleBookTile({super.key, required this.book, this.onOpen});

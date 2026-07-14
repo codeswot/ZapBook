@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/theme/app_radii.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_radii.dart';
 
 class ObStepIntro extends StatelessWidget {
   final IconData icon;

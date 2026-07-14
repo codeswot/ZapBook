@@ -6,8 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
-import 'package:zapbook/theme/app_radii.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_radii.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class LibraryProcessingTile extends StatefulWidget {

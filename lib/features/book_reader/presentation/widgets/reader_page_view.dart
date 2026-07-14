@@ -9,7 +9,7 @@ import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dar
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading.dart';
-import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/theme/reading_style.dart';
 
 class ReaderPageView extends StatelessWidget {
   const ReaderPageView({

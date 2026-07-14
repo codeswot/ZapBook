@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/reading_style.dart';
 import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 
 class ReaderBlockView extends StatelessWidget {

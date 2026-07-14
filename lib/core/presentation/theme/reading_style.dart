@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:zapbook/theme/semantic_colors.dart';
+import 'package:zapbook/core/presentation/theme/semantic_colors.dart';
 
 enum ReaderFont {
   sans('Sans', 'Hanken Grotesk'),

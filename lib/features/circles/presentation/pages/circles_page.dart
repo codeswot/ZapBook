@@ -6,7 +6,7 @@ import 'package:zapbook/features/circles/presentation/bloc/circles_cubit.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circle_tile.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circles_empty.dart';
 import 'package:zapbook/features/library/presentation/widgets/library_shimmer.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CirclesPage extends StatelessWidget {
   const CirclesPage({super.key});

@@ -12,7 +12,7 @@ import 'package:zapbook/features/library/presentation/widgets/library_body.dart'
 import 'package:zapbook/features/library/presentation/widgets/library_header.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 
 class LibraryPage extends StatelessWidget {

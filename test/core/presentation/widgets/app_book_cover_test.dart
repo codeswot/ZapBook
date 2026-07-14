@@ -6,7 +6,7 @@ import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/pulsing_blurhash.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 import 'package:zapbook/core/services/performance_service.dart';
 

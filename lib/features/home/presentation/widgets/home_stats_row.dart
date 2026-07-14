@@ -5,7 +5,7 @@ import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart';
 import 'package:zapbook/core/extensions/int_extension.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 import 'package:zapbook/features/home/presentation/widgets/home_stat_card.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class HomeStatsRow extends StatelessWidget {
   const HomeStatsRow({super.key, required this.stats});

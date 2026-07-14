@@ -7,7 +7,7 @@ import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
 import 'package:zapbook/features/profile/presentation/widgets/account_switch_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class MockSwitchAccountCubit extends Mock implements SwitchAccountCubit {}
 

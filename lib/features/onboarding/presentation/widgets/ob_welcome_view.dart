@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/theme/app_theme.dart';
-import 'package:zapbook/theme/app_radii.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_radii.dart';
 
 class ObWelcomeView extends StatelessWidget {
   const ObWelcomeView({super.key});

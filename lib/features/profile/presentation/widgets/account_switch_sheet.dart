@@ -5,7 +5,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';

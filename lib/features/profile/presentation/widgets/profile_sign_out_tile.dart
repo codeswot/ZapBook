@@ -5,7 +5,7 @@ import 'package:zapbook/core/router/app_router.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class ProfileSignOutTile extends StatelessWidget {
   const ProfileSignOutTile({super.key});

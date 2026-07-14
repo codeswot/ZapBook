@@ -7,7 +7,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_body.dart'
 import 'package:zapbook/features/profile/presentation/widgets/profile_error_view.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_header.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_shimmer.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});

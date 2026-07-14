@@ -5,7 +5,7 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:zapbook/features/circles/presentation/bloc/reader_zap_cubit.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 

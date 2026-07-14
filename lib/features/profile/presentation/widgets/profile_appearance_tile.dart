@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/theme/theme_cubit.dart';
+import 'package:zapbook/core/presentation/theme/theme_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
 
 class ProfileAppearanceTile extends StatelessWidget {

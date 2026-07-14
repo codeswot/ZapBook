@@ -7,7 +7,7 @@ import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_loading.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 import 'package:zapbook/features/book_reader/presentation/pages/reader_screen.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_init_cubit.dart';

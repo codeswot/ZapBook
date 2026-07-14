@@ -7,7 +7,7 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
 import 'package:zapbook/core/presentation/widgets/share_circle_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class MockShareCircleCubit extends Mock implements ShareCircleCubit {}

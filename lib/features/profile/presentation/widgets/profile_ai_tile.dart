@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_status_pill.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class ProfileAiTile extends StatelessWidget {
   const ProfileAiTile({super.key});

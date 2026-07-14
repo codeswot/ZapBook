@@ -92,7 +92,7 @@ import 'package:zapbook/core/services/zap_nudge_service.dart' as _i718;
 import 'package:zapbook/core/services/zap_service.dart' as _i362;
 import 'package:zapbook/core/services/zap_support_service.dart' as _i582;
 import 'package:zapbook/core/session/session_reloader.dart' as _i803;
-import 'package:zapbook/core/theme/theme_cubit.dart' as _i465;
+import 'package:zapbook/core/presentation/theme/theme_cubit.dart' as _i465;
 import 'package:zapbook/features/book_ingestion/data/ai/printing_pdf_rasterizer.dart'
     as _i217;
 import 'package:zapbook/features/book_ingestion/data/book_ingestion_repository_impl.dart'

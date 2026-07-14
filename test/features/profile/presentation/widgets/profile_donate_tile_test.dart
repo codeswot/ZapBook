@@ -11,7 +11,7 @@ import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_donate_tile.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/zap_sheet.dart';
 import 'package:go_router/go_router.dart';
 

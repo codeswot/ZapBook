@@ -17,7 +17,7 @@ import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circ
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_removed_banner.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circle_settings_sheet.dart';
 import 'package:zapbook/features/circles/presentation/widgets/reader_actions_sheet.dart';
-import 'package:zapbook/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CircleLoadedView extends StatelessWidget {
   const CircleLoadedView({

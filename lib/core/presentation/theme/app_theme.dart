@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:zapbook/theme/semantic_colors.dart';
-import 'package:zapbook/theme/app_typography.dart';
+import 'package:zapbook/core/presentation/theme/semantic_colors.dart';
+import 'package:zapbook/core/presentation/theme/app_typography.dart';
 
 export 'semantic_colors.dart';
 export 'app_typography.dart';
