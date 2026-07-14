@@ -11,7 +11,7 @@ import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.d
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {

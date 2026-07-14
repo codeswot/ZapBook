@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zapbook/core/data/app_database.dart';
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/app_database.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 
 void main() {

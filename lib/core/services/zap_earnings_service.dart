@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 @lazySingleton
 class ZapEarningsService {

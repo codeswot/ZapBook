@@ -5,8 +5,8 @@ import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
 
 import 'package:uuid/uuid.dart';
-import 'package:zapbook/core/data/dao/cheers_dao.dart';
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/milestone_book_session.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';

@@ -10,7 +10,7 @@ import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/lnurl_service.dart';
 import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/services/zap_support_service.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 import 'package:logging/logging.dart' as logging;
 

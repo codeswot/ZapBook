@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/core/data/dao/page_dao.dart';
+import 'package:zapbook/core/data/database/dao/page_dao.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';

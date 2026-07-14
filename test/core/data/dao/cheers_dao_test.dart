@@ -2,8 +2,8 @@ import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zapbook/core/data/app_database.dart';
-import 'package:zapbook/core/data/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/database/app_database.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 
 void main() {

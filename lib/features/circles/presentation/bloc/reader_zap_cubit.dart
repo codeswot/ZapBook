@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';

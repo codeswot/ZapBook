@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/reading_stats_service.dart';
 import 'package:zapbook/features/home/domain/entities/home_dashboard.dart';
 
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

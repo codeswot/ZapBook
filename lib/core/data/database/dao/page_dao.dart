@@ -3,7 +3,7 @@ import 'dart:isolate';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:zapbook/core/data/app_database.dart';
+import 'package:zapbook/core/data/database/app_database.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 @lazySingleton

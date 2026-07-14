@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zapbook/core/data/app_database.dart';
-import 'package:zapbook/core/data/dao/page_dao.dart';
+import 'package:zapbook/core/data/database/app_database.dart';
+import 'package:zapbook/core/data/database/dao/page_dao.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 void main() {

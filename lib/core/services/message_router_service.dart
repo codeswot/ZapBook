@@ -4,8 +4,8 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/models/app_message.dart';
 import 'package:zapbook/core/services/marmot_sync_service.dart';
-import 'package:zapbook/core/data/dao/cheers_dao.dart';
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 

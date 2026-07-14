@@ -5,10 +5,10 @@ import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/config/zapbook_config.dart';
-import 'package:zapbook/core/data/dao/circle_progress_dao.dart';
-import 'package:zapbook/core/data/dao/reading_stats_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
+import 'package:zapbook/core/data/database/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/services/zap_earnings_service.dart';
 
 @lazySingleton

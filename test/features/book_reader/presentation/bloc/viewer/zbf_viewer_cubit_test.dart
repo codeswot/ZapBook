@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/data/dao/page_dao.dart';
+import 'package:zapbook/core/data/database/dao/page_dao.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';

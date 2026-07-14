@@ -1,5 +1,5 @@
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';

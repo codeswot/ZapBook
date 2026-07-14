@@ -8,7 +8,7 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/data/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
 
 import 'package:zapbook/zbf/enums/book_source_format.dart';

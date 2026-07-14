@@ -6,7 +6,7 @@ import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/data/dao/cheers_dao.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 
 abstract interface class CheersDataSource {

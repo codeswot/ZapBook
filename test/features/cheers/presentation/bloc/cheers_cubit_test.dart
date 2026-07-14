@@ -11,7 +11,7 @@ import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
-import 'package:zapbook/core/data/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/services/clipboard_service.dart';
 
 class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
