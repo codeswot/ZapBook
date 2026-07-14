@@ -7,8 +7,8 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ## 1. Core Layer (`lib/core/`)
 
-- [ ] `lib/core/config/` (AppConfig, Env)
-- [ ] `lib/core/constants/` (Colors, Strings)
+- [x] `lib/core/config/` (AppConfig, Env)
+- [x] `lib/core/constants/` (Colors, Strings)
 - [ ] `lib/core/data/`
   - [ ] `database/` (AppDatabase, DAOs)
   - [ ] `network/` (NetworkClient wrapper)
@@ -20,8 +20,8 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
   - [ ] `widgets/` (Shared UI components)
   - [ ] `theme/` (App theme definitions)
   - [ ] `router/` (GoRouter configurations)
-- [ ] `lib/core/di/` (GetIt Service Locator setup)
-- [ ] `lib/core/utils/` (Helper extensions and formatters)
+- [x] `lib/core/di/` (GetIt Service Locator setup)
+- [x] `lib/core/utils/` (Helper extensions and formatters)
 
 ## 2. Features Layer (`lib/features/`)
 
