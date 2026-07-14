@@ -7,7 +7,7 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 
 @lazySingleton
 class ContactService {

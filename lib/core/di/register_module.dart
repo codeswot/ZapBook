@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:zapbook/core/services/app_info_service.dart';
+import 'package:zapbook/core/data/infrastructure/app_info_service.dart';
 
 @module
 abstract class RegisterModule {

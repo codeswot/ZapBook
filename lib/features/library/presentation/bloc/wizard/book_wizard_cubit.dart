@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/constants/book_genres.dart';
-import 'package:zapbook/core/services/file_picker_service.dart';
+import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 

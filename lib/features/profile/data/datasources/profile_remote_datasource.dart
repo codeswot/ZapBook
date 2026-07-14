@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 
 typedef ProfileMetadata = ({
   String? name,

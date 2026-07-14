@@ -4,7 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
-import 'package:zapbook/core/services/file_picker_service.dart';
+import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';

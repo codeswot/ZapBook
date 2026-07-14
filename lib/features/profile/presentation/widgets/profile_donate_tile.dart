@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';

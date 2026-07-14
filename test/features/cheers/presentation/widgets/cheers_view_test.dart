@@ -12,7 +12,7 @@ import 'package:zapbook/features/cheers/presentation/widgets/cheers_activity_car
 import 'package:get_it/get_it.dart';
 import 'package:zapbook/core/data/database/app_database.dart';
 import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 
 class MockCheersCubit extends Mock implements CheersCubit {}
 

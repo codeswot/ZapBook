@@ -10,7 +10,7 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
-import 'package:zapbook/core/services/file_picker_service.dart';
+import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 
 @injectable

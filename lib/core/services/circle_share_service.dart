@@ -8,7 +8,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
-import 'package:zapbook/core/services/blossom_service.dart';
+import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 

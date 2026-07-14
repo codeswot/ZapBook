@@ -7,9 +7,9 @@ import 'package:mime/mime.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
-import 'package:zapbook/core/services/marmot_sync_service.dart';
+import 'package:zapbook/core/data/infrastructure/marmot_sync_service.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/blossom_service.dart';
+import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

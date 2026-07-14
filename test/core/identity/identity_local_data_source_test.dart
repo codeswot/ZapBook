@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/secure_storage_service.dart';
+import 'package:zapbook/core/data/infrastructure/secure_storage_service.dart';
 
 class MockSecureStorageService extends Mock implements SecureStorageService {}
 

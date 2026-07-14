@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/identity/active_account.dart';
-import 'package:zapbook/core/services/secure_storage_service.dart';
+import 'package:zapbook/core/data/infrastructure/secure_storage_service.dart';
 
 @lazySingleton
 class IdentityLocalDataSource {

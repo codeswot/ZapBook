@@ -20,7 +20,7 @@ import 'package:zapbook/core/presentation/widgets/app_nwc_connected_sheet.dart';
 import 'package:zapbook/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/services/file_logger_service.dart';
+import 'package:zapbook/core/data/infrastructure/file_logger_service.dart';
 
 class ProfileBody extends StatelessWidget {
   const ProfileBody({super.key, required this.profile, this.nwcWalletName});

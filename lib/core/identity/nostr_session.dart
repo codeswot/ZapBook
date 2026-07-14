@@ -4,8 +4,8 @@ import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 
 import 'package:zapbook/core/identity/nostr_signer_source.dart';
-import 'package:zapbook/core/services/marmot_sync_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/marmot_sync_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 
 @lazySingleton
 class NostrSession {

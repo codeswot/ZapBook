@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 
-import 'package:zapbook/core/services/clipboard_service.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';

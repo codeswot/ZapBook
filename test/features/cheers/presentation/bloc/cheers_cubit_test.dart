@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:ndk/ndk.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/services/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 import 'package:zapbook/core/services/zap_nudge_service.dart';
 import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
@@ -12,7 +12,7 @@ import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
-import 'package:zapbook/core/services/clipboard_service.dart';
+import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 
 class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
 
