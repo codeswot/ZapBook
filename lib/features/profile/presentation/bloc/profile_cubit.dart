@@ -3,15 +3,9 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
-import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
-import 'package:zapbook/core/services/nwc_service.dart';
 import 'package:zapbook/core/config/zapbook_config.dart';
-import 'package:zapbook/core/data/infrastructure/app_info_service.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
-import 'package:zapbook/core/services/zap_support_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
+import 'package:zapbook/features/profile/domain/usecases/profile_usecases.dart';
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart';
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_state.dart';
@@ -24,13 +18,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     this._loadProfile,
     this._updateProfile,
     this._signOut,
-    this._clipboard,
-    this._nwc,
-    this._identity,
-    this._filePicker,
-    this._keyPackage,
-    this._appInfo,
-    this._support,
+    this._settings,
   ) : super(const ProfileLoading()) {
     load();
   }
@@ -38,27 +26,21 @@ class ProfileCubit extends Cubit<ProfileState> {
   final LoadProfile _loadProfile;
   final UpdateProfile _updateProfile;
   final SignOut _signOut;
-  final ClipboardService _clipboard;
-  final NwcService _nwc;
-  final IdentityLocalDataSource _identity;
-  final FilePickerService _filePicker;
-  final KeyPackageService _keyPackage;
-  final AppInfoService _appInfo;
-  final ZapSupportService _support;
+  final ProfileSettingsUseCases _settings;
 
-  String? get nwcConnectionString => _nwc.connectionString;
-  bool get isNwcConnected => _nwc.isConnected;
-  String get appVersion => _appInfo.version;
+  String? get nwcConnectionString => _settings.nwcConnectionString;
+  bool get isNwcConnected => _settings.isNwcConnected;
+  String get appVersion => _settings.appVersion;
   String get donationRecipient => ZapbookConfig.lnAddress;
-  int get supportPercent => _support.percent;
-  List<int> get supportPercentOptions => ZapSupportService.options;
+  int get supportPercent => _settings.supportPercent;
+  List<int> get supportPercentOptions => _settings.supportPercentOptions;
 
-  Future<void> setSupportPercent(int value) => _support.setPercent(value);
+  Future<void> setSupportPercent(int value) => _settings.setSupportPercent(value);
 
   Future<void> load() async {
     emit(const ProfileLoading());
     try {
-      emit(ProfileLoaded(await _loadProfile(), nwcWalletName: _nwc.walletName));
+      emit(ProfileLoaded(await _loadProfile(), nwcWalletName: _settings.nwcWalletName));
     } on Exception catch (error) {
       emit(ProfileError('$error'));
     }
@@ -67,7 +49,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   void _refreshNwc() {
     final state = this.state;
     if (state is ProfileLoaded) {
-      emit(ProfileLoaded(state.profile, nwcWalletName: _nwc.walletName));
+      emit(ProfileLoaded(state.profile, nwcWalletName: _settings.nwcWalletName));
     }
   }
 
@@ -87,28 +69,28 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<String> pickImage() async {
-    final bytes = await _filePicker.pickImage();
+    final bytes = await _settings.pickImage();
     if (bytes != null) {
       return 'data:image/png;base64,${base64Encode(bytes)}';
     }
     return '';
   }
 
-  Future<String?> readNsec() => _identity.readNsec();
+  Future<String?> readNsec() => _settings.readNsec();
 
   Future<void> connectNwc(String uri) async {
-    await _nwc.connect(uri);
+    await _settings.connectNwc(uri);
     _refreshNwc();
   }
 
   Future<void> disconnectNwc() async {
-    await _nwc.disconnect();
+    await _settings.disconnectNwc();
     _refreshNwc();
   }
 
-  Future<void> copy(String value) => _clipboard.copy(value);
+  Future<void> copy(String value) => _settings.copy(value);
 
-  Future<bool> rotateKeyPackage() => _keyPackage.forceRotate();
+  Future<bool> rotateKeyPackage() => _settings.rotateKeyPackage();
 
   Future<void> signOut() => _signOut();
 }
