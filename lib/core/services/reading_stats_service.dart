@@ -114,21 +114,28 @@ class ReadingStatsService {
     int newStreak = currentStats?.streak ?? 0;
     final lastActivity = currentStats?.lastActivityDate;
 
-    if (lastActivity == today) {
-      return;
+    bool streakUpdated = false;
+
+    if (lastActivity != today) {
+      if (lastActivity == yesterday) {
+        newStreak += 1;
+      } else {
+        newStreak = 1;
+      }
+      streakUpdated = true;
     }
 
-    if (lastActivity == yesterday) {
-      newStreak += 1;
-    } else {
-      newStreak = 1;
+    final newBooksRead = await _progressDao.countCompletedBooks(npub);
+
+    if (!streakUpdated && newBooksRead == (currentStats?.booksRead ?? 0)) {
+      return;
     }
 
     final record = ReadingStatsRecord(
       pubKey: npub,
       streak: newStreak,
       lastActivityDate: today,
-      booksRead: await _progressDao.countCompletedBooks(npub),
+      booksRead: newBooksRead,
       updatedAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
 

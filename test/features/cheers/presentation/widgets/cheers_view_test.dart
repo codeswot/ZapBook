@@ -69,8 +69,8 @@ void main() {
       final activity = CheersActivity(
         id: '1',
         groupId: 'g1',
-        senderNpub: 'npub2',
-        recipientNpub: '',
+        actorNpub: 'npub2',
+        otherPartyNpub: '',
         targetId: '',
         targetDescription: 'description',
         timestamp: DateTime.now(),

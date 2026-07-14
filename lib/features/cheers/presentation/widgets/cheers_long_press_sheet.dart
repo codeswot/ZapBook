@@ -84,7 +84,10 @@ class CheersLongPressSheet extends StatelessWidget {
               icon: LucideIcons.zap,
               label: 'Zap',
               tone: colors.bitcoin,
-              onTap: () => CheersZapSheet.show(context, activity: activity),
+              onTap: () {
+                context.pop();
+                CheersZapSheet.show(context, activity: activity, cubit: cubit);
+              },
             ),
             const SizedBox(height: 10),
           ],

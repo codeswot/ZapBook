@@ -13,13 +13,15 @@ class CheersZapSheet extends StatelessWidget {
   static Future<void> show(
     BuildContext context, {
     required CheersActivity activity,
+    CheersCubit? cubit,
   }) {
+    final effectiveCubit = cubit ?? context.read<CheersCubit>();
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: context.colors.transparent,
       builder: (_) => BlocProvider.value(
-        value: context.read<CheersCubit>(),
+        value: effectiveCubit,
         child: CheersZapSheet(activity: activity),
       ),
     );
