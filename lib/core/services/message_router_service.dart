@@ -37,6 +37,7 @@ class MessageRouterService {
 
   Future<void> _handleRawMessage(MarmotMessage rawMsg) async {
     final parsed = AppMessage.tryParse(rawMsg);
+    _log.warning('Incoming Message ${parsed.runtimeType}');
     if (parsed == null) return;
 
     try {

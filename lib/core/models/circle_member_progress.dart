@@ -26,7 +26,7 @@ class CircleMemberProgress extends Equatable {
     return CircleMemberProgress(
       groupId: msg.groupId,
       pubKey: msg.senderNpub,
-      bookId: msg.payload['circleBookId'] as String? ?? '',
+      bookId: msg.payload['circleDirId'] as String? ?? '',
       pageIndex: msg.payload['currentPage'] as int? ?? 0,
       progressPercentage: (msg.payload['fraction'] as num?)?.toDouble() ?? 0.0,
       updatedAt: msg.timestampSecs,
