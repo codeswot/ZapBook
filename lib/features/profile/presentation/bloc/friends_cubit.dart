@@ -6,20 +6,21 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
 @lazySingleton
 class FriendsCubit extends Cubit<FriendsState> {
   StreamSubscription? _sub;
 
-  FriendsCubit(this._contacts) : super(const FriendsLoading());
+  FriendsCubit(this._usecases) : super(const FriendsLoading());
 
-  final ContactService _contacts;
+  final FriendsUseCases _usecases;
   final _log = logging.Logger('FriendsCubit');
 
   Future<void> load() async {
     _sub?.cancel();
-    _sub = _contacts.friends.listen(
+    _sub = _usecases.friends.listen(
       (friends) {
         if (!isClosed) emit(FriendsLoaded(friends));
       },
@@ -38,7 +39,7 @@ class FriendsCubit extends Cubit<FriendsState> {
   Future<void> addNpub(String npub) async {
     if (npub.isEmpty) return;
 
-    if (!_contacts.isValidNpub(npub)) {
+    if (!_usecases.isValidNpub(npub)) {
       emit(FriendsError.from(state, 'Not a valid npub'));
       return;
     }
@@ -47,7 +48,7 @@ class FriendsCubit extends Cubit<FriendsState> {
     emit(FriendsBusy(friends: current, busyNpub: npub, adding: true));
 
     try {
-      await _contacts.add(npub);
+      await _usecases.add(npub);
     } on ContactException catch (e) {
       if (isClosed) return;
       emit(FriendsError.from(state, e.message));
@@ -63,7 +64,7 @@ class FriendsCubit extends Cubit<FriendsState> {
     emit(FriendsBusy(friends: current, busyNpub: npub));
 
     try {
-      await _contacts.remove(npub);
+      await _usecases.remove(npub);
     } on Object catch (e, stack) {
       if (isClosed) return;
       _log.warning('Remove contact failed', e, stack);
@@ -71,7 +72,7 @@ class FriendsCubit extends Cubit<FriendsState> {
     }
   }
 
-  Future<Contact> resolveNpub(String npub) => _contacts.resolve(npub);
+  Future<Contact> resolveNpub(String npub) => _usecases.resolve(npub);
 
   int get contactCount => _currentFriends.length;
 

@@ -2,33 +2,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/extensions/string_extension.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
-import 'package:zapbook/core/session/session_reloader.dart';
-import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:zapbook/features/profile/domain/usecases/switch_account_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
 
 @injectable
 class SwitchAccountCubit extends Cubit<SwitchAccountState> {
   SwitchAccountCubit(
-    this._identityLocal,
-    this._identityRepo,
-    this._remote,
-    this._sessionReloader,
+    this._usecases,
   ) : super(const SwitchAccountLoading());
 
-  final IdentityLocalDataSource _identityLocal;
-  final IdentityRepository _identityRepo;
-  final ProfileRemoteDataSource _remote;
-  final SessionReloader _sessionReloader;
+  final SwitchAccountUseCases _usecases;
   final _log = logging.Logger('SwitchAccountCubit');
 
   Future<void> load() async {
     emit(const SwitchAccountLoading());
     try {
-      final npubs = await _identityLocal.listNpubs();
-      final activeNpub = await _identityLocal.readNpub() ?? '';
+      final npubs = await _usecases.listNpubs();
+      final activeNpub = await _usecases.readNpub() ?? '';
 
       final accounts = <SwitchAccountItem>[];
       for (final npub in npubs) {
@@ -47,14 +38,14 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       for (var i = 0; i < accounts.length; i++) {
         final item = accounts[i];
         try {
-          final meta = await _remote.fetchMetadata(npub: item.npub);
+          final meta = await _usecases.fetchMetadata(item.npub);
           if (meta != null) {
-            final fetchedName = meta.displayName ?? meta.name;
+            final fetchedName = meta.displayName;
             final currentLoaded = _currentAccounts;
             final updatedAccounts = currentLoaded.map((a) {
               if (a.npub == item.npub) {
                 return a.copyWith(
-                  name: (fetchedName != null && fetchedName.isNotEmpty)
+                  name: (fetchedName.isNotEmpty)
                       ? fetchedName
                       : a.name,
                   picture: (meta.picture != null && meta.picture!.isNotEmpty)
@@ -90,8 +81,8 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, busyNpub: npub),
     );
     try {
-      await _identityLocal.setActive(npub);
-      await _sessionReloader.reload();
+      await _usecases.setActive(npub);
+      await _usecases.reloadSession();
     } on Object catch (e, stack) {
       _log.warning('Switch account failed', e, stack);
       emit(SwitchAccountLoaded(accounts: accounts, activeNpub: active));
@@ -107,7 +98,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, busyNpub: npub),
     );
     try {
-      await _identityLocal.removeAccount(npub);
+      await _usecases.removeAccount(npub);
       await load();
     } on Object catch (e, stack) {
       _log.warning('Remove account failed', e, stack);
@@ -126,15 +117,13 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
     );
     try {
-      final isValid = await _identityRepo.validateNsec(trimmed);
+      final isValid = await _usecases.validateNsec(trimmed);
       if (!isValid) {
         throw const FormatException('Invalid secret key');
       }
 
-      final keypair = await _identityRepo.importFromNsec(trimmed);
-      await _identityRepo.persist(npub: keypair.npub, nsec: keypair.nsec!);
-
-      await _sessionReloader.reload();
+      await _usecases.importAndPersist(trimmed);
+      await _usecases.reloadSession();
       return true;
     } on Object catch (e, stack) {
       _log.warning('Import account failed', e, stack);

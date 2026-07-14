@@ -7,16 +7,14 @@ import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/lnurl_models.dart';
-import 'package:zapbook/core/services/zap_service.dart';
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
+import 'package:zapbook/features/profile/domain/usecases/donate_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 
 @injectable
 class DonateCubit extends Cubit<DonateState> {
-  DonateCubit(this._zap, this._clipboard) : super(const DonateReady());
+  DonateCubit(this._usecases) : super(const DonateReady());
 
-  final ZapService _zap;
-  final ClipboardService _clipboard;
+  final DonateUseCases _usecases;
   final _log = logging.Logger('DonateCubit');
 
   String get recipient => ZapbookConfig.lnAddress;
@@ -49,7 +47,7 @@ class DonateCubit extends Cubit<DonateState> {
     emit(DonateLoading(showGift: showGift, presetChip: gesture));
 
     try {
-      final result = await _zap.donate(
+      final result = await _usecases.donate(
         amountSats: gesture.sats!,
         comment: _donationMessages[gesture] ?? gesture.label,
       );
@@ -69,7 +67,7 @@ class DonateCubit extends Cubit<DonateState> {
     emit(DonateLoading(showGift: showGift));
 
     try {
-      final result = await _zap.donate(
+      final result = await _usecases.donate(
         amountSats: sats,
         comment: (comment != null && comment.isNotEmpty) ? comment : null,
       );
@@ -81,9 +79,9 @@ class DonateCubit extends Cubit<DonateState> {
   }
 
   Future<void> _processPayment(String invoice, int sats, bool showGift) async {
-    final status = await _zap.payWithFallback(invoice);
+    final status = await _usecases.payWithFallback(invoice);
     if (status == ZapStatus.failed) {
-      await _clipboard.copy(invoice);
+      await _usecases.copyToClipboard(invoice);
       emit(
         DonateFailure(
           showGift: showGift,
