@@ -67,9 +67,8 @@ class MessageRouterService {
             ZapSentMessage() ||
             ZapNudgeMessage() ||
             ZapReadyMessage():
-          print("OBO TEST ${parsed}");
           final activity = CheersActivityMessage.fromAppMessage(parsed);
-          print("OBO i de $activity");
+
           await _cheersDao.saveActivity(activity);
 
         case InitialBookMessage() || BookCompletedMessage():
