@@ -17,8 +17,19 @@ class BookDownloadProgress {
   const BookDownloadProgress(this.circleDirId);
 }
 
+typedef _TaskResult = ({Object? error, StackTrace? stack});
+
+typedef _DownloadResult = ({
+  Uint8List? bytes,
+  Object? error,
+  StackTrace? stack,
+});
+
 @lazySingleton
 class CircleShareService {
+  static const kSegmentExt = '.zbfseg';
+  static const kSourceExt = '.source';
+
   CircleShareService(
     this._marmot,
     this._blossom,
@@ -40,13 +51,23 @@ class CircleShareService {
   static const _reader = ZbfReader();
   static const _segmenter = ZbfSegmenter();
 
+  static const int _transferConcurrency = 4;
+  static const int _fetchMaxAttempts = 10;
+  static const Duration _fetchRetryDelay = Duration(seconds: 2);
+  static const String _blobMimeType = 'application/octet-stream';
+  static const int _segmentIndexWidth = 4;
+
+  static final RegExp _segmentIndexPattern = RegExp(
+    r'\.seg(\d+)' + RegExp.escape(kSegmentExt) + r'$',
+  );
+
   Future<void> uploadBookContent(
     String npub,
     String groupId,
     String circleDirId,
   ) async {
     final zbf = await _fileStore.zbfFile(circleDirId);
-    if (!zbf.existsSync()) {
+    if (!await zbf.exists()) {
       _log.warning(
         'Cannot upload book content: ZBF file not found for $circleDirId',
       );
@@ -55,33 +76,35 @@ class CircleShareService {
 
     final handle = await _reader.open(zbf.path);
     try {
+      final window = <Future<_TaskResult>>[];
+
       final sourcePath = handle.sourceDocumentPath();
       if (sourcePath != null) {
-        final sourceBytes = File(sourcePath).readAsBytesSync();
-        await _uploadBlob(
-          npub,
-          groupId,
-          sourceBytes,
-          'application/octet-stream',
-          '$circleDirId.source',
+        window.add(
+          _guard(() => _uploadSource(npub, groupId, circleDirId, sourcePath)),
         );
       }
 
-      final segments = await _segmenter.segment(handle).toList();
-      for (var i = 0; i < segments.length; i += 4) {
-        final batch = segments.skip(i).take(4);
-        await Future.wait(
-          batch.map((segment) {
-            final index = segment.index.toString().padLeft(4, '0');
-            return _uploadBlob(
+      await for (final segment in _segmenter.segment(handle)) {
+        final index = segment.index.toString().padLeft(_segmentIndexWidth, '0');
+        window.add(
+          _guard(
+            () => _uploadBlob(
               npub,
               groupId,
               segment.bytes,
-              'application/octet-stream',
-              '$circleDirId.seg$index.zbfseg',
-            );
-          }),
+              _blobMimeType,
+              '$circleDirId.seg$index$kSegmentExt',
+            ),
+          ),
         );
+        if (window.length >= _transferConcurrency) {
+          await _drainOne(window);
+        }
+      }
+
+      while (window.isNotEmpty) {
+        await _drainOne(window);
       }
     } finally {
       handle.close();
@@ -90,41 +113,20 @@ class CircleShareService {
 
   Future<bool> fetchAndDownloadBook(String groupId, String circleDirId) async {
     try {
-      final messages = await _marmot.getMessages(groupId);
-      final segmentsMap = <String, MarmotMediaRef>{};
+      List<MarmotMediaRef> segments = [];
       MarmotMediaRef? sourceRef;
 
-      int maxSegmentIndex = -1;
+      for (var attempt = 0; attempt < _fetchMaxAttempts; attempt++) {
+        final found = await _collectMediaRefs(groupId, circleDirId);
+        segments = found.segments;
+        sourceRef = found.sourceRef;
+        if (found.complete) break;
 
-      for (final message in messages.reversed) {
-        for (final media in message.media) {
-          if (!media.filename.startsWith(circleDirId)) continue;
-
-          if (media.filename.endsWith('.source')) {
-            sourceRef ??= media;
-          } else if (media.filename.endsWith('.zbfseg')) {
-            if (segmentsMap.putIfAbsent(media.filename, () => media) == media) {
-              final match = RegExp(
-                r'\.seg(\d+)\.zbfseg$',
-              ).firstMatch(media.filename);
-              if (match != null) {
-                final idx = int.parse(match.group(1)!);
-                if (idx > maxSegmentIndex) {
-                  maxSegmentIndex = idx;
-                }
-              }
-            }
-          }
-        }
-
-        if (maxSegmentIndex != -1 &&
-            segmentsMap.length == maxSegmentIndex + 1 &&
-            sourceRef != null) {
-          break;
+        if (attempt < _fetchMaxAttempts - 1) {
+          await Future.delayed(_fetchRetryDelay);
         }
       }
 
-      final segments = segmentsMap.values.toList();
       if (segments.isEmpty) {
         _log.warning('No segment assets found in messages for $circleDirId');
         return false;
@@ -215,6 +217,65 @@ class CircleShareService {
     );
   }
 
+  Future<
+    ({List<MarmotMediaRef> segments, MarmotMediaRef? sourceRef, bool complete})
+  >
+  _collectMediaRefs(String groupId, String circleDirId) async {
+    final messages = await _marmot.getMessages(groupId);
+    final segmentsMap = <String, MarmotMediaRef>{};
+    MarmotMediaRef? sourceRef;
+    var maxSegmentIndex = -1;
+
+    bool isComplete() =>
+        maxSegmentIndex != -1 &&
+        segmentsMap.length == maxSegmentIndex + 1 &&
+        sourceRef != null;
+
+    for (final message in messages.reversed) {
+      for (final media in message.media) {
+        if (!media.filename.startsWith(circleDirId)) continue;
+
+        if (media.filename.endsWith(kSourceExt)) {
+          sourceRef ??= media;
+        } else if (media.filename.endsWith(kSegmentExt) &&
+            !segmentsMap.containsKey(media.filename)) {
+          segmentsMap[media.filename] = media;
+          final match = _segmentIndexPattern.firstMatch(media.filename);
+          if (match != null) {
+            final index = int.parse(match.group(1)!);
+            if (index > maxSegmentIndex) {
+              maxSegmentIndex = index;
+            }
+          }
+        }
+      }
+
+      if (isComplete()) break;
+    }
+
+    return (
+      segments: segmentsMap.values.toList(),
+      sourceRef: sourceRef,
+      complete: isComplete(),
+    );
+  }
+
+  Future<void> _uploadSource(
+    String npub,
+    String groupId,
+    String circleDirId,
+    String sourcePath,
+  ) async {
+    final sourceBytes = await File(sourcePath).readAsBytes();
+    await _uploadBlob(
+      npub,
+      groupId,
+      sourceBytes,
+      _blobMimeType,
+      '$circleDirId$kSourceExt',
+    );
+  }
+
   Future<void> _uploadBlob(
     String npub,
     String groupId,
@@ -239,21 +300,54 @@ class CircleShareService {
       dimensionsHeight: enc.dimensionsHeight,
     );
     final event = await _marmot.sendMessage(rumor, groupId);
-    _envelope.publish(event);
+    await _envelope.publish(event);
   }
 
   Stream<Uint8List> _downloadSegments(
     String groupId,
     List<MarmotMediaRef> refs,
   ) async* {
-    for (var i = 0; i < refs.length; i += 4) {
-      final batch = refs.skip(i).take(4);
-      final downloaded = await Future.wait(
-        batch.map((ref) => downloadAndDecrypt(groupId, ref)),
-      );
-      for (final bytes in downloaded) {
-        yield bytes;
+    final window = <Future<_DownloadResult>>[];
+    var next = 0;
+
+    while (next < refs.length || window.isNotEmpty) {
+      while (window.length < _transferConcurrency && next < refs.length) {
+        window.add(_downloadSafe(groupId, refs[next++]));
       }
+
+      final result = await window.removeAt(0);
+      if (result.error != null) {
+        Error.throwWithStackTrace(result.error!, result.stack!);
+      }
+      yield result.bytes!;
+    }
+  }
+
+  Future<_DownloadResult> _downloadSafe(
+    String groupId,
+    MarmotMediaRef ref,
+  ) async {
+    try {
+      final bytes = await downloadAndDecrypt(groupId, ref);
+      return (bytes: bytes, error: null, stack: null);
+    } catch (e, st) {
+      return (bytes: null, error: e, stack: st);
+    }
+  }
+
+  Future<_TaskResult> _guard(Future<void> Function() task) async {
+    try {
+      await task();
+      return (error: null, stack: null);
+    } catch (e, st) {
+      return (error: e, stack: st);
+    }
+  }
+
+  Future<void> _drainOne(List<Future<_TaskResult>> window) async {
+    final result = await window.removeAt(0);
+    if (result.error != null) {
+      Error.throwWithStackTrace(result.error!, result.stack!);
     }
   }
 }
