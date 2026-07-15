@@ -97,19 +97,19 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Book Reader & Progress (Tracking)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`BookProgress.dart`)
-  - [ ] `repositories/` (`BookReaderRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `ReportReadingProgressUseCase.dart` (Handles tracking stats and generating milestones)
-    - [ ] `GetBookContentUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`BookReaderLocalDataSource.dart`, `ProgressRemoteDataSource.dart`)
-  - [ ] `repositories/` (`BookReaderRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`BookReaderCubit.dart`)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`BookProgress.dart`)
+  - [x] `repositories/` (`BookReaderRepository` interface)
+  - [x] `usecases/`
+    - [x] `ReportReadingProgressUseCase.dart` (Handles tracking stats and generating milestones)
+    - [x] `GetBookContentUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`BookReaderLocalDataSource.dart`, `ProgressRemoteDataSource.dart`)
+  - [x] `repositories/` (`BookReaderRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`BookReaderCubit.dart`)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Library (My Books)
 

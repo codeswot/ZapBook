@@ -10,7 +10,7 @@ import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
-import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
+import 'package:zapbook/core/domain/usecases/pdf_usecases.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_state.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
@@ -30,7 +30,7 @@ class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
     required this.handle,
     required this.groupId,
-    this.rasterizer,
+    this.rasterizePdfPage,
     this.segmentLoader,
     this.onExit,
     this.initialPage,
@@ -40,7 +40,7 @@ class ReaderScreen extends StatefulWidget {
 
   final ZbfBookHandle handle;
   final String groupId;
-  final PdfPageRasterizer? rasterizer;
+  final RasterizePdfPageUseCase? rasterizePdfPage;
   final BookSegmentLoader? segmentLoader;
   final VoidCallback? onExit;
   final int? initialPage;
@@ -167,7 +167,7 @@ class _ReaderScreenState extends State<ReaderScreen>
         BlocProvider(
           create: (_) => ZbfViewerCubit(
             handle: widget.handle,
-            rasterizer: widget.rasterizer,
+            rasterizePdfPage: widget.rasterizePdfPage,
             segmentLoader: widget.segmentLoader,
             initialPage: _savedPage,
           ),

@@ -4,72 +4,41 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-import 'package:zapbook/core/data/database/dao/page_dao.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
-import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
 import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
+import 'package:zapbook/core/domain/usecases/pdf_usecases.dart';
+import 'package:zapbook/features/book_reader/domain/usecases/book_reader_usecases.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_state.dart';
 
 class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   ZbfViewerCubit({
     required this.handle,
     this.segmentLoader,
-    PdfPageRasterizer? rasterizer,
-    PdfChunkExtractor? chunkExtractor,
-    PageDao? pageCache,
-    CircleShareService? shareService,
+    RasterizePdfPageUseCase? rasterizePdfPage,
+    ExtractPdfChunkUseCase? extractPdfChunk,
+    SaveBookContentUseCase? saveBookContent,
+    GetBookContentUseCase? getBookContent,
+    WatchBookDownloadProgressUseCase? watchBookDownloadProgress,
     int initialPage = 0,
-  }) : _rasterizer = rasterizer ?? getIt<PdfPageRasterizer>(),
-       _chunkExtractor = chunkExtractor ?? getIt<PdfChunkExtractor>(),
-       _pageCache = pageCache ?? getIt<PageDao>(),
-       _shareService = shareService ?? getIt<CircleShareService>(),
+  }) : _rasterizePdfPage = rasterizePdfPage ?? getIt<RasterizePdfPageUseCase>(),
+       _extractPdfChunk = extractPdfChunk ?? getIt<ExtractPdfChunkUseCase>(),
+       _saveBookContent = saveBookContent ?? getIt<SaveBookContentUseCase>(),
+       _getBookContent = getBookContent ?? getIt<GetBookContentUseCase>(),
+       _watchBookDownloadProgress =
+           watchBookDownloadProgress ??
+           getIt<WatchBookDownloadProgressUseCase>(),
        _skippablePageSet = handle.manifest.skippablePages?.toSet() ?? const {},
        super(ZbfViewerState(currentPage: initialPage)) {
     _initialize(initialPage);
   }
 
-  Future<void> _initialize(int initialPage) async {
-    _progressSub = _shareService.onBookDownloadProgress.listen((event) {
-      if (event.circleDirId == handle.manifest.id && !isClosed) {
-        _reconcilePrep();
-        emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
-      }
-    });
-
-    _ensureSegment(initialPage);
-    _prefetch(initialPage);
-
-    await _hydrateFromCache(initialPage);
-    if (isClosed) return;
-
-    _ensureInitialChunk(initialPage);
-    _armPrepWatchdog(initialPage);
-  }
-
-  Future<void> _hydrateFromCache(int initialPage) async {
-    final cached = await _pageCache.load(handle.manifest.id);
-    if (isClosed || cached.isEmpty) return;
-    final pageCount = handle.manifest.pageCount;
-    var changed = false;
-    cached.forEach((index, page) {
-      if (index >= 0 && index < pageCount) {
-        handle.updatePage(index, page);
-        changed = true;
-      }
-    });
-    if (!changed || isClosed) return;
-    _reconcilePrep();
-    emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
-  }
-
   final ZbfBookHandle handle;
   final BookSegmentLoader? segmentLoader;
-  final PdfPageRasterizer _rasterizer;
-  final PdfChunkExtractor _chunkExtractor;
-  final PageDao _pageCache;
-  final CircleShareService _shareService;
+  final RasterizePdfPageUseCase _rasterizePdfPage;
+  final ExtractPdfChunkUseCase _extractPdfChunk;
+  final SaveBookContentUseCase _saveBookContent;
+  final GetBookContentUseCase _getBookContent;
+  final WatchBookDownloadProgressUseCase _watchBookDownloadProgress;
   final _logger = Logger('ZbfViewerCubit');
 
   StreamSubscription? _progressSub;
@@ -87,6 +56,40 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
 
   bool _isSkippable(int index) {
     return _skippablePageSet.contains(index);
+  }
+
+  Future<void> _initialize(int initialPage) async {
+    _progressSub = _watchBookDownloadProgress().listen((event) {
+      if (event.circleDirId == handle.manifest.id && !isClosed) {
+        _reconcilePrep();
+        emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
+      }
+    });
+
+    _ensureSegment(initialPage);
+    _prefetch(initialPage);
+
+    await _hydrateFromCache(initialPage);
+    if (isClosed) return;
+
+    _ensureInitialChunk(initialPage);
+    _armPrepWatchdog(initialPage);
+  }
+
+  Future<void> _hydrateFromCache(int initialPage) async {
+    final cached = await _getBookContent(handle.manifest.id);
+    if (isClosed || cached.isEmpty) return;
+    final pageCount = handle.manifest.pageCount;
+    var changed = false;
+    cached.forEach((index, page) {
+      if (index >= 0 && index < pageCount) {
+        handle.updatePage(index, page);
+        changed = true;
+      }
+    });
+    if (!changed || isClosed) return;
+    _reconcilePrep();
+    emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
   }
 
   void nextPage() {
@@ -146,13 +149,12 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
   }
 
   void _armPrepWatchdog(int index) {
-    _prepTimer?.cancel();
-    if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
     if (state.failedPages.contains(index)) return;
+    _prepTimer?.cancel();
     _prepTimer = Timer(_prepTimeout, () {
       if (isClosed) return;
       if (handle.pageAt(index).layoutType != BookLayoutType.processing) return;
-      _logger.warning(
+      _logger.info(
         'Page $index still preparing after ${_prepTimeout.inSeconds}s; '
         'showing fallback',
       );
@@ -265,16 +267,20 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     String title,
     int chunkIndex,
   ) async {
-    final pages = await _chunkExtractor
-        .extractRange(pdfFilePath, start, end, title, chunkIndex)
-        .timeout(_loadTimeout);
+    final pages = await _extractPdfChunk(
+      pdfFilePath,
+      start,
+      end,
+      title,
+      chunkIndex,
+    ).timeout(_loadTimeout);
     final saved = <int, BookPage>{};
     for (var i = 0; i < pages.length; i++) {
       handle.updatePage(start + i, pages[i]);
       saved[start + i] = pages[i];
     }
     if (isClosed) return;
-    unawaited(_pageCache.saveAll(handle.manifest.id, saved));
+    unawaited(_saveBookContent(handle.manifest.id, saved));
     _reconcilePrep();
     emit(state.copyWith(updateTrigger: state.updateTrigger + 1));
   }
@@ -384,7 +390,7 @@ class ZbfViewerCubit extends Cubit<ZbfViewerState> {
     }
 
     try {
-      final imageBytes = await _rasterizer.render(
+      final imageBytes = await _rasterizePdfPage(
         pdfFilePath,
         page.pageNumber - 1,
       );

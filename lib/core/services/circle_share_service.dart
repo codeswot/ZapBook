@@ -12,10 +12,7 @@ import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/services/group_envelope_service.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-class BookDownloadProgress {
-  final String circleDirId;
-  const BookDownloadProgress(this.circleDirId);
-}
+import 'package:zapbook/core/models/book_download_progress.dart';
 
 typedef _TaskResult = ({Object? error, StackTrace? stack});
 

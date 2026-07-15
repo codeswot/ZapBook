@@ -7,17 +7,31 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/domain/quiz_models.dart';
+import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/features/book_reader/domain/repositories/quiz_repository.dart';
 
-@lazySingleton
-class QuizRepository {
-  QuizRepository(this._ndk, this._cache);
+@Injectable(as: QuizRepository)
+class QuizRepositoryImpl implements QuizRepository {
+  QuizRepositoryImpl(this._ndk, this._cache, this._quizService);
 
   final Ndk _ndk;
   final NostrCacheStore _cache;
+  final QuizService _quizService;
   final _log = logging.Logger('QuizRepository');
 
   static const _kind = 30078;
 
+  @override
+  Stream<QuizSet> get onQuizSurface => _quizService.onSurface;
+
+  @override
+  void submitQuiz(int milestoneIdx, List<int> answers, QuizSet set) =>
+      _quizService.submitQuiz(milestoneIdx, answers, set);
+
+  @override
+  void skipQuiz(int milestoneIdx) => _quizService.skipQuiz(milestoneIdx);
+
+  @override
   Future<void> saveQuizBank(String circleDirId, List<QuizSet> quizzes) async {
     _log.info(
       'saveQuizBank: saving ${quizzes.length} quizzes for book $circleDirId',
@@ -57,6 +71,7 @@ class QuizRepository {
     );
   }
 
+  @override
   Future<List<QuizSet>> loadQuizBank(String circleDirId) async {
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return const [];

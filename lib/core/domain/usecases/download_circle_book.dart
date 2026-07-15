@@ -1,13 +1,13 @@
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
+import 'package:zapbook/core/domain/repositories/book_download_repository.dart';
 
 @injectable
 class DownloadCircleBook {
-  const DownloadCircleBook(this._circleShareService);
+  const DownloadCircleBook(this._repository);
 
-  final CircleShareService _circleShareService;
+  final BookDownloadRepository _repository;
 
   Future<bool> call(String groupId, String circleDirId) async {
-    return _circleShareService.fetchAndDownloadBook(groupId, circleDirId);
+    return _repository.fetchAndDownloadBook(groupId, circleDirId);
   }
 }

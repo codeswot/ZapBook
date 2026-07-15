@@ -7,8 +7,7 @@ import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart';
 import 'package:zapbook/core/domain/entities/reading_progress.dart';
 
-import 'package:zapbook/core/services/milestone_service.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
+import 'package:zapbook/features/book_reader/domain/usecases/book_reader_usecases.dart';
 import 'package:zapbook/features/book_reader/domain/reading_engine.dart';
 import 'package:zapbook/features/home/domain/usecases/touch_dashboard_book_opened.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -20,15 +19,17 @@ const defaultHeartbeat = Duration(seconds: 10);
 @injectable
 class ReadingProgressCubit extends Cubit<ReadingProgressState> {
   ReadingProgressCubit(
-    this._localReadingProgressStore,
+    this._saveSnapshot,
+    this._loadSnapshot,
+    this._reportProgress,
     this._watchProgressUseCase,
-    this._milestoneService,
     this._touchOpened,
   ) : super(const ReadingProgressState());
 
-  final ReadingProgressLocalStore _localReadingProgressStore;
+  final SaveReadingSnapshotUseCase _saveSnapshot;
+  final LoadReadingSnapshotUseCase _loadSnapshot;
+  final ReportReadingProgressUseCase _reportProgress;
   final WatchMyReadingProgressUseCase _watchProgressUseCase;
-  final MilestoneService _milestoneService;
   final TouchDashboardBookOpened _touchOpened;
 
   late final ReadingEngine _engine;
@@ -64,7 +65,7 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
   }
 
   Future<({int? page, double? scrollOffset})> restore() async {
-    final saved = await _localReadingProgressStore.loadSnapshot(_circleDirId);
+    final saved = await _loadSnapshot(_circleDirId);
     if (saved == null) return (page: null, scrollOffset: null);
     _engine.seed(
       _engine.state.copyWith(
@@ -129,7 +130,7 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
     if (page != null) {
       _run(_engine.exitPage(page, ExitDirection.forward));
     }
-    _milestoneService.closeBook(_circleDirId);
+    _reportProgress.close(_circleDirId);
     _save();
   }
 
@@ -149,7 +150,7 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
     for (final effect in effects) {
       _dirty = true;
       if (effect is PageCompleted) {
-        _milestoneService.flushProgress(_circleDirId);
+        _reportProgress.flush(_circleDirId);
       }
       if (effect is MilestoneReached) {
         _save();
@@ -163,7 +164,7 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
   }
 
   void _report() {
-    _milestoneService.reportProgress(
+    _reportProgress.report(
       circleDirId: _circleDirId,
       groupId: _groupId,
       currentPage: _engine.state.currentPage ?? 0,
@@ -184,7 +185,7 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
     if (!_dirty) return;
     _dirty = false;
     unawaited(
-      _localReadingProgressStore.saveSnapshot(
+      _saveSnapshot(
         _circleDirId,
         _engine.state,
         scrollOffset: _lastScrollOffset,

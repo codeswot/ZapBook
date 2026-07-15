@@ -3,14 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart';
+import 'package:zapbook/core/models/book_download_progress.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
+import 'package:zapbook/core/domain/usecases/watch_global_book_download_progress.dart';
 
 @injectable
 class BookDownloadCubit extends Cubit<BookDownloadState> {
-  BookDownloadCubit(this._downloadCircleBook, this._shareService)
+  BookDownloadCubit(this._downloadCircleBook, this._watchProgress)
     : super(const BookDownloadState()) {
-    _progressSub = _shareService.onBookDownloadProgress.listen((event) {
+    _progressSub = _watchProgress().listen((event) {
       if (isClosed) return;
       final newProgress = Map<String, int>.from(state.downloadProgress);
       newProgress[event.circleDirId] =
@@ -20,7 +21,7 @@ class BookDownloadCubit extends Cubit<BookDownloadState> {
   }
 
   final DownloadCircleBook _downloadCircleBook;
-  final CircleShareService _shareService;
+  final WatchGlobalBookDownloadProgress _watchProgress;
   late final StreamSubscription<BookDownloadProgress> _progressSub;
 
   @override

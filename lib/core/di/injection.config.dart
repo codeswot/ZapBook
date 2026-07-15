@@ -46,6 +46,8 @@ import 'package:zapbook/core/data/infrastructure/nostr_service.dart' as _i295;
 import 'package:zapbook/core/data/infrastructure/secure_storage_service.dart'
     as _i206;
 import 'package:zapbook/core/data/library_file_store.dart' as _i854;
+import 'package:zapbook/core/data/repositories/book_download_repository_impl.dart'
+    as _i558;
 import 'package:zapbook/core/data/repositories/circle_progress_repository.dart'
     as _i59;
 import 'package:zapbook/core/data/search/book_search_index.dart' as _i525;
@@ -58,9 +60,14 @@ import 'package:zapbook/core/domain/book_ingestion_repository.dart' as _i379;
 import 'package:zapbook/core/domain/ingest_book.dart' as _i696;
 import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
+import 'package:zapbook/core/domain/repositories/book_download_repository.dart'
+    as _i753;
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart'
     as _i665;
+import 'package:zapbook/core/domain/usecases/pdf_usecases.dart' as _i616;
+import 'package:zapbook/core/domain/usecases/watch_global_book_download_progress.dart'
+    as _i153;
 import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart'
     as _i35;
 import 'package:zapbook/core/domain/wizard_data.dart' as _i230;
@@ -113,12 +120,24 @@ import 'package:zapbook/features/book_ingestion/data/extractors/book_extractor.d
     as _i751;
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart'
     as _i1043;
-import 'package:zapbook/features/book_reader/data/quiz_repository.dart'
-    as _i246;
 import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart'
     as _i603;
 import 'package:zapbook/features/book_reader/data/recognition_quiz_builder.dart'
     as _i974;
+import 'package:zapbook/features/book_reader/data/repositories/book_reader_repository_impl.dart'
+    as _i995;
+import 'package:zapbook/features/book_reader/data/repositories/quiz_repository_impl.dart'
+    as _i389;
+import 'package:zapbook/features/book_reader/domain/repositories/book_reader_repository.dart'
+    as _i188;
+import 'package:zapbook/features/book_reader/domain/repositories/quiz_repository.dart'
+    as _i902;
+import 'package:zapbook/features/book_reader/domain/usecases/book_reader_usecases.dart'
+    as _i571;
+import 'package:zapbook/features/book_reader/domain/usecases/quiz_usecases.dart'
+    as _i297;
+import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart'
+    as _i552;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_init_cubit.dart'
     as _i227;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
@@ -311,6 +330,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i760.ZapSatsEarningsDao>(
       () => _i760.ZapSatsEarningsDao(gh<_i525.AppDatabase>()),
     );
+    gh.factory<_i227.ReaderInitCubit>(
+      () => _i227.ReaderInitCubit(gh<_i138.ZbfReader>()),
+    );
     gh.lazySingleton<_i603.IdentityLocalDataSource>(
       () => _i603.IdentityLocalDataSource(gh<_i206.SecureStorageService>()),
     );
@@ -335,8 +357,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1049.FilePickerService>(),
       ),
     );
-    gh.factory<_i227.ReaderInitCubit>(
-      () => _i227.ReaderInitCubit(gh<_i138.ZbfReader>()),
+    gh.factory<_i616.RasterizePdfPageUseCase>(
+      () => _i616.RasterizePdfPageUseCase(gh<_i283.PdfPageRasterizer>()),
+    );
+    gh.factory<_i902.QuizRepository>(
+      () => _i389.QuizRepositoryImpl(
+        gh<_i857.Ndk>(),
+        gh<_i68.NostrCacheStore>(),
+        gh<_i995.QuizService>(),
+      ),
     );
     gh.singleton<_i39.PerformanceService>(
       () => _i39.PerformanceService(gh<_i460.SharedPreferences>()),
@@ -372,9 +401,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
         gh<_i206.SecureStorageService>(),
       ),
-    );
-    gh.lazySingleton<_i246.QuizRepository>(
-      () => _i246.QuizRepository(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
     );
     gh.lazySingleton<_i59.CircleProgressRepository>(
       () => _i59.CircleProgressRepository(gh<_i220.CircleProgressDataSource>()),
@@ -413,6 +439,15 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i492.PageDao>(
       () => _i492.PageDao(gh<_i525.AppDatabase>()),
+    );
+    gh.factory<_i297.WatchQuizSurfaceUseCase>(
+      () => _i297.WatchQuizSurfaceUseCase(gh<_i902.QuizRepository>()),
+    );
+    gh.factory<_i297.SubmitQuizUseCase>(
+      () => _i297.SubmitQuizUseCase(gh<_i902.QuizRepository>()),
+    );
+    gh.factory<_i297.SkipQuizUseCase>(
+      () => _i297.SkipQuizUseCase(gh<_i902.QuizRepository>()),
     );
     gh.lazySingleton<_i901.BlossomService>(
       () => _i901.BlossomService(gh<_i857.Ndk>()),
@@ -464,6 +499,13 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i35.WatchMyReadingProgressUseCase(
         gh<_i59.CircleProgressRepository>(),
         gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
+    gh.factory<_i552.QuizCubit>(
+      () => _i552.QuizCubit(
+        gh<_i297.WatchQuizSurfaceUseCase>(),
+        gh<_i297.SubmitQuizUseCase>(),
+        gh<_i297.SkipQuizUseCase>(),
       ),
     );
     gh.lazySingleton<_i362.ZapService>(
@@ -563,6 +605,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i631.DonateUseCases>()),
     );
+    gh.factory<_i616.ExtractPdfChunkUseCase>(
+      () => _i616.ExtractPdfChunkUseCase(gh<_i970.PdfChunkExtractor>()),
+    );
     gh.lazySingleton<_i31.MilestoneService>(
       () => _i31.MilestoneService(
         gh<_i970.Marmot>(),
@@ -596,9 +641,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i348.CircleProgressDao>(),
       ),
     );
-    gh.factory<_i665.DownloadCircleBook>(
-      () => _i665.DownloadCircleBook(gh<_i455.CircleShareService>()),
-    );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
@@ -617,6 +659,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i760.ZapSatsEarningsDao>(),
       ),
     );
+    gh.factory<_i753.BookDownloadRepository>(
+      () => _i558.BookDownloadRepositoryImpl(gh<_i455.CircleShareService>()),
+    );
     gh.lazySingleton<_i821.CircleStoreService>(
       () => _i821.CircleStoreService(
         gh<_i40.GroupStoreService>(),
@@ -628,6 +673,35 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1009.SwitchAccountUseCases>(
       () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
+    );
+    gh.factory<_i188.BookReaderRepository>(
+      () => _i995.BookReaderRepositoryImpl(
+        gh<_i603.ReadingProgressLocalStore>(),
+        gh<_i31.MilestoneService>(),
+        gh<_i492.PageDao>(),
+        gh<_i455.CircleShareService>(),
+      ),
+    );
+    gh.factory<_i571.SaveReadingSnapshotUseCase>(
+      () => _i571.SaveReadingSnapshotUseCase(gh<_i188.BookReaderRepository>()),
+    );
+    gh.factory<_i571.LoadReadingSnapshotUseCase>(
+      () => _i571.LoadReadingSnapshotUseCase(gh<_i188.BookReaderRepository>()),
+    );
+    gh.factory<_i571.ReportReadingProgressUseCase>(
+      () =>
+          _i571.ReportReadingProgressUseCase(gh<_i188.BookReaderRepository>()),
+    );
+    gh.factory<_i571.GetBookContentUseCase>(
+      () => _i571.GetBookContentUseCase(gh<_i188.BookReaderRepository>()),
+    );
+    gh.factory<_i571.SaveBookContentUseCase>(
+      () => _i571.SaveBookContentUseCase(gh<_i188.BookReaderRepository>()),
+    );
+    gh.factory<_i571.WatchBookDownloadProgressUseCase>(
+      () => _i571.WatchBookDownloadProgressUseCase(
+        gh<_i188.BookReaderRepository>(),
+      ),
     );
     gh.lazySingleton<_i64.CheersDataSource>(
       () => _i64.CheersDataSourceImpl(
@@ -643,12 +717,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i856.FriendsRepository>(
       () => _i876.FriendsRepositoryImpl(gh<_i244.ContactService>()),
-    );
-    gh.factory<_i81.BookDownloadCubit>(
-      () => _i81.BookDownloadCubit(
-        gh<_i665.DownloadCircleBook>(),
-        gh<_i455.CircleShareService>(),
-      ),
     );
     gh.factory<_i385.LoadProfile>(
       () => _i385.LoadProfile(gh<_i582.ProfileRepository>()),
@@ -673,6 +741,14 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i41.CircleOperationsCubit(
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i821.CircleStoreService>(),
+      ),
+    );
+    gh.factory<_i665.DownloadCircleBook>(
+      () => _i665.DownloadCircleBook(gh<_i753.BookDownloadRepository>()),
+    );
+    gh.factory<_i153.WatchGlobalBookDownloadProgress>(
+      () => _i153.WatchGlobalBookDownloadProgress(
+        gh<_i753.BookDownloadRepository>(),
       ),
     );
     gh.lazySingleton<_i516.LibraryRepository>(
@@ -778,6 +854,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i492.ReaderZapCubit>(
       () => _i492.ReaderZapCubit(gh<_i1006.SendCircleZapUseCase>()),
     );
+    gh.factory<_i81.BookDownloadCubit>(
+      () => _i81.BookDownloadCubit(
+        gh<_i665.DownloadCircleBook>(),
+        gh<_i153.WatchGlobalBookDownloadProgress>(),
+      ),
+    );
     gh.factory<_i921.WatchCheersActivitiesUseCase>(
       () => _i921.WatchCheersActivitiesUseCase(gh<_i314.CheersRepository>()),
     );
@@ -856,9 +938,10 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i362.ReadingProgressCubit>(
       () => _i362.ReadingProgressCubit(
-        gh<_i603.ReadingProgressLocalStore>(),
+        gh<_i571.SaveReadingSnapshotUseCase>(),
+        gh<_i571.LoadReadingSnapshotUseCase>(),
+        gh<_i571.ReportReadingProgressUseCase>(),
         gh<_i35.WatchMyReadingProgressUseCase>(),
-        gh<_i31.MilestoneService>(),
         gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
