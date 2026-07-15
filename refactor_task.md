@@ -3,6 +3,8 @@
 This file tracks the progress of our refactor to a strict Clean Architecture. The dependency flow we are aiming for is:
 **Presentation (Cubit/Bloc)** → **Domain (UseCase)** → **Domain (Repository Interface)** ← **Data (Repository Impl)** → **Data (DataSource)** → **Infrastructure (Services/DB/Network)**.
 
+**CRITICAL ARCHITECTURE RULE**: UseCases MUST ONLY depend on Repository Interfaces defined in the Domain layer. They must NEVER depend directly on DataSources, Services, or any implementation details. Do not inject `*Service` or `*DataSource` into a UseCase!
+
 ---
 
 ## 1. Core Layer (`lib/core/`)

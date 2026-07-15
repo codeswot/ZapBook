@@ -5,18 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/lnurl_models.dart';
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/features/profile/domain/usecases/donate_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/donate_state.dart';
 
-class MockZapService extends Mock implements ZapService {}
-
-class MockClipboardService extends Mock implements ClipboardService {}
+class MockDonateUseCases extends Mock implements DonateUseCases {}
 
 void main() {
-  late MockZapService zapService;
-  late MockClipboardService clipboardService;
+  late MockDonateUseCases usecases;
 
   const tZapResult = ZapResult(
     invoice: 'lnbc1...',
@@ -28,16 +25,15 @@ void main() {
   );
 
   setUp(() {
-    zapService = MockZapService();
-    clipboardService = MockClipboardService();
+    usecases = MockDonateUseCases();
 
     when(
-      () => zapService.payWithFallback(any()),
+      () => usecases.payWithFallback(any()),
     ).thenAnswer((_) async => ZapStatus.paidNwc);
-    when(() => clipboardService.copy(any())).thenAnswer((_) async {});
+    when(() => usecases.copyToClipboard(any())).thenAnswer((_) async {});
   });
 
-  DonateCubit buildCubit() => DonateCubit(zapService, clipboardService);
+  DonateCubit buildCubit() => DonateCubit(usecases);
 
   group('DonateCubit', () {
     test('initial state is DonateReady', () {
@@ -74,7 +70,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(
+          () => usecases.donate(
             amountSats: 2100,
             comment: 'ZapBook To the moon!',
           ),
@@ -87,12 +83,12 @@ void main() {
       ],
       verify: (_) {
         verify(
-          () => zapService.donate(
+          () => usecases.donate(
             amountSats: 2100,
             comment: 'ZapBook To the moon!',
           ),
         ).called(1);
-        verify(() => zapService.payWithFallback('lnbc1...')).called(1);
+        verify(() => usecases.payWithFallback('lnbc1...')).called(1);
       },
     );
 
@@ -101,7 +97,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(
+          () => usecases.donate(
             amountSats: 2100,
             comment: 'ZapBook To the moon!',
           ),
@@ -122,7 +118,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(amountSats: 100, comment: 'gift'),
+          () => usecases.donate(amountSats: 100, comment: 'gift'),
         ).thenAnswer((_) async => tZapResult);
         await cubit.sendGift(100, 'gift');
       },
@@ -132,9 +128,9 @@ void main() {
       ],
       verify: (_) {
         verify(
-          () => zapService.donate(amountSats: 100, comment: 'gift'),
+          () => usecases.donate(amountSats: 100, comment: 'gift'),
         ).called(1);
-        verify(() => zapService.payWithFallback('lnbc1...')).called(1);
+        verify(() => usecases.payWithFallback('lnbc1...')).called(1);
       },
     );
 
@@ -143,10 +139,10 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(amountSats: 100, comment: 'gift'),
+          () => usecases.donate(amountSats: 100, comment: 'gift'),
         ).thenAnswer((_) async => tZapResult);
         when(
-          () => zapService.payWithFallback('lnbc1...'),
+          () => usecases.payWithFallback('lnbc1...'),
         ).thenAnswer((_) async => ZapStatus.failed);
         await cubit.sendGift(100, 'gift');
       },
@@ -158,7 +154,7 @@ void main() {
         ),
       ],
       verify: (_) {
-        verify(() => clipboardService.copy('lnbc1...')).called(1);
+        verify(() => usecases.copyToClipboard('lnbc1...')).called(1);
       },
     );
 
@@ -167,7 +163,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(amountSats: 100, comment: null),
+          () => usecases.donate(amountSats: 100, comment: null),
         ).thenThrow(const ZapException('Zap error'));
         await cubit.sendGift(100, null);
       },
@@ -182,7 +178,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(amountSats: 100, comment: null),
+          () => usecases.donate(amountSats: 100, comment: null),
         ).thenThrow(const LnurlException('Lnurl error'));
         await cubit.sendGift(100, '');
       },
@@ -197,7 +193,7 @@ void main() {
       build: buildCubit,
       act: (cubit) async {
         when(
-          () => zapService.donate(amountSats: 100, comment: null),
+          () => usecases.donate(amountSats: 100, comment: null),
         ).thenThrow(Exception('Fail'));
         await cubit.sendGift(100, '');
       },

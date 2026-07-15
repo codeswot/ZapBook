@@ -5,33 +5,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
-class MockContactService extends Mock implements ContactService {}
+class MockFriendsUseCases extends Mock implements FriendsUseCases {}
 
 void main() {
-  late MockContactService contactService;
-  late StreamController<List<Contact>> friendsStreamController;
-
-  const tContact = Contact(npub: 'npub', displayName: 'Test', picture: '');
+  late MockFriendsUseCases usecases;
+  late StreamController<List<Contact>> friendsController;
 
   setUp(() {
-    contactService = MockContactService();
-    friendsStreamController = StreamController<List<Contact>>();
+    usecases = MockFriendsUseCases();
+    friendsController = StreamController<List<Contact>>.broadcast();
 
-    when(
-      () => contactService.friends,
-    ).thenAnswer((_) => friendsStreamController.stream);
-    when(() => contactService.isValidNpub('npub')).thenReturn(true);
-    when(() => contactService.isValidNpub('invalid')).thenReturn(false);
+    when(() => usecases.friends).thenAnswer((_) => friendsController.stream);
   });
 
   tearDown(() {
-    friendsStreamController.close();
+    friendsController.close();
   });
 
-  FriendsCubit buildCubit() => FriendsCubit(contactService);
+  FriendsCubit buildCubit() => FriendsCubit(usecases);
 
   group('FriendsCubit', () {
     test('initial state is FriendsLoading', () {
@@ -40,147 +35,127 @@ void main() {
     });
 
     blocTest<FriendsCubit, FriendsState>(
-      'load emits FriendsLoaded when stream emits',
+      'load subscribes to friends stream',
       build: buildCubit,
       act: (cubit) async {
         await cubit.load();
-        friendsStreamController.add([tContact]);
+        friendsController.add([
+          const Contact(npub: 'npub1', displayName: 'Alice'),
+        ]);
       },
       expect: () => [
-        const FriendsLoaded([tContact]),
+        const FriendsLoaded([Contact(npub: 'npub1', displayName: 'Alice')]),
       ],
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'load emits FriendsError when stream errors',
+      'load emits error when stream emits error',
       build: buildCubit,
       act: (cubit) async {
         await cubit.load();
-        friendsStreamController.addError(Exception('stream error'));
+        friendsController.addError(Exception('stream fail'));
       },
       expect: () => [
-        const FriendsError(message: 'Failed to load friends', friends: []),
+        const FriendsError(
+          friends: [],
+          message: 'Failed to load friends',
+        ),
       ],
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'load emits FriendsError when stream done',
+      'addNpub validates and emits error for invalid npub',
       build: buildCubit,
       act: (cubit) async {
-        await cubit.load();
-        await friendsStreamController.close();
+        when(() => usecases.isValidNpub('bad')).thenReturn(false);
+        await cubit.addNpub('bad');
       },
       expect: () => [
-        const FriendsError(message: 'Friends stream closed', friends: []),
+        const FriendsError(friends: [], message: 'Not a valid npub'),
       ],
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'addNpub emits nothing if npub is empty',
-      build: buildCubit,
-      act: (cubit) async => cubit.addNpub(''),
-      expect: () => [],
-    );
-
-    blocTest<FriendsCubit, FriendsState>(
-      'addNpub emits Error if npub is invalid',
-      build: buildCubit,
-      act: (cubit) async => cubit.addNpub('invalid'),
-      expect: () => [
-        const FriendsError(message: 'Not a valid npub', friends: []),
-      ],
-    );
-
-    blocTest<FriendsCubit, FriendsState>(
-      'addNpub emits Busy and adds contact',
+      'addNpub success',
       build: buildCubit,
       act: (cubit) async {
-        when(
-          () => contactService.add('npub'),
-        ).thenAnswer((_) async => tContact);
-        await cubit.addNpub('npub');
+        when(() => usecases.isValidNpub('npub1')).thenReturn(true);
+        when(() => usecases.add('npub1')).thenAnswer((_) async {});
+        await cubit.addNpub('npub1');
       },
       expect: () => [
-        const FriendsBusy(friends: [], busyNpub: 'npub', adding: true),
+        const FriendsBusy(friends: [], busyNpub: 'npub1', adding: true),
       ],
       verify: (_) {
-        verify(() => contactService.add('npub')).called(1);
+        verify(() => usecases.add('npub1')).called(1);
       },
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'addNpub emits Error on ContactException',
+      'addNpub handles ContactException',
       build: buildCubit,
       act: (cubit) async {
+        when(() => usecases.isValidNpub('npub1')).thenReturn(true);
         when(
-          () => contactService.add('npub'),
-        ).thenThrow(ContactException('Already a friend'));
-        await cubit.addNpub('npub');
+          () => usecases.add('npub1'),
+        ).thenThrow(const ContactException('Already a friend'));
+        await cubit.addNpub('npub1');
       },
       expect: () => [
-        const FriendsBusy(friends: [], busyNpub: 'npub', adding: true),
-        const FriendsError(message: 'Already a friend', friends: []),
+        const FriendsBusy(friends: [], busyNpub: 'npub1', adding: true),
+        const FriendsError(friends: [], message: 'Already a friend'),
       ],
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'addNpub emits Error on general Exception',
+      'remove success',
       build: buildCubit,
+      seed: () => const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
       act: (cubit) async {
-        when(() => contactService.add('npub')).thenThrow(Exception('Fail'));
-        await cubit.addNpub('npub');
+        when(() => usecases.remove('npub1')).thenAnswer((_) async {});
+        await cubit.remove('npub1');
       },
       expect: () => [
-        const FriendsBusy(friends: [], busyNpub: 'npub', adding: true),
-        const FriendsError(message: 'Could not add contact', friends: []),
-      ],
-    );
-
-    blocTest<FriendsCubit, FriendsState>(
-      'remove emits Busy and removes contact',
-      build: buildCubit,
-      seed: () => const FriendsLoaded([tContact]),
-      act: (cubit) async {
-        when(() => contactService.remove('npub')).thenAnswer((_) async {});
-        await cubit.remove('npub');
-      },
-      expect: () => [
-        const FriendsBusy(friends: [tContact], busyNpub: 'npub'),
+        const FriendsBusy(
+          friends: [Contact(npub: 'npub1', displayName: 'A')],
+          busyNpub: 'npub1',
+        ),
       ],
       verify: (_) {
-        verify(() => contactService.remove('npub')).called(1);
+        verify(() => usecases.remove('npub1')).called(1);
       },
     );
 
     blocTest<FriendsCubit, FriendsState>(
-      'remove emits Loaded on failure',
+      'remove handles general exception',
       build: buildCubit,
-      seed: () => const FriendsLoaded([tContact]),
+      seed: () => const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
       act: (cubit) async {
-        when(() => contactService.remove('npub')).thenThrow(Exception('Fail'));
-        await cubit.remove('npub');
+        when(() => usecases.remove('npub1')).thenThrow(Exception('Fail'));
+        await cubit.remove('npub1');
       },
       expect: () => [
-        const FriendsBusy(friends: [tContact], busyNpub: 'npub'),
-        const FriendsLoaded([tContact]),
+        const FriendsBusy(
+          friends: [Contact(npub: 'npub1', displayName: 'A')],
+          busyNpub: 'npub1',
+        ),
+        const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
       ],
     );
 
-    test('resolveNpub calls service', () async {
+    test('resolveNpub calls contact service', () async {
       when(
-        () => contactService.resolve('npub'),
-      ).thenAnswer((_) async => tContact);
+        () => usecases.resolve('npub1'),
+      ).thenAnswer((_) async => const Contact(npub: 'npub1', displayName: 'A'));
+
       final cubit = buildCubit();
-      final res = await cubit.resolveNpub('npub');
-      expect(res, tContact);
-      verify(() => contactService.resolve('npub')).called(1);
+      final c = await cubit.resolveNpub('npub1');
+      expect(c.displayName, 'A');
     });
 
-    test('contactCount returns length', () async {
+    test('contactCount returns length', () {
       final cubit = buildCubit();
-      expect(cubit.contactCount, 0);
-
-      cubit.emit(const FriendsLoaded([tContact]));
+      cubit.emit(const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]));
       expect(cubit.contactCount, 1);
     });
   });

@@ -193,14 +193,26 @@ import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.d
     as _i634;
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart'
     as _i735;
+import 'package:zapbook/features/profile/data/repositories/donate_repository_impl.dart'
+    as _i51;
+import 'package:zapbook/features/profile/data/repositories/friends_repository_impl.dart'
+    as _i876;
 import 'package:zapbook/features/profile/data/repositories/profile_repository_impl.dart'
     as _i160;
 import 'package:zapbook/features/profile/data/repositories/profile_settings_repository_impl.dart'
     as _i366;
+import 'package:zapbook/features/profile/data/repositories/switch_account_repository_impl.dart'
+    as _i629;
+import 'package:zapbook/features/profile/domain/repositories/donate_repository.dart'
+    as _i993;
+import 'package:zapbook/features/profile/domain/repositories/friends_repository.dart'
+    as _i856;
 import 'package:zapbook/features/profile/domain/repositories/profile_repository.dart'
     as _i582;
 import 'package:zapbook/features/profile/domain/repositories/profile_settings_repository.dart'
     as _i493;
+import 'package:zapbook/features/profile/domain/repositories/switch_account_repository.dart'
+    as _i991;
 import 'package:zapbook/features/profile/domain/usecases/donate_usecases.dart'
     as _i631;
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart'
@@ -479,12 +491,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i397.KeyPackageService>(),
       ),
     );
-    gh.factory<_i631.DonateUseCases>(
-      () => _i631.DonateUseCases(
-        gh<_i362.ZapService>(),
-        gh<_i78.ClipboardService>(),
-      ),
-    );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
       () => _i735.ProfileRemoteDataSource(gh<_i295.NostrService>()),
     );
@@ -523,8 +529,17 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i803.SessionReloader>(),
       ),
     );
-    gh.factory<_i1009.SwitchAccountUseCases>(
-      () => _i1009.SwitchAccountUseCases(
+    gh.factory<_i993.DonateRepository>(
+      () => _i51.DonateRepositoryImpl(
+        gh<_i362.ZapService>(),
+        gh<_i78.ClipboardService>(),
+      ),
+    );
+    gh.factory<_i631.DonateUseCases>(
+      () => _i631.DonateUseCases(gh<_i993.DonateRepository>()),
+    );
+    gh.factory<_i991.SwitchAccountRepository>(
+      () => _i629.SwitchAccountRepositoryImpl(
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i63.IdentityRepository>(),
         gh<_i735.ProfileRemoteDataSource>(),
@@ -591,9 +606,6 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i1055.ProfileSettingsUseCases(gh<_i493.ProfileSettingsRepository>()),
     );
-    gh.factory<_i982.SwitchAccountCubit>(
-      () => _i982.SwitchAccountCubit(gh<_i1009.SwitchAccountUseCases>()),
-    );
     gh.lazySingleton<_i582.ProfileRepository>(
       () => _i160.ProfileRepositoryImpl(
         gh<_i603.IdentityLocalDataSource>(),
@@ -614,8 +626,8 @@ extension GetItInjectableX on _i174.GetIt {
       ),
       dispose: (i) => i.dispose(),
     );
-    gh.factory<_i86.FriendsUseCases>(
-      () => _i86.FriendsUseCases(gh<_i244.ContactService>()),
+    gh.factory<_i1009.SwitchAccountUseCases>(
+      () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
     );
     gh.factory<_i947.CircleDetailCubit>(
       () => _i947.CircleDetailCubit(
@@ -632,6 +644,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i562.CheersDao>(),
         gh<_i244.ContactService>(),
       ),
+    );
+    gh.factory<_i856.FriendsRepository>(
+      () => _i876.FriendsRepositoryImpl(gh<_i244.ContactService>()),
     );
     gh.factory<_i81.BookDownloadCubit>(
       () => _i81.BookDownloadCubit(
@@ -658,6 +673,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i821.CircleStoreService>(),
       ),
     );
+    gh.factory<_i86.FriendsUseCases>(
+      () => _i86.FriendsUseCases(gh<_i856.FriendsRepository>()),
+    );
     gh.factory<_i5.ShareCircleBookUseCase>(
       () => _i5.ShareCircleBookUseCase(
         gh<_i397.KeyPackageService>(),
@@ -683,6 +701,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i970.Marmot>(),
         gh<_i5.ShareCircleBookUseCase>(),
       ),
+    );
+    gh.factory<_i982.SwitchAccountCubit>(
+      () => _i982.SwitchAccountCubit(gh<_i1009.SwitchAccountUseCases>()),
     );
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),

@@ -35,7 +35,7 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
   @override
   bool get isNwcConnected => _nwc.isConnected;
   @override
-  String get nwcWalletName => _nwc.walletName;
+  String? get nwcWalletName => _nwc.walletName;
   @override
   int get supportPercent => _support.percent;
   @override

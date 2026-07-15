@@ -48,7 +48,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
                   name: (fetchedName.isNotEmpty)
                       ? fetchedName
                       : a.name,
-                  picture: (meta.picture != null && meta.picture!.isNotEmpty)
+                  picture: (meta.picture.isNotEmpty)
                       ? meta.picture
                       : a.picture,
                 );

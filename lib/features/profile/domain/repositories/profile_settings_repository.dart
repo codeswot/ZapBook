@@ -2,7 +2,7 @@ abstract class ProfileSettingsRepository {
   String get appVersion;
   String? get nwcConnectionString;
   bool get isNwcConnected;
-  String get nwcWalletName;
+  String? get nwcWalletName;
   int get supportPercent;
   List<int> get supportPercentOptions;
 

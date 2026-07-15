@@ -10,7 +10,7 @@ class ProfileSettingsUseCases {
   String get appVersion => _repository.appVersion;
   String? get nwcConnectionString => _repository.nwcConnectionString;
   bool get isNwcConnected => _repository.isNwcConnected;
-  String get nwcWalletName => _repository.nwcWalletName;
+  String? get nwcWalletName => _repository.nwcWalletName;
   int get supportPercent => _repository.supportPercent;
   List<int> get supportPercentOptions => _repository.supportPercentOptions;
 
