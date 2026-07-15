@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:zapbook/features/home/data/datasources/home_dashboard_data_source.dart';
 
 class MockIdentityLocalDataSource extends Mock
@@ -56,7 +56,7 @@ void main() {
     ).thenAnswer((_) => Stream.value([]));
     when(() => stats.watchStats()).thenAnswer((_) => Stream.value(null));
     when(
-      () => earningsDao.watchTotalSats(),
+      () => earningsDao.watchTotalSats(any()),
     ).thenAnswer((_) => Stream.value(100));
     when(() => identityLocal.readNpub()).thenAnswer((_) async => 'npub123');
 

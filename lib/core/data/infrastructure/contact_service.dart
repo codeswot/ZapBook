@@ -20,7 +20,15 @@ class ContactService {
   final _friendsController = StreamController<List<Contact>>.broadcast();
   List<Contact> _currentFriends = [];
 
-  bool isValidNpub(String value) => Nip19.isPubkey(value.trim());
+  bool isValidNpub(String value) {
+    final trimmed = value.trim();
+    if (!Nip19.isPubkey(trimmed)) return false;
+    try {
+      return Nip19.decode(trimmed).length == 64;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Stream<List<Contact>> get friends {
     _loadFriends();

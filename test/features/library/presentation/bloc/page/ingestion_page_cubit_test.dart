@@ -2,18 +2,19 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/file_hasher.dart';
-import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
+
+import 'package:zapbook/core/utils/file_hasher.dart';
+import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_cubit.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
-class MockFilePickerService extends Mock implements FilePickerService {}
+class MockPickBookFileUseCase extends Mock implements PickBookFileUseCase {}
 
 class MockFileHasher extends Mock implements FileHasher {}
 
-class MockCircleStoreService extends Mock implements CircleStoreService {}
+class MockFindExistingBookUseCase extends Mock
+    implements FindExistingBookUseCase {}
 
 class MockFile extends Mock implements File {}
 
@@ -39,29 +40,31 @@ CircleBook _createTestBook(String id, String title, String contentHash) {
 }
 
 void main() {
-  late MockFilePickerService mockFilePicker;
+  late MockPickBookFileUseCase mockFilePicker;
   late MockFileHasher mockHasher;
-  late MockCircleStoreService mockCircleStore;
+  late MockFindExistingBookUseCase mockFindExistingBook;
 
   setUp(() {
     registerFallbackValue(FakeFile());
-    mockFilePicker = MockFilePickerService();
+    mockFilePicker = MockPickBookFileUseCase();
     mockHasher = MockFileHasher();
-    mockCircleStore = MockCircleStoreService();
+    mockFindExistingBook = MockFindExistingBookUseCase();
   });
 
   IngestionPageCubit buildCubit() =>
-      IngestionPageCubit(mockFilePicker, mockHasher, mockCircleStore);
+      IngestionPageCubit(mockFilePicker, mockHasher, mockFindExistingBook);
 
   group('IngestionPageCubit', () {
     test('pickBook emits picked state if valid file', () async {
       final mockFile = MockFile();
       when(() => mockFile.path).thenReturn('/path/to/my_test-book.epub');
-      when(() => mockFilePicker.pickBook()).thenAnswer((_) async => mockFile);
+      when(() => mockFilePicker()).thenAnswer((_) async => mockFile);
       when(
         () => mockHasher.sha256OfFile(any()),
       ).thenAnswer((_) async => 'hash123');
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
+      when(
+        () => mockFindExistingBook.call(any()),
+      ).thenAnswer((_) async => null);
 
       final cubit = buildCubit();
 
@@ -88,13 +91,13 @@ void main() {
     test('pickBook emits error if book already in library', () async {
       final mockFile = MockFile();
       when(() => mockFile.path).thenReturn('/path/to/book.epub');
-      when(() => mockFilePicker.pickBook()).thenAnswer((_) async => mockFile);
+      when(() => mockFilePicker()).thenAnswer((_) async => mockFile);
       when(
         () => mockHasher.sha256OfFile(any()),
       ).thenAnswer((_) async => 'hash123');
-      when(
-        () => mockCircleStore.currentCircles,
-      ).thenReturn([_createTestBook('existing', 'Existing Book', 'hash123')]);
+      when(() => mockFindExistingBook.call(any())).thenAnswer(
+        (_) async => _createTestBook('existing', 'Existing Book', 'hash123'),
+      );
 
       final cubit = buildCubit();
       final states = <IngestionPageState>[];
@@ -119,11 +122,13 @@ void main() {
         when(() => mockFile.path).thenReturn('/path/to/another_book.pdf');
         // Return empty bytes so PdfDocument throws and it falls back to sanitized title
         when(() => mockFile.readAsBytesSync()).thenThrow(Exception());
-        when(() => mockFilePicker.pickBook()).thenAnswer((_) async => mockFile);
+        when(() => mockFilePicker()).thenAnswer((_) async => mockFile);
         when(
           () => mockHasher.sha256OfFile(any()),
         ).thenAnswer((_) async => 'hashpdf');
-        when(() => mockCircleStore.currentCircles).thenReturn([]);
+        when(
+          () => mockFindExistingBook.call(any()),
+        ).thenAnswer((_) async => null);
 
         final cubit = buildCubit();
 
@@ -131,7 +136,7 @@ void main() {
         final tempFile = File('${Directory.systemTemp.path}/test_pdf.pdf');
         tempFile.writeAsBytesSync([]);
 
-        when(() => mockFilePicker.pickBook()).thenAnswer((_) async => tempFile);
+        when(() => mockFilePicker()).thenAnswer((_) async => tempFile);
         when(
           () => mockHasher.sha256OfFile(any()),
         ).thenAnswer((_) async => 'hashpdf');
@@ -144,7 +149,7 @@ void main() {
     );
 
     test('pickBook handles picking cancellation', () async {
-      when(() => mockFilePicker.pickBook()).thenAnswer((_) async => null);
+      when(() => mockFilePicker()).thenAnswer((_) async => null);
 
       final cubit = buildCubit();
       final states = <IngestionPageState>[];
@@ -159,9 +164,7 @@ void main() {
     });
 
     test('pickBook handles exception', () async {
-      when(
-        () => mockFilePicker.pickBook(),
-      ).thenThrow(Exception('Picker failed'));
+      when(() => mockFilePicker()).thenThrow(Exception('Picker failed'));
 
       final cubit = buildCubit();
       final states = <IngestionPageState>[];

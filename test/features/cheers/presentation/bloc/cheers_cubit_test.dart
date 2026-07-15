@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 
 CheersActivity createEmptyActivity({
   String id = '',
@@ -157,7 +157,8 @@ void main() {
     test('emits CheersNudgeRequired if no lud16', () async {
       final cubit = createCubit();
       final activity = createEmptyActivity(
-        actorNpub: 'npub1test',
+        actorNpub:
+            'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
         isMine: false,
       );
 
@@ -178,6 +179,7 @@ void main() {
         amount: 10,
       );
 
+      await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersNudgeRequired>());
       verify(
         () => sendCheersNudge.sendNudge(
@@ -192,7 +194,8 @@ void main() {
     test('emits CheersZapSuccess when zap succeeds', () async {
       final cubit = createCubit();
       final activity = createEmptyActivity(
-        actorNpub: 'npub1test',
+        actorNpub:
+            'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
         isMine: false,
       );
 
@@ -215,6 +218,7 @@ void main() {
         amount: 10,
       );
 
+      await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersZapSuccess>());
       cubit.close();
     });
@@ -235,6 +239,7 @@ void main() {
 
       await cubit.performNudge(activity);
 
+      await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersNudgeSetupRequired>());
       cubit.close();
     });
@@ -262,6 +267,7 @@ void main() {
 
       await cubit.performNudge(activity);
 
+      await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersNudgeSuccess>());
       cubit.close();
     });

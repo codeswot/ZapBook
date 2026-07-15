@@ -8,7 +8,7 @@ import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dar
 import 'package:zapbook/core/presentation/bloc/performance/performance_state.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
-import 'package:zapbook/core/services/performance_service.dart';
+import 'package:zapbook/core/domain/entities/perf_mode.dart';
 
 class MockPerformanceCubit extends Mock implements PerformanceCubit {}
 

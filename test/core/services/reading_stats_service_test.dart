@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
 
-import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/database/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_earnings_service.dart';
 
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
@@ -82,7 +82,7 @@ void main() {
       () => mockIdentity.readNpub(),
     ).thenAnswer((_) => Future.value('pubkey1'));
     when(
-      () => mockEarningsDao.getTotalSats(),
+      () => mockEarningsDao.getTotalSats(any()),
     ).thenAnswer((_) => Future.value(100));
     when(() => mockEarnings.start()).thenAnswer((_) => Future.value());
     when(

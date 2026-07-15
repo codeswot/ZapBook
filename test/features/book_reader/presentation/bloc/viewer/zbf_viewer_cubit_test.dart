@@ -1,38 +1,44 @@
+import 'package:zapbook/core/domain/usecases/pdf_usecases.dart';
+import 'package:zapbook/core/models/book_download_progress.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/data/database/dao/page_dao.dart';
+import 'package:zapbook/features/book_reader/domain/usecases/book_reader_usecases.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
-import 'package:zapbook/core/domain/pdf_chunk_extractor.dart';
-import 'package:zapbook/core/domain/pdf_page_rasterizer.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
+
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-class MockPdfPageRasterizer extends Mock implements PdfPageRasterizer {}
+class MockPdfPageRasterizer extends Mock implements RasterizePdfPageUseCase {}
 
-class MockPdfChunkExtractor extends Mock implements PdfChunkExtractor {}
+class MockPdfChunkExtractor extends Mock implements ExtractPdfChunkUseCase {}
 
-class MockPageDao extends Mock implements PageDao {}
+class MockSaveBookContentUseCase extends Mock
+    implements SaveBookContentUseCase {}
 
-class MockCircleShareService extends Mock implements CircleShareService {}
+class MockGetBookContentUseCase extends Mock implements GetBookContentUseCase {}
+
+class MockWatchBookDownloadProgressUseCase extends Mock
+    implements WatchBookDownloadProgressUseCase {}
 
 void main() {
   late MockPdfPageRasterizer rasterizer;
   late MockPdfChunkExtractor chunkExtractor;
-  late MockPageDao pageCache;
-  late MockCircleShareService shareService;
+  late MockSaveBookContentUseCase saveBookContent;
+  late MockGetBookContentUseCase getBookContent;
+  late MockWatchBookDownloadProgressUseCase watchBookDownloadProgress;
   late BookManifest manifest;
   late ZbfBookHandle handle;
 
   setUp(() {
     rasterizer = MockPdfPageRasterizer();
     chunkExtractor = MockPdfChunkExtractor();
-    pageCache = MockPageDao();
-    shareService = MockCircleShareService();
+    saveBookContent = MockSaveBookContentUseCase();
+    getBookContent = MockGetBookContentUseCase();
+    watchBookDownloadProgress = MockWatchBookDownloadProgressUseCase();
 
     manifest = BookManifest(
       id: 'book_id',
@@ -50,20 +56,21 @@ void main() {
     handle = ZbfBookHandle(dirPath: '', manifest: manifest);
 
     when(
-      () => shareService.onBookDownloadProgress,
+      () => watchBookDownloadProgress(),
     ).thenAnswer((_) => const Stream.empty());
 
-    when(() => pageCache.load(any())).thenAnswer((_) async => {});
+    when(() => getBookContent(any())).thenAnswer((_) async => {});
   });
 
   ZbfViewerCubit createCubit({int initialPage = 0}) {
     return ZbfViewerCubit(
       handle: handle,
       segmentLoader: (pageIndex) async => null,
-      rasterizer: rasterizer,
-      chunkExtractor: chunkExtractor,
-      pageCache: pageCache,
-      shareService: shareService,
+      rasterizePdfPage: rasterizer,
+      extractPdfChunk: chunkExtractor,
+      saveBookContent: saveBookContent,
+      getBookContent: getBookContent,
+      watchBookDownloadProgress: watchBookDownloadProgress,
       initialPage: initialPage,
     );
   }
@@ -133,10 +140,11 @@ void main() {
             assets: {},
           );
         },
-        rasterizer: rasterizer,
-        chunkExtractor: chunkExtractor,
-        pageCache: pageCache,
-        shareService: shareService,
+        rasterizePdfPage: rasterizer,
+        extractPdfChunk: chunkExtractor,
+        saveBookContent: saveBookContent,
+        getBookContent: getBookContent,
+        watchBookDownloadProgress: watchBookDownloadProgress,
         initialPage: 0,
       );
 
@@ -146,7 +154,7 @@ void main() {
     });
 
     test('hydrateFromCache updates pages and triggers reconcile', () async {
-      when(() => pageCache.load(any())).thenAnswer(
+      when(() => getBookContent(any())).thenAnswer(
         (_) async => {
           0: const BookPage(
             pageNumber: 1,
@@ -167,7 +175,7 @@ void main() {
     test('progress stream triggers reconcile', () async {
       final controller = StreamController<BookDownloadProgress>();
       when(
-        () => shareService.onBookDownloadProgress,
+        () => watchBookDownloadProgress(),
       ).thenAnswer((_) => controller.stream);
 
       final cubit = createCubit(initialPage: 0);
@@ -236,9 +244,7 @@ void main() {
         );
       }
 
-      when(
-        () => chunkExtractor.extractRange(any(), any(), any(), any(), any()),
-      ).thenAnswer(
+      when(() => chunkExtractor(any(), any(), any(), any(), any())).thenAnswer(
         (_) async => [
           const BookPage(
             pageNumber: 1,
@@ -250,13 +256,13 @@ void main() {
           ),
         ],
       );
-      when(() => pageCache.saveAll(any(), any())).thenAnswer((_) async => {});
+      when(() => saveBookContent(any(), any())).thenAnswer((_) async => {});
 
       createCubit(initialPage: 0);
       await Future.delayed(const Duration(milliseconds: 100));
 
       verify(
-        () => chunkExtractor.extractRange(any(), any(), any(), any(), any()),
+        () => chunkExtractor(any(), any(), any(), any(), any()),
       ).called(greaterThan(0));
       tempDir.deleteSync(recursive: true);
     });
@@ -286,12 +292,12 @@ void main() {
         ),
       );
 
-      when(() => rasterizer.render(any(), any())).thenAnswer((_) async => null);
+      when(() => rasterizer(any(), any())).thenAnswer((_) async => null);
 
       createCubit(initialPage: 0);
       await Future.delayed(const Duration(milliseconds: 100));
 
-      verify(() => rasterizer.render(any(), 1)).called(1);
+      verify(() => rasterizer(any(), 1)).called(1);
       tempDir.deleteSync(recursive: true);
     });
 

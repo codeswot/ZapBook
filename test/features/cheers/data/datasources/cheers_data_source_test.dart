@@ -1,3 +1,5 @@
+import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
@@ -8,13 +10,13 @@ import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
 
-import 'package:zapbook/core/services/zap_service.dart';
-import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_nudge_service.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
@@ -71,8 +73,9 @@ void main() {
     });
 
     test('watchActivities returns empty list when no activities', () async {
+      when(() => identityLocal.readNpub()).thenAnswer((_) async => 'npub1my');
       when(
-        () => cheersDao.watchActivities(),
+        () => cheersDao.watchActivities(any()),
       ).thenAnswer((_) => Stream.value([]));
 
       final activities = await dataSource.watchActivities().first;
@@ -111,7 +114,7 @@ void main() {
       );
 
       when(
-        () => cheersDao.watchActivities(),
+        () => cheersDao.watchActivities(any()),
       ).thenAnswer((_) => Stream.value([msg]));
       when(() => identityLocal.readNpub()).thenAnswer((_) async => 'npub1my');
       when(() => circleStore.currentCircles).thenReturn([circle]);
@@ -147,7 +150,7 @@ void main() {
       );
 
       when(
-        () => cheersDao.watchActivities(),
+        () => cheersDao.watchActivities(any()),
       ).thenAnswer((_) => Stream.value([msg]));
       when(() => identityLocal.readNpub()).thenAnswer((_) async => 'npub1my');
       when(() => circleStore.currentCircles).thenReturn([]);
@@ -166,12 +169,17 @@ void main() {
     });
 
     test('sendZap returns failed if lud16 is null', () async {
-      when(() => nostrService.getMetadata(any())).thenAnswer((_) async => null);
+      when(
+        () => nostrService.getMetadata(
+          any(),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer((_) => Future<Metadata?>.value(null));
 
       final result = await dataSource.sendZap(
         activity: createEmptyActivity(
           actorNpub:
-              'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
+              'npub1dp20mrm3rthtyxur8m8eqffs407g77n83p7389k8n02t6aegsggs5h4q6h',
         ),
         amount: 10,
         gesture: ZapGesture.clap,
@@ -181,7 +189,12 @@ void main() {
     });
 
     test('sendZap executes with lud16', () async {
-      when(() => nostrService.getMetadata(any())).thenAnswer((_) async => null);
+      when(
+        () => nostrService.getMetadata(
+          any(),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer((_) => Future<Metadata?>.value(null));
 
       // The old tests were for the old empty implementation. For now, testing failure is enough.
     });

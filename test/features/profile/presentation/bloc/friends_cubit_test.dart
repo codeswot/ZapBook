@@ -4,7 +4,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';

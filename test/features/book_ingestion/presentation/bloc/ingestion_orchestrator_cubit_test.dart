@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/data/library_file_store.dart';
+
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
 import 'package:zapbook/core/domain/ingestion_progress.dart';
 import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+
+import 'package:zapbook/features/book_ingestion/domain/usecases/ingestion_orchestrator_usecases.dart';
 import 'package:zapbook/features/book_ingestion/presentation/bloc/ingestion_orchestrator_cubit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
@@ -17,11 +17,14 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 class MockBookIngestionRepository extends Mock
     implements BookIngestionRepository {}
 
-class MockCircleStoreService extends Mock implements CircleStoreService {}
+class MockCreateCircleBookUseCase extends Mock
+    implements CreateCircleBookUseCase {}
 
-class MockCircleShareService extends Mock implements CircleShareService {}
+class MockDeleteBookFilesUseCase extends Mock
+    implements DeleteBookFilesUseCase {}
 
-class MockLibraryFileStore extends Mock implements LibraryFileStore {}
+class MockFinalizeAndUploadBookUseCase extends Mock
+    implements FinalizeAndUploadBookUseCase {}
 
 class FakeFile extends Fake implements File {
   @override
@@ -30,16 +33,16 @@ class FakeFile extends Fake implements File {
 
 void main() {
   late MockBookIngestionRepository repository;
-  late MockCircleStoreService circleStore;
-  late MockCircleShareService shareService;
-  late MockLibraryFileStore fileStore;
+  late MockCreateCircleBookUseCase createCircleBook;
+  late MockDeleteBookFilesUseCase deleteBookFiles;
+  late MockFinalizeAndUploadBookUseCase finalizeAndUploadBook;
   late IngestionOrchestratorCubit cubit;
 
   setUp(() {
     repository = MockBookIngestionRepository();
-    circleStore = MockCircleStoreService();
-    shareService = MockCircleShareService();
-    fileStore = MockLibraryFileStore();
+    createCircleBook = MockCreateCircleBookUseCase();
+    deleteBookFiles = MockDeleteBookFilesUseCase();
+    finalizeAndUploadBook = MockFinalizeAndUploadBookUseCase();
 
     registerFallbackValue(FakeFile());
     registerFallbackValue(
@@ -61,20 +64,16 @@ void main() {
     );
 
     when(
-      () => circleStore.refreshBookCover(any()),
-    ).thenAnswer((_) => Future.value());
-    when(
-      () => shareService.uploadBookContent(any(), any(), any()),
-    ).thenAnswer((_) => Future.value());
-    when(
-      () => fileStore.coverPathIfExists(any()),
-    ).thenAnswer((_) async => null);
-
+      () => finalizeAndUploadBook(
+        circleDirId: any(named: 'circleDirId'),
+        marmotGroupId: any(named: 'marmotGroupId'),
+      ),
+    ).thenAnswer((_) async {});
     cubit = IngestionOrchestratorCubit(
       repository,
-      circleStore,
-      shareService,
-      fileStore,
+      createCircleBook,
+      deleteBookFiles,
+      finalizeAndUploadBook,
     );
   });
 
@@ -97,7 +96,7 @@ void main() {
       ).thenAnswer((_) => streamController.stream);
 
       when(
-        () => circleStore.createCircleBook(
+        () => createCircleBook(
           circleDirId: any(named: 'circleDirId'),
           humanTitle: any(named: 'humanTitle'),
           metadata: any(named: 'metadata'),
@@ -165,8 +164,7 @@ void main() {
         ),
       ).thenAnswer((_) => streamController.stream);
 
-      when(() => fileStore.deleteBook(any())).thenAnswer((_) async {});
-      when(() => circleStore.deleteCircleBook(any())).thenAnswer((_) async {});
+      when(() => deleteBookFiles(any())).thenAnswer((_) async {});
 
       final circleBookId = cubit.startIngestion(
         file,
@@ -179,7 +177,7 @@ void main() {
       await cubit.cancelIngestion(circleBookId);
 
       expect(cubit.state.tasks.containsKey(circleBookId), false);
-      verify(() => fileStore.deleteBook(circleBookId)).called(1);
+      verify(() => deleteBookFiles(circleBookId)).called(1);
     });
   });
 }

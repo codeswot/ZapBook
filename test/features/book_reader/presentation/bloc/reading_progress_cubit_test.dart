@@ -1,18 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:reading_progress/reading_progress.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+
 import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart';
 import 'package:zapbook/features/home/domain/usecases/touch_dashboard_book_opened.dart';
-import 'package:zapbook/core/services/reading_stats_service.dart';
-import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
+import 'package:zapbook/features/book_reader/domain/usecases/book_reader_usecases.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
-class MockReadingProgressRepository extends Mock
-    implements ReadingProgressLocalStore {}
+class MockSaveReadingSnapshotUseCase extends Mock
+    implements SaveReadingSnapshotUseCase {}
 
-class MockMilestoneService extends Mock implements MilestoneService {}
+class MockLoadReadingSnapshotUseCase extends Mock
+    implements LoadReadingSnapshotUseCase {}
+
+class MockReportReadingProgressUseCase extends Mock
+    implements ReportReadingProgressUseCase {}
 
 class MockWatchMyReadingProgressUseCase extends Mock
     implements WatchMyReadingProgressUseCase {}
@@ -41,8 +45,10 @@ ZbfBookHandle _handle() {
 }
 
 void main() {
-  late MockReadingProgressRepository mockRepo;
-  late MockMilestoneService mockMilestone;
+  late MockSaveReadingSnapshotUseCase mockSaveSnapshot;
+  late MockLoadReadingSnapshotUseCase mockLoadSnapshot;
+  late MockReportReadingProgressUseCase mockReportProgress;
+
   late MockWatchMyReadingProgressUseCase mockWatchProgress;
   late MockTouchDashboardBookOpened mockTouchOpened;
 
@@ -51,15 +57,16 @@ void main() {
   });
 
   setUp(() {
-    mockRepo = MockReadingProgressRepository();
-    mockMilestone = MockMilestoneService();
+    mockSaveSnapshot = MockSaveReadingSnapshotUseCase();
+    mockLoadSnapshot = MockLoadReadingSnapshotUseCase();
+    mockReportProgress = MockReportReadingProgressUseCase();
     mockWatchProgress = MockWatchMyReadingProgressUseCase();
     mockTouchOpened = MockTouchDashboardBookOpened();
 
     when(() => mockTouchOpened(any())).thenAnswer((_) async {});
 
     when(
-      () => mockRepo.saveSnapshot(
+      () => mockSaveSnapshot(
         any(),
         any(),
         scrollOffset: any(named: 'scrollOffset'),
@@ -69,9 +76,10 @@ void main() {
 
   ReadingProgressCubit buildCubit() {
     return ReadingProgressCubit(
-      mockRepo,
+      mockSaveSnapshot,
+      mockLoadSnapshot,
+      mockReportProgress,
       mockWatchProgress,
-      mockMilestone,
       mockTouchOpened,
     )..open(
       _handle(),
@@ -103,7 +111,7 @@ void main() {
     });
 
     test('restore seeds engine and projects words read', () async {
-      when(() => mockRepo.loadSnapshot('test_book')).thenAnswer(
+      when(() => mockLoadSnapshot('test_book')).thenAnswer(
         (_) async => (
           state: const ReadingState(
             wpm: 250,
@@ -145,7 +153,7 @@ void main() {
       cubit.openPage(1);
       cubit.pause();
       verify(
-        () => mockRepo.saveSnapshot(
+        () => mockSaveSnapshot(
           any(),
           any(),
           scrollOffset: any(named: 'scrollOffset'),
@@ -158,7 +166,7 @@ void main() {
       cubit.openPage(0);
       cubit.closeSession();
       verify(
-        () => mockRepo.saveSnapshot(
+        () => mockSaveSnapshot(
           any(),
           any(),
           scrollOffset: any(named: 'scrollOffset'),
@@ -171,7 +179,7 @@ void main() {
       cubit.saveScrollOffset(50.0);
       cubit.pause();
       verify(
-        () => mockRepo.saveSnapshot(any(), any(), scrollOffset: 50.0),
+        () => mockSaveSnapshot(any(), any(), scrollOffset: 50.0),
       ).called(1);
     });
   });

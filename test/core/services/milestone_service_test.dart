@@ -2,14 +2,14 @@ import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:marmot_dart/marmot_dart.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/data/infrastructure/milestone_service.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/group_envelope_service.dart';
+import 'package:zapbook/core/data/infrastructure/group_envelope_service.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
-import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:ndk/ndk.dart';
 
 class MockMarmot extends Mock implements Marmot {}
@@ -78,7 +78,9 @@ void main() {
     when(
       () => mockProgressDao.replaceId(any(), any()),
     ).thenAnswer((_) async => {});
-    when(() => mockCheersDao.saveActivity(any())).thenAnswer((_) async => {});
+    when(
+      () => mockCheersDao.saveActivity(any(), any()),
+    ).thenAnswer((_) async => {});
     when(() => mockStats.recordProgressMade()).thenAnswer((_) async => {});
     when(() => mockMarmot.sendStructured(any(), any(), any())).thenAnswer(
       (_) async =>

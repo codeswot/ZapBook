@@ -42,19 +42,19 @@ void main() {
   final testActivity = createActivity('act1', 1000);
 
   test('saveActivity and loadActivities works', () async {
-    await store.saveActivity(testActivity);
+    await store.saveActivity('owner_npub', testActivity);
 
-    final activities = await store.loadActivities();
+    final activities = await store.loadActivities('owner_npub');
     expect(activities.length, 1);
     expect(activities.first.id, 'act1');
     expect(activities.first.type, CheersActivityType.cheer);
   });
 
   test('watchActivities emits on save', () async {
-    final stream = store.watchActivities();
+    final stream = store.watchActivities('owner_npub');
 
     final nextUpdate = stream.skip(1).first;
-    await store.saveActivity(testActivity);
+    await store.saveActivity('owner_npub', testActivity);
 
     final activities = await nextUpdate;
     expect(activities.length, 1);
@@ -65,11 +65,11 @@ void main() {
     final act2 = createActivity('act2', 2000);
     final act3 = createActivity('act3', 500);
 
-    await store.saveActivity(testActivity);
-    await store.saveActivity(act2);
-    await store.saveActivity(act3);
+    await store.saveActivity('owner_npub', testActivity);
+    await store.saveActivity('owner_npub', act2);
+    await store.saveActivity('owner_npub', act3);
 
-    final activities = await store.loadActivities();
+    final activities = await store.loadActivities('owner_npub');
     expect(activities.length, 3);
     expect(activities[0].id, 'act2');
     expect(activities[1].id, 'act1');
@@ -78,10 +78,10 @@ void main() {
 
   test('loadActivities respects limit', () async {
     for (var i = 0; i < 5; i++) {
-      await store.saveActivity(createActivity('act$i', 1000 + i));
+      await store.saveActivity('owner_npub', createActivity('act$i', 1000 + i));
     }
 
-    final activities = await store.loadActivities(limit: 2);
+    final activities = await store.loadActivities('owner_npub', limit: 2);
     expect(activities.length, 2);
 
     expect(activities[0].id, 'act4');

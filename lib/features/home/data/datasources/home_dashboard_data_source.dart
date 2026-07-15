@@ -71,37 +71,37 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
           return (circles, lastOpened, owner, stats);
         },
       ).asyncMap((event) => event).switchMap((data) {
-      final circles = data.$1;
-      final lastOpened = data.$2;
-      final npub = data.$3;
-      final stats = data.$4;
+        final circles = data.$1;
+        final lastOpened = data.$2;
+        final npub = data.$3;
+        final stats = data.$4;
 
-      if (lastOpened == null || npub.isEmpty) {
-        return Stream.value(
-          HomeDashboard(
-            stats: stats,
-            circles: circles.toList(),
-            lastOpenedCircleBook: lastOpened,
-          ),
-        );
-      }
-
-      return _progressDao
-          .watchMyProgress(
-            groupId: lastOpened.id,
-            bookId: lastOpened.circleDirId,
-            myNpub: npub,
-          )
-          .map((progress) {
-            return HomeDashboard(
+        if (lastOpened == null || npub.isEmpty) {
+          return Stream.value(
+            HomeDashboard(
               stats: stats,
               circles: circles.toList(),
               lastOpenedCircleBook: lastOpened,
-              lastOpenedProgress: progress?.progressPercentage,
-              lastOpenedPage: progress?.pageIndex,
-            );
-          });
-    });
+            ),
+          );
+        }
+
+        return _progressDao
+            .watchMyProgress(
+              groupId: lastOpened.id,
+              bookId: lastOpened.circleDirId,
+              myNpub: npub,
+            )
+            .map((progress) {
+              return HomeDashboard(
+                stats: stats,
+                circles: circles.toList(),
+                lastOpenedCircleBook: lastOpened,
+                lastOpenedProgress: progress?.progressPercentage,
+                lastOpenedPage: progress?.pageIndex,
+              );
+            });
+      });
     });
   }
 

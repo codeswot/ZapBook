@@ -75,82 +75,84 @@ class CheersDataSourceImpl implements CheersDataSource {
       return _cheersDao.watchActivities(owner).asyncMap((activities) async {
         if (activities.isEmpty) return const <CheersActivity>[];
 
-      final myNpub = await _identityLocal.readNpub();
-      final circlesMap = {for (final c in _circleStore.currentCircles) c.id: c};
+        final myNpub = await _identityLocal.readNpub();
+        final circlesMap = {
+          for (final c in _circleStore.currentCircles) c.id: c,
+        };
 
-      final uniqueNpubs = {
-        for (final msg in activities) ...[
-          if (msg.actorNpub.isNpub == true) msg.actorNpub,
-          if (msg.zapRecipientNpub?.isNpub == true) msg.zapRecipientNpub!,
-        ],
-        if (myNpub != null && myNpub.isNpub == true) myNpub,
-      };
+        final uniqueNpubs = {
+          for (final msg in activities) ...[
+            if (msg.actorNpub.isNpub == true) msg.actorNpub,
+            if (msg.zapRecipientNpub?.isNpub == true) msg.zapRecipientNpub!,
+          ],
+          if (myNpub != null && myNpub.isNpub == true) myNpub,
+        };
 
-      final contactsMap = <String, Contact>{};
+        final contactsMap = <String, Contact>{};
 
-      await Future.wait(
-        uniqueNpubs.map((npub) async {
-          try {
-            contactsMap[npub] = await _contactService.resolve(npub);
-          } catch (_) {
-            _log.warning('Failed to resolve contact for npub: $npub');
-          }
-        }),
-      );
-
-      return activities.map((msg) {
-        final circle = circlesMap[msg.groupId];
-        final senderContact = contactsMap[msg.actorNpub];
-        final recipientContact = msg.zapRecipientNpub != null
-            ? contactsMap[msg.zapRecipientNpub!]
-            : null;
-
-        final isMine = msg.actorNpub == myNpub;
-
-        final recName = recipientContact?.displayName;
-        final senderName = senderContact?.displayName;
-
-        final finalActorName = isMine
-            ? 'You'
-            : (senderName != null && senderName.isNotEmpty
-                  ? senderName
-                  : 'Someone');
-
-        final finalActorAvatar = isMine
-            ? contactsMap[myNpub]?.picture ?? ''
-            : senderContact?.picture ?? '';
-
-        return CheersActivity(
-          id: msg.id,
-          groupId: circle?.id ?? msg.groupId ?? '',
-          actorNpub: msg.actorNpub,
-          otherPartyNpub: msg.zapRecipientNpub ?? '',
-          targetId: msg.zapTargetId ?? '',
-          targetDescription:
-              msg.zapTargetDescription ?? msg.activityDescription,
-          timestamp: msg.timestamp,
-          type: msg.type,
-          isUnread: msg.isUnread,
-          isMine: isMine,
-          nudgeId: msg.nudgeId,
-          thumbsUpCount: msg.thumbsUpCount,
-          clapCount: msg.clapCount,
-          fireCount: msg.fireCount,
-          rocketCount: msg.rocketCount,
-          trophyCount: msg.trophyCount,
-          zapAmount: msg.zapAmount,
-          zapReaction: msg.zapReaction,
-          bookCircleTitle: circle?.title,
-          otherPartyName: recName != null && recName.isNotEmpty
-              ? recName
-              : msg.zapRecipientNpub?.toNpubShort() ?? '',
-          otherPartyPicture: recipientContact?.picture ?? '',
-          actorName: finalActorName,
-          actorPicture: finalActorAvatar,
-          bookId: msg.circleBookId,
+        await Future.wait(
+          uniqueNpubs.map((npub) async {
+            try {
+              contactsMap[npub] = await _contactService.resolve(npub);
+            } catch (_) {
+              _log.warning('Failed to resolve contact for npub: $npub');
+            }
+          }),
         );
-      }).toList();
-    });
+
+        return activities.map((msg) {
+          final circle = circlesMap[msg.groupId];
+          final senderContact = contactsMap[msg.actorNpub];
+          final recipientContact = msg.zapRecipientNpub != null
+              ? contactsMap[msg.zapRecipientNpub!]
+              : null;
+
+          final isMine = msg.actorNpub == myNpub;
+
+          final recName = recipientContact?.displayName;
+          final senderName = senderContact?.displayName;
+
+          final finalActorName = isMine
+              ? 'You'
+              : (senderName != null && senderName.isNotEmpty
+                    ? senderName
+                    : 'Someone');
+
+          final finalActorAvatar = isMine
+              ? contactsMap[myNpub]?.picture ?? ''
+              : senderContact?.picture ?? '';
+
+          return CheersActivity(
+            id: msg.id,
+            groupId: circle?.id ?? msg.groupId ?? '',
+            actorNpub: msg.actorNpub,
+            otherPartyNpub: msg.zapRecipientNpub ?? '',
+            targetId: msg.zapTargetId ?? '',
+            targetDescription:
+                msg.zapTargetDescription ?? msg.activityDescription,
+            timestamp: msg.timestamp,
+            type: msg.type,
+            isUnread: msg.isUnread,
+            isMine: isMine,
+            nudgeId: msg.nudgeId,
+            thumbsUpCount: msg.thumbsUpCount,
+            clapCount: msg.clapCount,
+            fireCount: msg.fireCount,
+            rocketCount: msg.rocketCount,
+            trophyCount: msg.trophyCount,
+            zapAmount: msg.zapAmount,
+            zapReaction: msg.zapReaction,
+            bookCircleTitle: circle?.title,
+            otherPartyName: recName != null && recName.isNotEmpty
+                ? recName
+                : msg.zapRecipientNpub?.toNpubShort() ?? '',
+            otherPartyPicture: recipientContact?.picture ?? '',
+            actorName: finalActorName,
+            actorPicture: finalActorAvatar,
+            bookId: msg.circleBookId,
+          );
+        }).toList();
+      });
     });
   }
 

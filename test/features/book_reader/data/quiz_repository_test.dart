@@ -1,12 +1,15 @@
+import 'package:zapbook/core/data/infrastructure/quiz_service.dart';
+import 'package:zapbook/features/book_reader/data/repositories/quiz_repository_impl.dart';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/domain/quiz_models.dart';
-import 'package:zapbook/features/book_reader/data/quiz_repository.dart';
 
 class MockNdk extends Mock implements Ndk {}
+
+class MockQuizService extends Mock implements QuizService {}
 
 class MockAccounts extends Mock implements Accounts {}
 
@@ -23,8 +26,9 @@ class FakeNip01Event extends Fake implements Nip01Event {}
 class FakeNdkBroadcastResponse extends Fake implements NdkBroadcastResponse {}
 
 void main() {
-  late QuizRepository repository;
+  late QuizRepositoryImpl repository;
   late MockNdk mockNdk;
+  late MockQuizService mockQuizService;
   late MockAccounts mockAccounts;
   late MockBroadcast mockBroadcast;
   late MockNostrCacheStore mockCache;
@@ -37,6 +41,7 @@ void main() {
 
   setUp(() {
     mockNdk = MockNdk();
+    mockQuizService = MockQuizService();
     mockAccounts = MockAccounts();
     mockBroadcast = MockBroadcast();
     mockCache = MockNostrCacheStore();
@@ -47,7 +52,7 @@ void main() {
     when(() => mockNdk.broadcast).thenReturn(mockBroadcast);
     when(() => mockAccount.signer).thenReturn(mockSigner);
 
-    repository = QuizRepository(mockNdk, mockCache);
+    repository = QuizRepositoryImpl(mockNdk, mockCache, mockQuizService);
   });
 
   test('saveQuizBank saves encrypted quizzes', () async {

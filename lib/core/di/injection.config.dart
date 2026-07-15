@@ -82,6 +82,8 @@ import 'package:zapbook/core/data/repositories/book_download_repository_impl.dar
     as _i558;
 import 'package:zapbook/core/data/repositories/circle_progress_repository.dart'
     as _i59;
+import 'package:zapbook/core/data/repositories/earnings_repository_impl.dart'
+    as _i1042;
 import 'package:zapbook/core/data/search/book_search_index.dart' as _i525;
 import 'package:zapbook/core/data/search/book_vector_index.dart' as _i491;
 import 'package:zapbook/core/data/search/embedding_service.dart' as _i18;
@@ -94,12 +96,15 @@ import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
 import 'package:zapbook/core/domain/repositories/book_download_repository.dart'
     as _i753;
+import 'package:zapbook/core/domain/repositories/earnings_repository.dart'
+    as _i949;
 import 'package:zapbook/core/domain/repositories/performance_repository.dart'
     as _i801;
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart' as _i854;
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart'
     as _i665;
+import 'package:zapbook/core/domain/usecases/earnings_usecases.dart' as _i177;
 import 'package:zapbook/core/domain/usecases/pdf_usecases.dart' as _i616;
 import 'package:zapbook/core/domain/usecases/performance_usecases.dart'
     as _i1045;
@@ -372,6 +377,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i760.ZapSatsEarningsDao>(
       () => _i760.ZapSatsEarningsDao(gh<_i525.AppDatabase>()),
     );
+    gh.lazySingleton<_i949.EarningsRepository>(
+      () => _i1042.EarningsRepositoryImpl(gh<_i760.ZapSatsEarningsDao>()),
+    );
     gh.factory<_i227.ReaderInitCubit>(
       () => _i227.ReaderInitCubit(gh<_i138.ZbfReader>()),
     );
@@ -451,12 +459,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i492.PageDao>(
       () => _i492.PageDao(gh<_i525.AppDatabase>()),
     );
-    gh.factory<_i362.EarningsCubit>(
-      () => _i362.EarningsCubit(
-        gh<_i760.ZapSatsEarningsDao>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i901.BlossomService>(
       () => _i901.BlossomService(gh<_i857.Ndk>()),
     );
@@ -493,6 +495,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
         gh<_i68.NostrCacheStore>(),
         gh<_i876.QuizService>(),
+      ),
+    );
+    gh.factory<_i177.WatchEarningsUseCase>(
+      () => _i177.WatchEarningsUseCase(
+        gh<_i949.EarningsRepository>(),
+        gh<_i63.IdentityRepository>(),
+      ),
+    );
+    gh.factory<_i177.GetEarningsUseCase>(
+      () => _i177.GetEarningsUseCase(
+        gh<_i949.EarningsRepository>(),
+        gh<_i63.IdentityRepository>(),
       ),
     );
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
@@ -570,6 +584,12 @@ extension GetItInjectableX on _i174.GetIt {
         searchIndex: gh<_i525.BookSearchIndex>(),
         vectorIndex: gh<_i491.BookVectorIndex>(),
         writer: gh<_i1.ZbfWriter>(),
+      ),
+    );
+    gh.factory<_i362.EarningsCubit>(
+      () => _i362.EarningsCubit(
+        gh<_i177.GetEarningsUseCase>(),
+        gh<_i177.WatchEarningsUseCase>(),
       ),
     );
     gh.factory<_i341.CompleteOnboarding>(

@@ -40,7 +40,10 @@ class CheersDao {
     return controller.stream;
   }
 
-  Future<List<CheersActivityMessage>> loadActivities(String ownerNpub, {int limit = 300}) async {
+  Future<List<CheersActivityMessage>> loadActivities(
+    String ownerNpub, {
+    int limit = 300,
+  }) async {
     try {
       final db = await _appDatabase.open();
       final rows = db.select(
@@ -79,7 +82,10 @@ class CheersDao {
     }
   }
 
-  Future<void> saveActivity(String ownerNpub, CheersActivityMessage? activity) async {
+  Future<void> saveActivity(
+    String ownerNpub,
+    CheersActivityMessage? activity,
+  ) async {
     if (activity == null) return;
     try {
       final db = await _appDatabase.open();

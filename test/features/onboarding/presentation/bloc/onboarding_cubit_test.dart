@@ -2,16 +2,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
-import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 
-class MockClipboardService extends Mock implements ClipboardService {}
+class MockCopyTextUseCase extends Mock implements CopyTextUseCase {}
 
-class MockNostrService extends Mock implements NostrService {}
+class MockPasteTextUseCase extends Mock implements PasteTextUseCase {}
+
+class MockFetchExistingProfileUseCase extends Mock
+    implements FetchExistingProfileUseCase {}
 
 class MockGenerateIdentity extends Mock implements GenerateIdentity {}
 
@@ -20,15 +23,17 @@ class MockImportIdentity extends Mock implements ImportIdentity {}
 class MockCompleteOnboarding extends Mock implements CompleteOnboarding {}
 
 void main() {
-  late MockClipboardService clipboardService;
-  late MockNostrService nostrService;
+  late MockCopyTextUseCase copyText;
+  late MockPasteTextUseCase pasteText;
+  late MockFetchExistingProfileUseCase fetchExistingProfile;
   late MockGenerateIdentity generateIdentity;
   late MockImportIdentity importIdentity;
   late MockCompleteOnboarding completeOnboarding;
 
   setUp(() {
-    clipboardService = MockClipboardService();
-    nostrService = MockNostrService();
+    copyText = MockCopyTextUseCase();
+    pasteText = MockPasteTextUseCase();
+    fetchExistingProfile = MockFetchExistingProfileUseCase();
     generateIdentity = MockGenerateIdentity();
     importIdentity = MockImportIdentity();
     completeOnboarding = MockCompleteOnboarding();
@@ -40,12 +45,14 @@ void main() {
         pubkeyHex: 'hex_test',
       ),
     );
+    when(() => fetchExistingProfile(any())).thenAnswer((_) async => null);
   });
 
   OnboardingCubit buildCubit() {
     return OnboardingCubit(
-      clipboardService,
-      nostrService,
+      copyText,
+      pasteText,
+      fetchExistingProfile,
       generateIdentity,
       importIdentity,
       completeOnboarding,
@@ -157,26 +164,22 @@ void main() {
       final cubit = buildCubit();
       await Future.delayed(Duration.zero);
 
-      when(() => clipboardService.copy(any())).thenAnswer((_) async {});
-      when(
-        () => clipboardService.paste(),
-      ).thenAnswer((_) async => 'pasted_nsec');
+      when(() => copyText(any())).thenAnswer((_) async {});
+      when(() => pasteText()).thenAnswer((_) async => 'pasted_nsec');
 
       await cubit.copyKeys();
       await cubit.pasteNsec();
 
       expect(cubit.state.importedNsec, 'pasted_nsec');
-      verify(() => clipboardService.copy(any())).called(1);
-      verify(() => clipboardService.paste()).called(1);
+      verify(() => copyText(any())).called(1);
+      verify(() => pasteText()).called(1);
     });
 
     test('pasteLightningAddress', () async {
       final cubit = buildCubit();
       await Future.delayed(Duration.zero);
 
-      when(
-        () => clipboardService.paste(),
-      ).thenAnswer((_) async => 'pasted_lud');
+      when(() => pasteText()).thenAnswer((_) async => 'pasted_lud');
       await cubit.pasteLightningAddress();
 
       expect(cubit.state.lightningAddress, 'pasted_lud');

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ndk/ndk.dart';
-import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_earnings_service.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 class MockNdk extends Mock implements Ndk {}
@@ -43,9 +43,11 @@ void main() {
     when(() => mockNdk.requests).thenReturn(mockRequests);
 
     when(
-      () => mockEarningsDao.getLastZapTimestamp(),
+      () => mockEarningsDao.getLastZapTimestamp(any()),
     ).thenAnswer((_) async => null);
-    when(() => mockEarningsDao.insertZap(any())).thenAnswer((_) async {});
+    when(
+      () => mockEarningsDao.insertZap(any(), any()),
+    ).thenAnswer((_) async {});
 
     service = ZapEarningsService(mockNdk, mockEarningsDao);
   });
@@ -57,7 +59,9 @@ void main() {
   });
 
   test('start listens for events if pubkey is present', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
+    when(() => mockAccounts.getPublicKey()).thenReturn(
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+    );
 
     final mockSubscription = MockNdkResponse();
     when(() => mockSubscription.requestId).thenReturn('req-id-1');
@@ -75,7 +79,9 @@ void main() {
   });
 
   test('ingests valid zap receipt from subscription', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
+    when(() => mockAccounts.getPublicKey()).thenReturn(
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+    );
 
     final streamController = StreamController<Nip01Event>();
 
@@ -114,11 +120,13 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 10));
 
-    verify(() => mockEarningsDao.insertZap(any())).called(1);
+    verify(() => mockEarningsDao.insertZap(any(), any())).called(1);
   });
 
   test('skips events not belonging to zapbook', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
+    when(() => mockAccounts.getPublicKey()).thenReturn(
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+    );
 
     final streamController = StreamController<Nip01Event>();
 
@@ -156,11 +164,13 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 10));
 
-    verifyNever(() => mockEarningsDao.insertZap(any()));
+    verifyNever(() => mockEarningsDao.insertZap(any(), any()));
   });
 
   test('dispose cancels subscriptions', () async {
-    when(() => mockAccounts.getPublicKey()).thenReturn('pubkey1');
+    when(() => mockAccounts.getPublicKey()).thenReturn(
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+    );
 
     final mockSubscription = MockNdkResponse();
     when(() => mockSubscription.requestId).thenReturn('req-id-1');

@@ -164,7 +164,12 @@ class AppDatabase {
       )
     ''');
     _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
-    _addColumnIfMissing(db, 'cheers_feed', 'owner_npub', "TEXT NOT NULL DEFAULT ''");
+    _addColumnIfMissing(
+      db,
+      'cheers_feed',
+      'owner_npub',
+      "TEXT NOT NULL DEFAULT ''",
+    );
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_cheers_timestamp ON cheers_feed(timestamp DESC)',
     );
@@ -182,7 +187,12 @@ class AppDatabase {
         timestamp INTEGER NOT NULL
       )
     ''');
-    _addColumnIfMissing(db, 'zap_sats_earnings', 'owner_npub', "TEXT NOT NULL DEFAULT ''");
+    _addColumnIfMissing(
+      db,
+      'zap_sats_earnings',
+      'owner_npub',
+      "TEXT NOT NULL DEFAULT ''",
+    );
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_zap_sats_earnings_timestamp ON zap_sats_earnings(timestamp DESC)',
     );

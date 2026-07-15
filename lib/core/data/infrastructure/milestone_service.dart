@@ -155,7 +155,9 @@ class MilestoneService {
       await _cheersDao.saveActivity(npub, cheer);
     }
 
-    await _stats.recordProgressMade();
+    if (_isForwardProgress(previous, next)) {
+      await _stats.recordProgressMade();
+    }
 
     final report = (
       localId: next.id,
@@ -182,6 +184,22 @@ class MilestoneService {
       session.debounce = null;
       _dispatchPending(circleDirId, session);
     });
+  }
+
+  bool _isForwardProgress(
+    CircleMemberProgress? previous,
+    CircleMemberProgress next,
+  ) {
+    if (previous == null) {
+      return next.progressPercentage > 0 ||
+          next.pageIndex > 0 ||
+          next.milestonesReached > 0 ||
+          next.completed;
+    }
+    return next.progressPercentage > previous.progressPercentage ||
+        next.pageIndex > previous.pageIndex ||
+        next.milestonesReached > previous.milestonesReached ||
+        (next.completed && !previous.completed);
   }
 
   Future<void> _send(

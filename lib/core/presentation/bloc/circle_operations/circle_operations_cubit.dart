@@ -75,7 +75,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
 
       if (isClosed) return null;
       emit(const CircleOperationsSuccess());
-      return book;
+      return book.copyWith(title: title, author: author, genre: genre);
     } catch (e, st) {
       _log.warning('Failed to update book metadata', e, st);
       if (isClosed) return null;

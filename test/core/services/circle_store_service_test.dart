@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
-import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/group_store_service.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
+import 'package:zapbook/core/data/infrastructure/group_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';

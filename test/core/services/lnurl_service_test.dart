@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 
-import 'package:zapbook/core/services/lnurl_service.dart';
+import 'package:zapbook/core/data/infrastructure/lnurl_service.dart';
 import 'package:zapbook/core/models/lnurl_models.dart';
 import 'package:zapbook/core/utils/bolt11_utils.dart';
 
