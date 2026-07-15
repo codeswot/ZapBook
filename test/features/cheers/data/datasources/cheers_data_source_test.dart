@@ -19,6 +19,7 @@ import 'package:zapbook/core/data/infrastructure/zap_service.dart';
 import 'package:zapbook/core/data/infrastructure/zap_nudge_service.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
+import 'package:zapbook/core/data/infrastructure/share_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class MockCircleStoreService extends Mock implements CircleStoreService {}
@@ -38,6 +39,8 @@ class MockNostrService extends Mock implements NostrService {}
 
 class MockClipboardService extends Mock implements ClipboardService {}
 
+class MockShareService extends Mock implements ShareService {}
+
 void main() {
   group('CheersDataSourceImpl', () {
     late MockCircleStoreService circleStore;
@@ -48,6 +51,7 @@ void main() {
     late MockZapNudgeService nudgeService;
     late MockNostrService nostrService;
     late MockClipboardService clipboardService;
+    late MockShareService shareService;
     late CheersDataSourceImpl dataSource;
 
     setUp(() {
@@ -59,6 +63,7 @@ void main() {
       nudgeService = MockZapNudgeService();
       nostrService = MockNostrService();
       clipboardService = MockClipboardService();
+      shareService = MockShareService();
 
       dataSource = CheersDataSourceImpl(
         circleStore,
@@ -69,6 +74,7 @@ void main() {
         nudgeService,
         nostrService,
         clipboardService,
+        shareService,
       );
     });
 

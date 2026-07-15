@@ -56,6 +56,20 @@ final class CheersZapError extends CheersActionState {
   List<Object?> get props => [message, DateTime.now().millisecondsSinceEpoch];
 }
 
+final class CheersPostSuccess extends CheersActionState {
+  const CheersPostSuccess(this.message);
+  final String message;
+  @override
+  List<Object?> get props => [message, DateTime.now().millisecondsSinceEpoch];
+}
+
+final class CheersPostError extends CheersActionState {
+  const CheersPostError(this.message);
+  final String message;
+  @override
+  List<Object?> get props => [message, DateTime.now().millisecondsSinceEpoch];
+}
+
 final class CheersNudgeSuccess extends CheersActionState {
   const CheersNudgeSuccess(this.message);
   final String message;

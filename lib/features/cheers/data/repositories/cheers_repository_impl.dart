@@ -51,4 +51,10 @@ class CheersRepositoryImpl implements CheersRepository {
 
   @override
   Future<void> copyText(String text) => _dataSource.copyText(text);
+
+  @override
+  Future<void> shareText(String text) => _dataSource.shareText(text);
+
+  @override
+  Future<void> postNote(String text) => _dataSource.postNote(text);
 }

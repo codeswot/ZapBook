@@ -165,6 +165,10 @@ class _CheersViewState extends State<CheersView> {
                     context.toast.showInfo(state.message);
                   } else if (state is CheersZapError) {
                     context.toast.showError(state.message);
+                  } else if (state is CheersPostSuccess) {
+                    context.toast.showSuccess(state.message);
+                  } else if (state is CheersPostError) {
+                    context.toast.showError(state.message);
                   } else if (state is CheersNudgeSuccess) {
                     context.toast.showSuccess(state.message);
                   } else if (state is CheersNudgeRequired) {

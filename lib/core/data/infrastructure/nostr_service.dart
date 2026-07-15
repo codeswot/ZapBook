@@ -86,6 +86,27 @@ class NostrService {
     }
   }
 
+  Future<void> publishNote(String content) async {
+    final account = _ndk.accounts.getLoggedAccount();
+    if (account == null || !account.signer.canSign()) {
+      throw StateError('No signer available. Sign in before posting a note.');
+    }
+
+    final event = Nip01Event(
+      pubKey: account.pubkey,
+      kind: 1,
+      tags: const [],
+      content: content,
+      createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+
+    final signed = await account.signer.sign(event);
+    _ndk.broadcast.broadcast(
+      nostrEvent: signed,
+      specificRelays: ZapbookConfig.broadcastRelays,
+    );
+  }
+
   Future<Metadata?> getMetadata(String pubkey, {bool forceRefresh = false}) =>
       _ndk.metadata.loadMetadata(pubkey, forceRefresh: forceRefresh);
 

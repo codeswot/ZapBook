@@ -25,6 +25,7 @@ class CheersActivity {
   final int? zapAmount;
   final String? zapReaction;
   final bool isMine;
+  final int? pageCount;
 
   CheersActivity({
     required this.id,
@@ -51,5 +52,6 @@ class CheersActivity {
     required this.actorName,
     required this.actorPicture,
     this.bookId,
+    this.pageCount,
   });
 }

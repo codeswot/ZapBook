@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Cheers:** Long-pressing a milestone now offers **Post as note** — publish it to Nostr as a public note (kind 1) so it shows up on Damus, Primal, and other clients. Opens an editable sheet pre-filled with the milestone message; post as is or tweak it first.
+- **Cheers:** Copy, Share, and Post now share one uniform ZapBook message (first- or third-person, with book title and links) instead of ad-hoc text.
+
 ### Changed
 
 - **Performance:** Resolved major scroll freezing and Application Not Responding (ANR) crashes in the reader by replacing memory-bloating page caching with highly efficient, on-demand SQLite database reads.

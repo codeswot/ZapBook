@@ -17,6 +17,7 @@ import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/share_service.dart';
 import 'package:zapbook/core/data/infrastructure/zap_nudge_service.dart';
 
 abstract interface class CheersDataSource {
@@ -42,6 +43,10 @@ abstract interface class CheersDataSource {
   Future<String?> getMyPubkey();
 
   Future<void> copyText(String text);
+
+  Future<void> shareText(String text);
+
+  Future<void> postNote(String text);
 }
 
 final _log = logging.Logger('CheersDataSource');
@@ -57,6 +62,7 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._nudgeService,
     this._nostrService,
     this._clipboardService,
+    this._shareService,
   );
 
   final CircleStoreService _circleStore;
@@ -67,6 +73,7 @@ class CheersDataSourceImpl implements CheersDataSource {
   final ZapNudgeService _nudgeService;
   final NostrService _nostrService;
   final ClipboardService _clipboardService;
+  final ShareService _shareService;
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
@@ -150,6 +157,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             actorName: finalActorName,
             actorPicture: finalActorAvatar,
             bookId: msg.circleBookId,
+            pageCount: circle?.pageCount,
           );
         }).toList();
       });
@@ -222,4 +230,10 @@ class CheersDataSourceImpl implements CheersDataSource {
   Future<void> copyText(String text) async {
     _clipboardService.copy(text);
   }
+
+  @override
+  Future<void> shareText(String text) => _shareService.share(text);
+
+  @override
+  Future<void> postNote(String text) => _nostrService.publishNote(text);
 }
