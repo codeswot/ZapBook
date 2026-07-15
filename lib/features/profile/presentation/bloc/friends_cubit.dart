@@ -5,7 +5,6 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 

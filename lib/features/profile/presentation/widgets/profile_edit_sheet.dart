@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/validators.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';

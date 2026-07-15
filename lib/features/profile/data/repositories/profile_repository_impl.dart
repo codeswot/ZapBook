@@ -4,9 +4,9 @@ import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/utils/profile_meta_generator.dart';
 
-import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';

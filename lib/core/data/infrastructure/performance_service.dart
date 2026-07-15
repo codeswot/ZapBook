@@ -4,20 +4,11 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zapbook/core/domain/entities/perf_mode.dart';
+import 'package:zapbook/core/domain/repositories/performance_repository.dart';
 
-enum PerfMode {
-  auto,
-  on,
-  off;
-
-  static PerfMode fromName(String? name) => PerfMode.values.firstWhere(
-    (mode) => mode.name == name,
-    orElse: () => PerfMode.auto,
-  );
-}
-
-@singleton
-class PerformanceService {
+@Singleton(as: PerformanceRepository)
+class PerformanceService implements PerformanceRepository {
   PerformanceService(this._prefs);
 
   final SharedPreferences _prefs;
@@ -27,21 +18,26 @@ class PerformanceService {
 
   final ValueNotifier<bool> _reduceEffects = ValueNotifier<bool>(false);
 
+  @override
   ValueListenable<bool> get reduceEffectsListenable => _reduceEffects;
 
+  @override
   bool get reduceEffects => _reduceEffects.value;
 
   bool _deviceIsLegacy = false;
 
   bool get deviceIsLegacy => _deviceIsLegacy;
 
+  @override
   PerfMode get mode => PerfMode.fromName(_prefs.getString(_modeKey));
 
+  @override
   Future<void> init() async {
     _deviceIsLegacy = await _detectLegacyDevice();
     _recompute();
   }
 
+  @override
   Future<void> setMode(PerfMode value) async {
     await _prefs.setString(_modeKey, value.name);
     _recompute();

@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
@@ -15,6 +18,23 @@ abstract class CirclesRepository {
 
   Future<void> leaveCircleBook(CircleBook circleBook);
   Future<void> deleteCircleBook(CircleBook circleBook);
+
+  Future<GroupImagePrepared> prepareCover({required Uint8List coverBytes});
+  Future<void> updateCircleBookMetadata({
+    required String marmotGroupId,
+    required String title,
+    required String author,
+    String? genre,
+  });
+  void setUploadingCover(String marmotGroupId, String blurhash);
+  void clearUploadingCover(String marmotGroupId);
+  void updateCircleBookCoverOptimistic({
+    required String marmotGroupId,
+    required String circleDirId,
+    required Uint8List coverBytes,
+    required GroupImagePrepared preparedImage,
+    required String mimeType,
+  });
 
   Stream<List<CircleMemberProgress>> watchProgressByBook({
     required String groupId,

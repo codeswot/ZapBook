@@ -11,21 +11,36 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:mime/mime.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/constants/app_constants.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 
 @injectable
 class CircleOperationsCubit extends Cubit<CircleOperationsState> {
-  CircleOperationsCubit(this._identityLocal, this._circleStoreService)
-    : super(const CircleOperationsInitial());
+  CircleOperationsCubit(
+    this._identityLocal,
+    this._deleteCircleBookUseCase,
+    this._leaveCircleBookUseCase,
+    this._prepareCircleCoverUseCase,
+    this._updateCircleBookMetadataUseCase,
+    this._setUploadingCoverUseCase,
+    this._clearUploadingCoverUseCase,
+    this._updateCircleBookCoverOptimisticUseCase,
+  ) : super(const CircleOperationsInitial());
 
   final IdentityLocalDataSource _identityLocal;
-  final CircleStoreService _circleStoreService;
+  final DeleteCircleBookUseCase _deleteCircleBookUseCase;
+  final LeaveCircleBookUseCase _leaveCircleBookUseCase;
+  final PrepareCircleCoverUseCase _prepareCircleCoverUseCase;
+  final UpdateCircleBookMetadataUseCase _updateCircleBookMetadataUseCase;
+  final SetUploadingCoverUseCase _setUploadingCoverUseCase;
+  final ClearUploadingCoverUseCase _clearUploadingCoverUseCase;
+  final UpdateCircleBookCoverOptimisticUseCase
+  _updateCircleBookCoverOptimisticUseCase;
 
   final _log = logging.Logger('CircleOperationsCubit');
 
   Future<GroupImagePrepared> prepareCover(Uint8List coverBytes) async {
-    return _circleStoreService.prepareCover(coverBytes: coverBytes);
+    return _prepareCircleCoverUseCase(coverBytes) as Future<GroupImagePrepared>;
   }
 
   Future<void> deleteBook(CircleBook book) async {
@@ -33,9 +48,9 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
       emit(const CircleOperationsLoading());
       final isAdmin = await isAdminOf(book);
       if (!isAdmin) {
-        await _circleStoreService.leaveCircleBook(book);
+        await _leaveCircleBookUseCase(book);
       }
-      await _circleStoreService.deleteCircleBook(book);
+      await _deleteCircleBookUseCase(book);
       if (isClosed) return;
       emit(const CircleOperationsSuccess());
     } catch (e) {
@@ -52,7 +67,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   }) async {
     try {
       emit(const CircleOperationsLoading());
-      await _circleStoreService.updateCircleBookMetadata(
+      await _updateCircleBookMetadataUseCase(
         marmotGroupId: book.id,
         title: title,
         author: author,
@@ -61,9 +76,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
 
       if (isClosed) return null;
       emit(const CircleOperationsSuccess());
-      return _circleStoreService.currentCircles
-          .where((b) => b.id == book.id)
-          .firstOrNull;
+      return book;
     } catch (e, st) {
       _log.warning('Failed to update book metadata', e, st);
       if (isClosed) return null;
@@ -82,7 +95,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   }) {
     unawaited(() async {
       try {
-        await _circleStoreService.updateCircleBookMetadata(
+        await _updateCircleBookMetadataUseCase(
           marmotGroupId: book.id,
           title: title,
           author: author,
@@ -90,31 +103,25 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
         );
 
         if (coverBytes != null && pendingCoverUpload != null) {
-          _circleStoreService.setUploadingCover(
-            book.id,
-            AppConstants.placeholderBlurHash,
-          );
+          _setUploadingCoverUseCase(book.id, AppConstants.placeholderBlurHash);
 
           GroupImagePrepared preparedImage;
           try {
             preparedImage = await pendingCoverUpload;
           } catch (e) {
-            _circleStoreService.clearUploadingCover(book.id);
+            _clearUploadingCoverUseCase(book.id);
             rethrow;
           }
 
           if (preparedImage.blurhash != null) {
-            _circleStoreService.setUploadingCover(
-              book.id,
-              preparedImage.blurhash!,
-            );
+            _setUploadingCoverUseCase(book.id, preparedImage.blurhash!);
           }
 
           final mimeType =
               lookupMimeType('', headerBytes: coverBytes) ??
               AppConstants.defaultImageMimeType;
 
-          _circleStoreService.updateCircleBookCoverOptimistic(
+          _updateCircleBookCoverOptimisticUseCase(
             marmotGroupId: book.id,
             circleDirId: book.circleDirId,
             coverBytes: coverBytes,
@@ -131,7 +138,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   Future<void> leaveCircle(CircleBook book) async {
     try {
       emit(const CircleOperationsLoading());
-      await _circleStoreService.leaveCircleBook(book);
+      await _leaveCircleBookUseCase(book);
       if (isClosed) return;
       emit(const CircleOperationsSuccess());
     } catch (e) {

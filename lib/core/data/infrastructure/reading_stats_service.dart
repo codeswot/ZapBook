@@ -9,7 +9,7 @@ import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/database/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
-import 'package:zapbook/core/services/zap_earnings_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_earnings_service.dart';
 
 @lazySingleton
 class ReadingStatsService {

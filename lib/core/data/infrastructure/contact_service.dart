@@ -195,10 +195,3 @@ class ContactService {
     _friendsController.close();
   }
 }
-
-class ContactException implements Exception {
-  final String message;
-  const ContactException(this.message);
-  @override
-  String toString() => 'ContactException: $message';
-}

@@ -5,7 +5,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';

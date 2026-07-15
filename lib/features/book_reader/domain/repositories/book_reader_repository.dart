@@ -3,9 +3,15 @@ import 'package:zapbook/core/models/book_download_progress.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 abstract class BookReaderRepository {
-  Future<void> saveSnapshot(String circleDirId, ReadingState state, {double? scrollOffset});
-  
-  Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(String circleDirId);
+  Future<void> saveSnapshot(
+    String circleDirId,
+    ReadingState state, {
+    double? scrollOffset,
+  });
+
+  Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(
+    String circleDirId,
+  );
 
   void reportProgress({
     required String circleDirId,
@@ -19,7 +25,7 @@ abstract class BookReaderRepository {
   });
 
   void flushProgress(String circleDirId);
-  
+
   void closeBook(String circleDirId);
 
   Future<void> savePages(String bookId, Map<int, BookPage> pages);

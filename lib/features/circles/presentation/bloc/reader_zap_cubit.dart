@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 
 part 'reader_zap_state.dart';

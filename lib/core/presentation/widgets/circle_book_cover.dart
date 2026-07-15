@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/widgets/app_book_cover.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class CircleBookCover extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/profile/domain/repositories/donate_repository.dart';
 
 @injectable

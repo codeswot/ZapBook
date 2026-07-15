@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:ndk/ndk.dart';
 
 import 'package:injectable/injectable.dart';
-import 'package:ndk/ndk.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/lnurl_service.dart';
-import 'package:zapbook/core/services/nwc_service.dart';
-import 'package:zapbook/core/services/zap_support_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
+import 'package:zapbook/core/data/infrastructure/lnurl_service.dart';
+import 'package:zapbook/core/data/infrastructure/nwc_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_support_service.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 
 import 'package:logging/logging.dart' as logging;
@@ -259,36 +260,3 @@ class ZapService {
     }
   }
 }
-
-class ZapResult {
-  final String invoice;
-  final String zapRequestId;
-  final int amountSats;
-  final ZapGesture gesture;
-  final String recipientPubkey;
-  final String targetActivitytId;
-  final String? supportInvoice;
-  final int supportAmount;
-
-  bool get hasSupportZap => supportInvoice != null && supportAmount > 0;
-
-  const ZapResult({
-    required this.invoice,
-    required this.zapRequestId,
-    required this.amountSats,
-    required this.gesture,
-    required this.recipientPubkey,
-    required this.targetActivitytId,
-    this.supportInvoice,
-    this.supportAmount = 0,
-  });
-}
-
-class ZapException implements Exception {
-  final String message;
-  const ZapException(this.message);
-  @override
-  String toString() => 'ZapException: $message';
-}
-
-enum ZapStatus { paidNwc, pendingExternal, failed }

@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/extensions/string_extension.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/usecases/switch_account_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
 

@@ -12,11 +12,11 @@ import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/group_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
+import 'package:zapbook/core/data/infrastructure/group_store_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:zapbook/core/services/key_package_service.dart';
+import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 
 @lazySingleton
 class CircleStoreService {

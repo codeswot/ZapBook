@@ -10,7 +10,7 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/extensions/nip01_event_extension.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
+import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 
 @lazySingleton
 class MarmotSyncService {

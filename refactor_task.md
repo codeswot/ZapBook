@@ -11,17 +11,17 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 - [x] `lib/core/config/` (AppConfig, Env)
 - [x] `lib/core/constants/` (Colors, Strings)
-- [ ] `lib/core/data/`
-  - [ ] `database/` (AppDatabase, DAOs)
-  - [ ] `network/` (NetworkClient wrapper)
-  - [ ] `infrastructure/` (Low-level services: `NdkWrapper`, `ReadingStatsTracker`)
-- [ ] `lib/core/domain/`
-  - [ ] `entities/` (Shared entities like `AppMessage`, `UserProfile`)
-  - [ ] `exceptions/` (Custom app exceptions)
-- [ ] `lib/core/presentation/`
-  - [ ] `widgets/` (Shared UI components)
-  - [ ] `theme/` (App theme definitions)
-  - [ ] `router/` (GoRouter configurations)
+- [x] `lib/core/data/`
+  - [x] `database/` (AppDatabase, DAOs)
+  - [x] `network/` (NetworkClient wrapper)
+  - [x] `infrastructure/` (Low-level services: `NdkWrapper`, `ReadingStatsTracker`)
+- [x] `lib/core/domain/`
+  - [x] `entities/` (Shared entities like `AppMessage`, `UserProfile`)
+  - [x] `exceptions/` (Custom app exceptions)
+- [x] `lib/core/presentation/`
+  - [x] `widgets/` (Shared UI components)
+  - [x] `theme/` (App theme definitions)
+  - [x] `router/` (GoRouter configurations)
 - [x] `lib/core/di/` (GetIt Service Locator setup)
 - [x] `lib/core/utils/` (Helper extensions and formatters)
 
@@ -177,10 +177,10 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ## 3. App & Foundation (`lib/app/` & `lib/zbf/`)
 
-- [ ] **App Setup**
-  - [ ] `lib/app/` (Move `main.dart`, `app.dart` logic here cleanly)
-- [ ] **ZBF (ZapBook Format Parser)**
-  - [ ] Extract ZBF strictly as a package or keep it isolated in `lib/zbf/`
-  - [ ] `entities/`, `enums/`, `support/`
-- [ ] **Theme Consolidation**
-  - [ ] Merge `lib/theme/` into `lib/core/presentation/theme/` to keep root folder clean.
+- [x] **App Setup**
+  - [x] `lib/app/` (Move `main.dart`, `app.dart` logic here cleanly)
+- [x] **ZBF (ZapBook Format Parser)**
+  - [x] Extract ZBF strictly as a package or keep it isolated in `lib/zbf/`
+  - [x] `entities/`, `enums/`, `support/`
+- [x] **Theme Consolidation**
+  - [x] Merge `lib/theme/` into `lib/core/presentation/theme/` to keep root folder clean.

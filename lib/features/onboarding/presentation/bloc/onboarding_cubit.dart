@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
-import 'package:zapbook/core/services/profile_meta_generator.dart';
+import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
@@ -183,7 +183,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           state.copyWith(
             displayName: hasName ? fetchedName : state.displayName,
             picture: profile.picture ?? state.picture,
-            lightningAddress: profile.lightningAddress ?? state.lightningAddress,
+            lightningAddress:
+                profile.lightningAddress ?? state.lightningAddress,
             isFetchingMetadata: false,
             hasExistingProfile: hasName || profile.picture != null,
           ),

@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
 import 'package:zapbook/features/profile/domain/repositories/friends_repository.dart';
 
 @Injectable(as: FriendsRepository)

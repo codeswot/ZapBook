@@ -4,11 +4,12 @@ import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
@@ -16,7 +17,7 @@ import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
-import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_nudge_service.dart';
 
 abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();

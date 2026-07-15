@@ -26,11 +26,8 @@ class QuizCubitState {
 
 @injectable
 class QuizCubit extends Cubit<QuizCubitState> {
-  QuizCubit(
-    this._watchQuizSurface,
-    this._submitQuiz,
-    this._skipQuiz,
-  ) : super(const QuizCubitState());
+  QuizCubit(this._watchQuizSurface, this._submitQuiz, this._skipQuiz)
+    : super(const QuizCubitState());
 
   final WatchQuizSurfaceUseCase _watchQuizSurface;
   final SubmitQuizUseCase _submitQuiz;

@@ -2,8 +2,8 @@ import 'package:injectable/injectable.dart';
 import 'package:reading_progress/reading_progress.dart';
 import 'package:zapbook/core/data/database/dao/page_dao.dart';
 import 'package:zapbook/core/models/book_download_progress.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
-import 'package:zapbook/core/services/milestone_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_share_service.dart';
+import 'package:zapbook/core/data/infrastructure/milestone_service.dart';
 import 'package:zapbook/features/book_reader/data/reading_progress_local_store.dart';
 import 'package:zapbook/features/book_reader/domain/repositories/book_reader_repository.dart';
 import 'package:zapbook/zbf/zbf.dart';
@@ -23,12 +23,22 @@ class BookReaderRepositoryImpl implements BookReaderRepository {
   final CircleShareService _circleShareService;
 
   @override
-  Future<void> saveSnapshot(String circleDirId, ReadingState state, {double? scrollOffset}) {
-    return _localStore.saveSnapshot(circleDirId, state, scrollOffset: scrollOffset);
+  Future<void> saveSnapshot(
+    String circleDirId,
+    ReadingState state, {
+    double? scrollOffset,
+  }) {
+    return _localStore.saveSnapshot(
+      circleDirId,
+      state,
+      scrollOffset: scrollOffset,
+    );
   }
 
   @override
-  Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(String circleDirId) {
+  Future<({ReadingState state, double? scrollOffset})?> loadSnapshot(
+    String circleDirId,
+  ) {
     return _localStore.loadSnapshot(circleDirId);
   }
 

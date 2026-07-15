@@ -1,44 +1,50 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:zapbook/core/services/performance_service.dart';
+import 'package:zapbook/core/domain/entities/perf_mode.dart';
+import 'package:zapbook/core/domain/usecases/performance_usecases.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_state.dart';
 
 @LazySingleton()
 class PerformanceCubit extends Cubit<PerformanceState> {
-  PerformanceCubit(this._service)
-    : super(
+  PerformanceCubit(
+    this._watchPerformanceModeUseCase,
+    this._getPerformanceModeUseCase,
+    this._setPerformanceModeUseCase,
+  ) : super(
         PerformanceState(
-          reduceEffects: _service.reduceEffects,
-          mode: _service.mode,
+          reduceEffects: _getPerformanceModeUseCase.reduceEffects,
+          mode: _getPerformanceModeUseCase.mode,
         ),
       ) {
-    _service.reduceEffectsListenable.addListener(_onServiceChanged);
+    _watchPerformanceModeUseCase().addListener(_onServiceChanged);
   }
 
-  final PerformanceService _service;
+  final WatchPerformanceModeUseCase _watchPerformanceModeUseCase;
+  final GetPerformanceModeUseCase _getPerformanceModeUseCase;
+  final SetPerformanceModeUseCase _setPerformanceModeUseCase;
 
   void _onServiceChanged() {
     emit(
       PerformanceState(
-        reduceEffects: _service.reduceEffects,
-        mode: _service.mode,
+        reduceEffects: _getPerformanceModeUseCase.reduceEffects,
+        mode: _getPerformanceModeUseCase.mode,
       ),
     );
   }
 
   Future<void> setMode(PerfMode mode) async {
-    await _service.setMode(mode);
+    await _setPerformanceModeUseCase(mode);
     emit(
       PerformanceState(
-        reduceEffects: _service.reduceEffects,
-        mode: _service.mode,
+        reduceEffects: _getPerformanceModeUseCase.reduceEffects,
+        mode: _getPerformanceModeUseCase.mode,
       ),
     );
   }
 
   @override
   Future<void> close() {
-    _service.reduceEffectsListenable.removeListener(_onServiceChanged);
+    _watchPerformanceModeUseCase().removeListener(_onServiceChanged);
     return super.close();
   }
 }

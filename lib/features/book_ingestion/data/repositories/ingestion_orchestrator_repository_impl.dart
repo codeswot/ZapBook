@@ -6,12 +6,13 @@ import 'package:mime/mime.dart';
 import 'package:zapbook/core/constants/app_constants.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/active_account.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_share_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/features/book_ingestion/domain/repositories/ingestion_orchestrator_repository.dart';
 
 @Injectable(as: IngestionOrchestratorRepository)
-class IngestionOrchestratorRepositoryImpl implements IngestionOrchestratorRepository {
+class IngestionOrchestratorRepositoryImpl
+    implements IngestionOrchestratorRepository {
   IngestionOrchestratorRepositoryImpl(
     this._circleStore,
     this._circleShareService,

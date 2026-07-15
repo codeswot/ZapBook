@@ -8,7 +8,7 @@ import 'package:injectable/injectable.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
-import 'package:zapbook/core/services/file_hasher.dart';
+import 'package:zapbook/core/utils/file_hasher.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 
 @injectable

@@ -7,7 +7,7 @@ import 'package:zapbook/core/config/zapbook_config.dart';
 
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 import 'package:zapbook/core/domain/quiz_models.dart';
-import 'package:zapbook/core/services/quiz_service.dart';
+import 'package:zapbook/core/data/infrastructure/quiz_service.dart';
 import 'package:zapbook/features/book_reader/domain/repositories/quiz_repository.dart';
 
 @Injectable(as: QuizRepository)

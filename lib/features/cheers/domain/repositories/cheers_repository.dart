@@ -1,5 +1,5 @@
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 
 abstract interface class CheersRepository {

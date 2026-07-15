@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:injectable/injectable.dart';
 
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart';
 

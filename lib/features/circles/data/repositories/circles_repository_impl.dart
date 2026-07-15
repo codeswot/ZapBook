@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'package:marmot_dart/marmot_dart.dart';
 import 'package:injectable/injectable.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
@@ -9,9 +12,10 @@ import 'package:zapbook/features/circles/domain/repositories/circles_repository.
 
 @LazySingleton(as: CirclesRepository)
 class CirclesRepositoryImpl implements CirclesRepository {
-  const CirclesRepositoryImpl(this._dataSource);
+  const CirclesRepositoryImpl(this._dataSource, this._circleStoreService);
 
   final CirclesDataSource _dataSource;
+  final CircleStoreService _circleStoreService;
 
   @override
   Stream<List<CircleBook>> watchSharedCircles() =>
@@ -34,12 +38,63 @@ class CirclesRepositoryImpl implements CirclesRepository {
       _dataSource.toggleContact(npub, isFollow);
 
   @override
-  Future<void> leaveCircleBook(CircleBook circleBook) =>
-      _dataSource.leaveCircleBook(circleBook);
+  Future<void> leaveCircleBook(CircleBook circleBook) async {
+    await _circleStoreService.leaveCircleBook(circleBook);
+  }
 
   @override
-  Future<void> deleteCircleBook(CircleBook circleBook) =>
-      _dataSource.deleteCircleBook(circleBook);
+  Future<void> deleteCircleBook(CircleBook circleBook) async {
+    await _circleStoreService.deleteCircleBook(circleBook);
+  }
+
+  @override
+  Future<GroupImagePrepared> prepareCover({
+    required Uint8List coverBytes,
+  }) async {
+    return _circleStoreService.prepareCover(coverBytes: coverBytes);
+  }
+
+  @override
+  Future<void> updateCircleBookMetadata({
+    required String marmotGroupId,
+    required String title,
+    required String author,
+    String? genre,
+  }) async {
+    await _circleStoreService.updateCircleBookMetadata(
+      marmotGroupId: marmotGroupId,
+      title: title,
+      author: author,
+      genre: genre,
+    );
+  }
+
+  @override
+  void setUploadingCover(String marmotGroupId, String blurhash) {
+    _circleStoreService.setUploadingCover(marmotGroupId, blurhash);
+  }
+
+  @override
+  void clearUploadingCover(String marmotGroupId) {
+    _circleStoreService.clearUploadingCover(marmotGroupId);
+  }
+
+  @override
+  void updateCircleBookCoverOptimistic({
+    required String marmotGroupId,
+    required String circleDirId,
+    required Uint8List coverBytes,
+    required GroupImagePrepared preparedImage,
+    required String mimeType,
+  }) {
+    _circleStoreService.updateCircleBookCoverOptimistic(
+      marmotGroupId: marmotGroupId,
+      circleDirId: circleDirId,
+      coverBytes: coverBytes,
+      preparedImage: preparedImage,
+      mimeType: mimeType,
+    );
+  }
 
   @override
   Stream<List<CircleMemberProgress>> watchProgressByBook({

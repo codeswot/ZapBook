@@ -11,7 +11,7 @@ import 'package:zapbook/core/di/nostr_module.dart';
 import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/observers/app_bloc_observer.dart';
 import 'package:zapbook/core/data/infrastructure/file_logger_service.dart';
-import 'package:zapbook/core/services/performance_service.dart';
+import 'package:zapbook/core/domain/repositories/performance_repository.dart';
 import 'package:zapbook/core/session/start_session.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -44,7 +44,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
     getIt<FileLoggerService>().init();
 
-    await getIt<PerformanceService>().init();
+    await getIt<PerformanceRepository>().init();
     PaintingBinding.instance.imageCache
       ..maximumSizeBytes = 40 << 20
       ..maximumSize = 120;

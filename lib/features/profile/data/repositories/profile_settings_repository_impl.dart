@@ -3,9 +3,9 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/core/data/infrastructure/app_info_service.dart';
-import 'package:zapbook/core/services/nwc_service.dart';
-import 'package:zapbook/core/services/key_package_service.dart';
-import 'package:zapbook/core/services/zap_support_service.dart';
+import 'package:zapbook/core/data/infrastructure/nwc_service.dart';
+import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
+import 'package:zapbook/core/data/infrastructure/zap_support_service.dart';
 import 'package:zapbook/features/profile/domain/repositories/profile_settings_repository.dart';
 
 @LazySingleton(as: ProfileSettingsRepository)

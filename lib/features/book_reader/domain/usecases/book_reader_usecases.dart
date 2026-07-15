@@ -10,7 +10,11 @@ class SaveReadingSnapshotUseCase {
 
   final BookReaderRepository _repository;
 
-  Future<void> call(String circleDirId, ReadingState state, {double? scrollOffset}) =>
+  Future<void> call(
+    String circleDirId,
+    ReadingState state, {
+    double? scrollOffset,
+  }) =>
       _repository.saveSnapshot(circleDirId, state, scrollOffset: scrollOffset);
 }
 
@@ -20,8 +24,9 @@ class LoadReadingSnapshotUseCase {
 
   final BookReaderRepository _repository;
 
-  Future<({ReadingState state, double? scrollOffset})?> call(String circleDirId) =>
-      _repository.loadSnapshot(circleDirId);
+  Future<({ReadingState state, double? scrollOffset})?> call(
+    String circleDirId,
+  ) => _repository.loadSnapshot(circleDirId);
 }
 
 @injectable

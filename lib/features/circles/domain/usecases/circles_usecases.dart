@@ -119,3 +119,63 @@ class GetExistingMemberNpubsUseCase {
   Future<Set<String>> call(String circleBookId) =>
       _repository.getExistingMemberNpubs(circleBookId);
 }
+
+@injectable
+class PrepareCircleCoverUseCase {
+  const PrepareCircleCoverUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<dynamic> call(dynamic coverBytes) =>
+      _repository.prepareCover(coverBytes: coverBytes);
+}
+
+@injectable
+class UpdateCircleBookMetadataUseCase {
+  const UpdateCircleBookMetadataUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<void> call({
+    required String marmotGroupId,
+    required String title,
+    required String author,
+    String? genre,
+  }) => _repository.updateCircleBookMetadata(
+    marmotGroupId: marmotGroupId,
+    title: title,
+    author: author,
+    genre: genre,
+  );
+}
+
+@injectable
+class SetUploadingCoverUseCase {
+  const SetUploadingCoverUseCase(this._repository);
+  final CirclesRepository _repository;
+  void call(String marmotGroupId, String blurhash) =>
+      _repository.setUploadingCover(marmotGroupId, blurhash);
+}
+
+@injectable
+class ClearUploadingCoverUseCase {
+  const ClearUploadingCoverUseCase(this._repository);
+  final CirclesRepository _repository;
+  void call(String marmotGroupId) =>
+      _repository.clearUploadingCover(marmotGroupId);
+}
+
+@injectable
+class UpdateCircleBookCoverOptimisticUseCase {
+  const UpdateCircleBookCoverOptimisticUseCase(this._repository);
+  final CirclesRepository _repository;
+  void call({
+    required String marmotGroupId,
+    required String circleDirId,
+    required dynamic coverBytes,
+    required dynamic preparedImage,
+    required String mimeType,
+  }) => _repository.updateCircleBookCoverOptimistic(
+    marmotGroupId: marmotGroupId,
+    circleDirId: circleDirId,
+    coverBytes: coverBytes,
+    preparedImage: preparedImage,
+    mimeType: mimeType,
+  );
+}

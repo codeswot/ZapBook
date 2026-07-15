@@ -5,10 +5,10 @@ import 'package:zapbook/core/data/datasources/onboarding_local_datasource.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/identity/nostr_session.dart';
 
-import 'package:zapbook/core/services/key_package_service.dart';
-import 'package:zapbook/core/services/message_router_service.dart';
+import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
+import 'package:zapbook/core/data/infrastructure/message_router_service.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
-import 'package:zapbook/core/services/reading_stats_service.dart';
+import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 
 Future<void> startSession() async {
   getIt<MessageRouterService>();

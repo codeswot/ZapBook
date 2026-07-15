@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/domain/entities/app_message.dart';
-import 'package:zapbook/core/services/group_envelope_service.dart';
+import 'package:zapbook/core/data/infrastructure/group_envelope_service.dart';
 
 @lazySingleton
 class ZapNudgeService {

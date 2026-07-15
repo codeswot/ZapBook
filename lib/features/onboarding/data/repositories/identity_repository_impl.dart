@@ -28,7 +28,7 @@ class IdentityRepositoryImpl implements IdentityRepository {
         lightningAddress: metadata.lud16,
       );
     }
-    
+
     return null;
   }
 }

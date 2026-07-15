@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:zapbook/core/services/performance_service.dart';
+import 'package:zapbook/core/domain/entities/perf_mode.dart';
 
 class PerformanceState extends Equatable {
   const PerformanceState({required this.reduceEffects, required this.mode});

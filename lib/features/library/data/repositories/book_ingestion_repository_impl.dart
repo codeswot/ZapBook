@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/features/library/domain/repositories/book_ingestion_repository.dart';
 

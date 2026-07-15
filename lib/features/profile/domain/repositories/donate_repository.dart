@@ -1,4 +1,4 @@
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 
 abstract class DonateRepository {
   Future<ZapResult> donate({required int amountSats, String? comment});

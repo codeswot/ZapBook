@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/repositories/cheers_repository.dart';
 

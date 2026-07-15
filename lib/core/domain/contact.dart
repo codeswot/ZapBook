@@ -21,3 +21,10 @@ class Contact {
       ? npub
       : '${npub.substring(0, 12)}…${npub.substring(npub.length - 4)}';
 }
+
+class ContactException implements Exception {
+  final String message;
+  const ContactException(this.message);
+  @override
+  String toString() => 'ContactException: $message';
+}
