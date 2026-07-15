@@ -5,35 +5,31 @@ import 'dart:isolate';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:collection/collection.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
 import 'package:zapbook/core/services/file_hasher.dart';
-import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_state.dart';
 
 @injectable
 class IngestionPageCubit extends Cubit<IngestionPageState> {
   IngestionPageCubit(
-    this._filePickerService,
+    this._pickBookFile,
     this._fileHasher,
-    this._circleStoreService,
+    this._findExistingBook,
   ) : super(const IngestionPageIdle());
 
-  final FilePickerService _filePickerService;
+  final PickBookFileUseCase _pickBookFile;
   final FileHasher _fileHasher;
-  final CircleStoreService _circleStoreService;
+  final FindExistingBookUseCase _findExistingBook;
 
   Future<void> pickBook() async {
     emit(const IngestionPagePicking());
     try {
-      final file = await _filePickerService.pickBook();
+      final file = await _pickBookFile();
       if (file != null) {
         final hash = await _fileHasher.sha256OfFile(file);
-        final existing = _circleStoreService.currentCircles.firstWhereOrNull(
-          (c) => c.contentHash == hash,
-        );
+        final existing = await _findExistingBook(hash);
 
         if (existing != null) {
           emit(

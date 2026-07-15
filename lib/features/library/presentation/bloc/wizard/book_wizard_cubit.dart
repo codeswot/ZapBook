@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/constants/book_genres.dart';
-import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
+import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 
@@ -13,7 +13,7 @@ class BookWizardCubit extends Cubit<BookWizardState> {
   BookWizardCubit(
     @factoryParam this._completer,
     @factoryParam WizardInitialData? initialData,
-    this._filePickerService,
+    this._pickCoverImage,
   ) : super(
         BookWizardState(
           title: initialData?.title ?? 'Untitled',
@@ -23,7 +23,7 @@ class BookWizardCubit extends Cubit<BookWizardState> {
       );
 
   final Completer<WizardData> _completer;
-  final FilePickerService _filePickerService;
+  final PickCoverImageUseCase _pickCoverImage;
 
   void updateTitle(String title) {
     emit(state.copyWith(title: title));
@@ -38,7 +38,7 @@ class BookWizardCubit extends Cubit<BookWizardState> {
   }
 
   Future<void> pickCoverImage() async {
-    final image = await _filePickerService.pickImage();
+    final image = await _pickCoverImage();
     if (image != null) {
       emit(state.copyWith(coverImage: image));
     }

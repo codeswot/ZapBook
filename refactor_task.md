@@ -145,19 +145,19 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Heads Up (Notifications/Banner)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`HeadsUpMessage.dart`)
-  - [ ] `repositories/` (`HeadsUpRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `ShowNotificationUseCase.dart`
-    - [ ] `DismissNotificationUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`HeadsUpLocalDataSource.dart`)
-  - [ ] `repositories/` (`HeadsUpRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `cubit/` (`HeadsUpCubit.dart`)
-  - [ ] `models/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`HeadsUpMessage.dart`)
+  - [x] `repositories/` (`HeadsUpRepository` interface)
+  - [x] `usecases/`
+    - [x] `ShowNotificationUseCase.dart`
+    - [x] `DismissNotificationUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`HeadsUpLocalDataSource.dart`)
+  - [x] `repositories/` (`HeadsUpRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `cubit/` (`HeadsUpCubit.dart`)
+  - [x] `models/`
+  - [x] `widgets/`
 
 ### Feature: Book Ingestion (AI Parsing & Cover Generation)
 

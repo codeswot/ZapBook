@@ -188,10 +188,16 @@ import 'package:zapbook/features/home/domain/usecases/watch_home_dashboard.dart'
     as _i1021;
 import 'package:zapbook/features/home/presentation/bloc/home_cubit.dart'
     as _i602;
+import 'package:zapbook/features/library/data/repositories/book_ingestion_repository_impl.dart'
+    as _i484;
 import 'package:zapbook/features/library/data/repositories/marmot_library_repository.dart'
     as _i894;
+import 'package:zapbook/features/library/domain/repositories/book_ingestion_repository.dart'
+    as _i737;
 import 'package:zapbook/features/library/domain/repositories/library_repository.dart'
     as _i516;
+import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart'
+    as _i20;
 import 'package:zapbook/features/library/domain/usecases/watch_last_opened_library_book.dart'
     as _i16;
 import 'package:zapbook/features/library/domain/usecases/watch_library_books.dart'
@@ -345,17 +351,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i283.PdfPageRasterizer>(
       () => const _i217.PrintingPdfRasterizer(),
-    );
-    gh.factoryParam<
-      _i405.BookWizardCubit,
-      _i687.Completer<_i230.WizardData>,
-      _i230.WizardInitialData?
-    >(
-      (_completer, initialData) => _i405.BookWizardCubit(
-        _completer,
-        initialData,
-        gh<_i1049.FilePickerService>(),
-      ),
     );
     gh.factory<_i616.RasterizePdfPageUseCase>(
       () => _i616.RasterizePdfPageUseCase(gh<_i283.PdfPageRasterizer>()),
@@ -727,13 +722,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i223.UpdateProfile>(
       () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
     );
-    gh.factory<_i696.IngestionPageCubit>(
-      () => _i696.IngestionPageCubit(
-        gh<_i1049.FilePickerService>(),
-        gh<_i917.FileHasher>(),
-        gh<_i821.CircleStoreService>(),
-      ),
-    );
     gh.factory<_i86.FriendsUseCases>(
       () => _i86.FriendsUseCases(gh<_i856.FriendsRepository>()),
     );
@@ -768,6 +756,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i348.CircleProgressDao>(),
         gh<_i760.ZapSatsEarningsDao>(),
         gh<_i460.SharedPreferences>(),
+      ),
+    );
+    gh.factory<_i737.BookIngestionRepository>(
+      () => _i484.BookIngestionRepositoryImpl(
+        gh<_i1049.FilePickerService>(),
+        gh<_i821.CircleStoreService>(),
       ),
     );
     gh.lazySingleton<_i397.FriendsCubit>(
@@ -891,6 +885,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.ToggleContactUseCase>(),
       ),
     );
+    gh.factory<_i20.PickBookFileUseCase>(
+      () => _i20.PickBookFileUseCase(gh<_i737.BookIngestionRepository>()),
+    );
+    gh.factory<_i20.PickCoverImageUseCase>(
+      () => _i20.PickCoverImageUseCase(gh<_i737.BookIngestionRepository>()),
+    );
+    gh.factory<_i20.FindExistingBookUseCase>(
+      () => _i20.FindExistingBookUseCase(gh<_i737.BookIngestionRepository>()),
+    );
     gh.factory<_i584.CheersCubit>(
       () => _i584.CheersCubit(
         gh<_i921.WatchCheersActivitiesUseCase>(),
@@ -921,8 +924,26 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.DeleteCircleBookUseCase>(),
       ),
     );
+    gh.factoryParam<
+      _i405.BookWizardCubit,
+      _i687.Completer<_i230.WizardData>,
+      _i230.WizardInitialData?
+    >(
+      (_completer, initialData) => _i405.BookWizardCubit(
+        _completer,
+        initialData,
+        gh<_i20.PickCoverImageUseCase>(),
+      ),
+    );
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i1006.WatchCirclesUseCase>()),
+    );
+    gh.factory<_i696.IngestionPageCubit>(
+      () => _i696.IngestionPageCubit(
+        gh<_i20.PickBookFileUseCase>(),
+        gh<_i917.FileHasher>(),
+        gh<_i20.FindExistingBookUseCase>(),
+      ),
     );
     gh.factory<_i899.TouchDashboardBookOpened>(
       () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
