@@ -86,16 +86,25 @@ class NostrService {
     }
   }
 
-  Future<void> publishNote(String content) async {
+  Future<void> publishNote(
+    String content, {
+    List<String> mentionNpubs = const [],
+  }) async {
     final account = _ndk.accounts.getLoggedAccount();
     if (account == null || !account.signer.canSign()) {
       throw StateError('No signer available. Sign in before posting a note.');
     }
 
+    final tags = <List<String>>[];
+    for (final npub in mentionNpubs) {
+      final hex = _toHex(npub);
+      if (hex != null) tags.add(['p', hex]);
+    }
+
     final event = Nip01Event(
       pubKey: account.pubkey,
       kind: 1,
-      tags: const [],
+      tags: tags,
       content: content,
       createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
@@ -105,6 +114,20 @@ class NostrService {
       nostrEvent: signed,
       specificRelays: ZapbookConfig.broadcastRelays,
     );
+  }
+
+  String? _toHex(String npub) {
+    final trimmed = npub.trim();
+    if (trimmed.isEmpty) return null;
+    if (!trimmed.startsWith('npub')) {
+      return trimmed.length == 64 ? trimmed : null;
+    }
+    try {
+      final hex = Nip19.decode(trimmed);
+      return hex.length == 64 ? hex : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Metadata?> getMetadata(String pubkey, {bool forceRefresh = false}) =>

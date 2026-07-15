@@ -34,7 +34,7 @@ class CheersNoteComposer {
           '$_hashtags';
     }
 
-    return '${activity.actorName} is making great progress on $book$progressSuffix, '
+    return '${_mention(activity)} is making great progress on $book$progressSuffix, '
         'just passing $milestone! see whats it like on ZapBook at $_site.\n'
         '$_hashtags';
   }
@@ -48,7 +48,7 @@ class CheersNoteComposer {
           '$_hashtags';
     }
 
-    return '${activity.actorName} just finished reading $book. '
+    return '${_mention(activity)} just finished reading $book. '
         'Proof-of-Reading = Sats. ⚡️ experience it ZapBook out $_site.\n'
         '$_hashtags';
   }
@@ -65,6 +65,12 @@ class CheersNoteComposer {
     return '${activity.actorName}: $description on ZapBook. See what it is '
         'like at $_site.\n'
         '$_hashtags';
+  }
+
+  String _mention(CheersActivity activity) {
+    final npub = activity.actorNpub.trim();
+    if (npub.startsWith('npub')) return 'nostr:$npub';
+    return activity.actorName;
   }
 
   bool _isFinished(CheersActivity activity) =>

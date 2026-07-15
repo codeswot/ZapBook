@@ -74,6 +74,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(ZapGesture.clap);
     registerFallbackValue(createEmptyActivity());
+    registerFallbackValue(<String>[]);
   });
 
   late MockWatchCheersActivitiesUseCase watchCheersActivities;
@@ -282,6 +283,123 @@ void main() {
 
       await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersNudgeSuccess>());
+      cubit.close();
+    });
+  });
+
+  group('share and copy', () {
+    test('copyActivityToClipboard copies the composed note', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        type: CheersActivityType.milestone,
+        targetDescription: 'Finished the book',
+        isMine: true,
+      );
+      when(() => copyText(any())).thenAnswer((_) async {});
+
+      await cubit.copyActivityToClipboard(activity);
+
+      final captured =
+          verify(() => copyText(captureAny())).captured.single as String;
+      expect(captured, contains('#zapbook #reading #nostr'));
+      cubit.close();
+    });
+
+    test('shareActivity shares the composed note', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        type: CheersActivityType.milestone,
+        targetDescription: 'Finished the book',
+        isMine: true,
+      );
+      when(() => shareText(any())).thenAnswer((_) async {});
+
+      await cubit.shareActivity(activity);
+
+      verify(() => shareText(any(that: contains('zapbook.space')))).called(1);
+      cubit.close();
+    });
+  });
+
+  group('postActivityAsNote', () {
+    const npub =
+        'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps';
+
+    test('mentions the actor for someone else\'s milestone', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        type: CheersActivityType.milestone,
+        actorNpub: npub,
+        isMine: false,
+      );
+      when(
+        () => postNote(any(), mentionNpubs: any(named: 'mentionNpubs')),
+      ).thenAnswer((_) async {});
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.postActivityAsNote(activity, 'my note text');
+
+      verify(() => postNote('my note text', mentionNpubs: [npub])).called(1);
+      await Future.delayed(Duration.zero);
+      expect(states.last, isA<CheersPostSuccess>());
+      cubit.close();
+    });
+
+    test('does not mention anyone for my own milestone', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        type: CheersActivityType.milestone,
+        actorNpub: npub,
+        isMine: true,
+      );
+      when(
+        () => postNote(any(), mentionNpubs: any(named: 'mentionNpubs')),
+      ).thenAnswer((_) async {});
+
+      await cubit.postActivityAsNote(activity, 'my note text');
+
+      verify(
+        () => postNote('my note text', mentionNpubs: const <String>[]),
+      ).called(1);
+      cubit.close();
+    });
+
+    test('emits CheersPostError on empty text without posting', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity();
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.postActivityAsNote(activity, '   ');
+
+      await Future.delayed(Duration.zero);
+      expect(states.last, isA<CheersPostError>());
+      verifyNever(
+        () => postNote(any(), mentionNpubs: any(named: 'mentionNpubs')),
+      );
+      cubit.close();
+    });
+
+    test('emits CheersPostError when posting fails', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        type: CheersActivityType.milestone,
+        actorNpub: npub,
+      );
+      when(
+        () => postNote(any(), mentionNpubs: any(named: 'mentionNpubs')),
+      ).thenThrow(Exception('boom'));
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.postActivityAsNote(activity, 'my note text');
+
+      await Future.delayed(Duration.zero);
+      expect(states.last, isA<CheersPostError>());
       cubit.close();
     });
   });

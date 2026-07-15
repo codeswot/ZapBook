@@ -46,7 +46,7 @@ abstract interface class CheersDataSource {
 
   Future<void> shareText(String text);
 
-  Future<void> postNote(String text);
+  Future<void> postNote(String text, {List<String> mentionNpubs});
 }
 
 final _log = logging.Logger('CheersDataSource');
@@ -235,5 +235,6 @@ class CheersDataSourceImpl implements CheersDataSource {
   Future<void> shareText(String text) => _shareService.share(text);
 
   @override
-  Future<void> postNote(String text) => _nostrService.publishNote(text);
+  Future<void> postNote(String text, {List<String> mentionNpubs = const []}) =>
+      _nostrService.publishNote(text, mentionNpubs: mentionNpubs);
 }

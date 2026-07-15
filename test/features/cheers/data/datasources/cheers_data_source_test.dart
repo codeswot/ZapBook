@@ -42,6 +42,10 @@ class MockClipboardService extends Mock implements ClipboardService {}
 class MockShareService extends Mock implements ShareService {}
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(<String>[]);
+  });
+
   group('CheersDataSourceImpl', () {
     late MockCircleStoreService circleStore;
     late MockIdentityLocalDataSource identityLocal;
@@ -203,6 +207,38 @@ void main() {
       ).thenAnswer((_) => Future<Metadata?>.value(null));
 
       // The old tests were for the old empty implementation. For now, testing failure is enough.
+    });
+
+    test('copyText delegates to the clipboard service', () async {
+      when(() => clipboardService.copy(any())).thenAnswer((_) async {});
+
+      await dataSource.copyText('hello');
+
+      verify(() => clipboardService.copy('hello')).called(1);
+    });
+
+    test('shareText delegates to the share service', () async {
+      when(() => shareService.share(any())).thenAnswer((_) async {});
+
+      await dataSource.shareText('hello');
+
+      verify(() => shareService.share('hello')).called(1);
+    });
+
+    test('postNote publishes a note with mentions', () async {
+      when(
+        () => nostrService.publishNote(
+          any(),
+          mentionNpubs: any(named: 'mentionNpubs'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await dataSource.postNote('hello', mentionNpubs: const ['npub1abc']);
+
+      verify(
+        () =>
+            nostrService.publishNote('hello', mentionNpubs: const ['npub1abc']),
+      ).called(1);
     });
   });
 }

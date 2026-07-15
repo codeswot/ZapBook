@@ -87,5 +87,6 @@ class PostCheersNoteUseCase {
 
   final CheersRepository _repository;
 
-  Future<void> call(String text) => _repository.postNote(text);
+  Future<void> call(String text, {List<String> mentionNpubs = const []}) =>
+      _repository.postNote(text, mentionNpubs: mentionNpubs);
 }

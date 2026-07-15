@@ -201,8 +201,10 @@ class CheersCubit extends Cubit<CheersState> {
       return;
     }
 
+    final mentions = activity.isMine ? const <String>[] : [activity.actorNpub];
+
     try {
-      await _postNote(content);
+      await _postNote(content, mentionNpubs: mentions);
       emit(const CheersPostSuccess('Posted to Nostr'));
     } catch (error, stack) {
       _log.warning('Post note failed', error, stack);

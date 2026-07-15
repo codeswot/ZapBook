@@ -28,5 +28,5 @@ abstract interface class CheersRepository {
 
   Future<void> shareText(String text);
 
-  Future<void> postNote(String text);
+  Future<void> postNote(String text, {List<String> mentionNpubs});
 }

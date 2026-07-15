@@ -168,4 +168,52 @@ void main() {
 
     verify(() => mockMarmot.sendStructured(any(), any(), any())).called(1);
   });
+
+  test('records streak progress on a forward increment', () async {
+    service.reportProgress(
+      circleDirId: 'dir1',
+      groupId: 'g1',
+      currentPage: 2,
+      currentWordCount: 200,
+      totalWords: 1000,
+      fraction: 0.2,
+    );
+
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    verify(() => mockStats.recordProgressMade()).called(1);
+  });
+
+  test('does not record streak when position is unchanged', () async {
+    when(
+      () => mockProgressDao.getProgress(
+        groupId: any(named: 'groupId'),
+        bookId: any(named: 'bookId'),
+        pubKey: any(named: 'pubKey'),
+      ),
+    ).thenAnswer(
+      (_) async => const CircleMemberProgress(
+        id: 'prev',
+        groupId: 'g1',
+        pubKey: 'me',
+        bookId: 'dir1',
+        pageIndex: 5,
+        progressPercentage: 0.5,
+        updatedAt: 0,
+      ),
+    );
+
+    service.reportProgress(
+      circleDirId: 'dir1',
+      groupId: 'g1',
+      currentPage: 5,
+      currentWordCount: 500,
+      totalWords: 1000,
+      fraction: 0.5,
+    );
+
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    verifyNever(() => mockStats.recordProgressMade());
+  });
 }

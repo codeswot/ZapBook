@@ -56,5 +56,6 @@ class CheersRepositoryImpl implements CheersRepository {
   Future<void> shareText(String text) => _dataSource.shareText(text);
 
   @override
-  Future<void> postNote(String text) => _dataSource.postNote(text);
+  Future<void> postNote(String text, {List<String> mentionNpubs = const []}) =>
+      _dataSource.postNote(text, mentionNpubs: mentionNpubs);
 }
