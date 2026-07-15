@@ -161,19 +161,19 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Book Ingestion (AI Parsing & Cover Generation)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`IngestionJob.dart`, etc.)
-  - [ ] `repositories/` (`BookIngestionRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `ParseBookUseCase.dart`
-    - [ ] `GenerateCoverUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`AiRemoteDataSource.dart`, etc.)
-  - [ ] `repositories/` (`BookIngestionRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`BookIngestionBloc.dart`)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`IngestionJob.dart`, etc.)
+  - [x] `repositories/` (`BookIngestionRepository` interface)
+  - [x] `usecases/`
+    - [x] `ParseBookUseCase.dart`
+    - [x] `GenerateCoverUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`AiRemoteDataSource.dart`, etc.)
+  - [x] `repositories/` (`BookIngestionRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`BookIngestionBloc.dart`)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ## 3. App & Foundation (`lib/app/` & `lib/zbf/`)
 

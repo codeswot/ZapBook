@@ -3,18 +3,12 @@ import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:logging/logging.dart' as logging;
 import 'package:ulid/ulid.dart';
-import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_ingestion_repository.dart';
 import 'package:zapbook/core/domain/ingestion_progress.dart';
 import 'package:zapbook/core/domain/ingestion_stage.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
-import 'package:zapbook/core/identity/active_account.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/circle_share_service.dart';
-import 'package:zapbook/core/constants/app_constants.dart';
-import 'package:mime/mime.dart';
+import 'package:zapbook/features/book_ingestion/domain/usecases/ingestion_orchestrator_usecases.dart';
 
 part 'ingestion_orchestrator_state.dart';
 
@@ -22,16 +16,16 @@ part 'ingestion_orchestrator_state.dart';
 class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
   IngestionOrchestratorCubit(
     this._repository,
-    this._circleStore,
-    this._circleShareService,
-    this._fileStore,
+    this._createCircleBook,
+    this._deleteBookFiles,
+    this._finalizeAndUploadBook,
   ) : super(const IngestionOrchestratorState());
 
   final BookIngestionRepository _repository;
-  final CircleStoreService _circleStore;
-  final CircleShareService _circleShareService;
-  final LibraryFileStore _fileStore;
-  final _log = logging.Logger('IngestionOrchestratorCubit');
+  final CreateCircleBookUseCase _createCircleBook;
+  final DeleteBookFilesUseCase _deleteBookFiles;
+  final FinalizeAndUploadBookUseCase _finalizeAndUploadBook;
+
   final Map<String, StreamSubscription<IngestionProgress>> _subscriptions = {};
 
   String startIngestion(
@@ -121,7 +115,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
       'contentHash': contentHash,
     };
 
-    final marmotCircleGroupId = await _circleStore.createCircleBook(
+    final marmotCircleGroupId = await _createCircleBook(
       circleDirId: circleBookId,
       humanTitle: data.title ?? 'Untitled',
       metadata: metadata,
@@ -147,15 +141,7 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     final sub = _subscriptions.remove(circleBookId);
     await sub?.cancel();
 
-    try {
-      await _fileStore.deleteBook(circleBookId);
-    } catch (e, stackTrace) {
-      _log.warning(
-        'Failed to delete book files for $circleBookId ',
-        e,
-        stackTrace,
-      );
-    }
+    await _deleteBookFiles(circleBookId);
   }
 
   void _checkAndTriggerUpload(String circleDirId) async {
@@ -163,38 +149,12 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
     if (task == null) return;
 
     if (task.isGroupCreated && task.isExtractComplete) {
-      _circleStore.refreshBookCover(circleDirId);
-
-      final npub = ActiveAccount.currentNpub;
       final marmotGroupId = task.marmotGroupId;
-      if (npub != null && marmotGroupId != null) {
-        _circleShareService.uploadBookContent(npub, marmotGroupId, circleDirId);
-
-        final coverPath = await _fileStore.coverPathIfExists(circleDirId);
-        if (coverPath != null) {
-          try {
-            final coverBytes = await File(coverPath).readAsBytes();
-            final preparedImage = await _circleStore.prepareCover(
-              coverBytes: coverBytes,
-            );
-            final mimeType =
-                lookupMimeType(coverPath) ?? AppConstants.defaultImageMimeType;
-
-            _circleStore.updateCircleBookCoverOptimistic(
-              marmotGroupId: marmotGroupId,
-              circleDirId: circleDirId,
-              coverBytes: coverBytes,
-              preparedImage: preparedImage,
-              mimeType: mimeType,
-            );
-          } catch (e, stackTrace) {
-            _log.warning(
-              'Failed to update book cover for $circleDirId ',
-              e,
-              stackTrace,
-            );
-          }
-        }
+      if (marmotGroupId != null) {
+        await _finalizeAndUploadBook(
+          circleDirId: circleDirId,
+          marmotGroupId: marmotGroupId,
+        );
       }
 
       final newTasks = Map<String, IngestionTaskState>.from(state.tasks);
