@@ -62,6 +62,7 @@ import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
 import 'package:zapbook/core/domain/repositories/book_download_repository.dart'
     as _i753;
+import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart' as _i854;
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart'
     as _i665;
@@ -216,12 +217,18 @@ import 'package:zapbook/features/library/presentation/bloc/page/ingestion_page_c
     as _i696;
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_cubit.dart'
     as _i405;
+import 'package:zapbook/features/onboarding/data/repositories/identity_repository_impl.dart'
+    as _i503;
 import 'package:zapbook/features/onboarding/data/repositories/onboarding_repository_impl.dart'
     as _i444;
+import 'package:zapbook/features/onboarding/domain/repositories/identity_repository.dart'
+    as _i1033;
 import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repository.dart'
     as _i377;
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart'
     as _i341;
+import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart'
+    as _i1070;
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart'
     as _i709;
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart'
@@ -332,6 +339,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i539.HeadsUpCubit>(() => _i539.HeadsUpCubit());
     gh.lazySingleton<_i803.SessionReloader>(
       () => const _i803.SessionManagerReloader(),
+    );
+    gh.factory<_i854.CopyTextUseCase>(
+      () => _i854.CopyTextUseCase(gh<_i78.ClipboardService>()),
+    );
+    gh.factory<_i854.PasteTextUseCase>(
+      () => _i854.PasteTextUseCase(gh<_i78.ClipboardService>()),
     );
     gh.lazySingleton<_i348.CircleProgressDao>(
       () => _i348.CircleProgressDao(gh<_i525.AppDatabase>()),
@@ -609,6 +622,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i616.ExtractPdfChunkUseCase>(
       () => _i616.ExtractPdfChunkUseCase(gh<_i970.PdfChunkExtractor>()),
     );
+    gh.factory<_i1033.IdentityRepository>(
+      () => _i503.IdentityRepositoryImpl(gh<_i295.NostrService>()),
+    );
     gh.lazySingleton<_i31.MilestoneService>(
       () => _i31.MilestoneService(
         gh<_i970.Marmot>(),
@@ -617,15 +633,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i348.CircleProgressDao>(),
         gh<_i562.CheersDao>(),
         gh<_i182.ReadingStatsService>(),
-      ),
-    );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i78.ClipboardService>(),
-        gh<_i295.NostrService>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
       ),
     );
     gh.lazySingleton<_i244.ContactService>(
@@ -671,6 +678,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i397.KeyPackageService>(),
       ),
       dispose: (i) => i.dispose(),
+    );
+    gh.factory<_i1070.FetchExistingProfileUseCase>(
+      () => _i1070.FetchExistingProfileUseCase(gh<_i1033.IdentityRepository>()),
     );
     gh.factory<_i1009.SwitchAccountUseCases>(
       () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
@@ -753,6 +763,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i821.CircleStoreService>(),
         gh<_i455.CircleShareService>(),
         gh<_i854.LibraryFileStore>(),
+      ),
+    );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i854.CopyTextUseCase>(),
+        gh<_i854.PasteTextUseCase>(),
+        gh<_i1070.FetchExistingProfileUseCase>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
       ),
     );
     gh.factory<_i982.SwitchAccountCubit>(

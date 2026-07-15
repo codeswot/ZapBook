@@ -1,13 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
-import 'package:ndk/ndk.dart' show Nip19;
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
-import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
 import 'package:zapbook/core/services/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.dart';
 
 export 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.dart';
@@ -15,8 +14,9 @@ export 'package:zapbook/features/onboarding/presentation/bloc/onboarding_state.d
 @injectable
 class OnboardingCubit extends Cubit<OnboardingState> {
   OnboardingCubit(
-    this._clipboardService,
-    this._nostrService,
+    this._copyText,
+    this._pasteText,
+    this._fetchExistingProfileUseCase,
     this._generateIdentity,
     this._importIdentity,
     this._completeOnboarding,
@@ -26,8 +26,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   static final Logger _log = Logger('OnboardingCubit');
 
-  final ClipboardService _clipboardService;
-  final NostrService _nostrService;
+  final CopyTextUseCase _copyText;
+  final PasteTextUseCase _pasteText;
+  final FetchExistingProfileUseCase _fetchExistingProfileUseCase;
   final GenerateIdentity _generateIdentity;
   final ImportIdentity _importIdentity;
   final CompleteOnboarding _completeOnboarding;
@@ -134,13 +135,13 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> copyKeys() async {
-    await _clipboardService.copy(
+    await _copyText(
       "npub: ${state.generatedNpub}\nnsec: ${state.generatedNsec}",
     );
   }
 
   Future<String?> pasteNsec() async {
-    final text = await _clipboardService.paste();
+    final text = await _pasteText();
     if (text != null) {
       updateImportedNsec(text);
     }
@@ -148,7 +149,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> pasteLightningAddress() async {
-    final text = await _clipboardService.paste();
+    final text = await _pasteText();
     if (text != null) {
       updateLightningAddress(text);
     }
@@ -171,23 +172,20 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> _fetchExistingProfile() async {
-    final pubkey = Nip19.decode(state.generatedNpub);
-    if (pubkey.isEmpty) return;
+    if (state.generatedNpub.isEmpty) return;
     emit(state.copyWith(isFetchingMetadata: true));
     try {
-      final metadata = await _nostrService
-          .getMetadata(pubkey)
-          .timeout(const Duration(seconds: 10));
-      if (metadata != null) {
-        final fetchedName = metadata.displayName ?? metadata.name;
+      final profile = await _fetchExistingProfileUseCase(state.generatedNpub);
+      if (profile != null) {
+        final fetchedName = profile.displayName;
         final hasName = fetchedName != null && fetchedName.isNotEmpty;
         emit(
           state.copyWith(
             displayName: hasName ? fetchedName : state.displayName,
-            picture: metadata.picture ?? state.picture,
-            lightningAddress: metadata.lud16 ?? state.lightningAddress,
+            picture: profile.picture ?? state.picture,
+            lightningAddress: profile.lightningAddress ?? state.lightningAddress,
             isFetchingMetadata: false,
-            hasExistingProfile: hasName || metadata.picture != null,
+            hasExistingProfile: hasName || profile.picture != null,
           ),
         );
       } else {

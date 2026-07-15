@@ -113,35 +113,35 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Library (My Books)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`LibraryBook.dart`)
-  - [ ] `repositories/` (`LibraryRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `GetUserLibraryUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`LibraryLocalDataSource.dart`)
-  - [ ] `repositories/` (`LibraryRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`LibraryCubit.dart`)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`LibraryBook.dart`)
+  - [x] `repositories/` (`LibraryRepository` interface)
+  - [x] `usecases/`
+    - [x] `GetUserLibraryUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`LibraryLocalDataSource.dart`)
+  - [x] `repositories/` (`LibraryRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`LibraryCubit.dart`)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Onboarding & Identity
 
-- [ ] **Domain**
-  - [ ] `entities/` (`Identity.dart`)
-  - [ ] `repositories/` (`IdentityRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `GenerateKeysUseCase.dart`
-    - [ ] `ImportKeysUseCase.dart`
-    - [ ] `CheckExistingSessionUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`IdentityLocalDataSource.dart`)
-  - [ ] `repositories/` (`IdentityRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`OnboardingCubit.dart`)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`Identity.dart`)
+  - [x] `repositories/` (`IdentityRepository` interface)
+  - [x] `usecases/`
+    - [x] `GenerateKeysUseCase.dart`
+    - [x] `ImportKeysUseCase.dart`
+    - [x] `CheckExistingSessionUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`IdentityLocalDataSource.dart`)
+  - [x] `repositories/` (`IdentityRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`OnboardingCubit.dart`)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Heads Up (Notifications/Banner)
 
