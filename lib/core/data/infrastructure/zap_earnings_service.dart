@@ -19,14 +19,16 @@ class ZapEarningsService {
   final _subs = <StreamSubscription<Nip01Event>>[];
   final _requestIds = <String>[];
   bool _started = false;
+  late final String _myNpub;
 
   Future<void> start() async {
     if (_started) return;
     final pubkey = _ndk.accounts.getPublicKey();
     if (pubkey == null) return;
     _started = true;
+    _myNpub = Nip19.encodePubKey(pubkey);
 
-    final lastFetched = await _earningsDao.getLastZapTimestamp();
+    final lastFetched = await _earningsDao.getLastZapTimestamp(_myNpub);
 
     _listen(pubkey, ZapReceipt.kKind, _ingestReceipt, lastFetched);
     _listen(pubkey, _nutzapKind, _ingestNutzap, lastFetched);
@@ -124,7 +126,7 @@ class ZapEarningsService {
       sats: sats,
       timestamp: event.createdAt,
     );
-    _earningsDao.insertZap(record);
+    _earningsDao.insertZap(_myNpub, record);
   }
 
   void _ingestNutzap(Nip01Event event) {
@@ -139,7 +141,7 @@ class ZapEarningsService {
       sats: sats,
       timestamp: event.createdAt,
     );
-    _earningsDao.insertZap(record);
+    _earningsDao.insertZap(_myNpub, record);
   }
 
   int _bolt11Sats(String? bolt11) {

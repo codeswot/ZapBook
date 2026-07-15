@@ -39,7 +39,11 @@ class ReadingStatsService {
     unawaited(_earnings.start());
   }
 
-  Future<int> getTotalSatsEarned() => _earningsDao.getTotalSats();
+  Future<int> getTotalSatsEarned() async {
+    final npub = await _identity.readNpub();
+    if (npub == null) return 0;
+    return _earningsDao.getTotalSats(npub);
+  }
 
   Stream<ReadingStatsRecord?> watchStats() async* {
     final npub = await _identity.readNpub();

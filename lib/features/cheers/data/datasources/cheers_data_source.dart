@@ -70,8 +70,10 @@ class CheersDataSourceImpl implements CheersDataSource {
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
-    return _cheersDao.watchActivities().asyncMap((activities) async {
-      if (activities.isEmpty) return const <CheersActivity>[];
+    return Stream.fromFuture(_identityLocal.readNpub()).asyncExpand((myNpub) {
+      final owner = myNpub ?? '';
+      return _cheersDao.watchActivities(owner).asyncMap((activities) async {
+        if (activities.isEmpty) return const <CheersActivity>[];
 
       final myNpub = await _identityLocal.readNpub();
       final circlesMap = {for (final c in _circleStore.currentCircles) c.id: c};
@@ -148,6 +150,7 @@ class CheersDataSourceImpl implements CheersDataSource {
           bookId: msg.circleBookId,
         );
       }).toList();
+    });
     });
   }
 

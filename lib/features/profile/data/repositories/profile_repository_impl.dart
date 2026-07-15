@@ -55,7 +55,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           ? fetchedPicture
           : fallbackAvatar,
       lightningAddress: metadata?.lud16 ?? '',
-      satsEarned: await _earningsDao.getTotalSats(),
+      satsEarned: await _earningsDao.getTotalSats(npub),
       dayStreak: statsRecord?.effectiveStreak ?? 0,
       booksRead: statsRecord?.booksRead ?? 0,
       milestones: await _stats.getMilestones(),

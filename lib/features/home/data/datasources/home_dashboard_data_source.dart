@@ -40,43 +40,43 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
 
   @override
   Stream<HomeDashboard> watchDashboard() {
-    return Rx.combineLatest4(
-      _circleStore.watchCircleBooks,
-      _stats.watchStats(),
-      _earningsDao.watchTotalSats(),
-      _changeController.stream.startWith(null),
-      (circles, statsRecord, satsEarned, _) async {
-        final stats = HomeDashboardStats(
-          dayStreak: statsRecord?.effectiveStreak ?? 0,
-          satsEarned: satsEarned,
-          booksRead: statsRecord?.booksRead ?? 0,
-        );
+    return Stream.fromFuture(_identityLocal.readNpub()).asyncExpand((myNpub) {
+      final owner = myNpub ?? '';
+      return Rx.combineLatest4(
+        _circleStore.watchCircleBooks,
+        _stats.watchStats(),
+        _earningsDao.watchTotalSats(owner),
+        _changeController.stream.startWith(null),
+        (circles, statsRecord, satsEarned, _) async {
+          final stats = HomeDashboardStats(
+            dayStreak: statsRecord?.effectiveStreak ?? 0,
+            satsEarned: satsEarned,
+            booksRead: statsRecord?.booksRead ?? 0,
+          );
 
-        final npub = await _identityLocal.readNpub();
+          CircleBook? lastOpened;
 
-        CircleBook? lastOpened;
-
-        if (npub != null && npub.isNotEmpty) {
-          final lastOpenedDirId = _prefs.getString('last_opened_$npub');
-          if (lastOpenedDirId != null) {
-            for (final c in circles) {
-              if (c.circleDirId == lastOpenedDirId) {
-                lastOpened = c;
-                break;
+          if (owner.isNotEmpty) {
+            final lastOpenedDirId = _prefs.getString('last_opened_$owner');
+            if (lastOpenedDirId != null) {
+              for (final c in circles) {
+                if (c.circleDirId == lastOpenedDirId) {
+                  lastOpened = c;
+                  break;
+                }
               }
             }
           }
-        }
 
-        return (circles, lastOpened, npub, stats);
-      },
-    ).asyncMap((event) => event).switchMap((data) {
+          return (circles, lastOpened, owner, stats);
+        },
+      ).asyncMap((event) => event).switchMap((data) {
       final circles = data.$1;
       final lastOpened = data.$2;
       final npub = data.$3;
       final stats = data.$4;
 
-      if (lastOpened == null || npub == null) {
+      if (lastOpened == null || npub.isEmpty) {
         return Stream.value(
           HomeDashboard(
             stats: stats,
@@ -101,6 +101,7 @@ class HomeDashboardDataSourceImpl implements HomeDashboardDataSource {
               lastOpenedPage: progress?.pageIndex,
             );
           });
+    });
     });
   }
 

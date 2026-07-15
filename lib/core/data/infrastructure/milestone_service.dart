@@ -152,7 +152,7 @@ class MilestoneService {
       next: next,
     );
     if (cheer != null) {
-      await _cheersDao.saveActivity(cheer);
+      await _cheersDao.saveActivity(npub, cheer);
     }
 
     await _stats.recordProgressMade();

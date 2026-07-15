@@ -16,11 +16,11 @@ class CheersDao {
 
   final _changeController = StreamController<void>.broadcast();
 
-  Stream<List<CheersActivityMessage>> watchActivities() {
+  Stream<List<CheersActivityMessage>> watchActivities(String ownerNpub) {
     late StreamController<List<CheersActivityMessage>> controller;
 
     Future<void> emit() async {
-      final activities = await loadActivities();
+      final activities = await loadActivities(ownerNpub);
       if (!controller.isClosed) {
         controller.add(activities);
       }
@@ -40,12 +40,12 @@ class CheersDao {
     return controller.stream;
   }
 
-  Future<List<CheersActivityMessage>> loadActivities({int limit = 300}) async {
+  Future<List<CheersActivityMessage>> loadActivities(String ownerNpub, {int limit = 300}) async {
     try {
       final db = await _appDatabase.open();
       final rows = db.select(
-        'SELECT * FROM cheers_feed ORDER BY timestamp DESC LIMIT ?',
-        [limit],
+        'SELECT * FROM cheers_feed WHERE owner_npub = ? ORDER BY timestamp DESC LIMIT ?',
+        [ownerNpub, limit],
       );
 
       return rows.map((row) {
@@ -79,21 +79,22 @@ class CheersDao {
     }
   }
 
-  Future<void> saveActivity(CheersActivityMessage? activity) async {
+  Future<void> saveActivity(String ownerNpub, CheersActivityMessage? activity) async {
     if (activity == null) return;
     try {
       final db = await _appDatabase.open();
       db.execute(
         '''
         INSERT OR REPLACE INTO cheers_feed (
-          id, actor_npub, book_id, group_id,
+          id, owner_npub, actor_npub, book_id, group_id,
           activity_description, timestamp, type, is_unread, nudge_id, 
           thumbs_up_count, clap_count, fire_count, rocket_count, trophy_count, 
           zap_amount, zap_reaction, zap_target_id, zap_target_description, zap_recipient_npub
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           activity.id,
+          ownerNpub,
           activity.actorNpub,
           activity.circleBookId,
           activity.groupId,

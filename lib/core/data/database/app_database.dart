@@ -142,6 +142,7 @@ class AppDatabase {
     db.execute('''
       CREATE TABLE IF NOT EXISTS cheers_feed (
         id TEXT PRIMARY KEY,
+        owner_npub TEXT NOT NULL,
         actor_npub TEXT NOT NULL,        
         book_id TEXT,
         activity_description TEXT NOT NULL,
@@ -163,6 +164,7 @@ class AppDatabase {
       )
     ''');
     _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
+    _addColumnIfMissing(db, 'cheers_feed', 'owner_npub', "TEXT NOT NULL DEFAULT ''");
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_cheers_timestamp ON cheers_feed(timestamp DESC)',
     );
@@ -172,6 +174,7 @@ class AppDatabase {
     db.execute('''
       CREATE TABLE IF NOT EXISTS zap_sats_earnings (
         id TEXT PRIMARY KEY,
+        owner_npub TEXT NOT NULL,
         sender_npub TEXT NOT NULL,
         activity_id TEXT NOT NULL,
         zap_type TEXT NOT NULL,
@@ -179,6 +182,7 @@ class AppDatabase {
         timestamp INTEGER NOT NULL
       )
     ''');
+    _addColumnIfMissing(db, 'zap_sats_earnings', 'owner_npub', "TEXT NOT NULL DEFAULT ''");
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_zap_sats_earnings_timestamp ON zap_sats_earnings(timestamp DESC)',
     );

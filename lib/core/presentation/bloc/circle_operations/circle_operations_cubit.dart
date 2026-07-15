@@ -7,7 +7,6 @@ import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_state.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:mime/mime.dart';
@@ -17,7 +16,7 @@ import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 @injectable
 class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   CircleOperationsCubit(
-    this._identityLocal,
+    this._getMyNpubUseCase,
     this._deleteCircleBookUseCase,
     this._leaveCircleBookUseCase,
     this._prepareCircleCoverUseCase,
@@ -27,7 +26,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     this._updateCircleBookCoverOptimisticUseCase,
   ) : super(const CircleOperationsInitial());
 
-  final IdentityLocalDataSource _identityLocal;
+  final GetMyNpubUseCase _getMyNpubUseCase;
   final DeleteCircleBookUseCase _deleteCircleBookUseCase;
   final LeaveCircleBookUseCase _leaveCircleBookUseCase;
   final PrepareCircleCoverUseCase _prepareCircleCoverUseCase;
@@ -148,7 +147,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
   }
 
   Future<bool> isAdminOf(CircleBook book) async {
-    final myNpub = await _identityLocal.readNpub();
+    final myNpub = await _getMyNpubUseCase();
     if (myNpub == null) return false;
     return book.adminNpubs.contains(myNpub);
   }

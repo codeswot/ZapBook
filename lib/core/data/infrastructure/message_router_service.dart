@@ -8,12 +8,14 @@ import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 @LazySingleton()
 class MessageRouterService {
   final MarmotSyncService _marmotSyncService;
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
+  final IdentityLocalDataSource _identityLocalDataSource;
 
   final _log = logging.Logger('MessageRouterService');
   StreamSubscription<MarmotMessage>? _messageSub;
@@ -22,6 +24,7 @@ class MessageRouterService {
     this._marmotSyncService,
     this._cheersDao,
     this._circleProgressDao,
+    this._identityLocalDataSource,
   ) {
     initialize();
   }
@@ -60,7 +63,8 @@ class MessageRouterService {
             next: next,
           );
           if (cheer != null) {
-            await _cheersDao.saveActivity(cheer);
+            final npub = await _identityLocalDataSource.readNpub();
+            if (npub != null) await _cheersDao.saveActivity(npub, cheer);
           }
 
         case CheersMessage() ||
@@ -68,7 +72,8 @@ class MessageRouterService {
             ZapNudgeMessage() ||
             ZapReadyMessage():
           final activity = CheersActivityMessage.fromAppMessage(parsed);
-          await _cheersDao.saveActivity(activity);
+          final npub = await _identityLocalDataSource.readNpub();
+          if (npub != null) await _cheersDao.saveActivity(npub, activity);
 
         case InitialBookMessage() || BookCompletedMessage():
           break;

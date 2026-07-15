@@ -53,18 +53,19 @@ class ZapSatsEarningsDao {
 
   ZapSatsEarningsDao(this._db);
 
-  Future<void> insertZap(ZapSatsEarningsRecord record) async {
+  Future<void> insertZap(String ownerNpub, ZapSatsEarningsRecord record) async {
     try {
       final database = await _db.open();
       final stmt = database.prepare('''
         INSERT INTO zap_sats_earnings (
-          id, sender_npub, activity_id, zap_type, sats, timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          id, owner_npub, sender_npub, activity_id, zap_type, sats, timestamp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO NOTHING
       ''');
 
       stmt.execute([
         record.id,
+        ownerNpub,
         record.senderNpub,
         record.activityId,
         record.zapType.name,
@@ -82,11 +83,12 @@ class ZapSatsEarningsDao {
     }
   }
 
-  Future<int> getTotalSats() async {
+  Future<int> getTotalSats(String ownerNpub) async {
     try {
       final database = await _db.open();
       final resultSet = database.select(
-        'SELECT SUM(sats) as total FROM zap_sats_earnings',
+        'SELECT SUM(sats) as total FROM zap_sats_earnings WHERE owner_npub = ?',
+        [ownerNpub],
       );
       if (resultSet.isEmpty) return 0;
       final total = resultSet.first['total'];
@@ -97,11 +99,12 @@ class ZapSatsEarningsDao {
     }
   }
 
-  Future<int?> getLastZapTimestamp() async {
+  Future<int?> getLastZapTimestamp(String ownerNpub) async {
     try {
       final database = await _db.open();
       final resultSet = database.select(
-        'SELECT MAX(timestamp) as last_ts FROM zap_sats_earnings',
+        'SELECT MAX(timestamp) as last_ts FROM zap_sats_earnings WHERE owner_npub = ?',
+        [ownerNpub],
       );
       if (resultSet.isEmpty) return null;
       final ts = resultSet.first['last_ts'];
@@ -112,12 +115,12 @@ class ZapSatsEarningsDao {
     }
   }
 
-  Stream<int> watchTotalSats() {
+  Stream<int> watchTotalSats(String ownerNpub) {
     late StreamController<int> controller;
 
     Future<void> emit() async {
       try {
-        final total = await getTotalSats();
+        final total = await getTotalSats(ownerNpub);
         if (!controller.isClosed) {
           controller.add(total);
         }
@@ -138,12 +141,12 @@ class ZapSatsEarningsDao {
     return controller.stream;
   }
 
-  Future<int> getSatsForActivity(String activityId) async {
+  Future<int> getSatsForActivity(String ownerNpub, String activityId) async {
     try {
       final database = await _db.open();
       final resultSet = database.select(
-        'SELECT SUM(sats) as total FROM zap_sats_earnings WHERE activity_id = ?',
-        [activityId],
+        'SELECT SUM(sats) as total FROM zap_sats_earnings WHERE activity_id = ? AND owner_npub = ?',
+        [activityId, ownerNpub],
       );
       if (resultSet.isEmpty) return 0;
       final total = resultSet.first['total'];
@@ -154,12 +157,12 @@ class ZapSatsEarningsDao {
     }
   }
 
-  Stream<int> watchSatsForActivity(String activityId) {
+  Stream<int> watchSatsForActivity(String ownerNpub, String activityId) {
     late StreamController<int> controller;
 
     Future<void> emit() async {
       try {
-        final total = await getSatsForActivity(activityId);
+        final total = await getSatsForActivity(ownerNpub, activityId);
         if (!controller.isClosed) {
           controller.add(total);
         }

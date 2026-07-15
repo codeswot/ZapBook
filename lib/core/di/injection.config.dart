@@ -451,6 +451,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i492.PageDao>(
       () => _i492.PageDao(gh<_i525.AppDatabase>()),
     );
+    gh.factory<_i362.EarningsCubit>(
+      () => _i362.EarningsCubit(
+        gh<_i760.ZapSatsEarningsDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.lazySingleton<_i901.BlossomService>(
       () => _i901.BlossomService(gh<_i857.Ndk>()),
     );
@@ -473,9 +479,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i136.ImportIdentity>(
       () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
-    );
-    gh.factory<_i362.EarningsCubit>(
-      () => _i362.EarningsCubit(gh<_i760.ZapSatsEarningsDao>()),
     );
     gh.lazySingleton<_i1029.WelcomeInboxService>(
       () => _i1029.WelcomeInboxService(
@@ -619,6 +622,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i904.MarmotSyncService>(),
       ),
     );
+    gh.lazySingleton<_i194.MessageRouterService>(
+      () => _i194.MessageRouterService(
+        gh<_i904.MarmotSyncService>(),
+        gh<_i562.CheersDao>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i631.DonateUseCases>()),
     );
@@ -661,13 +672,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i603.IdentityLocalDataSource>(),
       ),
       dispose: (i) => i.dispose(),
-    );
-    gh.lazySingleton<_i194.MessageRouterService>(
-      () => _i194.MessageRouterService(
-        gh<_i904.MarmotSyncService>(),
-        gh<_i562.CheersDao>(),
-        gh<_i348.CircleProgressDao>(),
-      ),
     );
     gh.factory<_i856.FriendsRepository>(
       () => _i876.FriendsRepositoryImpl(gh<_i409.ContactService>()),
@@ -925,18 +929,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i492.ReaderZapCubit>(
       () => _i492.ReaderZapCubit(gh<_i1006.SendCircleZapUseCase>()),
     );
-    gh.factory<_i41.CircleOperationsCubit>(
-      () => _i41.CircleOperationsCubit(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1006.DeleteCircleBookUseCase>(),
-        gh<_i1006.LeaveCircleBookUseCase>(),
-        gh<_i1006.PrepareCircleCoverUseCase>(),
-        gh<_i1006.UpdateCircleBookMetadataUseCase>(),
-        gh<_i1006.SetUploadingCoverUseCase>(),
-        gh<_i1006.ClearUploadingCoverUseCase>(),
-        gh<_i1006.UpdateCircleBookCoverOptimisticUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i64.CheersDataSource>(
       () => _i64.CheersDataSourceImpl(
         gh<_i516.CircleStoreService>(),
@@ -984,6 +976,18 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
+    );
+    gh.factory<_i41.CircleOperationsCubit>(
+      () => _i41.CircleOperationsCubit(
+        gh<_i1006.GetMyNpubUseCase>(),
+        gh<_i1006.DeleteCircleBookUseCase>(),
+        gh<_i1006.LeaveCircleBookUseCase>(),
+        gh<_i1006.PrepareCircleCoverUseCase>(),
+        gh<_i1006.UpdateCircleBookMetadataUseCase>(),
+        gh<_i1006.SetUploadingCoverUseCase>(),
+        gh<_i1006.ClearUploadingCoverUseCase>(),
+        gh<_i1006.UpdateCircleBookCoverOptimisticUseCase>(),
+      ),
     );
     gh.factory<_i620.ShareCircleCubit>(
       () => _i620.ShareCircleCubit(
