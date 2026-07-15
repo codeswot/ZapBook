@@ -6,6 +6,7 @@ import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/domain/entities/zap_status.dart';
+import 'package:zapbook/features/cheers/domain/cheers_note_composer.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
@@ -18,6 +19,9 @@ class CheersCubit extends Cubit<CheersState> {
     this._sendCheersNudge,
     this._lookupLud16,
     this._copyText,
+    this._shareText,
+    this._postNote,
+    this._noteComposer,
   ) : super(const CheersLoading()) {
     _subscribe();
   }
@@ -27,6 +31,9 @@ class CheersCubit extends Cubit<CheersState> {
   final SendCheersNudgeUseCase _sendCheersNudge;
   final LookupLud16UseCase _lookupLud16;
   final CopyCheersActivityTextUseCase _copyText;
+  final ShareCheersActivityTextUseCase _shareText;
+  final PostCheersNoteUseCase _postNote;
+  final CheersNoteComposer _noteComposer;
 
   final _log = logging.Logger('CheersCubit');
   StreamSubscription? _subscription;
@@ -176,8 +183,31 @@ class CheersCubit extends Cubit<CheersState> {
     }
   }
 
+  String noteTextFor(CheersActivity activity) =>
+      _noteComposer.compose(activity);
+
   Future<void> copyActivityToClipboard(CheersActivity activity) async {
-    await _copyText('${activity.actorName}: ${activity.targetDescription}');
+    await _copyText(_noteComposer.compose(activity));
+  }
+
+  Future<void> shareActivity(CheersActivity activity) async {
+    await _shareText(_noteComposer.compose(activity));
+  }
+
+  Future<void> postActivityAsNote(CheersActivity activity, String text) async {
+    final content = text.trim();
+    if (content.isEmpty) {
+      emit(const CheersPostError('Note is empty'));
+      return;
+    }
+
+    try {
+      await _postNote(content);
+      emit(const CheersPostSuccess('Posted to Nostr'));
+    } catch (error, stack) {
+      _log.warning('Post note failed', error, stack);
+      emit(const CheersPostError('Failed to post note'));
+    }
   }
 
   @override

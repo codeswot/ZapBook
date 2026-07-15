@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/cheers_zap_sheet.dart';
+import 'package:zapbook/features/cheers/presentation/widgets/cheers_post_sheet.dart';
 import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
@@ -107,15 +107,22 @@ class CheersLongPressSheet extends StatelessWidget {
             label: 'Share',
             tone: colors.ink,
             onTap: () {
-              SharePlus.instance.share(
-                ShareParams(
-                  text:
-                      '${activity.actorName}: ${activity.targetDescription} — ${activity.bookCircleTitle ?? ''}',
-                ),
-              );
+              cubit.shareActivity(activity);
               context.pop();
             },
           ),
+          if (activity.type == CheersActivityType.milestone) ...[
+            const SizedBox(height: 10),
+            _Action(
+              icon: LucideIcons.notebookPen,
+              label: 'Post as note',
+              tone: colors.ink,
+              onTap: () {
+                context.pop();
+                CheersPostSheet.show(context, activity: activity, cubit: cubit);
+              },
+            ),
+          ],
           if (activity.type == CheersActivityType.zapNudge) ...[
             const SizedBox(height: 10),
             _Action(

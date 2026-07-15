@@ -75,18 +75,21 @@ void main() {
   });
 
   ReadingProgressCubit buildCubit() {
-    return ReadingProgressCubit(
-      mockSaveSnapshot,
-      mockLoadSnapshot,
-      mockReportProgress,
-      mockWatchProgress,
-      mockTouchOpened,
-    )..open(
-      _handle(),
-      circleDirId: 'test_book',
-      groupId: 'test_group',
-      clock: () => 100000,
-    );
+    final cubit =
+        ReadingProgressCubit(
+          mockSaveSnapshot,
+          mockLoadSnapshot,
+          mockReportProgress,
+          mockWatchProgress,
+          mockTouchOpened,
+        )..open(
+          _handle(),
+          circleDirId: 'test_book',
+          groupId: 'test_group',
+          clock: () => 100000,
+        );
+    addTearDown(cubit.close);
+    return cubit;
   }
 
   group('ReadingProgressCubit', () {

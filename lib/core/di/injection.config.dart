@@ -68,6 +68,7 @@ import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart'
     as _i837;
 import 'package:zapbook/core/data/infrastructure/secure_storage_service.dart'
     as _i206;
+import 'package:zapbook/core/data/infrastructure/share_service.dart' as _i210;
 import 'package:zapbook/core/data/infrastructure/welcome_inbox_service.dart'
     as _i1029;
 import 'package:zapbook/core/data/infrastructure/zap_earnings_service.dart'
@@ -177,6 +178,8 @@ import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart
     as _i64;
 import 'package:zapbook/features/cheers/data/repositories/cheers_repository_impl.dart'
     as _i489;
+import 'package:zapbook/features/cheers/domain/cheers_note_composer.dart'
+    as _i912;
 import 'package:zapbook/features/cheers/domain/repositories/cheers_repository.dart'
     as _i314;
 import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart'
@@ -319,6 +322,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
+    gh.factory<_i912.CheersNoteComposer>(
+      () => const _i912.CheersNoteComposer(),
+    );
     gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
     gh.singleton<_i525.AppDatabase>(() => _i525.AppDatabase());
     await gh.singletonAsync<_i739.AppInfoService>(
@@ -340,6 +346,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i206.SecureStorageService>(
       () => _i206.SecureStorageService(),
     );
+    gh.lazySingleton<_i210.ShareService>(() => _i210.ShareService());
     gh.lazySingleton<_i854.LibraryFileStore>(() => _i854.LibraryFileStore());
     gh.lazySingleton<_i525.BookSearchIndex>(() => _i525.BookSearchIndex());
     gh.lazySingleton<_i18.EmbeddingService>(() => _i18.EmbeddingService());
@@ -881,6 +888,19 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i516.CircleStoreService>(),
       ),
     );
+    gh.lazySingleton<_i64.CheersDataSource>(
+      () => _i64.CheersDataSourceImpl(
+        gh<_i516.CircleStoreService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i562.CheersDao>(),
+        gh<_i409.ContactService>(),
+        gh<_i327.ZapService>(),
+        gh<_i954.ZapNudgeService>(),
+        gh<_i295.NostrService>(),
+        gh<_i78.ClipboardService>(),
+        gh<_i210.ShareService>(),
+      ),
+    );
     gh.factory<_i1006.WatchCirclesUseCase>(
       () => _i1006.WatchCirclesUseCase(gh<_i203.CirclesRepository>()),
     );
@@ -948,18 +968,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i492.ReaderZapCubit>(
       () => _i492.ReaderZapCubit(gh<_i1006.SendCircleZapUseCase>()),
-    );
-    gh.lazySingleton<_i64.CheersDataSource>(
-      () => _i64.CheersDataSourceImpl(
-        gh<_i516.CircleStoreService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i562.CheersDao>(),
-        gh<_i409.ContactService>(),
-        gh<_i327.ZapService>(),
-        gh<_i954.ZapNudgeService>(),
-        gh<_i295.NostrService>(),
-        gh<_i78.ClipboardService>(),
-      ),
     );
     gh.factory<_i812.DeleteCircleBook>(
       () => _i812.DeleteCircleBook(gh<_i516.LibraryRepository>()),
@@ -1080,11 +1088,23 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i921.CopyCheersActivityTextUseCase>(
       () => _i921.CopyCheersActivityTextUseCase(gh<_i314.CheersRepository>()),
     );
+    gh.factory<_i921.ShareCheersActivityTextUseCase>(
+      () => _i921.ShareCheersActivityTextUseCase(gh<_i314.CheersRepository>()),
+    );
+    gh.factory<_i921.PostCheersNoteUseCase>(
+      () => _i921.PostCheersNoteUseCase(gh<_i314.CheersRepository>()),
+    );
     gh.factory<_i696.IngestionPageCubit>(
       () => _i696.IngestionPageCubit(
         gh<_i20.PickBookFileUseCase>(),
         gh<_i918.FileHasher>(),
         gh<_i20.FindExistingBookUseCase>(),
+      ),
+    );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     gh.factory<_i584.CheersCubit>(
@@ -1094,12 +1114,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i921.SendCheersNudgeUseCase>(),
         gh<_i921.LookupLud16UseCase>(),
         gh<_i921.CopyCheersActivityTextUseCase>(),
-      ),
-    );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
+        gh<_i921.ShareCheersActivityTextUseCase>(),
+        gh<_i921.PostCheersNoteUseCase>(),
+        gh<_i912.CheersNoteComposer>(),
       ),
     );
     return this;

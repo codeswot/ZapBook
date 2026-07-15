@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/features/cheers/domain/cheers_note_composer.dart';
 import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
@@ -64,6 +65,11 @@ class MockLookupLud16UseCase extends Mock implements LookupLud16UseCase {}
 class MockCopyCheersActivityTextUseCase extends Mock
     implements CopyCheersActivityTextUseCase {}
 
+class MockShareCheersActivityTextUseCase extends Mock
+    implements ShareCheersActivityTextUseCase {}
+
+class MockPostCheersNoteUseCase extends Mock implements PostCheersNoteUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(ZapGesture.clap);
@@ -75,6 +81,8 @@ void main() {
   late MockSendCheersNudgeUseCase sendCheersNudge;
   late MockLookupLud16UseCase lookupLud16;
   late MockCopyCheersActivityTextUseCase copyText;
+  late MockShareCheersActivityTextUseCase shareText;
+  late MockPostCheersNoteUseCase postNote;
   late StreamController<List<CheersActivity>> activitiesController;
 
   setUp(() {
@@ -83,6 +91,8 @@ void main() {
     sendCheersNudge = MockSendCheersNudgeUseCase();
     lookupLud16 = MockLookupLud16UseCase();
     copyText = MockCopyCheersActivityTextUseCase();
+    shareText = MockShareCheersActivityTextUseCase();
+    postNote = MockPostCheersNoteUseCase();
     activitiesController = StreamController<List<CheersActivity>>.broadcast();
 
     when(
@@ -101,6 +111,9 @@ void main() {
       sendCheersNudge,
       lookupLud16,
       copyText,
+      shareText,
+      postNote,
+      const CheersNoteComposer(),
     );
   }
 

@@ -25,4 +25,8 @@ abstract interface class CheersRepository {
   Future<String?> getMyPubkey();
 
   Future<void> copyText(String text);
+
+  Future<void> shareText(String text);
+
+  Future<void> postNote(String text);
 }

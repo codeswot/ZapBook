@@ -71,3 +71,21 @@ class CopyCheersActivityTextUseCase {
 
   Future<void> call(String text) => _repository.copyText(text);
 }
+
+@injectable
+class ShareCheersActivityTextUseCase {
+  const ShareCheersActivityTextUseCase(this._repository);
+
+  final CheersRepository _repository;
+
+  Future<void> call(String text) => _repository.shareText(text);
+}
+
+@injectable
+class PostCheersNoteUseCase {
+  const PostCheersNoteUseCase(this._repository);
+
+  final CheersRepository _repository;
+
+  Future<void> call(String text) => _repository.postNote(text);
+}
