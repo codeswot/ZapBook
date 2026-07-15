@@ -2,23 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
-import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
-class MockIdentityLocalDataSource extends Mock
-    implements IdentityLocalDataSource {}
+class MockGetCircleBookUseCase extends Mock implements GetCircleBookUseCase {}
 
-class MockCircleStoreService extends Mock implements CircleStoreService {}
+class MockGetMyNpubUseCase extends Mock implements GetMyNpubUseCase {}
 
-class MockContactService extends Mock implements ContactService {}
+class MockGetCircleMembersUseCase extends Mock
+    implements GetCircleMembersUseCase {}
 
-class MockCircleProgressDao extends Mock implements CircleProgressDao {}
+class MockWatchProgressByBookUseCase extends Mock
+    implements WatchProgressByBookUseCase {}
+
+class MockRemoveCircleMemberUseCase extends Mock
+    implements RemoveCircleMemberUseCase {}
+
+class MockToggleContactUseCase extends Mock implements ToggleContactUseCase {}
+
+class MockLeaveCircleBookUseCase extends Mock
+    implements LeaveCircleBookUseCase {}
+
+class MockDeleteCircleBookUseCase extends Mock
+    implements DeleteCircleBookUseCase {}
 
 CircleBook _createTestBook(String id, String title, List<String> adminNpubs) {
   return CircleBook(
@@ -40,20 +49,29 @@ CircleBook _createTestBook(String id, String title, List<String> adminNpubs) {
 }
 
 void main() {
-  late MockIdentityLocalDataSource mockIdentity;
-  late MockCircleStoreService mockCircleStore;
-  late MockContactService mockContacts;
-  late MockCircleProgressDao mockCircleProgressDao;
+  late MockGetCircleBookUseCase mockGetCircleBookUseCase;
+  late MockGetMyNpubUseCase mockGetMyNpubUseCase;
+  late MockGetCircleMembersUseCase mockGetCircleMembersUseCase;
+  late MockWatchProgressByBookUseCase mockWatchProgressByBookUseCase;
+  late MockRemoveCircleMemberUseCase mockRemoveCircleMemberUseCase;
+  late MockToggleContactUseCase mockToggleContactUseCase;
+  late MockLeaveCircleBookUseCase mockLeaveCircleBookUseCase;
+  late MockDeleteCircleBookUseCase mockDeleteCircleBookUseCase;
 
   final testBook = _createTestBook('book1', 'Test Book', ['npub1admin']);
 
   setUp(() {
-    mockIdentity = MockIdentityLocalDataSource();
-    mockCircleStore = MockCircleStoreService();
-    mockContacts = MockContactService();
-    mockCircleProgressDao = MockCircleProgressDao();
+    mockGetCircleBookUseCase = MockGetCircleBookUseCase();
+    mockGetMyNpubUseCase = MockGetMyNpubUseCase();
+    mockGetCircleMembersUseCase = MockGetCircleMembersUseCase();
+    mockWatchProgressByBookUseCase = MockWatchProgressByBookUseCase();
+    mockRemoveCircleMemberUseCase = MockRemoveCircleMemberUseCase();
+    mockToggleContactUseCase = MockToggleContactUseCase();
+    mockLeaveCircleBookUseCase = MockLeaveCircleBookUseCase();
+    mockDeleteCircleBookUseCase = MockDeleteCircleBookUseCase();
+
     when(
-      () => mockCircleProgressDao.watchProgressByBook(
+      () => mockWatchProgressByBookUseCase(
         groupId: any(named: 'groupId'),
         bookId: any(named: 'bookId'),
       ),
@@ -61,15 +79,21 @@ void main() {
   });
 
   CircleDetailCubit buildCubit() => CircleDetailCubit(
-    mockIdentity,
-    mockCircleStore,
-    mockContacts,
-    mockCircleProgressDao,
+    mockGetCircleBookUseCase,
+    mockGetMyNpubUseCase,
+    mockGetCircleMembersUseCase,
+    mockWatchProgressByBookUseCase,
+    mockRemoveCircleMemberUseCase,
+    mockToggleContactUseCase,
+    mockLeaveCircleBookUseCase,
+    mockDeleteCircleBookUseCase,
   );
 
   group('CircleDetailCubit', () {
     test('load emits error if book not found', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
+      when(
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
       final cubit = buildCubit();
 
       await cubit.load('book1');
@@ -79,9 +103,11 @@ void main() {
     });
 
     test('load emits loaded state with members', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([testBook]);
-      when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'npub1me');
-      when(() => mockCircleStore.getCircleMembers('book1')).thenAnswer(
+      when(
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npub1me');
+      when(() => mockGetCircleMembersUseCase('book1')).thenAnswer(
         (_) async => [
           const Contact(npub: 'npub1me', displayName: 'Me', isFollow: true),
           const Contact(
@@ -109,14 +135,16 @@ void main() {
     });
 
     test('removeMember removes and refreshes', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([testBook]);
-      when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'npub1me');
       when(
-        () => mockCircleStore.getCircleMembers('book1'),
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npub1me');
+      when(
+        () => mockGetCircleMembersUseCase('book1'),
       ).thenAnswer((_) async => []);
 
       when(
-        () => mockCircleStore.removeCircleMember('book1', 'npub1other'),
+        () => mockRemoveCircleMemberUseCase('book1', 'npub1other'),
       ).thenAnswer((_) async {});
 
       final cubit = buildCubit();
@@ -125,48 +153,49 @@ void main() {
       await cubit.removeMember('book1', 'npub1other');
 
       verify(
-        () => mockCircleStore.removeCircleMember('book1', 'npub1other'),
+        () => mockRemoveCircleMemberUseCase('book1', 'npub1other'),
       ).called(1);
       // It refreshes by calling getCircleMembers again
-      verify(() => mockCircleStore.getCircleMembers('book1')).called(2);
+      verify(() => mockGetCircleMembersUseCase('book1')).called(2);
     });
 
     test('toggleContact toggles follow state and refreshes', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([testBook]);
-      when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'npub1me');
       when(
-        () => mockCircleStore.getCircleMembers('book1'),
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npub1me');
+      when(
+        () => mockGetCircleMembersUseCase('book1'),
       ).thenAnswer((_) async => []);
 
       when(
-        () => mockContacts.add('npub1other'),
-      ).thenAnswer((_) async => const Contact(npub: 'npub1other'));
-      when(() => mockContacts.remove('npub1other')).thenAnswer((_) async {});
+        () => mockToggleContactUseCase('npub1other', any()),
+      ).thenAnswer((_) async {});
 
       final cubit = buildCubit();
       await cubit.load('book1');
 
       await cubit.toggleContact('npub1other', false);
-      verify(() => mockContacts.add('npub1other')).called(1);
-      verify(() => mockCircleStore.getCircleMembers('book1')).called(2);
+      verify(() => mockToggleContactUseCase('npub1other', false)).called(1);
+      verify(() => mockGetCircleMembersUseCase('book1')).called(2);
 
       await cubit.toggleContact('npub1other', true);
-      verify(() => mockContacts.remove('npub1other')).called(1);
-      verify(() => mockCircleStore.getCircleMembers('book1')).called(1);
+      verify(() => mockToggleContactUseCase('npub1other', true)).called(1);
+      verify(() => mockGetCircleMembersUseCase('book1')).called(1);
     });
 
     test('leaveAndDelete leaves and deletes book, emits closed', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([testBook]);
-      when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'npub1me');
       when(
-        () => mockCircleStore.getCircleMembers('book1'),
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npub1me');
+      when(
+        () => mockGetCircleMembersUseCase('book1'),
       ).thenAnswer((_) async => []);
 
+      when(() => mockLeaveCircleBookUseCase(testBook)).thenAnswer((_) async {});
       when(
-        () => mockCircleStore.leaveCircleBook(testBook),
-      ).thenAnswer((_) async {});
-      when(
-        () => mockCircleStore.deleteCircleBook(testBook),
+        () => mockDeleteCircleBookUseCase(testBook),
       ).thenAnswer((_) async {});
 
       final cubit = buildCubit();
@@ -175,19 +204,21 @@ void main() {
       await cubit.leaveAndDelete(testBook);
 
       expect(cubit.state, isA<CircleDetailClosed>());
-      verify(() => mockCircleStore.leaveCircleBook(testBook)).called(1);
-      verify(() => mockCircleStore.deleteCircleBook(testBook)).called(1);
+      verify(() => mockLeaveCircleBookUseCase(testBook)).called(1);
+      verify(() => mockDeleteCircleBookUseCase(testBook)).called(1);
     });
 
     test('dissolve deletes book and emits closed', () async {
-      when(() => mockCircleStore.currentCircles).thenReturn([testBook]);
-      when(() => mockIdentity.readNpub()).thenAnswer((_) async => 'npub1me');
       when(
-        () => mockCircleStore.getCircleMembers('book1'),
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npub1me');
+      when(
+        () => mockGetCircleMembersUseCase('book1'),
       ).thenAnswer((_) async => []);
 
       when(
-        () => mockCircleStore.deleteCircleBook(testBook),
+        () => mockDeleteCircleBookUseCase(testBook),
       ).thenAnswer((_) async {});
 
       final cubit = buildCubit();
@@ -196,8 +227,8 @@ void main() {
       await cubit.dissolve(testBook);
 
       expect(cubit.state, isA<CircleDetailClosed>());
-      verifyNever(() => mockCircleStore.leaveCircleBook(testBook));
-      verify(() => mockCircleStore.deleteCircleBook(testBook)).called(1);
+      verifyNever(() => mockLeaveCircleBookUseCase(testBook));
+      verify(() => mockDeleteCircleBookUseCase(testBook)).called(1);
     });
   });
 }

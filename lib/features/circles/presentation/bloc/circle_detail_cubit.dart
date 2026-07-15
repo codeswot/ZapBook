@@ -4,42 +4,45 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 
 import 'dart:async';
 
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
 
-import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
-
 @injectable
 class CircleDetailCubit extends Cubit<CircleDetailState> {
   CircleDetailCubit(
-    this._identityLocal,
-    this._circleStore,
-    this._contacts,
-    this._progressDao,
+    this._getCircleBookUseCase,
+    this._getMyNpubUseCase,
+    this._getCircleMembersUseCase,
+    this._watchProgressByBookUseCase,
+    this._removeCircleMemberUseCase,
+    this._toggleContactUseCase,
+    this._leaveCircleBookUseCase,
+    this._deleteCircleBookUseCase,
   ) : super(const CircleDetailLoading());
 
-  final CircleStoreService _circleStore;
-  final IdentityLocalDataSource _identityLocal;
-  final ContactService _contacts;
-  final CircleProgressDao _progressDao;
+  final GetCircleBookUseCase _getCircleBookUseCase;
+  final GetMyNpubUseCase _getMyNpubUseCase;
+  final GetCircleMembersUseCase _getCircleMembersUseCase;
+  final WatchProgressByBookUseCase _watchProgressByBookUseCase;
+  final RemoveCircleMemberUseCase _removeCircleMemberUseCase;
+  final ToggleContactUseCase _toggleContactUseCase;
+  final LeaveCircleBookUseCase _leaveCircleBookUseCase;
+  final DeleteCircleBookUseCase _deleteCircleBookUseCase;
+
   StreamSubscription? _progressSub;
 
   Future<void> load(String circleBookId) async {
-    final book = _circleStore.currentCircles
-        .where((c) => c.id == circleBookId)
-        .firstOrNull;
+    final book = await _getCircleBookUseCase(circleBookId);
     if (book == null) {
       emit(const CircleDetailError('Circle not found'));
       return;
     }
 
-    final myNpub = await _identityLocal.readNpub() ?? '';
+    final myNpub = await _getMyNpubUseCase() ?? '';
 
-    final circleMembers = await _circleStore.getCircleMembers(circleBookId);
+    final circleMembers = await _getCircleMembersUseCase(circleBookId);
 
     MemberEntry? selfEntry;
     final otherMembers = <MemberEntry>[];
@@ -81,9 +84,11 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     );
 
     _progressSub?.cancel();
-    _progressSub = _progressDao
-        .watchProgressByBook(groupId: book.id, bookId: book.circleDirId)
-        .listen((progressList) {
+    _progressSub =
+        _watchProgressByBookUseCase(
+          groupId: book.id,
+          bookId: book.circleDirId,
+        ).listen((progressList) {
           final s = state;
           if (s is CircleDetailLoaded) {
             final newProgress = <String, MemberProgress>{};
@@ -105,17 +110,13 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> removeMember(String circleBookId, String npub) async {
     final currentState = state;
     if (currentState is CircleDetailLoaded) {
-      await _circleStore.removeCircleMember(circleBookId, npub);
+      await _removeCircleMemberUseCase(circleBookId, npub);
       await refresh(circleBookId);
     }
   }
 
   Future<void> toggleContact(String npub, bool isFollow) async {
-    if (isFollow) {
-      await _contacts.remove(npub);
-    } else {
-      await _contacts.add(npub);
-    }
+    await _toggleContactUseCase(npub, isFollow);
 
     final currentState = state;
     if (currentState is CircleDetailLoaded) {
@@ -126,8 +127,8 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
   Future<void> leaveAndDelete(CircleBook circleBook) async {
     final s = state;
     if (s is! CircleDetailLoaded) return;
-    await _circleStore.leaveCircleBook(circleBook);
-    await _circleStore.deleteCircleBook(circleBook);
+    await _leaveCircleBookUseCase(circleBook);
+    await _deleteCircleBookUseCase(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
   }
 
@@ -135,7 +136,7 @@ class CircleDetailCubit extends Cubit<CircleDetailState> {
     final s = state;
     if (s is! CircleDetailLoaded) return;
 
-    await _circleStore.deleteCircleBook(circleBook);
+    await _deleteCircleBookUseCase(circleBook);
     if (!isClosed) emit(const CircleDetailClosed());
   }
 

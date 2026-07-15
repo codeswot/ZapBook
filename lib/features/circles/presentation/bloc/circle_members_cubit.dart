@@ -4,19 +4,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/core/identity/identity_local_data_source.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/services/contact_service.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart';
 
 @injectable
 class CircleMembersCubit extends Cubit<CircleMembersState> {
-  CircleMembersCubit(this._circleStore, this._identity, this._contacts)
-    : super(const CircleMembersLoading());
+  CircleMembersCubit(
+    this._getMyNpubUseCase,
+    this._getCircleMembersUseCase,
+    this._toggleContactUseCase,
+  ) : super(const CircleMembersLoading());
 
-  final IdentityLocalDataSource _identity;
-  final CircleStoreService _circleStore;
-  final ContactService _contacts;
+  final GetMyNpubUseCase _getMyNpubUseCase;
+  final GetCircleMembersUseCase _getCircleMembersUseCase;
+  final ToggleContactUseCase _toggleContactUseCase;
 
   StreamSubscription<List<Contact>>? _sub;
 
@@ -32,9 +33,9 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
     _circleBookId = circleBookId;
     emit(const CircleMembersLoading());
 
-    final myNpub = await _identity.readNpub();
+    final myNpub = await _getMyNpubUseCase();
 
-    final circleMembers = await _circleStore.getCircleMembers(circleBookId);
+    final circleMembers = await _getCircleMembersUseCase(circleBookId);
     final members = circleMembers
         .map(
           (member) => MemberEntry(
@@ -63,11 +64,7 @@ class CircleMembersCubit extends Cubit<CircleMembersState> {
   }
 
   void toggleContact(String npub, bool isFollow) async {
-    if (isFollow) {
-      await _contacts.remove(npub);
-    } else {
-      await _contacts.add(npub);
-    }
+    await _toggleContactUseCase(npub, isFollow);
 
     if (_circleBookId != null) {
       await refresh(_circleBookId!);

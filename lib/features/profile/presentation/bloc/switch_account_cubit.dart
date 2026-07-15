@@ -8,9 +8,7 @@ import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.
 
 @injectable
 class SwitchAccountCubit extends Cubit<SwitchAccountState> {
-  SwitchAccountCubit(
-    this._usecases,
-  ) : super(const SwitchAccountLoading());
+  SwitchAccountCubit(this._usecases) : super(const SwitchAccountLoading());
 
   final SwitchAccountUseCases _usecases;
   final _log = logging.Logger('SwitchAccountCubit');
@@ -45,12 +43,8 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
             final updatedAccounts = currentLoaded.map((a) {
               if (a.npub == item.npub) {
                 return a.copyWith(
-                  name: (fetchedName.isNotEmpty)
-                      ? fetchedName
-                      : a.name,
-                  picture: (meta.picture.isNotEmpty)
-                      ? meta.picture
-                      : a.picture,
+                  name: (fetchedName.isNotEmpty) ? fetchedName : a.name,
+                  picture: (meta.picture.isNotEmpty) ? meta.picture : a.picture,
                 );
               }
               return a;

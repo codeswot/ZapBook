@@ -10,9 +10,13 @@ import 'package:zapbook/features/profile/domain/usecases/update_profile.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 
 class MockLoadProfile extends Mock implements LoadProfile {}
+
 class MockUpdateProfile extends Mock implements UpdateProfile {}
+
 class MockSignOut extends Mock implements SignOut {}
-class MockProfileSettingsUseCases extends Mock implements ProfileSettingsUseCases {}
+
+class MockProfileSettingsUseCases extends Mock
+    implements ProfileSettingsUseCases {}
 
 void main() {
   late MockLoadProfile loadProfile;
@@ -39,19 +43,19 @@ void main() {
 
     when(() => loadProfile()).thenAnswer((_) async => tProfile);
     when(() => settingsUseCases.nwcWalletName).thenReturn('Alby');
-    when(() => settingsUseCases.nwcConnectionString).thenReturn('nostr+walletconnect://...');
+    when(
+      () => settingsUseCases.nwcConnectionString,
+    ).thenReturn('nostr+walletconnect://...');
     when(() => settingsUseCases.isNwcConnected).thenReturn(true);
     when(() => settingsUseCases.appVersion).thenReturn('1.0.0');
     when(() => settingsUseCases.supportPercent).thenReturn(10);
-    when(() => settingsUseCases.supportPercentOptions).thenReturn([0, 3, 5, 10, 15, 20, 50, 100]);
+    when(
+      () => settingsUseCases.supportPercentOptions,
+    ).thenReturn([0, 3, 5, 10, 15, 20, 50, 100]);
   });
 
-  ProfileCubit buildCubit() => ProfileCubit(
-    loadProfile,
-    updateProfile,
-    signOut,
-    settingsUseCases,
-  );
+  ProfileCubit buildCubit() =>
+      ProfileCubit(loadProfile, updateProfile, signOut, settingsUseCases);
 
   group('ProfileCubit', () {
     blocTest<ProfileCubit, ProfileState>(
@@ -81,15 +85,23 @@ void main() {
       build: buildCubit,
       seed: () => const ProfileLoaded(tProfile, nwcWalletName: 'Alby'),
       act: (cubit) async {
-        when(() => updateProfile(displayName: 'New', lud16: 'lud', picture: 'pic')).thenAnswer((_) async {});
-        await cubit.updateProfile(displayName: 'New', lud16: 'lud', picture: 'pic');
+        when(
+          () => updateProfile(displayName: 'New', lud16: 'lud', picture: 'pic'),
+        ).thenAnswer((_) async {});
+        await cubit.updateProfile(
+          displayName: 'New',
+          lud16: 'lud',
+          picture: 'pic',
+        );
       },
       expect: () => [
         const ProfileLoading(),
         const ProfileLoaded(tProfile, nwcWalletName: 'Alby'),
       ],
       verify: (_) {
-        verify(() => updateProfile(displayName: 'New', lud16: 'lud', picture: 'pic')).called(1);
+        verify(
+          () => updateProfile(displayName: 'New', lud16: 'lud', picture: 'pic'),
+        ).called(1);
       },
     );
 
@@ -132,7 +144,9 @@ void main() {
     });
 
     test('pickImage returns encoded image', () async {
-      when(() => settingsUseCases.pickImage()).thenAnswer((_) async => Uint8List.fromList([0x00, 0x01]));
+      when(
+        () => settingsUseCases.pickImage(),
+      ).thenAnswer((_) async => Uint8List.fromList([0x00, 0x01]));
       final cubit = buildCubit();
       final res = await cubit.pickImage();
       expect(res, 'data:image/png;base64,AAE=');
@@ -146,7 +160,9 @@ void main() {
     });
 
     test('readNsec', () async {
-      when(() => settingsUseCases.readNsec()).thenAnswer((_) async => 'nsec1...');
+      when(
+        () => settingsUseCases.readNsec(),
+      ).thenAnswer((_) async => 'nsec1...');
       final cubit = buildCubit();
       expect(await cubit.readNsec(), 'nsec1...');
     });
@@ -159,7 +175,9 @@ void main() {
     });
 
     test('rotateKeyPackage', () async {
-      when(() => settingsUseCases.rotateKeyPackage()).thenAnswer((_) async => true);
+      when(
+        () => settingsUseCases.rotateKeyPackage(),
+      ).thenAnswer((_) async => true);
       final cubit = buildCubit();
       expect(await cubit.rotateKeyPackage(), true);
     });
@@ -172,7 +190,9 @@ void main() {
     });
 
     test('setSupportPercent', () async {
-      when(() => settingsUseCases.setSupportPercent(5)).thenAnswer((_) async {});
+      when(
+        () => settingsUseCases.setSupportPercent(5),
+      ).thenAnswer((_) async {});
       final cubit = buildCubit();
       await cubit.setSupportPercent(5);
       verify(() => settingsUseCases.setSupportPercent(5)).called(1);

@@ -1,30 +1,29 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging show Logger;
-import 'package:marmot_dart/marmot_dart.dart';
 
-import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/core/identity/active_account.dart';
-import 'package:ndk/ndk.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
-import 'package:zapbook/features/circles/domain/usecases/share_circle_book.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
 
 @injectable
 class ShareCircleCubit extends Cubit<ShareCircleState> {
   ShareCircleCubit(
-    this._contactService,
-    this._circleStore,
-    this._marmot,
+    this._getFriendsUseCase,
+    this._getCircleBookUseCase,
+    this._getExistingMemberNpubsUseCase,
     this._shareUseCase,
+    this._getMyNpubUseCase,
   ) : super(const ShareCircleLoading());
 
-  final ContactService _contactService;
-  final CircleStoreService _circleStore;
-  final Marmot _marmot;
+  final GetFriendsUseCase _getFriendsUseCase;
+  final GetCircleBookUseCase _getCircleBookUseCase;
+  final GetExistingMemberNpubsUseCase _getExistingMemberNpubsUseCase;
   final ShareCircleBookUseCase _shareUseCase;
+  final GetMyNpubUseCase _getMyNpubUseCase;
+
   final _log = logging.Logger('ShareCircleCubit');
+
   bool isValidNpub(String value) {
     if (value.isEmpty) return false;
     final npubRegex = RegExp(r'^npub1[02-9ac-hj-np-z]{58}$');
@@ -32,25 +31,13 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   }
 
   Future<void> load(String circleBookId) async {
-    final friends = await _contactService.friends.first;
+    final friends = await _getFriendsUseCase();
 
-    final book = _circleStore.currentCircles
-        .where((b) => b.id == circleBookId)
-        .firstOrNull;
-    final existingMembers = <String>{};
+    final book = await _getCircleBookUseCase(circleBookId);
+    var existingMembers = <String>{};
 
     if (book != null && book.id.isNotEmpty) {
-      try {
-        final members = await _marmot.getMembers(book.id);
-        for (final member in members) {
-          try {
-            final npub = Nip19.encodePubKey(member.pubkeyHex);
-            existingMembers.add(npub);
-          } catch (_) {}
-        }
-      } catch (e, stack) {
-        _log.warning('Failed to load group members', e, stack);
-      }
+      existingMembers = await _getExistingMemberNpubsUseCase(circleBookId);
     }
 
     emit(
@@ -114,7 +101,7 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     if (s is! ShareCircleLoaded) return [];
     if (s.selectedNpubs.isEmpty) return [];
 
-    final myNpub = ActiveAccount.currentNpub;
+    final myNpub = await _getMyNpubUseCase();
     if (myNpub == null) return [];
 
     emit(

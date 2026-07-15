@@ -56,10 +56,7 @@ void main() {
         friendsController.addError(Exception('stream fail'));
       },
       expect: () => [
-        const FriendsError(
-          friends: [],
-          message: 'Failed to load friends',
-        ),
+        const FriendsError(friends: [], message: 'Failed to load friends'),
       ],
     );
 
@@ -110,7 +107,8 @@ void main() {
     blocTest<FriendsCubit, FriendsState>(
       'remove success',
       build: buildCubit,
-      seed: () => const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
+      seed: () =>
+          const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
       act: (cubit) async {
         when(() => usecases.remove('npub1')).thenAnswer((_) async {});
         await cubit.remove('npub1');
@@ -129,7 +127,8 @@ void main() {
     blocTest<FriendsCubit, FriendsState>(
       'remove handles general exception',
       build: buildCubit,
-      seed: () => const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
+      seed: () =>
+          const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
       act: (cubit) async {
         when(() => usecases.remove('npub1')).thenThrow(Exception('Fail'));
         await cubit.remove('npub1');
@@ -155,7 +154,9 @@ void main() {
 
     test('contactCount returns length', () {
       final cubit = buildCubit();
-      cubit.emit(const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]));
+      cubit.emit(
+        const FriendsLoaded([Contact(npub: 'npub1', displayName: 'A')]),
+      );
       expect(cubit.contactCount, 1);
     });
   });

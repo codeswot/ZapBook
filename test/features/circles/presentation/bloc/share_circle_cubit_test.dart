@@ -1,27 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:marmot_dart/marmot_dart.dart';
-import 'package:zapbook/core/identity/active_account.dart';
 import 'package:zapbook/core/domain/contact.dart';
-import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/services/contact_service.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
-import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
-import 'package:zapbook/features/circles/domain/usecases/share_circle_book.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.dart';
+import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
+import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
-class MockContactService extends Mock implements ContactService {}
+class MockGetFriendsUseCase extends Mock implements GetFriendsUseCase {}
 
-class MockCircleStoreService extends Mock implements CircleStoreService {}
+class MockGetCircleBookUseCase extends Mock implements GetCircleBookUseCase {}
 
-class MockMarmot extends Mock implements Marmot {}
+class MockGetExistingMemberNpubsUseCase extends Mock
+    implements GetExistingMemberNpubsUseCase {}
 
 class MockShareCircleBookUseCase extends Mock
     implements ShareCircleBookUseCase {}
 
-CircleBook _createTestBook(String id, String title) {
+class MockGetMyNpubUseCase extends Mock implements GetMyNpubUseCase {}
+
+CircleBook _createTestBook(String id, String title, List<String> adminNpubs) {
   return CircleBook(
     id: id,
     nostrGroudId: 'g_$id',
@@ -36,39 +35,39 @@ CircleBook _createTestBook(String id, String title) {
     zbfVersion: '1.0',
     createdAt: DateTime.now(),
     addedAt: DateTime.now(),
+    adminNpubs: adminNpubs,
   );
 }
 
 void main() {
-  late MockContactService mockContactService;
-  late MockCircleStoreService mockCircleStore;
-  late MockMarmot mockMarmot;
-  late MockShareCircleBookUseCase mockShareUseCase;
+  late MockGetFriendsUseCase mockGetFriendsUseCase;
+  late MockGetCircleBookUseCase mockGetCircleBookUseCase;
+  late MockGetExistingMemberNpubsUseCase mockGetExistingMemberNpubsUseCase;
+  late MockShareCircleBookUseCase mockShareCircleBookUseCase;
+  late MockGetMyNpubUseCase mockGetMyNpubUseCase;
 
   setUp(() {
-    mockContactService = MockContactService();
-    mockCircleStore = MockCircleStoreService();
-    mockMarmot = MockMarmot();
-    mockShareUseCase = MockShareCircleBookUseCase();
-
-    ActiveAccount.setNpub('npub1my_npub');
-  });
-
-  tearDown(() {
-    ActiveAccount.setNpub(null);
+    mockGetFriendsUseCase = MockGetFriendsUseCase();
+    mockGetCircleBookUseCase = MockGetCircleBookUseCase();
+    mockGetExistingMemberNpubsUseCase = MockGetExistingMemberNpubsUseCase();
+    mockShareCircleBookUseCase = MockShareCircleBookUseCase();
+    mockGetMyNpubUseCase = MockGetMyNpubUseCase();
   });
 
   ShareCircleCubit buildCubit() => ShareCircleCubit(
-    mockContactService,
-    mockCircleStore,
-    mockMarmot,
-    mockShareUseCase,
+    mockGetFriendsUseCase,
+    mockGetCircleBookUseCase,
+    mockGetExistingMemberNpubsUseCase,
+    mockShareCircleBookUseCase,
+    mockGetMyNpubUseCase,
   );
 
   group('ShareCircleCubit', () {
-    test('isValidNpub returns true for valid npub', () {
+    test('isValidNpub correctly validates npub strings', () {
       final cubit = buildCubit();
-      // Use a sample valid npub
+
+      expect(cubit.isValidNpub(''), false);
+      expect(cubit.isValidNpub('invalid_npub'), false);
       expect(
         cubit.isValidNpub(
           'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
@@ -77,134 +76,159 @@ void main() {
       );
     });
 
-    test('isValidNpub returns false for invalid npub', () {
-      final cubit = buildCubit();
-      expect(cubit.isValidNpub('invalid_npub'), false);
-    });
+    test('load fetches friends and existing members', () async {
+      final friendsList = [
+        const Contact(npub: 'npub11', displayName: 'Friend 1'),
+      ];
+      final testBook = _createTestBook('book1', 'Test', []);
 
-    test('load loads friends and existing members', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => friendsList);
       when(
-        () => mockContactService.friends,
-      ).thenAnswer((_) => Stream.value([const Contact(npub: 'npub1abc')]));
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => testBook);
       when(
-        () => mockCircleStore.currentCircles,
-      ).thenReturn([_createTestBook('group_1', 'Test Book')]);
-      // mockMarmot.getMembers returns list of Members.
-      // The stub needs to return something that has pubkeyHex.
-      when(() => mockMarmot.getMembers('group_1')).thenAnswer(
-        (_) async => [
-          const MarmotMember(
-            npub: 'npub1test123',
-            pubkeyHex:
-                '7fa56f5d6962ab1e3cdce7373ae0cce438be06466f272c72b2ff8eb88d4d7a8e',
-          ),
-        ],
-      );
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {'npub12'});
 
       final cubit = buildCubit();
-      await cubit.load('group_1');
+      await cubit.load('book1');
 
       expect(cubit.state, isA<ShareCircleLoaded>());
       final state = cubit.state as ShareCircleLoaded;
-      expect(state.friends.length, 1);
-      expect(state.existingMembers.isNotEmpty, true);
+      expect(state.friends, friendsList);
+      expect(state.existingMembers, {'npub12'});
+      expect(state.selectedNpubs, isEmpty);
     });
 
-    test('toggleNpub adds and removes npub from selection', () async {
+    test('toggleNpub toggles selection', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => []);
       when(
-        () => mockContactService.friends,
-      ).thenAnswer((_) => Stream.value([]));
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
-      when(() => mockMarmot.getMembers(any())).thenAnswer((_) async => []);
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {});
 
       final cubit = buildCubit();
-      await cubit.load('group_1');
+      await cubit.load('book1');
 
-      cubit.toggleNpub('npub1test');
-      expect(
-        (cubit.state as ShareCircleLoaded).selectedNpubs.contains('npub1test'),
-        true,
-      );
+      cubit.toggleNpub('npub1');
+      var state = cubit.state as ShareCircleLoaded;
+      expect(state.selectedNpubs, ['npub1']);
 
-      cubit.toggleNpub('npub1test');
-      expect(
-        (cubit.state as ShareCircleLoaded).selectedNpubs.contains('npub1test'),
-        false,
-      );
+      cubit.toggleNpub('npub1');
+      state = cubit.state as ShareCircleLoaded;
+      expect(state.selectedNpubs, isEmpty);
     });
 
-    test('addNpub adds npub if not present', () async {
+    test('addNpub adds to selection and emits loaded', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => []);
       when(
-        () => mockContactService.friends,
-      ).thenAnswer((_) => Stream.value([]));
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
-      when(() => mockMarmot.getMembers(any())).thenAnswer((_) async => []);
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {});
 
       final cubit = buildCubit();
-      await cubit.load('group_1');
+      await cubit.load('book1');
 
-      await cubit.addNpub('npub1new');
-      expect(
-        (cubit.state as ShareCircleLoaded).selectedNpubs.contains('npub1new'),
-        true,
+      await cubit.addNpub(
+        'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
       );
+
+      expect(cubit.state, isA<ShareCircleLoaded>());
+      expect((cubit.state as ShareCircleLoaded).selectedNpubs, [
+        'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
+      ]);
     });
 
-    test('share invokes usecase and returns skips', () async {
+    test('share returns empty if no selection', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => []);
       when(
-        () => mockContactService.friends,
-      ).thenAnswer((_) => Stream.value([]));
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
-      when(() => mockMarmot.getMembers(any())).thenAnswer((_) async => []);
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {});
 
-      final skips = [
-        const ShareSkip(npub: 'npub1new', reason: ShareSkipReason.noKeyPackage),
+      final cubit = buildCubit();
+      await cubit.load('book1');
+
+      final result = await cubit.share('book1');
+      expect(result, isEmpty);
+    });
+
+    test('share calls share service and returns skips', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => []);
+      when(
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {});
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npubMy');
+
+      final skipsResult = [
+        const ShareSkip(npub: 'npub2', reason: ShareSkipReason.unknownError),
       ];
       when(
-        () => mockShareUseCase(
-          circleBookId: 'group_1',
-          npubs: ['npub1new'],
-          myNpub: 'npub1my_npub',
+        () => mockShareCircleBookUseCase(
+          circleBookId: 'book1',
+          npubs: ['npub1', 'npub2'],
+          myNpub: 'npubMy',
         ),
-      ).thenAnswer((_) async => skips);
+      ).thenAnswer((_) async => skipsResult);
 
       final cubit = buildCubit();
-      await cubit.load('group_1');
-      await cubit.addNpub('npub1new');
+      await cubit.load('book1');
 
-      final result = await cubit.share('group_1');
+      await cubit.addNpub('npub1');
+      await cubit.addNpub('npub2');
 
-      expect(result, skips);
+      final result = await cubit.share('book1');
+
+      expect(result, skipsResult);
+
       verify(
-        () => mockShareUseCase(
-          circleBookId: 'group_1',
-          npubs: ['npub1new'],
-          myNpub: 'npub1my_npub',
+        () => mockShareCircleBookUseCase(
+          circleBookId: 'book1',
+          npubs: ['npub1', 'npub2'],
+          myNpub: 'npubMy',
         ),
       ).called(1);
+
+      final finalState = cubit.state as ShareCircleLoaded;
+      expect(finalState.selectedNpubs, isEmpty);
+      expect(finalState.shareResult, skipsResult);
     });
 
-    test('share rethrows on error and clears busy state', () async {
+    test('share rethrows on error', () async {
+      when(() => mockGetFriendsUseCase()).thenAnswer((_) async => []);
       when(
-        () => mockContactService.friends,
-      ).thenAnswer((_) => Stream.value([]));
-      when(() => mockCircleStore.currentCircles).thenReturn([]);
-      when(() => mockMarmot.getMembers(any())).thenAnswer((_) async => []);
+        () => mockGetCircleBookUseCase('book1'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockGetExistingMemberNpubsUseCase('book1'),
+      ).thenAnswer((_) async => {});
+      when(() => mockGetMyNpubUseCase()).thenAnswer((_) async => 'npubMy');
 
       when(
-        () => mockShareUseCase(
-          circleBookId: 'group_1',
-          npubs: ['npub1new'],
-          myNpub: 'npub1my_npub',
+        () => mockShareCircleBookUseCase(
+          circleBookId: 'book1',
+          npubs: ['npub1'],
+          myNpub: 'npubMy',
         ),
-      ).thenThrow(Exception('Share failed'));
+      ).thenThrow(Exception('test error'));
 
       final cubit = buildCubit();
-      await cubit.load('group_1');
-      await cubit.addNpub('npub1new');
+      await cubit.load('book1');
+      await cubit.addNpub('npub1');
 
-      await expectLater(() => cubit.share('group_1'), throwsException);
-      expect(cubit.state, isA<ShareCircleLoaded>());
+      await expectLater(() => cubit.share('book1'), throwsException);
+
+      final finalState = cubit.state as ShareCircleLoaded;
+      expect(finalState.selectedNpubs, ['npub1']);
     });
   });
 }

@@ -14,5 +14,6 @@ class DonateUseCases {
   Future<ZapStatus> payWithFallback(String invoice) =>
       _repository.payWithFallback(invoice);
 
-  Future<void> copyToClipboard(String text) => _repository.copyToClipboard(text);
+  Future<void> copyToClipboard(String text) =>
+      _repository.copyToClipboard(text);
 }

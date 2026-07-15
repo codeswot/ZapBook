@@ -22,9 +22,13 @@ void main() {
     });
 
     test('load populates accounts', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1', 'npub2']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1', 'npub2']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
 
       final cubit = createCubit();
       await cubit.load();
@@ -36,9 +40,13 @@ void main() {
     });
 
     test('switchAccount updates active and reloads session', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1', 'npub2']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1', 'npub2']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
       when(() => usecases.setActive(any())).thenAnswer((_) => Future.value());
       when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
 
@@ -52,10 +60,16 @@ void main() {
     });
 
     test('removeAccount removes and reloads accounts', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1', 'npub2']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1', 'npub2']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
-      when(() => usecases.removeAccount(any())).thenAnswer((_) => Future.value());
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.removeAccount(any()),
+      ).thenAnswer((_) => Future.value());
 
       final cubit = createCubit();
       await cubit.load();
@@ -67,11 +81,19 @@ void main() {
     });
 
     test('importAccount validates, persists, and reloads session', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
-      when(() => usecases.validateNsec(any())).thenAnswer((_) => Future.value(true));
-      when(() => usecases.importAndPersist(any())).thenAnswer((_) => Future.value());
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.validateNsec(any()),
+      ).thenAnswer((_) => Future.value(true));
+      when(
+        () => usecases.importAndPersist(any()),
+      ).thenAnswer((_) => Future.value());
       when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
 
       final cubit = createCubit();
@@ -86,10 +108,16 @@ void main() {
     });
 
     test('importAccount returns false on invalid nsec', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
-      when(() => usecases.validateNsec(any())).thenAnswer((_) => Future.value(false));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.validateNsec(any()),
+      ).thenAnswer((_) => Future.value(false));
 
       final cubit = createCubit();
       await cubit.load();
@@ -101,10 +129,16 @@ void main() {
     });
 
     test('importAccount handles exception gracefully', () async {
-      when(() => usecases.listNpubs()).thenAnswer((_) => Future.value(['npub1']));
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
       when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
-      when(() => usecases.fetchMetadata(any())).thenAnswer((_) => Future.value(null));
-      when(() => usecases.validateNsec(any())).thenThrow(Exception('Simulated error'));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+      when(
+        () => usecases.validateNsec(any()),
+      ).thenThrow(Exception('Simulated error'));
 
       final cubit = createCubit();
       await cubit.load();

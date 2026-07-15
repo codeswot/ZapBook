@@ -35,12 +35,18 @@ class ProfileCubit extends Cubit<ProfileState> {
   int get supportPercent => _settings.supportPercent;
   List<int> get supportPercentOptions => _settings.supportPercentOptions;
 
-  Future<void> setSupportPercent(int value) => _settings.setSupportPercent(value);
+  Future<void> setSupportPercent(int value) =>
+      _settings.setSupportPercent(value);
 
   Future<void> load() async {
     emit(const ProfileLoading());
     try {
-      emit(ProfileLoaded(await _loadProfile(), nwcWalletName: _settings.nwcWalletName));
+      emit(
+        ProfileLoaded(
+          await _loadProfile(),
+          nwcWalletName: _settings.nwcWalletName,
+        ),
+      );
     } on Exception catch (error) {
       emit(ProfileError('$error'));
     }
@@ -49,7 +55,9 @@ class ProfileCubit extends Cubit<ProfileState> {
   void _refreshNwc() {
     final state = this.state;
     if (state is ProfileLoaded) {
-      emit(ProfileLoaded(state.profile, nwcWalletName: _settings.nwcWalletName));
+      emit(
+        ProfileLoaded(state.profile, nwcWalletName: _settings.nwcWalletName),
+      );
     }
   }
 

@@ -22,28 +22,28 @@ class SwitchAccountRepositoryImpl implements SwitchAccountRepository {
 
   @override
   Future<List<String>> listNpubs() => _identityLocal.listNpubs();
-  
+
   @override
   Future<String?> readNpub() => _identityLocal.readNpub();
-  
+
   @override
   Future<void> setActive(String npub) => _identityLocal.setActive(npub);
-  
+
   @override
   Future<void> removeAccount(String npub) => _identityLocal.removeAccount(npub);
-  
+
   @override
   Future<bool> validateNsec(String nsec) => _identityRepo.validateNsec(nsec);
-  
+
   @override
   Future<void> importAndPersist(String nsec) async {
     final keypair = await _identityRepo.importFromNsec(nsec);
     await _identityRepo.persist(npub: keypair.npub, nsec: keypair.nsec!);
   }
-  
+
   @override
   Future<void> reloadSession() => _sessionReloader.reload();
-  
+
   @override
   Future<UserProfile?> fetchMetadata(String npub) async {
     final meta = await _remote.fetchMetadata(npub: npub);

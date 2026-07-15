@@ -5,14 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/domain/entities/circle_book.dart';
-import 'package:zapbook/core/services/circle_store_service.dart';
+import 'package:zapbook/features/circles/domain/usecases/circles_usecases.dart';
 
 part 'circles_state.dart';
 
 @injectable
 class CirclesCubit extends Cubit<CirclesState> {
-  CirclesCubit(this._circleStore) : super(const CirclesLoading()) {
-    _subscription = _circleStore.watchCircleBooks.listen((circles) {
+  CirclesCubit(this._watchCircles) : super(const CirclesLoading()) {
+    _subscription = _watchCircles().listen((circles) {
       final sharedCircles = circles.where((c) => c.isShared).toList();
       emit(
         sharedCircles.isEmpty
@@ -22,7 +22,7 @@ class CirclesCubit extends Cubit<CirclesState> {
     }, onError: (Object error) => emit(CirclesError('$error')));
   }
 
-  final CircleStoreService _circleStore;
+  final WatchCirclesUseCase _watchCircles;
   StreamSubscription<List<CircleBook>>? _subscription;
 
   @override

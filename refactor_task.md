@@ -48,35 +48,35 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Home (Dashboard)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`DashboardData.dart`)
-  - [ ] `repositories/` (`HomeRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `GetHomeDashboardDataUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`HomeLocalDataSource.dart`, `HomeRemoteDataSource.dart`)
-  - [ ] `repositories/` (`HomeRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`HomeCubit.dart` - *Depends only on UseCases*)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`DashboardData.dart`)
+  - [x] `repositories/` (`HomeRepository` interface)
+  - [x] `usecases/`
+    - [x] `GetHomeDashboardDataUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`HomeLocalDataSource.dart`, `HomeRemoteDataSource.dart`)
+  - [x] `repositories/` (`HomeRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`HomeCubit.dart` - *Depends only on UseCases*)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Circles
 
-- [ ] **Domain**
-  - [ ] `entities/` (`Circle.dart`)
-  - [ ] `repositories/` (`CirclesRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `GetCircleDetailsUseCase.dart`
-    - [ ] `JoinCircleUseCase.dart`
-    - [ ] `LeaveCircleUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`CirclesRemoteDataSource.dart`)
-  - [ ] `repositories/` (`CirclesRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`CirclesCubit.dart`, `CircleOperationsBloc.dart`)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`Circle.dart`)
+  - [x] `repositories/` (`CirclesRepository` interface)
+  - [x] `usecases/`
+    - [x] `GetCircleDetailsUseCase.dart`
+    - [x] `JoinCircleUseCase.dart`
+    - [x] `LeaveCircleUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`CirclesRemoteDataSource.dart`)
+  - [x] `repositories/` (`CirclesRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`CirclesCubit.dart`, `CircleOperationsBloc.dart`)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Cheers (Social Celebrations)
 
