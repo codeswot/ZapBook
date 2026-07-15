@@ -7,11 +7,40 @@ import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/services/circle_store_service.dart';
 import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
+import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
+import 'package:ndk/ndk.dart';
+import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:zapbook/core/services/zap_nudge_service.dart';
 
 abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();
-  Future<void> sendZap(String activityId, int amount, String reactionType);
+
+  Future<ZapStatus> sendZap({
+    required CheersActivity activity,
+    required ZapGesture gesture,
+    required int amount,
+    String? comment,
+  });
+
+  Future<void> sendNudge({required String groupId, required String toNpub});
+
+  Future<void> sendNudgeReady({
+    required String groupId,
+    required String nudgeId,
+    required String toNpub,
+  });
+
+  Future<String?> lookupLud16(String pubkey);
+
+  Future<String?> getMyPubkey();
+
+  Future<void> copyText(String text);
 }
 
 final _log = logging.Logger('CheersDataSource');
@@ -23,12 +52,20 @@ class CheersDataSourceImpl implements CheersDataSource {
     this._identityLocal,
     this._cheersDao,
     this._contactService,
+    this._zapService,
+    this._nudgeService,
+    this._nostrService,
+    this._clipboardService,
   );
 
   final CircleStoreService _circleStore;
   final IdentityLocalDataSource _identityLocal;
   final CheersDao _cheersDao;
   final ContactService _contactService;
+  final ZapService _zapService;
+  final ZapNudgeService _nudgeService;
+  final NostrService _nostrService;
+  final ClipboardService _clipboardService;
 
   @override
   Stream<List<CheersActivity>> watchActivities() {
@@ -114,16 +151,69 @@ class CheersDataSourceImpl implements CheersDataSource {
   }
 
   @override
-  Future<void> sendZap(
-    String activityId,
-    int amount,
-    String reactionType,
-  ) async {
-    final npub = await _identityLocal.readNpub();
-    if (npub == null || npub.isEmpty) return;
+  Future<ZapStatus> sendZap({
+    required CheersActivity activity,
+    required ZapGesture gesture,
+    required int amount,
+    String? comment,
+  }) async {
+    final pubkey = Nip19.decode(activity.actorNpub);
+    final lud16 = await lookupLud16(pubkey);
 
-    try {} catch (error, stack) {
-      _log.warning('cheer broadcast failed', error, stack);
+    if (lud16 == null || lud16.isEmpty) {
+      return ZapStatus.failed;
     }
+
+    final result = await _zapService.send(
+      recipientLud16: lud16,
+      recipientPubkey: pubkey,
+      targetActivitytId: activity.targetId,
+      gesture: gesture,
+      customSats: amount,
+      comment: comment,
+      zapType: activity.type == CheersActivityType.milestone
+          ? ZapType.milestone
+          : ZapType.profile,
+    );
+
+    return _zapService.payZap(result);
+  }
+
+  @override
+  Future<void> sendNudge({required String groupId, required String toNpub}) =>
+      _nudgeService.nudge(groupId: groupId, toNpub: toNpub);
+
+  @override
+  Future<void> sendNudgeReady({
+    required String groupId,
+    required String nudgeId,
+    required String toNpub,
+  }) => _nudgeService.ready(groupId: groupId, nudgeId: nudgeId, toNpub: toNpub);
+
+  @override
+  Future<String?> lookupLud16(String pubkey) async {
+    final cache = await _nostrService.getMetadata(pubkey);
+    final cachedlud16 = cache?.lud16 ?? '';
+    if (cachedlud16.isNotEmpty) {
+      return cachedlud16;
+    }
+    final fresh = await _nostrService.getMetadata(pubkey, forceRefresh: true);
+    return fresh?.lud16;
+  }
+
+  @override
+  Future<String?> getMyPubkey() async {
+    final npub = await _identityLocal.readNpub();
+    if (npub == null || npub.isEmpty) return null;
+    try {
+      return Nip19.decode(npub);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> copyText(String text) async {
+    _clipboardService.copy(text);
   }
 }

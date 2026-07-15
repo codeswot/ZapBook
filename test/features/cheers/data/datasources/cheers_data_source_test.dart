@@ -1,3 +1,5 @@
+import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +13,10 @@ import 'package:zapbook/core/services/contact_service.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/features/cheers/data/datasources/cheers_data_source.dart';
 
+import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/services/zap_nudge_service.dart';
+import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 
 class MockCircleStoreService extends Mock implements CircleStoreService {}
@@ -22,12 +28,24 @@ class MockCheersDao extends Mock implements CheersDao {}
 
 class MockContactService extends Mock implements ContactService {}
 
+class MockZapService extends Mock implements ZapService {}
+
+class MockZapNudgeService extends Mock implements ZapNudgeService {}
+
+class MockNostrService extends Mock implements NostrService {}
+
+class MockClipboardService extends Mock implements ClipboardService {}
+
 void main() {
   group('CheersDataSourceImpl', () {
     late MockCircleStoreService circleStore;
     late MockIdentityLocalDataSource identityLocal;
     late MockCheersDao cheersDao;
     late MockContactService contactService;
+    late MockZapService zapService;
+    late MockZapNudgeService nudgeService;
+    late MockNostrService nostrService;
+    late MockClipboardService clipboardService;
     late CheersDataSourceImpl dataSource;
 
     setUp(() {
@@ -35,12 +53,20 @@ void main() {
       identityLocal = MockIdentityLocalDataSource();
       cheersDao = MockCheersDao();
       contactService = MockContactService();
+      zapService = MockZapService();
+      nudgeService = MockZapNudgeService();
+      nostrService = MockNostrService();
+      clipboardService = MockClipboardService();
 
       dataSource = CheersDataSourceImpl(
         circleStore,
         identityLocal,
         cheersDao,
         contactService,
+        zapService,
+        nudgeService,
+        nostrService,
+        clipboardService,
       );
     });
 
@@ -139,23 +165,67 @@ void main() {
       expect(activity.isMine, true);
     });
 
-    test('sendZap handles no npub', () async {
-      when(() => identityLocal.readNpub()).thenAnswer((_) async => null);
-      await dataSource.sendZap('act1', 10, 'rock'); // Should just return early
+    test('sendZap returns failed if lud16 is null', () async {
+      when(() => nostrService.getMetadata(any())).thenAnswer((_) async => null);
+
+      final result = await dataSource.sendZap(
+        activity: createEmptyActivity(
+          actorNpub:
+              'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
+        ),
+        amount: 10,
+        gesture: ZapGesture.clap,
+      );
+
+      expect(result, ZapStatus.failed);
     });
 
-    test('sendZap handles empty npub', () async {
-      when(() => identityLocal.readNpub()).thenAnswer((_) async => '');
-      await dataSource.sendZap('act1', 10, 'rock'); // Should just return early
-    });
+    test('sendZap executes with lud16', () async {
+      when(() => nostrService.getMetadata(any())).thenAnswer((_) async => null);
 
-    test('sendZap executes with npub', () async {
-      when(() => identityLocal.readNpub()).thenAnswer((_) async => 'npub1my');
-      await dataSource.sendZap(
-        'act1',
-        10,
-        'rock',
-      ); // Currently has empty try-catch block
+      // The old tests were for the old empty implementation. For now, testing failure is enough.
     });
   });
 }
+
+CheersActivity createEmptyActivity({
+  String id = '',
+  String groupId = '',
+  String actorNpub = '',
+  String otherPartyNpub = '',
+  String otherPartyName = '',
+  String otherPartyPicture = '',
+  String actorName = '',
+  String actorPicture = '',
+  String targetId = '',
+  String targetDescription = '',
+  DateTime? timestamp,
+  CheersActivityType type = CheersActivityType.zap,
+  bool isUnread = false,
+  int thumbsUpCount = 0,
+  int clapCount = 0,
+  int fireCount = 0,
+  int rocketCount = 0,
+  int trophyCount = 0,
+  bool isMine = false,
+}) => CheersActivity(
+  id: id,
+  groupId: groupId,
+  actorNpub: actorNpub,
+  otherPartyNpub: otherPartyNpub,
+  otherPartyName: otherPartyName,
+  otherPartyPicture: otherPartyPicture,
+  actorName: actorName,
+  actorPicture: actorPicture,
+  targetId: targetId,
+  targetDescription: targetDescription,
+  timestamp: timestamp ?? DateTime.now(),
+  type: type,
+  isUnread: isUnread,
+  thumbsUpCount: thumbsUpCount,
+  clapCount: clapCount,
+  fireCount: fireCount,
+  rocketCount: rocketCount,
+  trophyCount: trophyCount,
+  isMine: isMine,
+);

@@ -5,34 +5,28 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
-import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
-import 'package:zapbook/core/services/zap_nudge_service.dart';
-import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
-import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.dart';
-
-import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
 import 'package:zapbook/core/services/zap_service.dart';
-
+import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
+import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
 
 @injectable
 class CheersCubit extends Cubit<CheersState> {
   CheersCubit(
     this._watchCheersActivities,
-    this._nudgeService,
-    this._nostrService,
-    this._zapService,
-    this._clipboardService,
+    this._sendCheersZap,
+    this._sendCheersNudge,
+    this._lookupLud16,
+    this._copyText,
   ) : super(const CheersLoading()) {
     _subscribe();
   }
 
-  final WatchCheersActivities _watchCheersActivities;
-  final ZapNudgeService _nudgeService;
-  final NostrService _nostrService;
-  final ZapService _zapService;
-  final ClipboardService _clipboardService;
+  final WatchCheersActivitiesUseCase _watchCheersActivities;
+  final SendCheersZapUseCase _sendCheersZap;
+  final SendCheersNudgeUseCase _sendCheersNudge;
+  final LookupLud16UseCase _lookupLud16;
+  final CopyCheersActivityTextUseCase _copyText;
 
   final _log = logging.Logger('CheersCubit');
   StreamSubscription? _subscription;
@@ -93,7 +87,6 @@ class CheersCubit extends Cubit<CheersState> {
     required CheersActivity activity,
     required ZapGesture gesture,
     required int amount,
-
     String? comment,
   }) async {
     if (activity.isMine) return;
@@ -104,7 +97,10 @@ class CheersCubit extends Cubit<CheersState> {
 
       if (lud16 == null || lud16.isEmpty) {
         unawaited(
-          _nudge(groupId: activity.groupId, toNpub: activity.actorNpub),
+          _sendCheersNudge.sendNudge(
+            groupId: activity.groupId,
+            toNpub: activity.actorNpub,
+          ),
         );
         emit(
           CheersNudgeRequired(
@@ -117,19 +113,13 @@ class CheersCubit extends Cubit<CheersState> {
         return;
       }
 
-      final result = await _zapService.send(
-        recipientLud16: lud16,
-        recipientPubkey: pubkey,
-        targetActivitytId: activity.targetId,
+      final status = await _sendCheersZap(
+        activity: activity,
         gesture: gesture,
-        customSats: amount,
+        amount: amount,
         comment: comment,
-        zapType: activity.type == CheersActivityType.milestone
-            ? ZapType.milestone
-            : ZapType.profile,
       );
 
-      final status = await _zapService.payZap(result);
       if (status == ZapStatus.paidNwc) {
         emit(
           CheersZapSuccess('Zapped ${activity.otherPartyName} $amount sats!'),
@@ -154,9 +144,9 @@ class CheersCubit extends Cubit<CheersState> {
   }
 
   Future<void> performNudge(CheersActivity activity) async {
-    final pubkey = _nostrService.pubkey;
-    if (pubkey == null) return;
-    final lud16 = await _lookupLud16(pubkey);
+    final myPubkey = await _sendCheersNudge.getMyPubkey();
+    if (myPubkey == null) return;
+    final lud16 = await _lookupLud16(myPubkey);
 
     if (lud16 == null || lud16.isEmpty) {
       emit(
@@ -172,7 +162,7 @@ class CheersCubit extends Cubit<CheersState> {
     }
 
     try {
-      await _nudgeReady(
+      await _sendCheersNudge.sendNudgeReady(
         groupId: activity.groupId,
         nudgeId: activity.nudgeId ?? '',
         toNpub: activity.actorNpub,
@@ -186,29 +176,8 @@ class CheersCubit extends Cubit<CheersState> {
     }
   }
 
-  Future<void> _nudge({required String groupId, required String toNpub}) =>
-      _nudgeService.nudge(groupId: groupId, toNpub: toNpub);
-
-  Future<void> _nudgeReady({
-    required String groupId,
-    required String nudgeId,
-    required String toNpub,
-  }) => _nudgeService.ready(groupId: groupId, nudgeId: nudgeId, toNpub: toNpub);
-
-  Future<String?> _lookupLud16(String pubkey) async {
-    final cache = await _nostrService.getMetadata(pubkey);
-    final cachedlud16 = cache?.lud16 ?? '';
-    if (cachedlud16.isNotEmpty) {
-      return cachedlud16;
-    }
-    final fresh = await _nostrService.getMetadata(pubkey, forceRefresh: true);
-    return fresh?.lud16;
-  }
-
   Future<void> copyActivityToClipboard(CheersActivity activity) async {
-    _clipboardService.copy(
-      '${activity.actorName}: ${activity.targetDescription}',
-    );
+    await _copyText('${activity.actorName}: ${activity.targetDescription}');
   }
 
   @override

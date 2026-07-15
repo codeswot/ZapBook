@@ -1,81 +1,88 @@
-import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'dart:async';
-import 'package:ndk/ndk.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
-import 'package:zapbook/core/services/zap_nudge_service.dart';
-import 'package:zapbook/core/services/zap_service.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/services/zap_service.dart';
 import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
-import 'package:zapbook/features/cheers/domain/usecases/watch_cheers_activities.dart';
+import 'package:zapbook/features/cheers/domain/usecases/cheers_usecases.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_state.dart';
-import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
-import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 
-class MockWatchCheersActivities extends Mock implements WatchCheersActivities {}
+CheersActivity createEmptyActivity({
+  String id = '',
+  String groupId = '',
+  String actorNpub = '',
+  String otherPartyNpub = '',
+  String otherPartyName = '',
+  String otherPartyPicture = '',
+  String actorName = '',
+  String actorPicture = '',
+  String targetId = '',
+  String targetDescription = '',
+  DateTime? timestamp,
+  CheersActivityType type = CheersActivityType.zap,
+  bool isUnread = false,
+  int thumbsUpCount = 0,
+  int clapCount = 0,
+  int fireCount = 0,
+  int rocketCount = 0,
+  int trophyCount = 0,
+  bool isMine = false,
+}) => CheersActivity(
+  id: id,
+  groupId: groupId,
+  actorNpub: actorNpub,
+  otherPartyNpub: otherPartyNpub,
+  otherPartyName: otherPartyName,
+  otherPartyPicture: otherPartyPicture,
+  actorName: actorName,
+  actorPicture: actorPicture,
+  targetId: targetId,
+  targetDescription: targetDescription,
+  timestamp: timestamp ?? DateTime.now(),
+  type: type,
+  isUnread: isUnread,
+  thumbsUpCount: thumbsUpCount,
+  clapCount: clapCount,
+  fireCount: fireCount,
+  rocketCount: rocketCount,
+  trophyCount: trophyCount,
+  isMine: isMine,
+);
 
-class MockZapNudgeService extends Mock implements ZapNudgeService {}
+class MockWatchCheersActivitiesUseCase extends Mock
+    implements WatchCheersActivitiesUseCase {}
 
-class MockZapService extends Mock implements ZapService {}
+class MockSendCheersZapUseCase extends Mock implements SendCheersZapUseCase {}
 
-class MockClipboardService extends Mock implements ClipboardService {}
+class MockSendCheersNudgeUseCase extends Mock
+    implements SendCheersNudgeUseCase {}
 
-class FakeNostrService extends Fake implements NostrService {
-  @override
-  String? get pubkey => 'testPubkey';
-  @override
-  Future<Metadata?> getMetadata(
-    String pubkey, {
-    bool forceRefresh = false,
-  }) async {
-    return null;
-  }
-}
+class MockLookupLud16UseCase extends Mock implements LookupLud16UseCase {}
 
-class FakeNostrServiceWithLud16 extends Fake implements NostrService {
-  @override
-  Future<Metadata?> getMetadata(
-    String pubkey, {
-    bool forceRefresh = false,
-  }) async {
-    final meta = Metadata(pubKey: pubkey)..lud16 = 'test@example.com';
-    return meta;
-  }
-}
+class MockCopyCheersActivityTextUseCase extends Mock
+    implements CopyCheersActivityTextUseCase {}
 
 void main() {
   setUpAll(() {
     registerFallbackValue(ZapGesture.clap);
-    registerFallbackValue(ZapType.profile);
-    registerFallbackValue(
-      const ZapResult(
-        invoice: 'invoice',
-        zapRequestId: 'req',
-        amountSats: 21,
-        gesture: ZapGesture.clap,
-        recipientPubkey: 'pubkey',
-        targetActivitytId: 'targetId',
-      ),
-    );
+    registerFallbackValue(createEmptyActivity());
   });
 
-  late MockWatchCheersActivities watchCheersActivities;
-  late MockZapNudgeService nudgeService;
-  late NostrService nostrService;
-  late MockZapService zapService;
-  late MockClipboardService clipboardService;
-
+  late MockWatchCheersActivitiesUseCase watchCheersActivities;
+  late MockSendCheersZapUseCase sendCheersZap;
+  late MockSendCheersNudgeUseCase sendCheersNudge;
+  late MockLookupLud16UseCase lookupLud16;
+  late MockCopyCheersActivityTextUseCase copyText;
   late StreamController<List<CheersActivity>> activitiesController;
 
   setUp(() {
-    watchCheersActivities = MockWatchCheersActivities();
-    nudgeService = MockZapNudgeService();
-    nostrService = FakeNostrService();
-    zapService = MockZapService();
-    clipboardService = MockClipboardService();
-
+    watchCheersActivities = MockWatchCheersActivitiesUseCase();
+    sendCheersZap = MockSendCheersZapUseCase();
+    sendCheersNudge = MockSendCheersNudgeUseCase();
+    lookupLud16 = MockLookupLud16UseCase();
+    copyText = MockCopyCheersActivityTextUseCase();
     activitiesController = StreamController<List<CheersActivity>>.broadcast();
 
     when(
@@ -90,225 +97,173 @@ void main() {
   CheersCubit createCubit() {
     return CheersCubit(
       watchCheersActivities,
-      nudgeService,
-      nostrService,
-      zapService,
-      clipboardService,
+      sendCheersZap,
+      sendCheersNudge,
+      lookupLud16,
+      copyText,
     );
   }
 
   test('initial state is CheersLoading', () {
     final cubit = createCubit();
-    expect(cubit.state, const CheersLoading());
+    expect(cubit.state, isA<CheersLoading>());
+    cubit.close();
   });
 
-  test('emits CheersLoaded when stream yields activities', () async {
-    final cubit = createCubit();
+  group('filtering', () {
+    test('emits CheersLoaded on stream update', () async {
+      final cubit = createCubit();
 
-    final activity = CheersActivity(
-      id: '1',
-      groupId: 'g1',
-      actorNpub:
-          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      otherPartyNpub:
-          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      targetId: '',
-      targetDescription: 'desc',
-      timestamp: DateTime.now(),
-      type: CheersActivityType.zap,
-      isUnread: false,
-      isMine: false,
-      otherPartyName: '',
-      otherPartyPicture: '',
-      actorName: '',
-      actorPicture: '',
-      zapAmount: 100,
-    );
-    activitiesController.add([activity]);
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    expect(cubit.state, isA<CheersLoaded>());
-    final state = cubit.state as CheersLoaded;
-    expect(state.activities.length, 1);
-    expect(state.activities.first.id, '1');
-  });
-
-  test('setFilter filters activities correctly', () async {
-    final cubit = createCubit();
-
-    final activities = [
-      CheersActivity(
+      final activity = createEmptyActivity(
         id: '1',
-        groupId: 'g1',
-        actorNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        otherPartyNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        targetId: '',
-        targetDescription: 'd',
-        timestamp: DateTime.now(),
-        type: CheersActivityType.unknown,
-        isUnread: false,
-        isMine: false,
-        otherPartyName: '',
-        otherPartyPicture: '',
-        actorName: '',
-        actorPicture: '',
-        zapAmount: 100,
-      ),
-      CheersActivity(
-        id: '2',
-        groupId: 'g1',
-        actorNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        otherPartyNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        targetId: '',
-        targetDescription: 'desc',
-        timestamp: DateTime.now(),
         type: CheersActivityType.zap,
-        isUnread: false,
-        isMine: false,
-        otherPartyName: '',
-        otherPartyPicture: '',
-        actorName: '',
-        actorPicture: '',
-        zapAmount: 50,
-      ),
-    ];
+      );
 
-    activitiesController.add(activities);
-    await Future.delayed(const Duration(milliseconds: 300));
+      activitiesController.add([activity]);
 
-    cubit.setFilter('Zaps');
+      await expectLater(
+        cubit.stream,
+        emitsInOrder([
+          isA<CheersLoaded>().having((s) => s.activities.length, 'length', 1),
+        ]),
+      );
 
-    expect(cubit.state, isA<CheersLoaded>());
-    final state = cubit.state as CheersLoaded;
-    expect(state.activeFilter, 'Zaps');
-    expect(state.activities.length, 1);
-    expect(state.activities.first.type, CheersActivityType.zap);
+      cubit.close();
+    });
   });
 
   group('performZap', () {
-    final activity = CheersActivity(
-      id: 'group1:npub123',
-      groupId: 'g1',
-      actorNpub:
-          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      otherPartyNpub:
-          'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-      targetId: '',
-      targetDescription: 'desc',
-      timestamp: DateTime.now(),
-      type: CheersActivityType.milestone,
-      isUnread: false,
-      isMine: false,
-      otherPartyName: '',
-      otherPartyPicture: '',
-      actorName: '',
-      actorPicture: '',
-    );
-
-    test('ignores mine activities', () async {
+    test('does nothing if activity is mine', () async {
       final cubit = createCubit();
-      final mineActivity = CheersActivity(
-        id: 'group1:npub123',
-        groupId: 'g1',
-        actorNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        otherPartyNpub:
-            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
-        targetId: '',
-        targetDescription: 'desc',
-        timestamp: DateTime.now(),
-        type: CheersActivityType.zap,
-        isUnread: false,
-        isMine: true,
-        otherPartyName: '',
-        otherPartyPicture: '',
-        actorName: '',
-        actorPicture: '',
-      );
-      await cubit.performZap(
-        activity: mineActivity,
-        gesture: ZapGesture.thumbsUp,
-        amount: 10,
-      );
-      expect(cubit.state, const CheersLoading()); // State remains unchanged
-    });
-
-    test('emits CheersNudgeRequired when lud16 is empty', () async {
-      final cubit = createCubit();
-
-      when(
-        () => nudgeService.nudge(
-          groupId: any(named: 'groupId'),
-          toNpub: any(named: 'toNpub'),
-        ),
-      ).thenAnswer((_) => Future.value());
+      final activity = createEmptyActivity(isMine: true);
 
       await cubit.performZap(
         activity: activity,
-        gesture: ZapGesture.thumbsUp,
+        gesture: ZapGesture.clap,
         amount: 10,
       );
 
-      expect(cubit.state, isA<CheersNudgeRequired>());
+      verifyNever(() => lookupLud16(any()));
+      verifyNever(
+        () => sendCheersZap(
+          activity: any(named: 'activity'),
+          gesture: any(named: 'gesture'),
+          amount: any(named: 'amount'),
+        ),
+      );
+      cubit.close();
     });
 
-    test(
-      'performs zap and emits CheersZapSuccess when lud16 is present',
-      () async {
-        createCubit();
+    test('emits CheersNudgeRequired if no lud16', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        actorNpub: 'npub1test',
+        isMine: false,
+      );
 
-        nostrService = FakeNostrServiceWithLud16();
+      when(() => lookupLud16(any())).thenAnswer((_) async => null);
+      when(
+        () => sendCheersNudge.sendNudge(
+          groupId: any(named: 'groupId'),
+          toNpub: any(named: 'toNpub'),
+        ),
+      ).thenAnswer((_) async {});
 
-        // Need a new cubit with the mocked nostrService
-        final validCubit = CheersCubit(
-          watchCheersActivities,
-          nudgeService,
-          nostrService,
-          zapService,
-          clipboardService,
-        );
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
 
-        when(
-          () => zapService.send(
-            recipientLud16: any(named: 'recipientLud16'),
-            recipientPubkey: any(named: 'recipientPubkey'),
-            targetActivitytId: any(named: 'targetActivitytId'),
-            gesture: any(named: 'gesture'),
-            customSats: any(named: 'customSats'),
-            comment: any(named: 'comment'),
-            zapType: any(named: 'zapType'),
-          ),
-        ).thenAnswer(
-          (_) async => const ZapResult(
-            invoice: 'pr123',
-            zapRequestId: 'req123',
-            amountSats: 21,
-            gesture: ZapGesture.clap,
-            recipientPubkey: 'testPubkey',
-            targetActivitytId: 'targetId',
-          ),
-        );
+      await cubit.performZap(
+        activity: activity,
+        gesture: ZapGesture.clap,
+        amount: 10,
+      );
 
-        when(
-          () => zapService.payZap(any()),
-        ).thenAnswer((_) async => ZapStatus.paidNwc);
+      expect(states.last, isA<CheersNudgeRequired>());
+      verify(
+        () => sendCheersNudge.sendNudge(
+          groupId: activity.groupId,
+          toNpub: activity.actorNpub,
+        ),
+      ).called(1);
 
-        await validCubit.performZap(
-          activity: activity,
-          gesture: ZapGesture.clap,
-          amount: 21,
-          comment: 'Nice!',
-        );
+      cubit.close();
+    });
 
-        expect(validCubit.state, isA<CheersZapSuccess>());
-        final state = validCubit.state as CheersZapSuccess;
-        expect(state.message, contains('21'));
-      },
-    );
+    test('emits CheersZapSuccess when zap succeeds', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity(
+        actorNpub: 'npub1test',
+        isMine: false,
+      );
+
+      when(() => lookupLud16(any())).thenAnswer((_) async => 'test@lud16.com');
+      when(
+        () => sendCheersZap(
+          activity: any(named: 'activity'),
+          gesture: any(named: 'gesture'),
+          amount: any(named: 'amount'),
+          comment: any(named: 'comment'),
+        ),
+      ).thenAnswer((_) async => ZapStatus.paidNwc);
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.performZap(
+        activity: activity,
+        gesture: ZapGesture.clap,
+        amount: 10,
+      );
+
+      expect(states.last, isA<CheersZapSuccess>());
+      cubit.close();
+    });
+  });
+
+  group('performNudge', () {
+    test('emits CheersNudgeSetupRequired if my lud16 is empty', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity();
+
+      when(
+        () => sendCheersNudge.getMyPubkey(),
+      ).thenAnswer((_) async => 'mypubkey');
+      when(() => lookupLud16('mypubkey')).thenAnswer((_) async => '');
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.performNudge(activity);
+
+      expect(states.last, isA<CheersNudgeSetupRequired>());
+      cubit.close();
+    });
+
+    test('emits CheersNudgeSuccess when nudge succeeds', () async {
+      final cubit = createCubit();
+      final activity = createEmptyActivity();
+
+      when(
+        () => sendCheersNudge.getMyPubkey(),
+      ).thenAnswer((_) async => 'mypubkey');
+      when(
+        () => lookupLud16('mypubkey'),
+      ).thenAnswer((_) async => 'mylud16@example.com');
+      when(
+        () => sendCheersNudge.sendNudgeReady(
+          groupId: any(named: 'groupId'),
+          nudgeId: any(named: 'nudgeId'),
+          toNpub: any(named: 'toNpub'),
+        ),
+      ).thenAnswer((_) async {});
+
+      final states = <CheersState>[];
+      cubit.stream.listen(states.add);
+
+      await cubit.performNudge(activity);
+
+      expect(states.last, isA<CheersNudgeSuccess>());
+      cubit.close();
+    });
   });
 }

@@ -80,20 +80,20 @@ This file tracks the progress of our refactor to a strict Clean Architecture. Th
 
 ### Feature: Cheers (Social Celebrations)
 
-- [ ] **Domain**
-  - [ ] `entities/` (`CheersActivity.dart`)
-  - [ ] `repositories/` (`CheersRepository` interface)
-  - [ ] `usecases/`
-    - [ ] `GetCheersActivityUseCase.dart`
-    - [ ] `SendZapUseCase.dart`
-    - [ ] `SendNudgeUseCase.dart`
-- [ ] **Data**
-  - [ ] `datasources/` (`CheersLocalDataSource.dart`, `CheersRemoteDataSource.dart`)
-  - [ ] `repositories/` (`CheersRepositoryImpl.dart`)
-- [ ] **Presentation**
-  - [ ] `bloc/` (`CheersCubit.dart` - *Depends only on UseCases*)
-  - [ ] `pages/`
-  - [ ] `widgets/`
+- [x] **Domain**
+  - [x] `entities/` (`CheersActivity.dart`)
+  - [x] `repositories/` (`CheersRepository` interface)
+  - [x] `usecases/`
+    - [x] `WatchCheersActivitiesUseCase.dart`
+    - [x] `SendCheersZapUseCase.dart`
+    - [x] `SendCheersNudgeUseCase.dart`
+- [x] **Data**
+  - [x] `datasources/` (`CheersDataSource.dart`)
+  - [x] `repositories/` (`CheersRepositoryImpl.dart`)
+- [x] **Presentation**
+  - [x] `bloc/` (`CheersCubit.dart` - *Depends only on UseCases*)
+  - [x] `pages/`
+  - [x] `widgets/`
 
 ### Feature: Book Reader & Progress (Tracking)
 
