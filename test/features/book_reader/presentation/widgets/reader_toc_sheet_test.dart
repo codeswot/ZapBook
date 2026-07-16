@@ -22,7 +22,7 @@ void main() {
         ChapterSummary(index: 0, title: 'Chapter 1', pageCount: 2),
         ChapterSummary(index: 1, title: 'Chapter 2', pageCount: 1),
       ],
-      genre: 'fiction',
+      genres: const ['fiction'],
     );
 
     // Muting the ListTile assertion by overriding the error handler temporarily

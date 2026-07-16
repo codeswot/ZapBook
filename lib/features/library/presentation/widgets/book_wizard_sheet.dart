@@ -139,14 +139,15 @@ class _BookWizardSheetState extends State<BookWizardSheet> {
                     spacing: 8,
                     runSpacing: 8,
                     children: state.availableGenres.map((genre) {
-                      final isSelected = state.genre == genre;
+                      final isSelected = state.selectedGenres.contains(genre);
+                      
                       return AppChip(
                         label: genre,
                         selected: isSelected,
                         tone: isSelected ? AppChipTone.zap : null,
-                        onTap: () => cubit.updateGenre(isSelected ? '' : genre),
-                      );
-                    }).toList(),
+                        onTap: () => cubit.toggleGenre(genre),
+                        );
+                      }).toList(),
                   ),
                   const SizedBox(height: 32),
                   AppButton(

@@ -56,7 +56,8 @@ BookDensity bookDensityFromHandle(ZbfBookHandle handle) {
   return BookDensity(
     pageWords: m.pageWords ?? [],
     skippablePages: m.skippablePages?.toSet() ?? const {},
-    genre: genreFromLabel(m.genre),
+   genre: genreFromLabel(
+  m.genres.isEmpty ? null : m.genres.first,),
   );
 }
 

@@ -13,7 +13,7 @@ final class ZbfAssembler {
     required String id,
     required String title,
     required String author,
-    String? genre,
+    List<String> genres = const [],
     required BookSourceFormat sourceFormat,
     required List<ChapterSummary> chapters,
     required Map<String, Uint8List> assets,
@@ -26,11 +26,12 @@ final class ZbfAssembler {
       0,
       (sum, chapter) => sum + chapter.pageCount,
     );
+
     final manifest = BookManifest(
       id: id,
       title: title,
       author: author,
-      genre: genre,
+      genres: genres,
       sourceFormat: sourceFormat,
       pageCount: pageCount,
       chapterCount: chapters.length,
@@ -41,10 +42,15 @@ final class ZbfAssembler {
       pageWords: pageWords,
       skippablePages: skippablePages,
     );
+
     final fullAssets = <String, Uint8List>{
       ...assets,
       AssetNaming.coverAsset: cover,
     };
-    return ZbfBook(manifest: manifest, assets: fullAssets);
+
+    return ZbfBook(
+      manifest: manifest,
+      assets: fullAssets,
+    );
   }
 }

@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/constants/book_genres.dart';
-import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
 import 'package:zapbook/core/domain/wizard_data.dart';
+import 'package:zapbook/features/library/domain/usecases/book_ingestion_usecases.dart';
 import 'package:zapbook/features/library/presentation/bloc/wizard/book_wizard_state.dart';
 
 @injectable
@@ -15,12 +15,12 @@ class BookWizardCubit extends Cubit<BookWizardState> {
     @factoryParam WizardInitialData? initialData,
     this._pickCoverImage,
   ) : super(
-        BookWizardState(
-          title: initialData?.title ?? 'Untitled',
-          author: initialData?.author,
-          availableGenres: bookGenres,
-        ),
-      );
+          BookWizardState(
+            title: initialData?.title ?? 'Untitled',
+            author: initialData?.author,
+            availableGenres: bookGenres,
+          ),
+        );
 
   final Completer<WizardData> _completer;
   final PickCoverImageUseCase _pickCoverImage;
@@ -33,8 +33,16 @@ class BookWizardCubit extends Cubit<BookWizardState> {
     emit(state.copyWith(author: author));
   }
 
-  void updateGenre(String genre) {
-    emit(state.copyWith(genre: genre));
+  void toggleGenre(String genre) {
+    final genres = List<String>.from(state.selectedGenres);
+
+    if (genres.contains(genre)) {
+      genres.remove(genre);
+    } else {
+      genres.add(genre);
+    }
+
+    emit(state.copyWith(selectedGenres: genres));
   }
 
   Future<void> pickCoverImage() async {
@@ -55,7 +63,7 @@ class BookWizardCubit extends Cubit<BookWizardState> {
           title: state.title,
           coverImage: state.coverImage,
           author: state.author,
-          genre: state.genre,
+          genres: state.selectedGenres,
         ),
       );
     }
