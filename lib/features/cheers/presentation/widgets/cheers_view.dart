@@ -259,7 +259,7 @@ class _CheersViewState extends State<CheersView> {
                           onLongPress: () {
                             if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);
-                            } else if (item.type != CheersActivityType.zap) {
+                            } else {
                               _showLongPressMenu(context, item);
                             }
                           },

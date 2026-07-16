@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Profiles:** Tap any reader, member, or friend tile to open their full profile — avatar, npub, reading achievements (streak, books read, milestones), and a **Zap Profile** button. Wired up from circle reader lists, circle member management, the friends list, and the Cheers long-press menu; tapping your own tile takes you to your editable `you` profile instead.
 - **Cheers:** Long-pressing a milestone now offers **Post as note** — publish it to Nostr as a public note (kind 1) so it shows up on Damus, Primal, and other clients. Opens an editable sheet pre-filled with the milestone message; post as is or tweak it first.
 - **Cheers:** Copy, Share, and Post now share one uniform ZapBook message (first- or third-person, with book title and links) instead of ad-hoc text.
 - **External Signer (NIP-55):** Sign with Amber or any NIP-55 signer app on Android — no nsec ever touches ZapBook.

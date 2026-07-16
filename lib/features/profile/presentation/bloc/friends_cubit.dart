@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
@@ -12,10 +13,13 @@ import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 class FriendsCubit extends Cubit<FriendsState> {
   StreamSubscription? _sub;
 
-  FriendsCubit(this._usecases) : super(const FriendsLoading());
+  FriendsCubit(this._usecases, this._copyText) : super(const FriendsLoading());
 
   final FriendsUseCases _usecases;
+  final CopyTextUseCase _copyText;
   final _log = logging.Logger('FriendsCubit');
+
+  Future<void> copy(String value) => _copyText(value);
 
   Future<void> load() async {
     _sub?.cancel();

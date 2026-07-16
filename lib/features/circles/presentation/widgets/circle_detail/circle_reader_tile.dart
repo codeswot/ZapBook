@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart'
     show MemberProgress;
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
@@ -44,6 +46,14 @@ class CircleReaderTile extends StatelessWidget {
     return;
   }
 
+  void _openProfile(BuildContext context) {
+    if (isYou) {
+      context.go('/you');
+      return;
+    }
+    UserProfileRoute(npub: entry.npub).push(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -55,7 +65,7 @@ class CircleReaderTile extends StatelessWidget {
 
     return BouncingInteractiveWidget(
       onLongPress: onLongPress,
-      onTap: () => _showZapSheet(context),
+      onTap: () => _openProfile(context),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

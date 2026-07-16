@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zapbook/core/presentation/widgets/app_back_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_state.dart';

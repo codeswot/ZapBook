@@ -26,7 +26,7 @@ class ProfileSection extends StatelessWidget {
           label.toUpperCase(),
           style: context.typography.eyebrow.copyWith(color: colors.slate2),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         ...children,
       ],
     );

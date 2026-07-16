@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/widgets/app_back_button.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
 class CircleDetailTopBar extends StatelessWidget {
@@ -29,8 +30,8 @@ class CircleDetailTopBar extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BackButton(onPressed: () => context.pop()),
-          const SizedBox(width: 8),
+          AppBackButton(onPressed: () => context.pop()),
+          const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
