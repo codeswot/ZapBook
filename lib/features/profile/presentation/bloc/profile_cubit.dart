@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/config/zapbook_config.dart';
+import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
 import 'package:zapbook/features/profile/domain/usecases/profile_usecases.dart';
 import 'package:zapbook/features/profile/domain/usecases/sign_out.dart';
@@ -85,6 +86,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<String?> readNsec() => _settings.readNsec();
+
+  Future<SignerMeta?> readSignerInfo() => _settings.readSignerInfo();
 
   Future<void> connectNwc(String uri) async {
     await _settings.connectNwc(uri);

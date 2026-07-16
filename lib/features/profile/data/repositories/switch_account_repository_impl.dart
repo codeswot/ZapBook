@@ -38,7 +38,33 @@ class SwitchAccountRepositoryImpl implements SwitchAccountRepository {
   @override
   Future<void> importAndPersist(String nsec) async {
     final keypair = await _identityRepo.importFromNsec(nsec);
-    await _identityRepo.persist(npub: keypair.npub, nsec: keypair.nsec!);
+    final derivedNsec = keypair.nsec;
+    if (derivedNsec == null || derivedNsec.isEmpty) {
+      throw const FormatException('Could not derive secret key');
+    }
+    await _identityRepo.persist(npub: keypair.npub, nsec: derivedNsec);
+  }
+
+  @override
+  Future<bool> isExternalSignerAvailable() =>
+      _identityRepo.isExternalSignerAvailable();
+
+  @override
+  Future<void> connectExternalSigner() async {
+    final connection = await _identityRepo.connectExternalSigner();
+    await _identityRepo.persistExternal(
+      npub: connection.npub,
+      package: connection.package,
+    );
+  }
+
+  @override
+  Future<void> connectBunker(String bunkerUrl) async {
+    final result = await _identityRepo.connectBunker(bunkerUrl);
+    await _identityRepo.persistBunker(
+      npub: result.npub,
+      connectionJson: result.connectionJson,
+    );
   }
 
   @override

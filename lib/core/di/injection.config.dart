@@ -114,12 +114,16 @@ import 'package:zapbook/core/domain/usecases/watch_global_book_download_progress
 import 'package:zapbook/core/domain/usecases/watch_my_reading_progress.dart'
     as _i35;
 import 'package:zapbook/core/domain/wizard_data.dart' as _i230;
+import 'package:zapbook/core/identity/bunker_signer_source.dart' as _i991;
 import 'package:zapbook/core/identity/identity_local_data_source.dart' as _i603;
 import 'package:zapbook/core/identity/identity_repository.dart' as _i63;
 import 'package:zapbook/core/identity/local_key_signer_source.dart' as _i429;
 import 'package:zapbook/core/identity/marmot_identity_repository.dart' as _i538;
+import 'package:zapbook/core/identity/nip55_signer.dart' as _i513;
+import 'package:zapbook/core/identity/nip55_signer_source.dart' as _i552;
 import 'package:zapbook/core/identity/nostr_session.dart' as _i1073;
 import 'package:zapbook/core/identity/nostr_signer_source.dart' as _i148;
+import 'package:zapbook/core/identity/signer_source_resolver.dart' as _i105;
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart'
     as _i81;
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart'
@@ -252,6 +256,8 @@ import 'package:zapbook/features/onboarding/domain/repositories/onboarding_repos
     as _i377;
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart'
     as _i341;
+import 'package:zapbook/features/onboarding/domain/usecases/connect_external_signer.dart'
+    as _i234;
 import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart'
     as _i1070;
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart'
@@ -358,6 +364,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => nostrModule.cacheStore(),
       preResolve: true,
     );
+    gh.lazySingleton<_i513.Nip55Signer>(() => const _i513.Nip55Signer());
     gh.lazySingleton<_i520.AppRouter>(() => _i520.AppRouter());
     gh.lazySingleton<_i918.FileHasher>(() => const _i918.FileHasher());
     gh.lazySingleton<_i201.CoverGenerator>(
@@ -406,6 +413,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i616.RasterizePdfPageUseCase>(
       () => _i616.RasterizePdfPageUseCase(gh<_i283.PdfPageRasterizer>()),
     );
+    gh.lazySingleton<_i429.LocalKeySignerSource>(
+      () => _i429.LocalKeySignerSource(gh<_i603.IdentityLocalDataSource>()),
+    );
     gh.lazySingleton<_i342.OnboardingLocalDataSource>(
       () => _i342.OnboardingLocalDataSource(gh<_i460.SharedPreferences>()),
     );
@@ -438,11 +448,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i59.CircleProgressRepository>(
       () => _i59.CircleProgressRepository(gh<_i220.CircleProgressDataSource>()),
     );
+    gh.lazySingleton<_i552.Nip55SignerSource>(
+      () => _i552.Nip55SignerSource(gh<_i513.Nip55Signer>()),
+    );
     gh.singleton<_i801.PerformanceRepository>(
       () => _i797.PerformanceService(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i148.NostrSignerSource>(
-      () => _i429.LocalKeySignerSource(gh<_i603.IdentityLocalDataSource>()),
     );
     gh.lazySingleton<_i491.BookVectorIndex>(
       () => _i491.BookVectorIndex(gh<_i18.EmbeddingService>()),
@@ -472,8 +482,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i733.GroupEnvelopeService>(
       () => _i733.GroupEnvelopeService(gh<_i857.Ndk>()),
     );
-    gh.lazySingleton<_i63.IdentityRepository>(
-      () => _i538.MarmotIdentityRepository(gh<_i603.IdentityLocalDataSource>()),
+    gh.lazySingleton<_i991.BunkerSignerSource>(
+      () => _i991.BunkerSignerSource(gh<_i857.Ndk>()),
     );
     gh.lazySingleton<_i540.CircleShareService>(
       () => _i540.CircleShareService(
@@ -482,12 +492,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.LibraryFileStore>(),
         gh<_i733.GroupEnvelopeService>(),
       ),
-    );
-    gh.factory<_i709.GenerateIdentity>(
-      () => _i709.GenerateIdentity(gh<_i63.IdentityRepository>()),
-    );
-    gh.factory<_i136.ImportIdentity>(
-      () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
     );
     gh.lazySingleton<_i1029.WelcomeInboxService>(
       () => _i1029.WelcomeInboxService(
@@ -504,18 +508,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i876.QuizService>(),
       ),
     );
-    gh.factory<_i177.WatchEarningsUseCase>(
-      () => _i177.WatchEarningsUseCase(
-        gh<_i949.EarningsRepository>(),
-        gh<_i63.IdentityRepository>(),
-      ),
-    );
-    gh.factory<_i177.GetEarningsUseCase>(
-      () => _i177.GetEarningsUseCase(
-        gh<_i949.EarningsRepository>(),
-        gh<_i63.IdentityRepository>(),
-      ),
-    );
     gh.lazySingleton<_i974.RecognitionQuizBuilder>(
       () => _i974.RecognitionQuizBuilder(gh<_i491.BookVectorIndex>()),
     );
@@ -523,6 +515,14 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i603.ReadingProgressLocalStore(
         gh<_i460.SharedPreferences>(),
         gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
+    gh.lazySingleton<_i148.NostrSignerSource>(
+      () => _i105.SignerSourceResolver(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i429.LocalKeySignerSource>(),
+        gh<_i552.Nip55SignerSource>(),
+        gh<_i991.BunkerSignerSource>(),
       ),
     );
     gh.lazySingleton<_i295.NostrService>(
@@ -545,6 +545,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i377.OnboardingRepository>(
       () =>
           _i444.OnboardingRepositoryImpl(gh<_i342.OnboardingLocalDataSource>()),
+    );
+    gh.lazySingleton<_i63.IdentityRepository>(
+      () => _i538.MarmotIdentityRepository(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i513.Nip55Signer>(),
+        gh<_i991.BunkerSignerSource>(),
+      ),
     );
     gh.lazySingleton<_i904.MarmotSyncService>(
       () => _i904.MarmotSyncService(
@@ -591,12 +598,6 @@ extension GetItInjectableX on _i174.GetIt {
         searchIndex: gh<_i525.BookSearchIndex>(),
         vectorIndex: gh<_i491.BookVectorIndex>(),
         writer: gh<_i1.ZbfWriter>(),
-      ),
-    );
-    gh.factory<_i362.EarningsCubit>(
-      () => _i362.EarningsCubit(
-        gh<_i177.GetEarningsUseCase>(),
-        gh<_i177.WatchEarningsUseCase>(),
       ),
     );
     gh.factory<_i341.CompleteOnboarding>(
@@ -700,6 +701,27 @@ extension GetItInjectableX on _i174.GetIt {
       ),
       dispose: (i) => i.dispose(),
     );
+    gh.factory<_i234.ConnectExternalSigner>(
+      () => _i234.ConnectExternalSigner(gh<_i63.IdentityRepository>()),
+    );
+    gh.factory<_i709.GenerateIdentity>(
+      () => _i709.GenerateIdentity(gh<_i63.IdentityRepository>()),
+    );
+    gh.factory<_i136.ImportIdentity>(
+      () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
+    );
+    gh.factory<_i177.WatchEarningsUseCase>(
+      () => _i177.WatchEarningsUseCase(
+        gh<_i949.EarningsRepository>(),
+        gh<_i63.IdentityRepository>(),
+      ),
+    );
+    gh.factory<_i177.GetEarningsUseCase>(
+      () => _i177.GetEarningsUseCase(
+        gh<_i949.EarningsRepository>(),
+        gh<_i63.IdentityRepository>(),
+      ),
+    );
     gh.factory<_i856.FriendsRepository>(
       () => _i876.FriendsRepositoryImpl(gh<_i409.ContactService>()),
     );
@@ -750,6 +772,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1009.SwitchAccountUseCases>(
       () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
     );
+    gh.factory<_i362.EarningsCubit>(
+      () => _i362.EarningsCubit(
+        gh<_i177.GetEarningsUseCase>(),
+        gh<_i177.WatchEarningsUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i400.PerformanceCubit>(
       () => _i400.PerformanceCubit(
         gh<_i1045.WatchPerformanceModeUseCase>(),
@@ -776,6 +804,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i571.WatchBookDownloadProgressUseCase>(
       () => _i571.WatchBookDownloadProgressUseCase(
         gh<_i188.BookReaderRepository>(),
+      ),
+    );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i854.CopyTextUseCase>(),
+        gh<_i854.PasteTextUseCase>(),
+        gh<_i1070.FetchExistingProfileUseCase>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+        gh<_i234.ConnectExternalSigner>(),
       ),
     );
     gh.factory<_i81.BookDownloadCubit>(
@@ -825,16 +864,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i516.CircleStoreService>(),
         gh<_i540.CircleShareService>(),
         gh<_i854.LibraryFileStore>(),
-      ),
-    );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i854.CopyTextUseCase>(),
-        gh<_i854.PasteTextUseCase>(),
-        gh<_i1070.FetchExistingProfileUseCase>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
       ),
     );
     gh.factory<_i982.SwitchAccountCubit>(

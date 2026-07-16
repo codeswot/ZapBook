@@ -15,11 +15,22 @@ class CompleteOnboarding {
   Future<void> call({
     required String npub,
     required String nsec,
+    String? signerPackage,
+    String? bunkerConnectionJson,
     String? displayName,
     String? lud16,
     String? picture,
   }) async {
-    await _identity.persist(npub: npub, nsec: nsec);
+    if (bunkerConnectionJson != null && bunkerConnectionJson.isNotEmpty) {
+      await _identity.persistBunker(
+        npub: npub,
+        connectionJson: bunkerConnectionJson,
+      );
+    } else if (signerPackage != null && signerPackage.isNotEmpty) {
+      await _identity.persistExternal(npub: npub, package: signerPackage);
+    } else {
+      await _identity.persist(npub: npub, nsec: nsec);
+    }
     await _onboarding.complete();
     if (displayName != null || lud16 != null || picture != null) {
       await _onboarding.stashPendingProfile(

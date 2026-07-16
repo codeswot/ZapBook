@@ -1,5 +1,14 @@
 import 'package:marmot_dart/marmot_dart.dart';
 
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
+
+class ExternalSignerConnection {
+  const ExternalSignerConnection({required this.npub, required this.package});
+
+  final String npub;
+  final String package;
+}
+
 abstract interface class IdentityRepository {
   Future<NostrKeypair> generate();
 
@@ -9,9 +18,20 @@ abstract interface class IdentityRepository {
 
   Future<void> persist({required String npub, required String nsec});
 
-  Future<String?> currentNpub();
+  Future<void> persistExternal({required String npub, required String package});
 
-  Future<String?> currentNsec();
+  Future<void> persistBunker({
+    required String npub,
+    required String connectionJson,
+  });
+
+  Future<bool> isExternalSignerAvailable();
+
+  Future<ExternalSignerConnection> connectExternalSigner();
+
+  Future<BunkerConnectResult> connectBunker(String bunkerUrl);
+
+  Future<String?> currentNpub();
 
   Future<bool> hasIdentity();
 
