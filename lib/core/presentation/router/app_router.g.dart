@@ -11,6 +11,7 @@ List<RouteBase> get $appRoutes => [
   $appShellRoute,
   $zbfViewerRoute,
   $circleDetailRoute,
+  $userProfileRoute,
 ];
 
 RouteBase get $onboardingRoute => GoRouteData.$route(
@@ -222,6 +223,35 @@ mixin $CircleDetailRoute on GoRouteData {
     '/circle',
     queryParams: {'circle-book-id': _self.circleBookId},
   );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $userProfileRoute => GoRouteData.$route(
+  path: '/profile/:npub',
+  factory: $UserProfileRoute._fromState,
+);
+
+mixin $UserProfileRoute on GoRouteData {
+  static UserProfileRoute _fromState(GoRouterState state) =>
+      UserProfileRoute(npub: state.pathParameters['npub']!);
+
+  UserProfileRoute get _self => this as UserProfileRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/profile/${Uri.encodeComponent(_self.npub)}');
 
   @override
   void go(BuildContext context) => context.go(location);

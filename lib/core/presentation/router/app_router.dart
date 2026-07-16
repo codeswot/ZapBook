@@ -10,6 +10,7 @@ import 'package:zapbook/features/circles/presentation/pages/circle_detail_page.d
 import 'package:zapbook/features/book_reader/presentation/widgets/zbf_viewer_page.dart';
 import 'package:zapbook/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:zapbook/features/profile/presentation/pages/profile_page.dart';
+import 'package:zapbook/features/profile/presentation/pages/user_profile_page.dart';
 import 'package:zapbook/features/cheers/presentation/pages/cheers_page.dart';
 import 'package:zapbook/features/home/presentation/pages/home_page.dart';
 
@@ -181,4 +182,15 @@ class CircleDetailRoute extends GoRouteData with $CircleDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       CircleDetailPage(circleBookId: circleBookId);
+}
+
+@TypedGoRoute<UserProfileRoute>(path: '/profile/:npub')
+class UserProfileRoute extends GoRouteData with $UserProfileRoute {
+  final String npub;
+
+  const UserProfileRoute({required this.npub});
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      UserProfilePage(npub: npub);
 }

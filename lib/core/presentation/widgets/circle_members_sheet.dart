@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
@@ -53,6 +55,15 @@ class _Body extends StatelessWidget {
   const _Body({required this.book});
   final CircleBook book;
 
+  void _openProfile(BuildContext context, MemberEntry entry) {
+    context.pop();
+    if (entry.isSelf) {
+      context.go('/you');
+    } else {
+      UserProfileRoute(npub: entry.npub).push(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CircleMembersCubit, CircleMembersState>(
@@ -91,31 +102,41 @@ class _Body extends StatelessWidget {
                   for (final entry in entries) ...[
                     Row(
                       children: [
-                        AppProfileAvatar(
-                          url: entry.contact.picture ?? '',
-                          size: 36,
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                entry.contact.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: typography.bodyL.copyWith(
-                                  color: colors.ink,
+                          child: BouncingInteractiveWidget(
+                            onTap: () => _openProfile(context, entry),
+                            child: Row(
+                              children: [
+                                AppProfileAvatar(
+                                  url: entry.contact.picture ?? '',
+                                  size: 36,
                                 ),
-                              ),
-                              Text(
-                                entry.contact.shortNpub,
-                                style: typography.bodyS.copyWith(
-                                  color: colors.slate,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        entry.contact.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: typography.bodyL.copyWith(
+                                          color: colors.ink,
+                                        ),
+                                      ),
+                                      Text(
+                                        entry.contact.shortNpub,
+                                        style: typography.bodyS.copyWith(
+                                          color: colors.slate,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                         if (busyNpub == entry.npub)

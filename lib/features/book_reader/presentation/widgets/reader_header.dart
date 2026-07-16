@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/widgets/app_back_button.dart';
 
 class ReaderHeader extends StatelessWidget {
   const ReaderHeader({
@@ -32,8 +33,8 @@ class ReaderHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
           child: Row(
             children: [
-              BackButton(onPressed: onBack, color: colors.ink),
-              const SizedBox(width: 4),
+              AppBackButton(onPressed: onBack, color: colors.ink),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

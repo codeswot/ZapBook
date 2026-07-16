@@ -4,18 +4,23 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 
 class MockFriendsUseCases extends Mock implements FriendsUseCases {}
 
+class MockCopyTextUseCase extends Mock implements CopyTextUseCase {}
+
 void main() {
   late MockFriendsUseCases usecases;
+  late MockCopyTextUseCase copyText;
   late StreamController<List<Contact>> friendsController;
 
   setUp(() {
     usecases = MockFriendsUseCases();
+    copyText = MockCopyTextUseCase();
     friendsController = StreamController<List<Contact>>.broadcast();
 
     when(() => usecases.friends).thenAnswer((_) => friendsController.stream);
@@ -25,7 +30,7 @@ void main() {
     friendsController.close();
   });
 
-  FriendsCubit buildCubit() => FriendsCubit(usecases);
+  FriendsCubit buildCubit() => FriendsCubit(usecases, copyText);
 
   group('FriendsCubit', () {
     test('initial state is FriendsLoading', () {

@@ -43,14 +43,16 @@ class _ViewerError extends StatelessWidget {
         final downloadedSegments = state.downloadProgress[circleDirId] ?? 0;
 
         return Scaffold(
-          appBar: AppBar(leading: const BackButton()),
-          body: Center(
+          body: SafeArea(
+            bottom: false,
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  AppBackButton(),
+                  SizedBox(height: 32),
                   if (coverPath != null && File(coverPath!).existsSync())
                     Container(
                       width: double.infinity,

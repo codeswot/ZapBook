@@ -5,9 +5,20 @@ class _ViewerLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(leading: const BackButton()),
-
     backgroundColor: context.colors.paper,
-    body: const ReaderPageLoading(message: 'Opening…'),
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: AppBackButton(),
+          ),
+        ),
+
+        const ReaderPageLoading(message: 'Opening…'),
+      ],
+    ),
   );
 }

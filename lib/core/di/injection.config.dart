@@ -278,6 +278,8 @@ import 'package:zapbook/features/profile/data/repositories/profile_settings_repo
     as _i366;
 import 'package:zapbook/features/profile/data/repositories/switch_account_repository_impl.dart'
     as _i629;
+import 'package:zapbook/features/profile/data/repositories/user_profile_repository_impl.dart'
+    as _i615;
 import 'package:zapbook/features/profile/domain/repositories/donate_repository.dart'
     as _i993;
 import 'package:zapbook/features/profile/domain/repositories/friends_repository.dart'
@@ -288,6 +290,8 @@ import 'package:zapbook/features/profile/domain/repositories/profile_settings_re
     as _i493;
 import 'package:zapbook/features/profile/domain/repositories/switch_account_repository.dart'
     as _i991;
+import 'package:zapbook/features/profile/domain/repositories/user_profile_repository.dart'
+    as _i771;
 import 'package:zapbook/features/profile/domain/usecases/donate_usecases.dart'
     as _i631;
 import 'package:zapbook/features/profile/domain/usecases/friends_usecases.dart'
@@ -302,6 +306,8 @@ import 'package:zapbook/features/profile/domain/usecases/switch_account_usecases
     as _i1009;
 import 'package:zapbook/features/profile/domain/usecases/update_profile.dart'
     as _i223;
+import 'package:zapbook/features/profile/domain/usecases/user_profile_usecases.dart'
+    as _i644;
 import 'package:zapbook/features/profile/presentation/bloc/donate_cubit.dart'
     as _i469;
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart'
@@ -310,6 +316,10 @@ import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart'
     as _i145;
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart'
     as _i982;
+import 'package:zapbook/features/profile/presentation/bloc/user_profile_cubit.dart'
+    as _i623;
+import 'package:zapbook/features/profile/presentation/bloc/user_profile_zap_cubit.dart'
+    as _i3;
 import 'package:zapbook/zbf/zbf.dart' as _i1;
 import 'package:zapbook/zbf/zbf_reader.dart' as _i138;
 
@@ -685,6 +695,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
       ),
     );
+    gh.lazySingleton<_i771.UserProfileRepository>(
+      () => _i615.UserProfileRepositoryImpl(
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i837.ReadingStatsService>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i327.ZapService>(),
+      ),
+    );
     gh.factory<_i297.WatchQuizSurfaceUseCase>(
       () => _i297.WatchQuizSurfaceUseCase(gh<_i902.QuizRepository>()),
     );
@@ -778,6 +796,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i177.WatchEarningsUseCase>(),
       ),
     );
+    gh.factory<_i644.LoadUserProfileUseCase>(
+      () => _i644.LoadUserProfileUseCase(gh<_i771.UserProfileRepository>()),
+    );
+    gh.factory<_i644.SendProfileZapUseCase>(
+      () => _i644.SendProfileZapUseCase(gh<_i771.UserProfileRepository>()),
+    );
     gh.lazySingleton<_i400.PerformanceCubit>(
       () => _i400.PerformanceCubit(
         gh<_i1045.WatchPerformanceModeUseCase>(),
@@ -869,8 +893,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i982.SwitchAccountCubit>(
       () => _i982.SwitchAccountCubit(gh<_i1009.SwitchAccountUseCases>()),
     );
-    gh.lazySingleton<_i397.FriendsCubit>(
-      () => _i397.FriendsCubit(gh<_i86.FriendsUseCases>()),
+    gh.factory<_i3.UserProfileZapCubit>(
+      () => _i3.UserProfileZapCubit(gh<_i644.SendProfileZapUseCase>()),
     );
     gh.factory<_i704.CreateCircleBookUseCase>(
       () => _i704.CreateCircleBookUseCase(
@@ -903,6 +927,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i348.CircleProgressDao>(),
         gh<_i760.ZapSatsEarningsDao>(),
         gh<_i460.SharedPreferences>(),
+      ),
+    );
+    gh.lazySingleton<_i397.FriendsCubit>(
+      () => _i397.FriendsCubit(
+        gh<_i86.FriendsUseCases>(),
+        gh<_i854.CopyTextUseCase>(),
+      ),
+    );
+    gh.factory<_i623.UserProfileCubit>(
+      () => _i623.UserProfileCubit(
+        gh<_i644.LoadUserProfileUseCase>(),
+        gh<_i854.CopyTextUseCase>(),
       ),
     );
     gh.lazySingleton<_i203.CirclesRepository>(

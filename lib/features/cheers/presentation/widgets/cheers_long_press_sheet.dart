@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/cheers/presentation/bloc/cheers_cubit.dart';
 import 'package:zapbook/features/cheers/presentation/cheers_zap_sheet.dart';
@@ -32,6 +33,7 @@ class CheersLongPressSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider.value(
         value: cubit,
@@ -79,6 +81,20 @@ class CheersLongPressSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
+          _Action(
+            icon: LucideIcons.userCircle,
+            label: 'View profile',
+            tone: colors.ink,
+            onTap: () {
+              context.pop();
+              if (isMine) {
+                context.go('/you');
+              } else {
+                UserProfileRoute(npub: activity.actorNpub).push(context);
+              }
+            },
+          ),
+          const SizedBox(height: 10),
           if (!isMine) ...[
             _Action(
               icon: LucideIcons.zap,
