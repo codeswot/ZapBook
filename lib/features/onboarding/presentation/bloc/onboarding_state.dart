@@ -19,6 +19,7 @@ class OnboardingState extends Equatable {
   final bool keyPackagePublishFailed;
   final bool isExternalSigner;
   final String signerPackage;
+  final String signerConnectionJson;
 
   const OnboardingState({
     required this.step,
@@ -37,6 +38,7 @@ class OnboardingState extends Equatable {
     this.keyPackagePublishFailed = false,
     this.isExternalSigner = false,
     this.signerPackage = "",
+    this.signerConnectionJson = "",
   });
 
   @override
@@ -57,6 +59,7 @@ class OnboardingState extends Equatable {
     keyPackagePublishFailed,
     isExternalSigner,
     signerPackage,
+    signerConnectionJson,
   ];
 
   OnboardingState copyWith({
@@ -76,6 +79,7 @@ class OnboardingState extends Equatable {
     bool? keyPackagePublishFailed,
     bool? isExternalSigner,
     String? signerPackage,
+    String? signerConnectionJson,
   }) {
     return OnboardingState(
       step: step ?? this.step,
@@ -95,6 +99,8 @@ class OnboardingState extends Equatable {
           keyPackagePublishFailed ?? this.keyPackagePublishFailed,
       isExternalSigner: isExternalSigner ?? this.isExternalSigner,
       signerPackage: signerPackage ?? this.signerPackage,
+      signerConnectionJson:
+          signerConnectionJson ?? this.signerConnectionJson,
     );
   }
 }

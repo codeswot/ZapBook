@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/identity/nip55_signer.dart';
@@ -8,10 +9,11 @@ import 'package:zapbook/core/identity/signer_meta.dart';
 
 @LazySingleton(as: IdentityRepository)
 class MarmotIdentityRepository implements IdentityRepository {
-  const MarmotIdentityRepository(this._local, this._signer);
+  const MarmotIdentityRepository(this._local, this._signer, this._bunker);
 
   final IdentityLocalDataSource _local;
   final Nip55Signer _signer;
+  final BunkerSignerSource _bunker;
 
   @override
   Future<NostrKeypair> generate() => MarmotIdentity.generate();
@@ -35,6 +37,13 @@ class MarmotIdentityRepository implements IdentityRepository {
       _local.writeExternal(npub: npub, package: package);
 
   @override
+  Future<void> persistBunker({
+    required String npub,
+    required String connectionJson,
+  }) =>
+      _local.writeBunker(npub: npub, connectionJson: connectionJson);
+
+  @override
   Future<bool> isExternalSignerAvailable() => _signer.isSignerInstalled();
 
   @override
@@ -46,6 +55,10 @@ class MarmotIdentityRepository implements IdentityRepository {
     }
     return ExternalSignerConnection(npub: key.npub, package: package);
   }
+
+  @override
+  Future<BunkerConnectResult> connectBunker(String bunkerUrl) =>
+      _bunker.connect(bunkerUrl);
 
   @override
   Future<String?> currentNpub() => _local.readNpub();

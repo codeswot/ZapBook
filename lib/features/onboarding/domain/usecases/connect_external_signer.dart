@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 
 @injectable
@@ -11,4 +12,7 @@ class ConnectExternalSigner {
   Future<bool> isAvailable() => _identity.isExternalSignerAvailable();
 
   Future<ExternalSignerConnection> call() => _identity.connectExternalSigner();
+
+  Future<BunkerConnectResult> connectBunker(String bunkerUrl) =>
+      _identity.connectBunker(bunkerUrl);
 }

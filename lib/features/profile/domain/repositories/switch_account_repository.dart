@@ -12,6 +12,7 @@ abstract class SwitchAccountRepository {
 
   Future<bool> isExternalSignerAvailable();
   Future<void> connectExternalSigner();
+  Future<void> connectBunker(String bunkerUrl);
 
   Future<void> reloadSession();
 

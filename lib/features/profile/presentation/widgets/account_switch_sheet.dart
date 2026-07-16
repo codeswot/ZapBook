@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
+import 'package:zapbook/features/onboarding/presentation/widgets/external_signer_method_sheet.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
@@ -202,49 +203,66 @@ class _BodyState extends State<_Body> {
                       ),
                     ],
                   ),
-                  if (Platform.isAndroid) ...[
-                    const SizedBox(height: 12),
-                    BouncingInteractiveWidget(
-                      onTap: isAdding
-                          ? null
-                          : () => cubit.connectExternalSigner(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.paper2,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colors.hairline2),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              LucideIcons.shieldCheck,
-                              size: 20,
-                              color: colors.bitcoin,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Connect external signer',
-                                style: typography.bodyL.copyWith(
-                                  color: colors.ink,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                  const SizedBox(height: 12),
+                  BouncingInteractiveWidget(
+                    onTap: isAdding
+                        ? null
+                        : () => ExternalSignerMethodSheet.show(
+                            context,
+                            showSignerApp: Platform.isAndroid,
+                            onSignerApp: () async {
+                              final ok = await cubit.connectExternalSigner();
+                              if (ok) return null;
+                              final s = cubit.state;
+                              return s is SwitchAccountError
+                                  ? s.message
+                                  : "Couldn't connect signer";
+                            },
+                            onBunker: (url) async {
+                              final ok = await cubit.connectBunker(url);
+                              if (ok) return null;
+                              final s = cubit.state;
+                              return s is SwitchAccountError
+                                  ? s.message
+                                  : "Couldn't connect signer";
+                            },
+                          ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.paper2,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: colors.hairline2),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.shieldCheck,
+                            size: 20,
+                            color: colors.bitcoin,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Connect external signer',
+                              style: typography.bodyL.copyWith(
+                                color: colors.ink,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Icon(
-                              LucideIcons.arrowRight,
-                              size: 18,
-                              color: colors.slate,
-                            ),
-                          ],
-                        ),
+                          ),
+                          Icon(
+                            LucideIcons.arrowRight,
+                            size: 18,
+                            color: colors.slate,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                   const SizedBox(height: 20),
                 ],
                 if (isLoading)

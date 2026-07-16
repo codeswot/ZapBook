@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/core/data/infrastructure/clipboard_service.dart';
 import 'package:zapbook/core/data/infrastructure/file_picker_service.dart';
 import 'package:zapbook/core/data/infrastructure/app_info_service.dart';
@@ -48,11 +49,11 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
   @override
   Future<String?> readNsec() => _identity.readNsec();
   @override
-  Future<String?> readSignerPackage() async {
+  Future<SignerMeta?> readSignerInfo() async {
     final npub = await _identity.readNpub();
     if (npub == null) return null;
     final meta = await _identity.readSignerMeta(npub);
-    return meta != null && meta.isExternal ? meta.package : null;
+    return meta != null && meta.isExternal ? meta : null;
   }
   @override
   Future<void> connectNwc(String uri) => _nwc.connect(uri);

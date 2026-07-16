@@ -1,3 +1,5 @@
+import 'package:zapbook/core/identity/signer_meta.dart';
+
 abstract class ProfileSettingsRepository {
   String get appVersion;
   String? get nwcConnectionString;
@@ -9,7 +11,7 @@ abstract class ProfileSettingsRepository {
   Future<void> setSupportPercent(int value);
   Future<List<int>?> pickImage();
   Future<String?> readNsec();
-  Future<String?> readSignerPackage();
+  Future<SignerMeta?> readSignerInfo();
   Future<void> connectNwc(String uri);
   Future<void> disconnectNwc();
   Future<void> copyToClipboard(String value);

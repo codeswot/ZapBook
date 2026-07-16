@@ -1,16 +1,19 @@
-enum SignerType { local, nip55 }
+enum SignerType { local, nip55, nip46 }
 
 class SignerMeta {
-  const SignerMeta({required this.type, this.package});
+  const SignerMeta({required this.type, this.package, this.connectionJson});
 
   final SignerType type;
   final String? package;
+  final String? connectionJson;
 
-  bool get isExternal => type == SignerType.nip55;
+  bool get isExternal =>
+      type == SignerType.nip55 || type == SignerType.nip46;
 
   Map<String, dynamic> toJson() => {
         'type': type.name,
         if (package != null) 'package': package,
+        if (connectionJson != null) 'connection': connectionJson,
       };
 
   static SignerMeta? fromJson(Object? raw) {
@@ -21,6 +24,13 @@ class SignerMeta {
       return SignerMeta(
         type: SignerType.nip55,
         package: package is String ? package : null,
+      );
+    }
+    if (type == SignerType.nip46.name) {
+      final connection = raw['connection'];
+      return SignerMeta(
+        type: SignerType.nip46,
+        connectionJson: connection is String ? connection : null,
       );
     }
     return const SignerMeta(type: SignerType.local);

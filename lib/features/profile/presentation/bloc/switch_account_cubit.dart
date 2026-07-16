@@ -156,6 +156,31 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
     }
   }
 
+  Future<bool> connectBunker(String bunkerUrl) async {
+    final accounts = _currentAccounts;
+    final active = _currentActiveNpub;
+
+    emit(
+      SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
+    );
+    try {
+      await _usecases.connectBunker(bunkerUrl);
+      await _usecases.reloadSession();
+      return true;
+    } on Nip55Exception catch (e, stack) {
+      _log.warning('Connect bunker failed', e, stack);
+      emit(SwitchAccountError.from(state, _bunkerErrorMessage(e)));
+      return false;
+    } on Object catch (e, stack) {
+      _log.warning('Connect bunker failed', e, stack);
+      emit(SwitchAccountError.from(
+        state,
+        'Could not connect to the remote signer',
+      ));
+      return false;
+    }
+  }
+
   String _signerErrorMessage(Nip55Exception error) => switch (error) {
         SignerNotInstalled() =>
           'No Nostr signer app found. Install Amber to continue.',
@@ -164,6 +189,11 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
         SignerUnavailable() ||
         SignerMalformed() =>
           'Couldn\'t reach the signer app. Try again.',
+      };
+
+  String _bunkerErrorMessage(Nip55Exception error) => switch (error) {
+        SignerMalformed() => 'Enter a valid bunker:// connection link.',
+        _ => 'Could not connect to the remote signer. Check the link.',
       };
 
   List<SwitchAccountItem> get _currentAccounts {

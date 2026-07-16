@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/features/onboarding/presentation/bloc/onboarding_cubit.dart';
+import 'package:zapbook/features/onboarding/presentation/widgets/external_signer_method_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 
 class ObFooter extends StatelessWidget {
@@ -87,27 +88,28 @@ class ObFooter extends StatelessWidget {
               cubit.nextStep();
             },
           ),
-          if (Platform.isAndroid) ...[
-            const SizedBox(height: 12),
-            AppButton(
-              label: "Use an external signer",
-              variant: AppButtonVariant.ghost,
-              fullWidth: true,
-              iconRight: LucideIcons.shieldCheck,
-              onTap: () async {
-                final connected = await cubit.connectExternalSigner();
-                if (!connected) {
-                  if (context.mounted) {
-                    context.toast.showError(
-                      cubit.state.error ?? "Couldn't connect signer",
-                    );
-                  }
-                  return;
-                }
-                cubit.nextStep();
-              },
-            ),
-          ],
+          const SizedBox(height: 12),
+          AppButton(
+            label: "Use an external signer",
+            variant: AppButtonVariant.ghost,
+            fullWidth: true,
+            iconRight: LucideIcons.shieldCheck,
+            onTap: () async {
+              final done = await ExternalSignerMethodSheet.show(
+                context,
+                showSignerApp: Platform.isAndroid,
+                onSignerApp: () async {
+                  final ok = await cubit.connectExternalSigner();
+                  return ok ? null : (cubit.state.error ?? "Couldn't connect signer");
+                },
+                onBunker: (url) async {
+                  final ok = await cubit.connectBunker(url);
+                  return ok ? null : (cubit.state.error ?? "Couldn't connect signer");
+                },
+              );
+              if (done == true) cubit.nextStep();
+            },
+          ),
         ];
       case OnboardingStep.wallet:
         return [

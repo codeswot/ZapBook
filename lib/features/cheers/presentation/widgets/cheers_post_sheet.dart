@@ -70,70 +70,72 @@ class _CheersPostSheetState extends State<CheersPostSheet> {
     final typography = context.typography;
 
     return AppSheet(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Post as note',
-            style: typography.displayM.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colors.ink,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Share this on Nostr as a public note. Edit it or post as is.',
-            style: typography.bodyS.copyWith(color: colors.slate),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            height: 200,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: colors.paper2,
-              borderRadius: AppRadii.br16,
-              border: Border.all(color: colors.hairline2),
-            ),
-            child: TextField(
-              controller: _controller,
-              autofocus: true,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              style: typography.body.copyWith(
-                fontSize: 16,
-                height: 1.4,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Post as note',
+              style: typography.displayM.copyWith(
+                fontWeight: FontWeight.w700,
                 color: colors.ink,
               ),
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Share this on Nostr as a public note. Edit it or post as is.',
+              style: typography.bodyS.copyWith(color: colors.slate),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              height: 200,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: colors.paper2,
+                borderRadius: AppRadii.br16,
+                border: Border.all(color: colors.hairline2),
+              ),
+              child: TextField(
+                controller: _controller,
+                autofocus: true,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                style: typography.body.copyWith(
+                  fontSize: 16,
+                  height: 1.4,
+                  color: colors.ink,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 22),
-          AppButton(
-            label: 'Post',
-            variant: AppButtonVariant.primary,
-            fullWidth: true,
-            isLoading: _posting,
-            onTap: _post,
-          ),
-          const SizedBox(height: 10),
-          AppButton(
-            label: 'Cancel',
-            variant: AppButtonVariant.ghost,
-            fullWidth: true,
-            onTap: () => Navigator.of(context).pop(),
-          ),
-        ],
+            const SizedBox(height: 22),
+            AppButton(
+              label: 'Post',
+              variant: AppButtonVariant.primary,
+              fullWidth: true,
+              isLoading: _posting,
+              onTap: _post,
+            ),
+            const SizedBox(height: 10),
+            AppButton(
+              label: 'Cancel',
+              variant: AppButtonVariant.ghost,
+              fullWidth: true,
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
       ),
     );
   }

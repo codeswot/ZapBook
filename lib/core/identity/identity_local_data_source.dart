@@ -68,6 +68,18 @@ class IdentityLocalDataSource {
     await _saveSignerMeta(meta);
   }
 
+  Future<void> addBunkerAccount({
+    required String npub,
+    required String connectionJson,
+  }) async {
+    final meta = await _signerMeta();
+    meta[npub] = SignerMeta(
+      type: SignerType.nip46,
+      connectionJson: connectionJson,
+    ).toJson();
+    await _saveSignerMeta(meta);
+  }
+
   Future<SignerMeta?> readSignerMeta(String npub) async {
     final meta = await _signerMeta();
     return SignerMeta.fromJson(meta[npub]);
@@ -110,6 +122,14 @@ class IdentityLocalDataSource {
     required String package,
   }) async {
     await addExternalAccount(npub: npub, package: package);
+    await setActive(npub);
+  }
+
+  Future<void> writeBunker({
+    required String npub,
+    required String connectionJson,
+  }) async {
+    await addBunkerAccount(npub: npub, connectionJson: connectionJson);
     await setActive(npub);
   }
 

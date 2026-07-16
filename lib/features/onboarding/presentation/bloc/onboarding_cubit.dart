@@ -105,10 +105,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   Future<bool> connectExternalSigner() async {
     if (!await _connectExternalSigner.isAvailable()) {
-      emit(state.copyWith(
-        error:
-            "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
-      ));
+      emit(
+        state.copyWith(
+          error:
+              "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
+        ),
+      );
       return false;
     }
     emit(state.copyWith(isBusy: true, error: null));
@@ -133,15 +135,52 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
+  Future<bool> connectBunker(String bunkerUrl) async {
+    emit(state.copyWith(isBusy: true, error: null));
+    try {
+      final connection = await _connectExternalSigner.connectBunker(bunkerUrl);
+      emit(
+        state.copyWith(
+          isExternalSigner: true,
+          signerConnectionJson: connection.connectionJson,
+          signerPackage: "",
+          generatedNpub: connection.npub,
+          generatedNsec: "",
+          importedNsec: "",
+        ),
+      );
+      await _fetchExistingProfile();
+      emit(state.copyWith(isBusy: false));
+      return true;
+    } on Nip55Exception catch (error, stack) {
+      _log.warning('connectBunker failed', error, stack);
+      emit(state.copyWith(isBusy: false, error: _bunkerErrorMessage(error)));
+      return false;
+    } on Object catch (error, stack) {
+      _log.warning('connectBunker failed', error, stack);
+      emit(
+        state.copyWith(
+          isBusy: false,
+          error: "Couldn't connect to the remote signer. Check the link.",
+        ),
+      );
+      return false;
+    }
+  }
+
   String _signerErrorMessage(Nip55Exception error) => switch (error) {
-        SignerNotInstalled() =>
-          "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
-        SignerRejected() => "Signing request was declined.",
-        SignerTimeout() => "Signer didn't respond. Try again.",
-        SignerUnavailable() ||
-        SignerMalformed() =>
-          "Couldn't reach the signer app. Try again.",
-      };
+    SignerNotInstalled() =>
+      "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
+    SignerRejected() => "Signing request was declined.",
+    SignerTimeout() => "Signer didn't respond. Try again.",
+    SignerUnavailable() ||
+    SignerMalformed() => "Couldn't reach the signer app. Try again.",
+  };
+
+  String _bunkerErrorMessage(Nip55Exception error) => switch (error) {
+    SignerMalformed() => "Enter a valid bunker:// connection link.",
+    _ => "Couldn't connect to the remote signer. Check the link.",
+  };
 
   Future<bool> importNsec(String nsec) async {
     final trimmed = nsec.trim();
@@ -254,6 +293,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       npub: npub,
       nsec: nsec,
       signerPackage: state.isExternalSigner ? state.signerPackage : null,
+      bunkerConnectionJson: state.isExternalSigner
+          ? state.signerConnectionJson
+          : null,
       displayName: publish && state.displayName.isNotEmpty
           ? state.displayName
           : null,

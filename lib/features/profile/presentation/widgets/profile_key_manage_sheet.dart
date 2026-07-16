@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
+import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
@@ -12,7 +13,7 @@ import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.da
 class ProfileKeyManageSheet extends StatefulWidget {
   final String npub;
   final String? nsec;
-  final String? signerPackage;
+  final SignerMeta? signerMeta;
   final ProfileCubit cubit;
 
   const ProfileKeyManageSheet({
@@ -20,10 +21,10 @@ class ProfileKeyManageSheet extends StatefulWidget {
     required this.npub,
     required this.nsec,
     required this.cubit,
-    this.signerPackage,
+    this.signerMeta,
   });
 
-  bool get isExternal => signerPackage != null && signerPackage!.isNotEmpty;
+  bool get isExternal => signerMeta != null;
 
   @override
   State<ProfileKeyManageSheet> createState() => _ProfileKeyManageSheetState();
@@ -33,7 +34,7 @@ class ProfileKeyManageSheet extends StatefulWidget {
     required String npub,
     required String? nsec,
     required ProfileCubit cubit,
-    String? signerPackage,
+    SignerMeta? signerMeta,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -44,7 +45,7 @@ class ProfileKeyManageSheet extends StatefulWidget {
         npub: npub,
         nsec: nsec,
         cubit: cubit,
-        signerPackage: signerPackage,
+        signerMeta: signerMeta,
       ),
     );
   }
@@ -92,7 +93,7 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
             ),
             const SizedBox(height: 12),
             if (widget.isExternal)
-              _ExternalSignerBlock(package: widget.signerPackage!)
+              _ExternalSignerBlock(meta: widget.signerMeta)
             else ...[
               _KeyBlock(
                 label: 'Secret Key (nsec)',
@@ -127,12 +128,16 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
 }
 
 class _ExternalSignerBlock extends StatelessWidget {
-  final String package;
+  final SignerMeta? meta;
 
-  const _ExternalSignerBlock({required this.package});
+  const _ExternalSignerBlock({required this.meta});
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = meta?.type == SignerType.nip46
+        ? 'Remote signer (NIP-46)'
+        : (meta?.package ?? 'External signer');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,7 +177,7 @@ class _ExternalSignerBlock extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      package,
+                      subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.typography.bodyS.copyWith(

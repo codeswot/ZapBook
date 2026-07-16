@@ -22,6 +22,8 @@ class SwitchAccountUseCases {
       _repository.isExternalSignerAvailable();
   Future<void> connectExternalSigner() =>
       _repository.connectExternalSigner();
+  Future<void> connectBunker(String bunkerUrl) =>
+      _repository.connectBunker(bunkerUrl);
 
   Future<void> reloadSession() => _repository.reloadSession();
 

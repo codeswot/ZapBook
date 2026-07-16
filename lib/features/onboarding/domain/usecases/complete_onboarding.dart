@@ -16,11 +16,17 @@ class CompleteOnboarding {
     required String npub,
     required String nsec,
     String? signerPackage,
+    String? bunkerConnectionJson,
     String? displayName,
     String? lud16,
     String? picture,
   }) async {
-    if (signerPackage != null && signerPackage.isNotEmpty) {
+    if (bunkerConnectionJson != null && bunkerConnectionJson.isNotEmpty) {
+      await _identity.persistBunker(
+        npub: npub,
+        connectionJson: bunkerConnectionJson,
+      );
+    } else if (signerPackage != null && signerPackage.isNotEmpty) {
       await _identity.persistExternal(npub: npub, package: signerPackage);
     } else {
       await _identity.persist(npub: npub, nsec: nsec);

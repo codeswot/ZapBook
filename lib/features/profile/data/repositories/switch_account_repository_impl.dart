@@ -59,6 +59,15 @@ class SwitchAccountRepositoryImpl implements SwitchAccountRepository {
   }
 
   @override
+  Future<void> connectBunker(String bunkerUrl) async {
+    final result = await _identityRepo.connectBunker(bunkerUrl);
+    await _identityRepo.persistBunker(
+      npub: result.npub,
+      connectionJson: result.connectionJson,
+    );
+  }
+
+  @override
   Future<void> reloadSession() => _sessionReloader.reload();
 
   @override
