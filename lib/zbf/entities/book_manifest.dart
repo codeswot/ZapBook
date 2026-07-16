@@ -39,22 +39,21 @@ final class BookManifest extends Equatable {
   final List<int>? skippablePages;
 
   Map<String, Object?> toJson() => {
-        'zbfVersion': zbfVersion,
-        'id': id,
-        'title': title,
-        'author': author,
-        'genres': genres,
-        'sourceFormat': sourceFormat.wireValue,
-        'pageCount': pageCount,
-        'chapterCount': chapterCount,
-        'coverAsset': coverAsset,
-        'createdAt': createdAt.toUtc().toIso8601String(),
-        'needsAiProcessing': needsAiProcessing,
-        'chapters': chapters.map((chapter) => chapter.toJson()).toList(),
-        if (pageWords != null) 'pageWords': pageWords,
-        if (skippablePages != null)
-          'skippablePages': skippablePages!.toList(),
-      };
+    'zbfVersion': zbfVersion,
+    'id': id,
+    'title': title,
+    'author': author,
+    'genres': genres,
+    'sourceFormat': sourceFormat.wireValue,
+    'pageCount': pageCount,
+    'chapterCount': chapterCount,
+    'coverAsset': coverAsset,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+    'needsAiProcessing': needsAiProcessing,
+    'chapters': chapters.map((chapter) => chapter.toJson()).toList(),
+    if (pageWords != null) 'pageWords': pageWords,
+    if (skippablePages != null) 'skippablePages': skippablePages!.toList(),
+  };
 
   factory BookManifest.fromJson(Map<String, Object?> json) {
     final rawChapters = json['chapters'] as List<Object?>?;
@@ -62,9 +61,7 @@ final class BookManifest extends Equatable {
     List<String> parsedGenres = [];
 
     if (json['genres'] is List) {
-      parsedGenres = (json['genres'] as List)
-          .map((e) => e.toString())
-          .toList();
+      parsedGenres = (json['genres'] as List).map((e) => e.toString()).toList();
     } else if (json['genre'] is String) {
       parsedGenres = (json['genre'] as String)
           .split(',')
@@ -85,11 +82,11 @@ final class BookManifest extends Equatable {
       coverAsset: json['coverAsset'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       needsAiProcessing: json['needsAiProcessing'] as bool,
-      chapters: rawChapters
+      chapters:
+          rawChapters
               ?.map(
-                (chapter) => ChapterSummary.fromJson(
-                  chapter as Map<String, Object?>,
-                ),
+                (chapter) =>
+                    ChapterSummary.fromJson(chapter as Map<String, Object?>),
               )
               .toList() ??
           const [],
@@ -139,19 +136,19 @@ final class BookManifest extends Equatable {
 
   @override
   List<Object?> get props => [
-        zbfVersion,
-        id,
-        title,
-        author,
-        genres,
-        sourceFormat,
-        pageCount,
-        chapterCount,
-        coverAsset,
-        createdAt,
-        needsAiProcessing,
-        chapters,
-        pageWords,
-        skippablePages,
-      ];
+    zbfVersion,
+    id,
+    title,
+    author,
+    genres,
+    sourceFormat,
+    pageCount,
+    chapterCount,
+    coverAsset,
+    createdAt,
+    needsAiProcessing,
+    chapters,
+    pageWords,
+    skippablePages,
+  ];
 }

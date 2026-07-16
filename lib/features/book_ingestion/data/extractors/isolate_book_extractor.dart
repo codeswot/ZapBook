@@ -72,18 +72,18 @@ abstract base class IsolateBookExtractor implements BookExtractor {
     final finalGenres = customData?.genres ?? const <String>[];
 
     final book = _assembler.assemble(
-  id: circleBookId,
-  title: finalTitle,
-  author: finalAuthor,
-  genres: finalGenres,
-  sourceFormat: format,
-  chapters: parsed.chapters,
-  assets: parsed.assets,
-  cover: cover,
-  needsAiProcessing: parsed.needsAiProcessing,
-  pageWords: parsed.pageWords,
-  skippablePages: parsed.skippablePages,
-);
+      id: circleBookId,
+      title: finalTitle,
+      author: finalAuthor,
+      genres: finalGenres,
+      sourceFormat: format,
+      chapters: parsed.chapters,
+      assets: parsed.assets,
+      cover: cover,
+      needsAiProcessing: parsed.needsAiProcessing,
+      pageWords: parsed.pageWords,
+      skippablePages: parsed.skippablePages,
+    );
     yield IngestionProgress.complete(book);
   }
 

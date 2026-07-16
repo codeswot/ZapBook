@@ -103,7 +103,7 @@ void main() {
         const WizardData(
           title: 'Wizard Title',
           author: 'Wizard Author',
-           genres: ['Sci-Fi'],
+          genres: ['Sci-Fi'],
         ),
       );
 

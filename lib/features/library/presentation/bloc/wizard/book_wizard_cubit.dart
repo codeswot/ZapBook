@@ -15,12 +15,12 @@ class BookWizardCubit extends Cubit<BookWizardState> {
     @factoryParam WizardInitialData? initialData,
     this._pickCoverImage,
   ) : super(
-          BookWizardState(
-            title: initialData?.title ?? 'Untitled',
-            author: initialData?.author,
-            availableGenres: bookGenres,
-          ),
-        );
+        BookWizardState(
+          title: initialData?.title ?? 'Untitled',
+          author: initialData?.author,
+          availableGenres: bookGenres,
+        ),
+      );
 
   final Completer<WizardData> _completer;
   final PickCoverImageUseCase _pickCoverImage;

@@ -48,9 +48,6 @@ final class ZbfAssembler {
       AssetNaming.coverAsset: cover,
     };
 
-    return ZbfBook(
-      manifest: manifest,
-      assets: fullAssets,
-    );
+    return ZbfBook(manifest: manifest, assets: fullAssets);
   }
 }

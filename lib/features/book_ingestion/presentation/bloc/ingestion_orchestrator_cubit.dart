@@ -109,11 +109,11 @@ class IngestionOrchestratorCubit extends Cubit<IngestionOrchestratorState> {
   ) async {
     if (!state.tasks.containsKey(circleBookId)) return;
 
-   final metadata = {
-  if (data.author != null) 'author': data.author,
-  if (data.genres.isNotEmpty) 'genres': data.genres,
-  'contentHash': contentHash,
-};
+    final metadata = {
+      if (data.author != null) 'author': data.author,
+      if (data.genres.isNotEmpty) 'genres': data.genres,
+      'contentHash': contentHash,
+    };
 
     final marmotCircleGroupId = await _createCircleBook(
       circleDirId: circleBookId,

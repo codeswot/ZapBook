@@ -36,10 +36,10 @@ class BookWizardState extends Equatable {
 
   @override
   List<Object?> get props => [
-        title,
-        coverImage,
-        author,
-        selectedGenres,
-        availableGenres,
-      ];
+    title,
+    coverImage,
+    author,
+    selectedGenres,
+    availableGenres,
+  ];
 }

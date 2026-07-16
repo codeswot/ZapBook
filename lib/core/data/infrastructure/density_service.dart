@@ -45,8 +45,7 @@ class DensityService {
   BookDensity _fromManifest(BookManifest m) => BookDensity(
     pageWords: m.pageWords ?? [],
     skippablePages: m.skippablePages?.toSet() ?? const {},
-    genre: genreFromLabel(
-  m.genres.isEmpty ? null : m.genres.first,),
+    genre: genreFromLabel(m.genres.isEmpty ? null : m.genres.first),
   );
 
   BookDensity? load(String circleBookId) {
