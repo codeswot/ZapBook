@@ -10,7 +10,7 @@ final class CircleBook extends Equatable {
     required this.circleDirId,
     required this.title,
     required this.author,
-    this.genre,
+    this.genres = const [],
     required this.sourceFormat,
     required this.pageCount,
     required this.chapterCount,
@@ -32,7 +32,7 @@ final class CircleBook extends Equatable {
   final String circleDirId;
   final String title;
   final String author;
-  final String? genre;
+  final List<String> genres;
   final BookSourceFormat sourceFormat;
   final int pageCount;
   final int chapterCount;
@@ -54,7 +54,7 @@ final class CircleBook extends Equatable {
   CircleBook copyWith({
     String? title,
     String? author,
-    String? genre,
+    List<String>? genres,
     String? coverPath,
     DateTime? lastOpenedAt,
     int? memberCount,
@@ -67,7 +67,7 @@ final class CircleBook extends Equatable {
       circleDirId: circleDirId,
       title: title ?? this.title,
       author: author ?? this.author,
-      genre: genre ?? this.genre,
+      genres: genres ?? this.genres,
       sourceFormat: sourceFormat,
       pageCount: pageCount,
       chapterCount: chapterCount,
@@ -90,7 +90,7 @@ final class CircleBook extends Equatable {
     id,
     title,
     author,
-    genre,
+    genres,
     sourceFormat,
     pageCount,
     chapterCount,

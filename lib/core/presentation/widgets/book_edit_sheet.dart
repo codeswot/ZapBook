@@ -60,14 +60,14 @@ class _BodyState extends State<_Body> {
     text: widget.book.author,
   );
 
-  String? _genre;
+  late List<String> _genres;
   Uint8List? _newCover;
   Future<GroupImagePrepared>? _pendingCoverUpload;
 
   @override
   void initState() {
     super.initState();
-    _genre = widget.book.genre;
+    _genres = List<String>.from(widget.book.genres);
   }
 
   @override
@@ -92,7 +92,7 @@ class _BodyState extends State<_Body> {
   Future<void> _save(CircleOperationsCubit cubit) async {
     final title = _titleController.text;
     final author = _authorController.text;
-    final genre = _genre;
+    final genres = List<String>.from(_genres);
     final coverBytes = _newCover;
     final pendingCoverUpload = _pendingCoverUpload;
     final book = widget.book;
@@ -103,7 +103,7 @@ class _BodyState extends State<_Body> {
       book: book,
       title: title,
       author: author,
-      genre: genre,
+      genres: genres,
       coverBytes: coverBytes,
       pendingCoverUpload: pendingCoverUpload,
     );
@@ -184,14 +184,18 @@ class _BodyState extends State<_Body> {
                   spacing: 8,
                   runSpacing: 8,
                   children: bookGenres.map((genre) {
-                    final selected = _genre == genre;
+                    final selected = _genres.contains(genre);
                     return AppChip(
                       label: genre,
                       selected: selected,
                       tone: selected ? AppChipTone.zap : null,
                       onTap: () {
                         setState(() {
-                          _genre = selected ? null : genre;
+                          if (selected) {
+                            _genres.remove(genre);
+                          } else {
+                            _genres.add(genre);
+                          }
                         });
                       },
                     );

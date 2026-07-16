@@ -62,7 +62,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     required CircleBook book,
     required String title,
     required String author,
-    String? genre,
+    List<String>? genres,
   }) async {
     try {
       emit(const CircleOperationsLoading());
@@ -70,12 +70,12 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
         marmotGroupId: book.id,
         title: title,
         author: author,
-        genre: genre,
+        genres: genres,
       );
 
       if (isClosed) return null;
       emit(const CircleOperationsSuccess());
-      return book.copyWith(title: title, author: author, genre: genre);
+      return book.copyWith(title: title, author: author, genres: genres);
     } catch (e, st) {
       _log.warning('Failed to update book metadata', e, st);
       if (isClosed) return null;
@@ -88,7 +88,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
     required CircleBook book,
     required String title,
     required String author,
-    String? genre,
+    List<String>? genres,
     Uint8List? coverBytes,
     Future<GroupImagePrepared>? pendingCoverUpload,
   }) {
@@ -98,7 +98,7 @@ class CircleOperationsCubit extends Cubit<CircleOperationsState> {
           marmotGroupId: book.id,
           title: title,
           author: author,
-          genre: genre,
+          genres: genres,
         );
 
         if (coverBytes != null && pendingCoverUpload != null) {

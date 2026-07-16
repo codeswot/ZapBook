@@ -59,13 +59,13 @@ class CirclesRepositoryImpl implements CirclesRepository {
     required String marmotGroupId,
     required String title,
     required String author,
-    String? genre,
+    List<String>? genres,
   }) async {
     await _circleStoreService.updateCircleBookMetadata(
       marmotGroupId: marmotGroupId,
       title: title,
       author: author,
-      genre: genre,
+      genres: genres,
     );
   }
 

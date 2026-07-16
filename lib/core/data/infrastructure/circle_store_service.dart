@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:rxdart/rxdart.dart';
@@ -110,7 +110,7 @@ class CircleStoreService {
               final dirId = BookGroupNaming.circleDirIdOf(g.name);
 
               String? author;
-              String? genre;
+              List<String>? genres;
               String? sourceFormat;
               int? pageCount;
               int? chapterCount;
@@ -124,7 +124,7 @@ class CircleStoreService {
                 try {
                   final map = jsonDecode(g.description) as Map<String, dynamic>;
                   author = map['author'] as String?;
-                  genre = map['genre'] as String?;
+                  genres = _parseGenres(map);
                   sourceFormat = map['sourceFormat'] as String?;
                   pageCount = (map['pageCount'] as num?)?.toInt();
                   chapterCount = (map['chapterCount'] as num?)?.toInt();
@@ -167,7 +167,7 @@ class CircleStoreService {
                 circleDirId: dirId,
                 title: title,
                 author: author ?? lastBook?.author ?? '',
-                genre: genre ?? lastBook?.genre,
+                genres: genres ?? lastBook?.genres ?? const [],
                 memberCount: g.memberCount,
                 addedAt: addedAtMs != null
                     ? DateTime.fromMillisecondsSinceEpoch(addedAtMs)
@@ -207,6 +207,22 @@ class CircleStoreService {
         .listen((books) {
           _circlesController.add(books);
         });
+  }
+
+  List<String>? _parseGenres(Map<String, dynamic> map) {
+    final rawGenres = map['genres'];
+    if (rawGenres is List) {
+      return rawGenres.map((e) => e.toString()).toList();
+    }
+    final legacyGenre = map['genre'];
+    if (legacyGenre is String) {
+      return legacyGenre
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    return null;
   }
 
   @disposeMethod
@@ -259,7 +275,7 @@ class CircleStoreService {
   Future<void> updateCircleBookMetadata({
     required String marmotGroupId,
     String? author,
-    String? genre,
+    List<String>? genres,
     String? title,
   }) async {
     final group = _groupStore.currentGroups
@@ -281,9 +297,13 @@ class CircleStoreService {
       metadata['author'] = author;
       changed = true;
     }
-    if (genre != null && genre.isNotEmpty && metadata['genre'] != genre) {
-      metadata['genre'] = genre;
-      changed = true;
+    if (genres != null) {
+      final existing = _parseGenres(metadata) ?? const [];
+      if (!listEquals(existing, genres)) {
+        metadata['genres'] = genres;
+        metadata.remove('genre');
+        changed = true;
+      }
     }
 
     String? newName;

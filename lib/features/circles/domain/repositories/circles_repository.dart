@@ -24,7 +24,7 @@ abstract class CirclesRepository {
     required String marmotGroupId,
     required String title,
     required String author,
-    String? genre,
+    List<String>? genres,
   });
   void setUploadingCover(String marmotGroupId, String blurhash);
   void clearUploadingCover(String marmotGroupId);

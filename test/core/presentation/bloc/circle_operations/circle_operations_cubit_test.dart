@@ -154,7 +154,7 @@ void main() {
           marmotGroupId: 'book1',
           title: 'New Title',
           author: 'New Author',
-          genre: 'Sci-Fi',
+          genres: ['Sci-Fi'],
         ),
       ).thenAnswer((_) async {});
 
@@ -163,7 +163,7 @@ void main() {
         book: testBook,
         title: 'New Title',
         author: 'New Author',
-        genre: 'Sci-Fi',
+        genres: ['Sci-Fi'],
       );
 
       expect(result?.title, 'New Title');
@@ -176,7 +176,7 @@ void main() {
           marmotGroupId: any(named: 'marmotGroupId'),
           title: any(named: 'title'),
           author: any(named: 'author'),
-          genre: any(named: 'genre'),
+          genres: any(named: 'genres'),
         ),
       ).thenThrow(Exception('Update failed'));
 
@@ -199,7 +199,7 @@ void main() {
             marmotGroupId: any(named: 'marmotGroupId'),
             title: any(named: 'title'),
             author: any(named: 'author'),
-            genre: any(named: 'genre'),
+            genres: any(named: 'genres'),
           ),
         ).thenAnswer((_) async {});
 
@@ -217,7 +217,7 @@ void main() {
             marmotGroupId: 'book1',
             title: 'Bg Title',
             author: 'Bg Author',
-            genre: null,
+            genres: null,
           ),
         ).called(1);
       },

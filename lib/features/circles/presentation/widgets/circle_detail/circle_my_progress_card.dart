@@ -35,65 +35,116 @@ class CircleMyProgressCard extends StatelessWidget {
         borderRadius: AppRadii.br16,
         border: Border.all(color: colors.hairline),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Hero(
-            tag: 'circle-cover-${book.id}',
-            child: Material(
-              type: MaterialType.transparency,
-              child: CircleBookCover(book: book, width: 72, height: 92),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'YOUR PROGRESS',
-                  style: typography.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.0,
-                    color: colors.slate2,
-                  ),
+          Row(
+            children: [
+              Hero(
+                tag: 'circle-cover-${book.id}',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: CircleBookCover(book: book, width: 72, height: 92),
                 ),
-                const SizedBox(height: 6),
-                CircleProgressBar(
-                  value: myProgressFraction,
-                  color: colors.bitcoin,
-                ),
-                const SizedBox(height: 8),
-                Row(
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.zap, size: 14, color: colors.bitcoin),
-                    const SizedBox(width: 5),
                     Text(
-                      '$satsEarned sats',
-                      style: typography.bodyS.copyWith(
-                        color: colors.bitcoin,
+                      'YOUR PROGRESS',
+                      style: typography.caption.copyWith(
                         fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                        color: colors.slate2,
                       ),
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(height: 6),
+                    CircleProgressBar(
+                      value: myProgressFraction,
+                      color: colors.bitcoin,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(LucideIcons.zap, size: 14, color: colors.bitcoin),
+                        const SizedBox(width: 5),
+                        Text(
+                          '$satsEarned sats',
+                          style: typography.bodyS.copyWith(
+                            color: colors.bitcoin,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'zapped in this circle',
+                          style: typography.caption.copyWith(
+                            color: colors.slate2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      'zapped in this circle',
-                      style: typography.caption.copyWith(color: colors.slate2),
+                      myPage >= 0
+                          ? (book.pageCount > 0
+                                ? 'Page ${myPage + 1} of ${book.pageCount}'
+                                : 'Reading: Page ${myPage + 1}')
+                          : 'Not started',
+                      style: typography.bodyS.copyWith(color: colors.slate),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  myPage >= 0
-                      ? (book.pageCount > 0
-                            ? 'Page ${myPage + 1} of ${book.pageCount}'
-                            : 'Reading: Page ${myPage + 1}')
-                      : 'Not started',
-                  style: typography.bodyS.copyWith(color: colors.slate),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (book.author.isNotEmpty) ...[
+            const SizedBox(height: 12),
+
+            Text.rich(
+              TextSpan(
+                text: 'Author: ',
+                children: [
+                  TextSpan(
+                    text: book.author,
+                    style: typography.bodyS.copyWith(
+                      color: colors.slate,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              style: typography.bodyS.copyWith(
+                color: colors.slate,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (book.genres.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text.rich(
+              TextSpan(
+                text: 'Genres: ',
+                children: [
+                  TextSpan(
+                    text: book.genres.join(', '),
+                    style: typography.bodyS.copyWith(
+                      color: colors.slate,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              style: typography.bodyS.copyWith(
+                color: colors.slate,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );

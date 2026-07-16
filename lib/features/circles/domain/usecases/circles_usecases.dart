@@ -136,12 +136,12 @@ class UpdateCircleBookMetadataUseCase {
     required String marmotGroupId,
     required String title,
     required String author,
-    String? genre,
+    List<String>? genres,
   }) => _repository.updateCircleBookMetadata(
     marmotGroupId: marmotGroupId,
     title: title,
     author: author,
-    genre: genre,
+    genres: genres,
   );
 }
 

@@ -21,6 +21,7 @@ void main() {
       needsAiProcessing: false,
       zbfVersion: '1.0',
       createdAt: now,
+      genres: [],
       addedAt: now,
       memberCount: 1,
     );
@@ -30,7 +31,7 @@ void main() {
         '1',
         'Title',
         'Author',
-        null,
+        <String>[],
         BookSourceFormat.epub,
         10,
         2,
