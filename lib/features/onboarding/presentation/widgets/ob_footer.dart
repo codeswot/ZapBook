@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zapbook/core/domain/validators.dart';
@@ -85,15 +87,27 @@ class ObFooter extends StatelessWidget {
               cubit.nextStep();
             },
           ),
-          const SizedBox(height: 12),
-          AppButton(
-            label: state.isGeneratingNew
-                ? "Import an existing nsec"
-                : "Generate a new nsec",
-            variant: AppButtonVariant.ghost,
-            fullWidth: true,
-            onTap: () => cubit.toggleIdentityMode(!state.isGeneratingNew),
-          ),
+          if (Platform.isAndroid) ...[
+            const SizedBox(height: 12),
+            AppButton(
+              label: "Use an external signer",
+              variant: AppButtonVariant.ghost,
+              fullWidth: true,
+              iconRight: LucideIcons.shieldCheck,
+              onTap: () async {
+                final connected = await cubit.connectExternalSigner();
+                if (!connected) {
+                  if (context.mounted) {
+                    context.toast.showError(
+                      cubit.state.error ?? "Couldn't connect signer",
+                    );
+                  }
+                  return;
+                }
+                cubit.nextStep();
+              },
+            ),
+          ],
         ];
       case OnboardingStep.wallet:
         return [

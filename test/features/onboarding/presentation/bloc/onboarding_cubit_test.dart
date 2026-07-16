@@ -3,6 +3,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:marmot_dart/marmot_dart.dart';
 
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/connect_external_signer.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
@@ -22,6 +23,9 @@ class MockImportIdentity extends Mock implements ImportIdentity {}
 
 class MockCompleteOnboarding extends Mock implements CompleteOnboarding {}
 
+class MockConnectExternalSigner extends Mock
+    implements ConnectExternalSigner {}
+
 void main() {
   late MockCopyTextUseCase copyText;
   late MockPasteTextUseCase pasteText;
@@ -29,6 +33,7 @@ void main() {
   late MockGenerateIdentity generateIdentity;
   late MockImportIdentity importIdentity;
   late MockCompleteOnboarding completeOnboarding;
+  late MockConnectExternalSigner connectExternalSigner;
 
   setUp(() {
     copyText = MockCopyTextUseCase();
@@ -37,6 +42,7 @@ void main() {
     generateIdentity = MockGenerateIdentity();
     importIdentity = MockImportIdentity();
     completeOnboarding = MockCompleteOnboarding();
+    connectExternalSigner = MockConnectExternalSigner();
 
     when(() => generateIdentity()).thenAnswer(
       (_) async => const NostrKeypair(
@@ -56,6 +62,7 @@ void main() {
       generateIdentity,
       importIdentity,
       completeOnboarding,
+      connectExternalSigner,
     );
   }
 
@@ -193,6 +200,7 @@ void main() {
         () => completeOnboarding(
           npub: any(named: 'npub'),
           nsec: any(named: 'nsec'),
+          signerPackage: any(named: 'signerPackage'),
           displayName: any(named: 'displayName'),
           lud16: any(named: 'lud16'),
           picture: any(named: 'picture'),
@@ -207,6 +215,7 @@ void main() {
         () => completeOnboarding(
           npub: 'npub_test',
           nsec: 'nsec_test',
+          signerPackage: null,
           displayName: null,
           lud16: null,
           picture: null,
@@ -227,6 +236,7 @@ void main() {
         () => completeOnboarding(
           npub: any(named: 'npub'),
           nsec: any(named: 'nsec'),
+          signerPackage: any(named: 'signerPackage'),
           displayName: any(named: 'displayName'),
           lud16: any(named: 'lud16'),
           picture: any(named: 'picture'),
@@ -241,6 +251,7 @@ void main() {
         () => completeOnboarding(
           npub: 'npub_test',
           nsec: 'nsec_test',
+          signerPackage: null,
           displayName: 'Name',
           lud16: 'user@example.com',
           picture: null,

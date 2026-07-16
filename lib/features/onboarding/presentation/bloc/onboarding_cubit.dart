@@ -2,8 +2,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
+import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
+import 'package:zapbook/features/onboarding/domain/usecases/connect_external_signer.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/generate_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/import_identity.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/fetch_existing_profile.dart';
@@ -20,6 +22,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     this._generateIdentity,
     this._importIdentity,
     this._completeOnboarding,
+    this._connectExternalSigner,
   ) : super(const OnboardingState(step: OnboardingStep.welcome)) {
     generateKeys();
   }
@@ -32,6 +35,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   final GenerateIdentity _generateIdentity;
   final ImportIdentity _importIdentity;
   final CompleteOnboarding _completeOnboarding;
+  final ConnectExternalSigner _connectExternalSigner;
 
   void nextStep() {
     switch (state.step) {
@@ -98,6 +102,46 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       emit(state.copyWith(isBusy: false, error: "Failed to generate keypair"));
     }
   }
+
+  Future<bool> connectExternalSigner() async {
+    if (!await _connectExternalSigner.isAvailable()) {
+      emit(state.copyWith(
+        error:
+            "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
+      ));
+      return false;
+    }
+    emit(state.copyWith(isBusy: true, error: null));
+    try {
+      final connection = await _connectExternalSigner();
+      emit(
+        state.copyWith(
+          isExternalSigner: true,
+          signerPackage: connection.package,
+          generatedNpub: connection.npub,
+          generatedNsec: "",
+          importedNsec: "",
+        ),
+      );
+      await _fetchExistingProfile();
+      emit(state.copyWith(isBusy: false));
+      return true;
+    } on Nip55Exception catch (error, stack) {
+      _log.warning('connectExternalSigner failed', error, stack);
+      emit(state.copyWith(isBusy: false, error: _signerErrorMessage(error)));
+      return false;
+    }
+  }
+
+  String _signerErrorMessage(Nip55Exception error) => switch (error) {
+        SignerNotInstalled() =>
+          "No Nostr signer app found. Install Amber (or another NIP-55 signer) to continue.",
+        SignerRejected() => "Signing request was declined.",
+        SignerTimeout() => "Signer didn't respond. Try again.",
+        SignerUnavailable() ||
+        SignerMalformed() =>
+          "Couldn't reach the signer app. Try again.",
+      };
 
   Future<bool> importNsec(String nsec) async {
     final trimmed = nsec.trim();
@@ -201,7 +245,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   Future<bool> completeOnboarding({bool publish = true}) async {
     final npub = state.generatedNpub;
     final nsec = state.generatedNsec;
-    if (npub.isEmpty || nsec.isEmpty) {
+    if (npub.isEmpty || (!state.isExternalSigner && nsec.isEmpty)) {
       emit(state.copyWith(error: "No identity to save"));
       return false;
     }
@@ -209,6 +253,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     await _completeOnboarding(
       npub: npub,
       nsec: nsec,
+      signerPackage: state.isExternalSigner ? state.signerPackage : null,
       displayName: publish && state.displayName.isNotEmpty
           ? state.displayName
           : null,

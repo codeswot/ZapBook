@@ -10,6 +10,9 @@ abstract class SwitchAccountRepository {
   Future<bool> validateNsec(String nsec);
   Future<void> importAndPersist(String nsec);
 
+  Future<bool> isExternalSignerAvailable();
+  Future<void> connectExternalSigner();
+
   Future<void> reloadSession();
 
   Future<UserProfile?> fetchMetadata(String npub);

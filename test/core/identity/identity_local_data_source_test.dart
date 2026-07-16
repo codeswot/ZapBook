@@ -15,6 +15,8 @@ void main() {
     storage = MockSecureStorageService();
     dataSource = IdentityLocalDataSource(storage);
     ActiveAccount.setNpub(null); // Reset global state
+    when(() => storage.read('signer_meta')).thenAnswer((_) async => null);
+    when(() => storage.write('signer_meta', any())).thenAnswer((_) async {});
   });
 
   group('IdentityLocalDataSource', () {

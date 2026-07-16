@@ -86,6 +86,8 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<String?> readNsec() => _settings.readNsec();
 
+  Future<String?> readSignerPackage() => _settings.readSignerPackage();
+
   Future<void> connectNwc(String uri) async {
     await _settings.connectNwc(uri);
     _refreshNwc();

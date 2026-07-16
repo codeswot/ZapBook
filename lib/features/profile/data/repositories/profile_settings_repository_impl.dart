@@ -48,6 +48,13 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
   @override
   Future<String?> readNsec() => _identity.readNsec();
   @override
+  Future<String?> readSignerPackage() async {
+    final npub = await _identity.readNpub();
+    if (npub == null) return null;
+    final meta = await _identity.readSignerMeta(npub);
+    return meta != null && meta.isExternal ? meta.package : null;
+  }
+  @override
   Future<void> connectNwc(String uri) => _nwc.connect(uri);
   @override
   Future<void> disconnectNwc() => _nwc.disconnect();

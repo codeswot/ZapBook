@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
@@ -78,12 +76,11 @@ class KeyPackageService {
 
   Future<bool> _publishIfNeededInternal() async {
     final npub = await _identity.readNpub();
-    final nsec = await _identity.readNsec();
-    if (npub == null || nsec == null) return false;
+    if (npub == null) return false;
 
     final dTag = await _identity.readDtag(_dTagKey);
     if (dTag == null) {
-      return _publishInitial(nsec);
+      return _publish(npub, existingDtag: null);
     }
 
     final lastStr = await _identity.readDtag(_rotatedAtKey);
@@ -94,7 +91,7 @@ class KeyPackageService {
       }
     }
 
-    return _rotate(nsec, dTag);
+    return _publish(npub, existingDtag: dTag);
   }
 
   Future<bool> ensurePublished({int attempts = 3}) async {
@@ -118,124 +115,56 @@ class KeyPackageService {
 
   Future<bool> _forceRotateInternal() async {
     final npub = await _identity.readNpub();
-    final nsec = await _identity.readNsec();
-    if (npub == null || nsec == null) return false;
-
+    if (npub == null) return false;
     final dTag = await _identity.readDtag(_dTagKey);
-    if (dTag == null) {
-      return _publishInitial(nsec);
-    } else {
-      return _rotate(nsec, dTag);
-    }
+    return _publish(npub, existingDtag: dTag);
   }
 
-  Future<bool> _publishInitial(String nsec) async {
-    try {
-      final signed = await _marmot.createSignedKeyPackage(
-        nsec,
-        ZapbookConfig.broadcastRelays,
-      );
-
-      final dTag = _extractDTag(signed);
-      await _identity.writeDtag(_dTagKey, dTag);
-      await _identity.writeDtag(
-        _rotatedAtKey,
-        DateTime.now().toIso8601String(),
-      );
-
-      _broadcast(signed);
-      _log.info('Key package published (initial)');
-      return true;
-    } on Object catch (error, stack) {
-      _log.warning('Failed to publish initial key package', error, stack);
+  Future<bool> _publish(String npub, {required String? existingDtag}) async {
+    final account = _ndk.accounts.getLoggedAccount();
+    if (account == null || !account.signer.canSign()) {
+      _log.warning('No signer available to publish key package');
       return false;
     }
-  }
 
-  Future<bool> _rotate(String nsec, String dTag) async {
     try {
-      final npub = await _identity.readNpub();
-      if (npub == null) return false;
-
       final kp = await _marmot.createKeyPackage(
         npub,
         ZapbookConfig.broadcastRelays,
       );
+      final dTag = existingDtag ?? kp.dTag;
 
-      final pubkey = await MarmotIdentity.pubkeyHexFromNpub(npub);
-      final unsigned = _assembleUnsigned(
+      final unsigned = Nip01Event(
+        pubKey: account.signer.getPublicKey(),
+        kind: _keyPackageKind,
+        tags: [
+          ['d', dTag],
+          ...kp.tags30443,
+        ],
         content: kp.content,
-        dTag: dTag,
-        tags30443: kp.tags30443,
-        pubkey: pubkey,
       );
 
-      final signed = await signEvent(nsec, unsigned);
+      final signed = await account.signer.sign(unsigned);
+      _ndk.broadcast.broadcast(
+        nostrEvent: signed,
+        specificRelays: ZapbookConfig.broadcastRelays,
+      );
+
+      if (existingDtag == null) {
+        await _identity.writeDtag(_dTagKey, dTag);
+      }
       await _identity.writeDtag(
         _rotatedAtKey,
         DateTime.now().toIso8601String(),
       );
 
-      _broadcast(signed);
-      _log.info('Key package rotated');
+      _log.info(
+        existingDtag == null ? 'Key package published (initial)' : 'Key package rotated',
+      );
       return true;
     } on Object catch (error, stack) {
-      _log.warning('Failed to rotate key package', error, stack);
+      _log.warning('Failed to publish key package', error, stack);
       return false;
     }
-  }
-
-  void _broadcast(String eventJson) {
-    try {
-      final map = jsonDecode(eventJson) as Map<String, dynamic>;
-      final tags = (map['tags'] as List)
-          .map((t) => (t as List).map((e) => e.toString()).toList())
-          .toList();
-
-      _ndk.broadcast.broadcast(
-        nostrEvent: Nip01Event(
-          id: map['id'] as String,
-          pubKey: map['pubkey'] as String,
-          kind: (map['kind'] as num).toInt(),
-          tags: tags,
-          content: map['content'] as String,
-          sig: map['sig'] as String?,
-          createdAt: (map['created_at'] as num).toInt(),
-        ),
-        specificRelays: ZapbookConfig.broadcastRelays,
-      );
-    } on Object catch (error, stack) {
-      _log.warning('Key package broadcast failed', error, stack);
-    }
-  }
-
-  String _extractDTag(String signedEventJson) {
-    final map = jsonDecode(signedEventJson) as Map<String, dynamic>;
-    final tags = map['tags'] as List;
-    for (final tag in tags) {
-      final t = tag as List;
-      if (t.isNotEmpty && t[0] == 'd') return t[1] as String;
-    }
-    throw StateError('No d tag found in key package event');
-  }
-
-  String _assembleUnsigned({
-    required String content,
-    required String dTag,
-    required List<List<String>> tags30443,
-    required String pubkey,
-  }) {
-    final tags = <List<String>>[
-      ['d', dTag],
-      ...tags30443,
-    ];
-    final event = {
-      'pubkey': pubkey,
-      'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      'kind': 30443,
-      'tags': tags,
-      'content': content,
-    };
-    return jsonEncode(event);
   }
 }

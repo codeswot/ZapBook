@@ -11,7 +11,8 @@ import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.da
 
 class ProfileKeyManageSheet extends StatefulWidget {
   final String npub;
-  final String nsec;
+  final String? nsec;
+  final String? signerPackage;
   final ProfileCubit cubit;
 
   const ProfileKeyManageSheet({
@@ -19,7 +20,10 @@ class ProfileKeyManageSheet extends StatefulWidget {
     required this.npub,
     required this.nsec,
     required this.cubit,
+    this.signerPackage,
   });
+
+  bool get isExternal => signerPackage != null && signerPackage!.isNotEmpty;
 
   @override
   State<ProfileKeyManageSheet> createState() => _ProfileKeyManageSheetState();
@@ -27,16 +31,21 @@ class ProfileKeyManageSheet extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     required String npub,
-    required String nsec,
+    required String? nsec,
     required ProfileCubit cubit,
+    String? signerPackage,
   }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          ProfileKeyManageSheet(npub: npub, nsec: nsec, cubit: cubit),
+      builder: (_) => ProfileKeyManageSheet(
+        npub: npub,
+        nsec: nsec,
+        cubit: cubit,
+        signerPackage: signerPackage,
+      ),
     );
   }
 }
@@ -62,7 +71,9 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Never share your secret key with anyone.',
+              widget.isExternal
+                  ? 'Your secret key is held by your external signer app.'
+                  : 'Never share your secret key with anyone.',
               style: context.typography.bodyL.copyWith(
                 color: context.colors.slate,
               ),
@@ -80,25 +91,31 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
               },
             ),
             const SizedBox(height: 12),
-            _KeyBlock(
-              label: 'Secret Key (nsec)',
-              displayValue: _nsecRevealed ? widget.nsec : _masked,
-              onTap: () {
-                _cubit.copy(widget.nsec);
-                context.toast.showInfo(
-                  'Secret Key (nsec) copied to clipboard',
-                  rootNavigator: true,
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: _nsecRevealed ? 'Hide secret key' : 'Reveal secret key',
-              fullWidth: true,
-              variant: AppButtonVariant.tonal,
-              icon: _nsecRevealed ? LucideIcons.eyeOff : LucideIcons.eye,
-              onTap: () => setState(() => _nsecRevealed = !_nsecRevealed),
-            ),
+            if (widget.isExternal)
+              _ExternalSignerBlock(package: widget.signerPackage!)
+            else ...[
+              _KeyBlock(
+                label: 'Secret Key (nsec)',
+                displayValue: _nsecRevealed ? (widget.nsec ?? '') : _masked,
+                onTap: () {
+                  final nsec = widget.nsec;
+                  if (nsec == null) return;
+                  _cubit.copy(nsec);
+                  context.toast.showInfo(
+                    'Secret Key (nsec) copied to clipboard',
+                    rootNavigator: true,
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: _nsecRevealed ? 'Hide secret key' : 'Reveal secret key',
+                fullWidth: true,
+                variant: AppButtonVariant.tonal,
+                icon: _nsecRevealed ? LucideIcons.eyeOff : LucideIcons.eye,
+                onTap: () => setState(() => _nsecRevealed = !_nsecRevealed),
+              ),
+            ],
             const SizedBox(height: 8),
           ],
         ),
@@ -107,6 +124,70 @@ class _ProfileKeyManageSheetState extends State<ProfileKeyManageSheet> {
   }
 
   String get _masked => 'nsec1•••••••••••••••••••••••••••••••••••••••••••';
+}
+
+class _ExternalSignerBlock extends StatelessWidget {
+  final String package;
+
+  const _ExternalSignerBlock({required this.package});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Secret Key (nsec)',
+          style: context.typography.bodyS.copyWith(
+            fontWeight: FontWeight.w600,
+            color: context.colors.slate,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: context.colors.paper2,
+            borderRadius: AppRadii.br10,
+            border: Border.all(color: context.colors.hairline),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                LucideIcons.shieldCheck,
+                size: 18,
+                color: context.colors.bitcoin,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Managed by external signer',
+                      style: context.typography.bodyL.copyWith(
+                        color: context.colors.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      package,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.typography.bodyS.copyWith(
+                        color: context.colors.slate,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _KeyBlock extends StatelessWidget {

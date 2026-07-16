@@ -60,15 +60,20 @@ class ProfileBody extends StatelessWidget {
                 title: 'Manage keys',
                 subtitle: 'Back up or export your nsec',
                 onTap: () async {
-                  final nsec = await context.read<ProfileCubit>().readNsec();
-                  if (nsec != null && context.mounted) {
-                    ProfileKeyManageSheet.show(
-                      context,
-                      npub: profile.npub,
-                      nsec: nsec,
-                      cubit: context.read<ProfileCubit>(),
-                    );
-                  }
+                  final cubit = context.read<ProfileCubit>();
+                  final signerPackage = await cubit.readSignerPackage();
+                  final nsec = signerPackage == null
+                      ? await cubit.readNsec()
+                      : null;
+                  if (!context.mounted) return;
+                  if (signerPackage == null && nsec == null) return;
+                  ProfileKeyManageSheet.show(
+                    context,
+                    npub: profile.npub,
+                    nsec: nsec,
+                    cubit: cubit,
+                    signerPackage: signerPackage,
+                  );
                 },
               ),
             ],

@@ -9,6 +9,7 @@ abstract class ProfileSettingsRepository {
   Future<void> setSupportPercent(int value);
   Future<List<int>?> pickImage();
   Future<String?> readNsec();
+  Future<String?> readSignerPackage();
   Future<void> connectNwc(String uri);
   Future<void> disconnectNwc();
   Future<void> copyToClipboard(String value);

@@ -18,6 +18,11 @@ class SwitchAccountUseCases {
   Future<void> importAndPersist(String nsec) =>
       _repository.importAndPersist(nsec);
 
+  Future<bool> isExternalSignerAvailable() =>
+      _repository.isExternalSignerAvailable();
+  Future<void> connectExternalSigner() =>
+      _repository.connectExternalSigner();
+
   Future<void> reloadSession() => _repository.reloadSession();
 
   Future<UserProfile?> fetchMetadata(String npub) =>

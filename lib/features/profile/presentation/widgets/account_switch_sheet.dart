@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -200,6 +202,49 @@ class _BodyState extends State<_Body> {
                       ),
                     ],
                   ),
+                  if (Platform.isAndroid) ...[
+                    const SizedBox(height: 12),
+                    BouncingInteractiveWidget(
+                      onTap: isAdding
+                          ? null
+                          : () => cubit.connectExternalSigner(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.paper2,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colors.hairline2),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              LucideIcons.shieldCheck,
+                              size: 20,
+                              color: colors.bitcoin,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Connect external signer',
+                                style: typography.bodyL.copyWith(
+                                  color: colors.ink,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              LucideIcons.arrowRight,
+                              size: 18,
+                              color: colors.slate,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                 ],
                 if (isLoading)

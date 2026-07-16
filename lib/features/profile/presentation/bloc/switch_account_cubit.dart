@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/extensions/string_extension.dart';
+import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/usecases/switch_account_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
@@ -129,6 +130,41 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       return false;
     }
   }
+
+  Future<bool> isExternalSignerAvailable() =>
+      _usecases.isExternalSignerAvailable();
+
+  Future<bool> connectExternalSigner() async {
+    final accounts = _currentAccounts;
+    final active = _currentActiveNpub;
+
+    emit(
+      SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
+    );
+    try {
+      await _usecases.connectExternalSigner();
+      await _usecases.reloadSession();
+      return true;
+    } on Nip55Exception catch (e, stack) {
+      _log.warning('Connect external signer failed', e, stack);
+      emit(SwitchAccountError.from(state, _signerErrorMessage(e)));
+      return false;
+    } on Object catch (e, stack) {
+      _log.warning('Connect external signer failed', e, stack);
+      emit(SwitchAccountError.from(state, 'Could not connect signer'));
+      return false;
+    }
+  }
+
+  String _signerErrorMessage(Nip55Exception error) => switch (error) {
+        SignerNotInstalled() =>
+          'No Nostr signer app found. Install Amber to continue.',
+        SignerRejected() => 'Signing request was declined.',
+        SignerTimeout() => "Signer didn't respond. Try again.",
+        SignerUnavailable() ||
+        SignerMalformed() =>
+          'Couldn\'t reach the signer app. Try again.',
+      };
 
   List<SwitchAccountItem> get _currentAccounts {
     final s = state;

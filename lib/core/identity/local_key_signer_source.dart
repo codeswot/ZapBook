@@ -4,7 +4,7 @@ import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/identity/nostr_signer_source.dart';
 
-@LazySingleton(as: NostrSignerSource)
+@lazySingleton
 class LocalKeySignerSource implements NostrSignerSource {
   const LocalKeySignerSource(this._identity);
 
