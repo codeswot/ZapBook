@@ -159,7 +159,9 @@ class KeyPackageService {
       );
 
       _log.info(
-        existingDtag == null ? 'Key package published (initial)' : 'Key package rotated',
+        existingDtag == null
+            ? 'Key package published (initial)'
+            : 'Key package rotated',
       );
       return true;
     } on Object catch (error, stack) {

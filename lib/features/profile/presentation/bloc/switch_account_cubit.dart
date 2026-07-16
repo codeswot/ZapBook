@@ -173,28 +173,29 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       return false;
     } on Object catch (e, stack) {
       _log.warning('Connect bunker failed', e, stack);
-      emit(SwitchAccountError.from(
-        state,
-        'Could not connect to the remote signer',
-      ));
+      emit(
+        SwitchAccountError.from(
+          state,
+          'Could not connect to the remote signer',
+        ),
+      );
       return false;
     }
   }
 
   String _signerErrorMessage(Nip55Exception error) => switch (error) {
-        SignerNotInstalled() =>
-          'No Nostr signer app found. Install Amber to continue.',
-        SignerRejected() => 'Signing request was declined.',
-        SignerTimeout() => "Signer didn't respond. Try again.",
-        SignerUnavailable() ||
-        SignerMalformed() =>
-          'Couldn\'t reach the signer app. Try again.',
-      };
+    SignerNotInstalled() =>
+      'No Nostr signer app found. Install Amber to continue.',
+    SignerRejected() => 'Signing request was declined.',
+    SignerTimeout() => "Signer didn't respond. Try again.",
+    SignerUnavailable() ||
+    SignerMalformed() => 'Couldn\'t reach the signer app. Try again.',
+  };
 
   String _bunkerErrorMessage(Nip55Exception error) => switch (error) {
-        SignerMalformed() => 'Enter a valid bunker:// connection link.',
-        _ => 'Could not connect to the remote signer. Check the link.',
-      };
+    SignerMalformed() => 'Enter a valid bunker:// connection link.',
+    _ => 'Could not connect to the remote signer. Check the link.',
+  };
 
   List<SwitchAccountItem> get _currentAccounts {
     final s = state;

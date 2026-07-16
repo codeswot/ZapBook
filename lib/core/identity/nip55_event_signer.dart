@@ -57,25 +57,23 @@ class Nip55EventSigner implements EventSigner {
   Future<String?> encryptNip44({
     required String plaintext,
     required String recipientPubKey,
-  }) =>
-      _channel.nip44Encrypt(
-        plaintext: plaintext,
-        counterpartyHex: recipientPubKey,
-        currentUserHex: _accountHex,
-        package: _package,
-      );
+  }) => _channel.nip44Encrypt(
+    plaintext: plaintext,
+    counterpartyHex: recipientPubKey,
+    currentUserHex: _accountHex,
+    package: _package,
+  );
 
   @override
   Future<String?> decryptNip44({
     required String ciphertext,
     required String senderPubKey,
-  }) =>
-      _channel.nip44Decrypt(
-        ciphertext: ciphertext,
-        counterpartyHex: senderPubKey,
-        currentUserHex: _accountHex,
-        package: _package,
-      );
+  }) => _channel.nip44Decrypt(
+    ciphertext: ciphertext,
+    counterpartyHex: senderPubKey,
+    currentUserHex: _accountHex,
+    package: _package,
+  );
 
   @override
   Future<String?> encrypt(String msg, String destPubKey, {String? id}) =>

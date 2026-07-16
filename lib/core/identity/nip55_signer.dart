@@ -49,69 +49,70 @@ class Nip55Signer {
     required String eventJson,
     required String currentUserHex,
     required String package,
-  }) =>
-      _invokeString('signEvent', {
-        'eventJson': eventJson,
-        'currentUser': currentUserHex,
-        'package': package,
-      });
+  }) => _invokeString('signEvent', {
+    'eventJson': eventJson,
+    'currentUser': currentUserHex,
+    'package': package,
+  });
 
   Future<String> nip44Encrypt({
     required String plaintext,
     required String counterpartyHex,
     required String currentUserHex,
     required String package,
-  }) =>
-      _invokeString('nip44Encrypt', {
-        'payload': plaintext,
-        'pubkey': counterpartyHex,
-        'currentUser': currentUserHex,
-        'package': package,
-      });
+  }) => _invokeString('nip44Encrypt', {
+    'payload': plaintext,
+    'pubkey': counterpartyHex,
+    'currentUser': currentUserHex,
+    'package': package,
+  });
 
   Future<String> nip44Decrypt({
     required String ciphertext,
     required String counterpartyHex,
     required String currentUserHex,
     required String package,
-  }) =>
-      _invokeString('nip44Decrypt', {
-        'payload': ciphertext,
-        'pubkey': counterpartyHex,
-        'currentUser': currentUserHex,
-        'package': package,
-      });
+  }) => _invokeString('nip44Decrypt', {
+    'payload': ciphertext,
+    'pubkey': counterpartyHex,
+    'currentUser': currentUserHex,
+    'package': package,
+  });
 
   Future<String> nip04Encrypt({
     required String plaintext,
     required String counterpartyHex,
     required String currentUserHex,
     required String package,
-  }) =>
-      _invokeString('nip04Encrypt', {
-        'payload': plaintext,
-        'pubkey': counterpartyHex,
-        'currentUser': currentUserHex,
-        'package': package,
-      });
+  }) => _invokeString('nip04Encrypt', {
+    'payload': plaintext,
+    'pubkey': counterpartyHex,
+    'currentUser': currentUserHex,
+    'package': package,
+  });
 
   Future<String> nip04Decrypt({
     required String ciphertext,
     required String counterpartyHex,
     required String currentUserHex,
     required String package,
-  }) =>
-      _invokeString('nip04Decrypt', {
-        'payload': ciphertext,
-        'pubkey': counterpartyHex,
-        'currentUser': currentUserHex,
-        'package': package,
-      });
+  }) => _invokeString('nip04Decrypt', {
+    'payload': ciphertext,
+    'pubkey': counterpartyHex,
+    'currentUser': currentUserHex,
+    'package': package,
+  });
 
-  Future<Map<String, dynamic>> _invokeMap(String method, [Map<String, dynamic>? args]) async {
+  Future<Map<String, dynamic>> _invokeMap(
+    String method, [
+    Map<String, dynamic>? args,
+  ]) async {
     if (!Platform.isAndroid) throw const SignerNotInstalled();
     try {
-      final result = await _channel.invokeMapMethod<String, dynamic>(method, args);
+      final result = await _channel.invokeMapMethod<String, dynamic>(
+        method,
+        args,
+      );
       if (result == null) throw const SignerMalformed('Empty signer response');
       return result;
     } on PlatformException catch (e) {

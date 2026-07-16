@@ -23,8 +23,7 @@ class MockImportIdentity extends Mock implements ImportIdentity {}
 
 class MockCompleteOnboarding extends Mock implements CompleteOnboarding {}
 
-class MockConnectExternalSigner extends Mock
-    implements ConnectExternalSigner {}
+class MockConnectExternalSigner extends Mock implements ConnectExternalSigner {}
 
 void main() {
   late MockCopyTextUseCase copyText;

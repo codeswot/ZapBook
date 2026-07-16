@@ -100,11 +100,15 @@ class ObFooter extends StatelessWidget {
                 showSignerApp: Platform.isAndroid,
                 onSignerApp: () async {
                   final ok = await cubit.connectExternalSigner();
-                  return ok ? null : (cubit.state.error ?? "Couldn't connect signer");
+                  return ok
+                      ? null
+                      : (cubit.state.error ?? "Couldn't connect signer");
                 },
                 onBunker: (url) async {
                   final ok = await cubit.connectBunker(url);
-                  return ok ? null : (cubit.state.error ?? "Couldn't connect signer");
+                  return ok
+                      ? null
+                      : (cubit.state.error ?? "Couldn't connect signer");
                 },
               );
               if (done == true) cubit.nextStep();

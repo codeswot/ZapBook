@@ -55,6 +55,7 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
     final meta = await _identity.readSignerMeta(npub);
     return meta != null && meta.isExternal ? meta : null;
   }
+
   @override
   Future<void> connectNwc(String uri) => _nwc.connect(uri);
   @override

@@ -33,15 +33,13 @@ class MarmotIdentityRepository implements IdentityRepository {
   Future<void> persistExternal({
     required String npub,
     required String package,
-  }) =>
-      _local.writeExternal(npub: npub, package: package);
+  }) => _local.writeExternal(npub: npub, package: package);
 
   @override
   Future<void> persistBunker({
     required String npub,
     required String connectionJson,
-  }) =>
-      _local.writeBunker(npub: npub, connectionJson: connectionJson);
+  }) => _local.writeBunker(npub: npub, connectionJson: connectionJson);
 
   @override
   Future<bool> isExternalSignerAvailable() => _signer.isSignerInstalled();

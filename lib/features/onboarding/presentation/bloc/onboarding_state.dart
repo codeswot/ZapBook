@@ -99,8 +99,7 @@ class OnboardingState extends Equatable {
           keyPackagePublishFailed ?? this.keyPackagePublishFailed,
       isExternalSigner: isExternalSigner ?? this.isExternalSigner,
       signerPackage: signerPackage ?? this.signerPackage,
-      signerConnectionJson:
-          signerConnectionJson ?? this.signerConnectionJson,
+      signerConnectionJson: signerConnectionJson ?? this.signerConnectionJson,
     );
   }
 }

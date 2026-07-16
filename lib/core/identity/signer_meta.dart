@@ -7,14 +7,13 @@ class SignerMeta {
   final String? package;
   final String? connectionJson;
 
-  bool get isExternal =>
-      type == SignerType.nip55 || type == SignerType.nip46;
+  bool get isExternal => type == SignerType.nip55 || type == SignerType.nip46;
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        if (package != null) 'package': package,
-        if (connectionJson != null) 'connection': connectionJson,
-      };
+    'type': type.name,
+    if (package != null) 'package': package,
+    if (connectionJson != null) 'connection': connectionJson,
+  };
 
   static SignerMeta? fromJson(Object? raw) {
     if (raw is! Map) return null;
