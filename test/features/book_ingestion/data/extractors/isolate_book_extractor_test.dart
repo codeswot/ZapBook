@@ -103,7 +103,7 @@ void main() {
         const WizardData(
           title: 'Wizard Title',
           author: 'Wizard Author',
-          genre: 'Sci-Fi',
+           genres: ['Sci-Fi'],
         ),
       );
 
@@ -118,7 +118,7 @@ void main() {
       expect(events.last.stage, IngestionStage.complete);
       expect(events.last.result!.manifest.title, 'Wizard Title');
       expect(events.last.result!.manifest.author, 'Wizard Author');
-      expect(events.last.result!.manifest.genre, 'Sci-Fi');
+      expect(events.last.result!.manifest.genres, ['Sci-Fi']);
     });
   });
 }
