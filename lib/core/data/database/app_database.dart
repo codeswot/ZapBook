@@ -164,6 +164,7 @@ class AppDatabase {
       )
     ''');
     _addColumnIfMissing(db, 'cheers_feed', 'group_id', 'TEXT');
+    _addColumnIfMissing(db, 'cheers_feed', 'book_title', 'TEXT');
     _addColumnIfMissing(
       db,
       'cheers_feed',

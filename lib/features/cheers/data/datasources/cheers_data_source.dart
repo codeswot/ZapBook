@@ -149,7 +149,7 @@ class CheersDataSourceImpl implements CheersDataSource {
             trophyCount: msg.trophyCount,
             zapAmount: msg.zapAmount,
             zapReaction: msg.zapReaction,
-            bookCircleTitle: circle?.title,
+            bookCircleTitle: circle?.title ?? msg.bookTitle,
             otherPartyName: recName != null && recName.isNotEmpty
                 ? recName
                 : msg.zapRecipientNpub?.toNpubShort() ?? '',

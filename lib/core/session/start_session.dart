@@ -7,6 +7,7 @@ import 'package:zapbook/core/identity/nostr_session.dart';
 
 import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 import 'package:zapbook/core/data/infrastructure/message_router_service.dart';
+import 'package:zapbook/core/data/infrastructure/notification_gate.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
 import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:zapbook/core/data/search/search_index_backfill.dart';
@@ -16,6 +17,7 @@ Future<void> startSession() async {
   final ok = await getIt<NostrSession>().login();
   if (ok) {
     unawaited(getIt<KeyPackageService>().publishIfNeeded());
+    unawaited(getIt<NotificationGate>().init());
     await _publishPendingProfile();
   }
   final stats = getIt<ReadingStatsService>();

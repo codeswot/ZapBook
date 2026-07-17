@@ -21,6 +21,9 @@ class ZapEarningsService {
   bool _started = false;
   late final String _myNpub;
 
+  final _zapController = StreamController<ZapSatsEarningsRecord>.broadcast();
+  Stream<ZapSatsEarningsRecord> get onZap => _zapController.stream;
+
   Future<void> start() async {
     if (_started) return;
     final pubkey = _ndk.accounts.getPublicKey();
@@ -126,7 +129,7 @@ class ZapEarningsService {
       sats: sats,
       timestamp: event.createdAt,
     );
-    _earningsDao.insertZap(_myNpub, record);
+    unawaited(_emitIfNew(record));
   }
 
   void _ingestNutzap(Nip01Event event) {
@@ -141,7 +144,12 @@ class ZapEarningsService {
       sats: sats,
       timestamp: event.createdAt,
     );
-    _earningsDao.insertZap(_myNpub, record);
+    unawaited(_emitIfNew(record));
+  }
+
+  Future<void> _emitIfNew(ZapSatsEarningsRecord record) async {
+    final inserted = await _earningsDao.insertZap(_myNpub, record);
+    if (inserted) _zapController.add(record);
   }
 
   int _bolt11Sats(String? bolt11) {

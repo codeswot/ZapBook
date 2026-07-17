@@ -8,6 +8,7 @@ import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
+import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 
 @LazySingleton()
@@ -16,17 +17,43 @@ class MessageRouterService {
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
   final IdentityLocalDataSource _identityLocalDataSource;
+  final Marmot _marmot;
 
   final _log = logging.Logger('MessageRouterService');
   StreamSubscription<MarmotMessage>? _messageSub;
+
+  final _activityController =
+      StreamController<CheersActivityMessage>.broadcast();
+  Stream<CheersActivityMessage> get onActivity => _activityController.stream;
+
+  final _groupTitles = <String, String>{};
 
   MessageRouterService(
     this._marmotSyncService,
     this._cheersDao,
     this._circleProgressDao,
     this._identityLocalDataSource,
+    this._marmot,
   ) {
     initialize();
+  }
+
+  Future<String?> _titleFor(String? groupId) async {
+    if (groupId == null || groupId.isEmpty) return null;
+    final cached = _groupTitles[groupId];
+    if (cached != null) return cached;
+    try {
+      final group = await _marmot.getGroup(groupId);
+      if (group == null) return null;
+      final title = BookGroupNaming.matches(group.name)
+          ? BookGroupNaming.titleOf(group.name)
+          : group.name;
+      _groupTitles[groupId] = title;
+      return title;
+    } on Object catch (error) {
+      _log.fine('title lookup failed for $groupId: $error');
+      return null;
+    }
   }
 
   void initialize() {
@@ -61,19 +88,37 @@ class MessageRouterService {
             timestampSecs: parsed.timestampSecs,
             previous: previous,
             next: next,
+            bookTitle: await _titleFor(parsed.groupId),
           );
           if (cheer != null) {
             final npub = await _identityLocalDataSource.readNpub();
             if (npub != null) await _cheersDao.saveActivity(npub, cheer);
+            _activityController.add(cheer);
           }
 
-        case CheersMessage() ||
-            ZapSentMessage() ||
-            ZapNudgeMessage() ||
-            ZapReadyMessage():
-          final activity = CheersActivityMessage.fromAppMessage(parsed);
+        case CheersMessage() || ZapSentMessage():
+          final activity = CheersActivityMessage.fromAppMessage(
+            parsed,
+            bookTitle: await _titleFor(parsed.groupId),
+          );
           final npub = await _identityLocalDataSource.readNpub();
-          if (npub != null) await _cheersDao.saveActivity(npub, activity);
+          if (npub != null && activity != null) {
+            await _cheersDao.saveActivity(npub, activity);
+            _activityController.add(activity);
+          }
+
+        case ZapNudgeMessage(payload: final payload) ||
+            ZapReadyMessage(payload: final payload):
+          final npub = await _identityLocalDataSource.readNpub();
+          if (npub == null || payload['toNpub'] != npub) break;
+          final activity = CheersActivityMessage.fromAppMessage(
+            parsed,
+            bookTitle: await _titleFor(parsed.groupId),
+          );
+          if (activity != null) {
+            await _cheersDao.saveActivity(npub, activity);
+            _activityController.add(activity);
+          }
 
         case InitialBookMessage() || BookCompletedMessage():
           break;
