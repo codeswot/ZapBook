@@ -46,8 +46,8 @@ class BookSearchIndex {
 
   static void _initSchema(Database db) {
     db.execute('PRAGMA journal_mode=WAL');
-    final version =
-        (db.select('PRAGMA user_version').first.columnAt(0) as num).toInt();
+    final version = (db.select('PRAGMA user_version').first.columnAt(0) as num)
+        .toInt();
     if (version != schemaVersion) {
       db.execute('DROP TABLE IF EXISTS page_index');
       db.execute('DROP TABLE IF EXISTS indexed_books');

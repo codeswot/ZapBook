@@ -58,8 +58,8 @@ class BookVectorIndex {
     if (existing != null) return existing;
     final db = sqlite3.open(await _path());
     db.execute('PRAGMA journal_mode=WAL');
-    final version =
-        (db.select('PRAGMA user_version').first.columnAt(0) as num).toInt();
+    final version = (db.select('PRAGMA user_version').first.columnAt(0) as num)
+        .toInt();
     if (version != schemaVersion) {
       db.execute('DROP TABLE IF EXISTS chunks');
       db.execute('DROP TABLE IF EXISTS centroids');
@@ -133,19 +133,15 @@ class BookVectorIndex {
     if (delta.pageIndexes.isEmpty) return;
 
     var seq =
-        (db
-                    .select(
-                      'SELECT COALESCE(MAX(seq), -1) AS max_seq FROM chunks WHERE book_id = ?',
-                      [circleBookId],
-                    )
-                    .first['max_seq']
+        (db.select(
+                  'SELECT COALESCE(MAX(seq), -1) AS max_seq FROM chunks WHERE book_id = ?',
+                  [circleBookId],
+                ).first['max_seq']
                 as num)
             .toInt() +
         1;
 
-    final batch = delta.inputs
-        .map((e) => e.tokens)
-        .toList(growable: false);
+    final batch = delta.inputs.map((e) => e.tokens).toList(growable: false);
     final vectors = batch.isEmpty
         ? const <Float32List>[]
         : await _embeddings.embedTokensBatch(batch);

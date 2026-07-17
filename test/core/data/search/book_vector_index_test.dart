@@ -208,41 +208,49 @@ void main() {
       );
     });
 
-    test('embeds incrementally as pages land and completes at full coverage', () async {
-      final path = await writeBook('v5', [
-        'first page about mountain hiking trails',
-        'second page about deep sea creatures',
-        'third page about ancient roman history',
-      ], presentPages: {0});
+    test(
+      'embeds incrementally as pages land and completes at full coverage',
+      () async {
+        final path = await writeBook(
+          'v5',
+          [
+            'first page about mountain hiking trails',
+            'second page about deep sea creatures',
+            'third page about ancient roman history',
+          ],
+          presentPages: {0},
+        );
 
-      await index.ensureEmbedded('v5', path);
-      expect(await index.isEmbedded('v5'), isFalse);
+        await index.ensureEmbedded('v5', path);
+        expect(await index.isEmbedded('v5'), isFalse);
 
-      var hits = await index.search(
-        'mountain hiking',
-        circleDirId: 'v5',
-        minScore: 0.1,
-      );
-      expect(hits.map((h) => h.pageNumber), contains(1));
+        var hits = await index.search(
+          'mountain hiking',
+          circleDirId: 'v5',
+          minScore: 0.1,
+        );
+        expect(hits.map((h) => h.pageNumber), contains(1));
 
-      addPage(path, 1, 'second page about deep sea creatures');
-      addPage(path, 2, 'third page about ancient roman history');
-      await index.ensureEmbedded('v5', path);
-      expect(await index.isEmbedded('v5'), isTrue);
+        addPage(path, 1, 'second page about deep sea creatures');
+        addPage(path, 2, 'third page about ancient roman history');
+        await index.ensureEmbedded('v5', path);
+        expect(await index.isEmbedded('v5'), isTrue);
 
-      hits = await index.search(
-        'ancient roman history',
-        circleDirId: 'v5',
-        minScore: 0.1,
-      );
-      expect(hits.map((h) => h.pageNumber), contains(3));
-    });
+        hits = await index.search(
+          'ancient roman history',
+          circleDirId: 'v5',
+          minScore: 0.1,
+        );
+        expect(hits.map((h) => h.pageNumber), contains(3));
+      },
+    );
 
     test('does not re-embed pages already processed', () async {
-      final path = await writeBook('v6', [
-        'alpha content page',
-        'beta content page',
-      ], presentPages: {0});
+      final path = await writeBook(
+        'v6',
+        ['alpha content page', 'beta content page'],
+        presentPages: {0},
+      );
       await index.ensureEmbedded('v6', path);
       addPage(path, 1, 'beta content page');
       await index.ensureEmbedded('v6', path);
