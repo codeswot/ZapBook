@@ -5,22 +5,9 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:sqlite3/sqlite3.dart';
 
+import 'package:zapbook/core/domain/entities/book_search_hit.dart';
 import 'package:zapbook/core/identity/account_paths.dart';
 import 'package:zapbook/zbf/zbf.dart';
-
-class BookSearchHit {
-  const BookSearchHit({
-    required this.circleDirId,
-    required this.pageNumber,
-    required this.chapterTitle,
-    required this.snippet,
-  });
-
-  final String circleDirId;
-  final int pageNumber;
-  final String chapterTitle;
-  final String snippet;
-}
 
 @lazySingleton
 class BookSearchIndex {
@@ -28,8 +15,7 @@ class BookSearchIndex {
 
   BookSearchIndex.forPath(String dbPath) : _dbPath = dbPath;
 
-  static const highlightStart = '‹';
-  static const highlightEnd = '›';
+  static const schemaVersion = 2;
   static final RegExp _whitespace = RegExp(r'\s+');
 
   final _log = logging.Logger('BookSearchIndex');
@@ -60,6 +46,14 @@ class BookSearchIndex {
 
   static void _initSchema(Database db) {
     db.execute('PRAGMA journal_mode=WAL');
+    final version =
+        (db.select('PRAGMA user_version').first.columnAt(0) as num).toInt();
+    if (version != schemaVersion) {
+      db.execute('DROP TABLE IF EXISTS page_index');
+      db.execute('DROP TABLE IF EXISTS indexed_books');
+      db.execute('DROP TABLE IF EXISTS indexed_pages');
+      db.execute('PRAGMA user_version = $schemaVersion');
+    }
     db.execute('''
       CREATE VIRTUAL TABLE IF NOT EXISTS page_index USING fts5(
         book_id UNINDEXED,
@@ -74,6 +68,13 @@ class BookSearchIndex {
         book_id TEXT PRIMARY KEY,
         page_count INTEGER NOT NULL,
         indexed_at INTEGER NOT NULL
+      )
+    ''');
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS indexed_pages (
+        book_id TEXT NOT NULL,
+        page_index INTEGER NOT NULL,
+        PRIMARY KEY (book_id, page_index)
       )
     ''');
   }
@@ -93,15 +94,38 @@ class BookSearchIndex {
     ]);
     if (done.isNotEmpty) return;
 
+    final processed = db
+        .select('SELECT page_index FROM indexed_pages WHERE book_id = ?', [
+          circleBookId,
+        ])
+        .map((r) => (r['page_index'] as num).toInt())
+        .toSet();
+
     final dbPath = await _path();
-    await Isolate.run(() => _indexBook(dbPath, circleBookId, zbfPath));
-    _log.info('Indexed $circleBookId for search');
+    final outcome = await Isolate.run(
+      () => _indexBookDelta(dbPath, circleBookId, zbfPath, processed),
+    );
+    if (outcome.newPages == 0) return;
+
+    final processedCount = processed.length + outcome.newPages;
+    if (processedCount >= outcome.totalPages) {
+      db.execute(
+        'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
+        'VALUES (?, ?, ?)',
+        [circleBookId, processedCount, DateTime.now().millisecondsSinceEpoch],
+      );
+    }
+    _log.info(
+      'Indexed $circleBookId delta '
+      '(${outcome.newPages} pages, $processedCount/${outcome.totalPages})',
+    );
   }
 
-  static Future<void> _indexBook(
+  static Future<({int newPages, int totalPages})> _indexBookDelta(
     String dbPath,
     String circleBookId,
     String zbfPath,
+    Set<int> processedPages,
   ) async {
     final handle = await const ZbfReader().open(zbfPath);
     try {
@@ -112,36 +136,37 @@ class BookSearchIndex {
         _initSchema(db);
         db.execute('BEGIN');
         try {
-          db.execute('DELETE FROM page_index WHERE book_id = ?', [
-            circleBookId,
-          ]);
           final insert = db.prepare(
             'INSERT INTO page_index (book_id, page_number, chapter_title, body) '
             'VALUES (?, ?, ?, ?)',
           );
-          var indexedPages = 0;
+          final markPage = db.prepare(
+            'INSERT OR REPLACE INTO indexed_pages (book_id, page_index) '
+            'VALUES (?, ?)',
+          );
+          var newPages = 0;
           for (var i = 0; i < manifest.pageCount; i++) {
+            if (processedPages.contains(i)) continue;
             final page = handle.pageAtOrNull(i);
             if (page == null || page.layoutType == BookLayoutType.processing) {
               continue;
             }
             final body = _pageText(page);
-            if (body.isEmpty) continue;
-            insert.execute([
-              circleBookId,
-              page.pageNumber,
-              page.chapterTitle,
-              body,
-            ]);
-            indexedPages++;
+            if (body.isNotEmpty) {
+              insert.execute([
+                circleBookId,
+                page.pageNumber,
+                page.chapterTitle,
+                body,
+              ]);
+            }
+            markPage.execute([circleBookId, i]);
+            newPages++;
           }
           insert.close();
-          db.execute(
-            'INSERT OR REPLACE INTO indexed_books (book_id, page_count, indexed_at) '
-            'VALUES (?, ?, ?)',
-            [circleBookId, indexedPages, DateTime.now().millisecondsSinceEpoch],
-          );
+          markPage.close();
           db.execute('COMMIT');
+          return (newPages: newPages, totalPages: manifest.pageCount);
         } catch (_) {
           db.execute('ROLLBACK');
           rethrow;
@@ -188,7 +213,7 @@ class BookSearchIndex {
       final rows = db.select(
         '''
         SELECT book_id, page_number, chapter_title,
-               snippet(page_index, 3, '$highlightStart', '$highlightEnd', '…', 12) AS excerpt
+               snippet(page_index, 3, '${BookSearchHit.highlightStart}', '${BookSearchHit.highlightEnd}', '…', 12) AS excerpt
         FROM page_index
         WHERE page_index MATCH ? $filter
         ORDER BY rank
@@ -237,6 +262,7 @@ class BookSearchIndex {
   Future<void> remove(String circleBookId) async {
     final db = await _open();
     db.execute('DELETE FROM page_index WHERE book_id = ?', [circleBookId]);
+    db.execute('DELETE FROM indexed_pages WHERE book_id = ?', [circleBookId]);
     db.execute('DELETE FROM indexed_books WHERE book_id = ?', [circleBookId]);
   }
 }

@@ -1,18 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logging/logging.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/core/data/search/book_search_index.dart';
-import 'package:zapbook/core/data/search/book_vector_index.dart';
 import 'package:zapbook/core/di/injection.dart';
+import 'package:zapbook/core/domain/entities/book_search_hit.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
-
-final _log = Logger('ReaderSearchSheet');
+import 'package:zapbook/features/book_reader/presentation/bloc/reader_search_cubit.dart';
 
 class ReaderSearchSheet extends StatefulWidget {
   const ReaderSearchSheet({
@@ -34,8 +30,10 @@ class ReaderSearchSheet extends StatefulWidget {
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: context.colors.transparent,
-      builder: (_) =>
-          ReaderSearchSheet(circleDirId: circleDirId, onSelect: onSelect),
+      builder: (_) => BlocProvider<ReaderSearchCubit>(
+        create: (_) => getIt<ReaderSearchCubit>(),
+        child: ReaderSearchSheet(circleDirId: circleDirId, onSelect: onSelect),
+      ),
     );
   }
 
@@ -45,69 +43,11 @@ class ReaderSearchSheet extends StatefulWidget {
 
 class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
   final _controller = TextEditingController();
-  final _keyword = getIt<BookSearchIndex>();
-  final _vectors = getIt<BookVectorIndex>();
-
-  Timer? _debounce;
-  String _query = '';
-  List<BookSearchHit> _hits = const [];
-  var _loading = false;
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onChanged(String raw) {
-    _debounce?.cancel();
-    final q = raw.trim();
-    setState(() => _query = q);
-    if (q.length < 3) {
-      setState(() => _hits = const []);
-      return;
-    }
-    setState(() => _loading = true);
-    _debounce = Timer(const Duration(milliseconds: 250), () => _run(q));
-  }
-
-  Future<void> _run(String q) async {
-    final keyword = await _keyword.search(
-      q,
-      circleDirId: widget.circleDirId,
-      limit: 30,
-    );
-    final seen = {for (final h in keyword) h.pageNumber};
-    final blended = [...keyword];
-    try {
-      final semantic = await _vectors.search(
-        q,
-        circleDirId: widget.circleDirId,
-        limit: 30,
-      );
-      for (final hit in semantic) {
-        if (seen.add(hit.pageNumber)) {
-          blended.add(
-            BookSearchHit(
-              circleDirId: hit.circleDirId,
-              pageNumber: hit.pageNumber,
-              chapterTitle: '',
-              snippet: hit.text,
-            ),
-          );
-        }
-      }
-    } on Object catch (error, stack) {
-      _log.warning('semantic search failed', error, stack);
-    }
-    blended.sort((a, b) => a.pageNumber.compareTo(b.pageNumber));
-    if (mounted) {
-      setState(() {
-        _hits = blended;
-        _loading = false;
-      });
-    }
   }
 
   @override
@@ -129,45 +69,60 @@ class _ReaderSearchSheetState extends State<ReaderSearchSheet> {
       ),
       padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + bottomInset),
       margin: const EdgeInsets.all(6).copyWith(bottom: 4 + bottomPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(
-            alignment: Alignment.center,
-            child: Container(
-              width: 42,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: colors.hairline,
-                borderRadius: BorderRadius.circular(2),
+      child: BlocBuilder<ReaderSearchCubit, ReaderSearchState>(
+        builder: (context, state) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: colors.hairline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text('Search this book', style: typography.h3),
-          ),
-          AppInput(
-            controller: _controller,
-            autofocus: true,
-            icon: LucideIcons.search,
-            hintText: 'Find a word or phrase…',
-            onChanged: _onChanged,
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: _ResultsList(
-              loading: _loading,
-              query: _query,
-              hits: _hits,
-              onSelect: (hit) {
-                context.pop();
-                widget.onSelect(hit.pageNumber - 1, _query);
-              },
-            ),
-          ),
-        ],
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text('Search this book', style: typography.h3),
+              ),
+              AppInput(
+                controller: _controller,
+                autofocus: true,
+                icon: LucideIcons.search,
+                hintText: 'Find a word or phrase…',
+                onChanged: (raw) => context.read<ReaderSearchCubit>().query(
+                  widget.circleDirId,
+                  raw,
+                ),
+              ),
+              if (!state.semanticAvailable)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'AI search unavailable — showing exact matches only',
+                    style: typography.caption.copyWith(color: colors.slate),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: _ResultsList(
+                  loading: state.loading,
+                  query: state.query,
+                  hits: state.hits,
+                  onSelect: (hit) {
+                    context.pop();
+                    widget.onSelect(hit.pageNumber - 1, state.query);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -276,10 +231,10 @@ class _ResultsList extends StatelessWidget {
       color: colors.ink,
       fontWeight: FontWeight.w800,
     );
-    final parts = snippet.split(BookSearchIndex.highlightStart);
+    final parts = snippet.split(BookSearchHit.highlightStart);
     final spans = <TextSpan>[TextSpan(text: parts.first, style: base)];
     for (final part in parts.skip(1)) {
-      final end = part.indexOf(BookSearchIndex.highlightEnd);
+      final end = part.indexOf(BookSearchHit.highlightEnd);
       if (end == -1) {
         spans.add(TextSpan(text: part, style: base));
         continue;

@@ -24,7 +24,7 @@ class CircleBookTile extends StatelessWidget {
       return;
     }
     onOpen?.call();
-    context.read<LibraryCubit>().markOpened(book.id);
+    context.read<LibraryCubit>().onBookOpened(book);
     ZbfViewerRoute(
       zbfPath: book.zbfPath,
       bookTitle: book.title,

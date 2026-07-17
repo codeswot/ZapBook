@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:zapbook/core/data/search/book_search_index.dart';
+import 'package:zapbook/core/domain/entities/book_search_hit.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 void main() {
@@ -78,7 +79,7 @@ void main() {
     expect(hits, hasLength(1));
     expect(hits.first.circleDirId, 'b1');
     expect(hits.first.pageNumber, 2);
-    expect(hits.first.snippet, contains(BookSearchIndex.highlightStart));
+    expect(hits.first.snippet, contains(BookSearchHit.highlightStart));
   });
 
   test('prefix-matches the last term for as-you-type search', () async {

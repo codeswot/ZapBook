@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/core/data/search/book_search_index.dart';
+import 'package:zapbook/core/domain/entities/book_search_hit.dart';
 import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
@@ -22,7 +22,7 @@ class BookTextSearchResults extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final byId = {for (final book in books) book.id: book};
+    final byId = {for (final book in books) book.circleDirId: book};
     final visible = hits
         .where((hit) => byId.containsKey(hit.circleDirId))
         .toList();
@@ -120,10 +120,10 @@ class _SearchHitTile extends StatelessWidget {
       color: colors.ink,
       fontWeight: FontWeight.w800,
     );
-    final parts = snippet.split(BookSearchIndex.highlightStart);
+    final parts = snippet.split(BookSearchHit.highlightStart);
     final spans = <TextSpan>[TextSpan(text: parts.first, style: base)];
     for (final part in parts.skip(1)) {
-      final end = part.indexOf(BookSearchIndex.highlightEnd);
+      final end = part.indexOf(BookSearchHit.highlightEnd);
       if (end == -1) {
         spans.add(TextSpan(text: part, style: base));
         continue;

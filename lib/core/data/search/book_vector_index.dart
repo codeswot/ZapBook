@@ -32,6 +32,8 @@ class BookVectorIndex {
 
   BookVectorIndex.forPath(this._embeddings, String dbPath) : _dbPath = dbPath;
 
+  static const schemaVersion = 2;
+
   final EmbeddingService _embeddings;
   final _log = logging.Logger('BookVectorIndex');
 
@@ -56,6 +58,15 @@ class BookVectorIndex {
     if (existing != null) return existing;
     final db = sqlite3.open(await _path());
     db.execute('PRAGMA journal_mode=WAL');
+    final version =
+        (db.select('PRAGMA user_version').first.columnAt(0) as num).toInt();
+    if (version != schemaVersion) {
+      db.execute('DROP TABLE IF EXISTS chunks');
+      db.execute('DROP TABLE IF EXISTS centroids');
+      db.execute('DROP TABLE IF EXISTS embedded_books');
+      db.execute('DROP TABLE IF EXISTS embedded_pages');
+      db.execute('PRAGMA user_version = $schemaVersion');
+    }
     db.execute('''
       CREATE TABLE IF NOT EXISTS chunks (
         book_id TEXT NOT NULL,
@@ -67,19 +78,19 @@ class BookVectorIndex {
         PRIMARY KEY (book_id, seq)
       )
     ''');
-    final columns = db
-        .select('PRAGMA table_info("chunks")')
-        .map((r) => r['name'] as String)
-        .toSet();
-    if (!columns.contains('cluster_id')) {
-      db.execute('ALTER TABLE chunks ADD COLUMN cluster_id INTEGER');
-    }
     db.execute('''
       CREATE TABLE IF NOT EXISTS centroids (
         book_id TEXT NOT NULL,
         cluster_id INTEGER NOT NULL,
         embedding BLOB NOT NULL,
         PRIMARY KEY (book_id, cluster_id)
+      )
+    ''');
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS embedded_pages (
+        book_id TEXT NOT NULL,
+        page_index INTEGER NOT NULL,
+        PRIMARY KEY (book_id, page_index)
       )
     ''');
     db.execute('''
@@ -109,54 +120,121 @@ class BookVectorIndex {
     ]);
     if (done.isNotEmpty) return;
 
-    final inputs = await Isolate.run(() => _chunkAndTokenize(zbfPath));
-    if (inputs.isEmpty) return;
+    final processed = db
+        .select('SELECT page_index FROM embedded_pages WHERE book_id = ?', [
+          circleBookId,
+        ])
+        .map((r) => (r['page_index'] as num).toInt())
+        .toSet();
 
-    final batch = inputs.map((e) => e.tokens).toList(growable: false);
-    final vectors = await _embeddings.embedTokensBatch(batch);
+    final delta = await Isolate.run(
+      () => _chunkAndTokenizeDelta(zbfPath, processed),
+    );
+    if (delta.pageIndexes.isEmpty) return;
 
-    final clusterCount = _clusterCount(inputs.length);
-    List<Float32List> centroids;
-    List<int> assignments;
-    if (clusterCount > 1) {
-      final result = await Isolate.run(() => _runKMeans(vectors, clusterCount));
-      centroids = result.centroids;
-      assignments = result.assignments;
-    } else {
-      centroids = const [];
-      assignments = List.filled(inputs.length, 0);
-    }
+    var seq =
+        (db
+                    .select(
+                      'SELECT COALESCE(MAX(seq), -1) AS max_seq FROM chunks WHERE book_id = ?',
+                      [circleBookId],
+                    )
+                    .first['max_seq']
+                as num)
+            .toInt() +
+        1;
+
+    final batch = delta.inputs
+        .map((e) => e.tokens)
+        .toList(growable: false);
+    final vectors = batch.isEmpty
+        ? const <Float32List>[]
+        : await _embeddings.embedTokensBatch(batch);
 
     db.execute('BEGIN');
     try {
-      db.execute('DELETE FROM chunks WHERE book_id = ?', [circleBookId]);
-      db.execute('DELETE FROM centroids WHERE book_id = ?', [circleBookId]);
       final insert = db.prepare(
-        'INSERT INTO chunks (book_id, page_number, seq, text, embedding, cluster_id) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO chunks (book_id, page_number, seq, text, embedding, cluster_id) '
+        'VALUES (?, ?, ?, ?, ?, NULL)',
       );
-      for (var i = 0; i < inputs.length; i++) {
-        final chunk = inputs[i].chunk;
+      for (var i = 0; i < delta.inputs.length; i++) {
+        final chunk = delta.inputs[i].chunk;
         final embedding = vectors[i];
         insert.execute([
           circleBookId,
           chunk.pageNumber,
-          chunk.seq,
+          seq++,
           chunk.text,
           embedding.buffer.asUint8List(
             embedding.offsetInBytes,
             embedding.lengthInBytes,
           ),
-          clusterCount > 1 ? assignments[i] : null,
         ]);
       }
       insert.close();
-      if (centroids.isNotEmpty) {
+      final markPage = db.prepare(
+        'INSERT OR REPLACE INTO embedded_pages (book_id, page_index) VALUES (?, ?)',
+      );
+      for (final pageIndex in delta.pageIndexes) {
+        markPage.execute([circleBookId, pageIndex]);
+      }
+      markPage.close();
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
+    }
+
+    final processedCount = processed.length + delta.pageIndexes.length;
+    if (processedCount >= delta.totalPages) {
+      await _finalizeBook(db, circleBookId);
+    }
+    _log.info(
+      'Embedded $circleBookId delta '
+      '(${delta.inputs.length} chunks, $processedCount/${delta.totalPages} pages)',
+    );
+  }
+
+  Future<void> _finalizeBook(Database db, String circleBookId) async {
+    final rows = db.select(
+      'SELECT seq, embedding FROM chunks WHERE book_id = ? ORDER BY seq',
+      [circleBookId],
+    );
+    final seqs = <int>[];
+    final vectors = <Float32List>[];
+    for (final row in rows) {
+      seqs.add((row['seq'] as num).toInt());
+      final blob = row['embedding'] as Uint8List;
+      vectors.add(
+        Float32List.fromList(
+          Float32List.view(
+            blob.buffer,
+            blob.offsetInBytes,
+            EmbeddingService.dimensions,
+          ),
+        ),
+      );
+    }
+
+    final clusterCount = _clusterCount(vectors.length);
+    db.execute('BEGIN');
+    try {
+      db.execute('DELETE FROM centroids WHERE book_id = ?', [circleBookId]);
+      if (clusterCount > 1) {
+        final result = await Isolate.run(
+          () => _runKMeans(vectors, clusterCount),
+        );
+        final assign = db.prepare(
+          'UPDATE chunks SET cluster_id = ? WHERE book_id = ? AND seq = ?',
+        );
+        for (var i = 0; i < seqs.length; i++) {
+          assign.execute([result.assignments[i], circleBookId, seqs[i]]);
+        }
+        assign.close();
         final insertCentroid = db.prepare(
           'INSERT INTO centroids (book_id, cluster_id, embedding) VALUES (?, ?, ?)',
         );
-        for (var i = 0; i < centroids.length; i++) {
-          final c = centroids[i];
+        for (var i = 0; i < result.centroids.length; i++) {
+          final c = result.centroids[i];
           insertCentroid.execute([
             circleBookId,
             i,
@@ -168,31 +246,40 @@ class BookVectorIndex {
       db.execute(
         'INSERT OR REPLACE INTO embedded_books (book_id, chunk_count, embedded_at) '
         'VALUES (?, ?, ?)',
-        [circleBookId, inputs.length, DateTime.now().millisecondsSinceEpoch],
+        [circleBookId, vectors.length, DateTime.now().millisecondsSinceEpoch],
       );
       db.execute('COMMIT');
     } catch (_) {
       db.execute('ROLLBACK');
       rethrow;
     }
-    _log.info('Embedded $circleBookId (${inputs.length} chunks)');
   }
 
-  static Future<List<_EmbedInput>> _chunkAndTokenize(String zbfPath) async {
+  static Future<_EmbedDelta> _chunkAndTokenizeDelta(
+    String zbfPath,
+    Set<int> processedPages,
+  ) async {
     final handle = await const ZbfReader().open(zbfPath);
     try {
       const chunker = BookChunker();
       final inputs = <_EmbedInput>[];
+      final pageIndexes = <int>[];
       for (var i = 0; i < handle.manifest.pageCount; i++) {
+        if (processedPages.contains(i)) continue;
         final page = handle.pageAtOrNull(i);
         if (page == null || page.layoutType == BookLayoutType.processing) {
           continue;
         }
+        pageIndexes.add(i);
         for (final chunk in chunker.chunkPage(page, startSeq: inputs.length)) {
           inputs.add(_EmbedInput(chunk, EmbeddingService.tokenize(chunk.text)));
         }
       }
-      return inputs;
+      return _EmbedDelta(
+        inputs: inputs,
+        pageIndexes: pageIndexes,
+        totalPages: handle.manifest.pageCount,
+      );
     } finally {
       handle.close();
     }
@@ -301,29 +388,8 @@ class BookVectorIndex {
   }) {
     final db = sqlite3.open(dbPath);
     try {
-      final probedClusters = _probeClusters(db, queryVector, circleBookId);
-
-      final rows = probedClusters == null
-          ? (circleBookId == null
-                ? db.select('SELECT rowid, embedding FROM chunks')
-                : db.select(
-                    'SELECT rowid, embedding FROM chunks WHERE book_id = ?',
-                    [circleBookId],
-                  ))
-          : () {
-              final placeholders = probedClusters.map((_) => '?').join(',');
-              if (circleBookId == null) {
-                return db.select(
-                  'SELECT rowid, embedding FROM chunks WHERE cluster_id IN ($placeholders)',
-                  probedClusters,
-                );
-              }
-              return db.select(
-                'SELECT rowid, embedding FROM chunks '
-                'WHERE book_id = ? AND (cluster_id IS NULL OR cluster_id IN ($placeholders))',
-                [circleBookId, ...probedClusters],
-              );
-            }();
+      final probes = _probeClusters(db, queryVector, circleBookId);
+      final rows = _candidateRows(db, probes, circleBookId);
 
       final topHits = <_ScoredRow>[];
       for (final row in rows) {
@@ -385,20 +451,56 @@ class BookVectorIndex {
     }
   }
 
-  static List<int>? _probeClusters(
+  static ResultSet _candidateRows(
+    Database db,
+    List<_BookProbes>? probes,
+    String? circleBookId,
+  ) {
+    if (probes == null) {
+      return circleBookId == null
+          ? db.select('SELECT rowid, embedding FROM chunks')
+          : db.select('SELECT rowid, embedding FROM chunks WHERE book_id = ?', [
+              circleBookId,
+            ]);
+    }
+    if (circleBookId != null) {
+      final probe = probes.first;
+      final placeholders = probe.clusterIds.map((_) => '?').join(',');
+      return db.select(
+        'SELECT rowid, embedding FROM chunks '
+        'WHERE book_id = ? AND (cluster_id IS NULL OR cluster_id IN ($placeholders))',
+        [circleBookId, ...probe.clusterIds],
+      );
+    }
+    final terms = <String>['cluster_id IS NULL'];
+    final args = <Object>[];
+    for (final probe in probes) {
+      final placeholders = probe.clusterIds.map((_) => '?').join(',');
+      terms.add('(book_id = ? AND cluster_id IN ($placeholders))');
+      args
+        ..add(probe.bookId)
+        ..addAll(probe.clusterIds);
+    }
+    return db.select(
+      'SELECT rowid, embedding FROM chunks WHERE ${terms.join(' OR ')}',
+      args,
+    );
+  }
+
+  static List<_BookProbes>? _probeClusters(
     Database db,
     Float32List queryVector,
     String? circleBookId,
   ) {
     final centroidRows = circleBookId == null
-        ? db.select('SELECT cluster_id, embedding FROM centroids')
+        ? db.select('SELECT book_id, cluster_id, embedding FROM centroids')
         : db.select(
-            'SELECT cluster_id, embedding FROM centroids WHERE book_id = ?',
+            'SELECT book_id, cluster_id, embedding FROM centroids WHERE book_id = ?',
             [circleBookId],
           );
     if (centroidRows.isEmpty) return null;
 
-    final scored = <_ScoredRow>[];
+    final byBook = <String, List<_ScoredRow>>{};
     for (final row in centroidRows) {
       final blob = row['embedding'] as Uint8List;
       final vector = Float32List.view(
@@ -406,16 +508,28 @@ class BookVectorIndex {
         blob.offsetInBytes,
         EmbeddingService.dimensions,
       );
-      scored.add(
-        _ScoredRow(
-          (row['cluster_id'] as num).toInt(),
-          EmbeddingService.cosine(queryVector, vector),
+      byBook
+          .putIfAbsent(row['book_id'] as String, () => [])
+          .add(
+            _ScoredRow(
+              (row['cluster_id'] as num).toInt(),
+              EmbeddingService.cosine(queryVector, vector),
+            ),
+          );
+    }
+
+    final result = <_BookProbes>[];
+    for (final entry in byBook.entries) {
+      final scored = entry.value..sort((a, b) => b.score.compareTo(a.score));
+      final probeCount = (scored.length / 4).ceil().clamp(1, 5);
+      result.add(
+        _BookProbes(
+          entry.key,
+          scored.take(probeCount).map((c) => c.rowid).toList(),
         ),
       );
     }
-    scored.sort((a, b) => b.score.compareTo(a.score));
-    final probes = (scored.length / 4).ceil().clamp(1, 5);
-    return scored.take(probes).map((c) => c.rowid).toList();
+    return result;
   }
 
   Future<bool> isEmbedded(String circleBookId) async {
@@ -428,8 +542,22 @@ class BookVectorIndex {
   Future<void> remove(String circleBookId) async {
     final db = await _open();
     db.execute('DELETE FROM chunks WHERE book_id = ?', [circleBookId]);
+    db.execute('DELETE FROM centroids WHERE book_id = ?', [circleBookId]);
+    db.execute('DELETE FROM embedded_pages WHERE book_id = ?', [circleBookId]);
     db.execute('DELETE FROM embedded_books WHERE book_id = ?', [circleBookId]);
   }
+}
+
+class _EmbedDelta {
+  const _EmbedDelta({
+    required this.inputs,
+    required this.pageIndexes,
+    required this.totalPages,
+  });
+
+  final List<_EmbedInput> inputs;
+  final List<int> pageIndexes;
+  final int totalPages;
 }
 
 class _EmbedInput {
@@ -437,6 +565,13 @@ class _EmbedInput {
 
   final BookChunk chunk;
   final List<List<int>> tokens;
+}
+
+class _BookProbes {
+  const _BookProbes(this.bookId, this.clusterIds);
+
+  final String bookId;
+  final List<int> clusterIds;
 }
 
 class _ScoredRow {

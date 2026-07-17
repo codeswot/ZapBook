@@ -6,7 +6,7 @@ import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/features/library/presentation/bloc/library_cubit.dart';
 
 void openBook(BuildContext context, CircleBook book) {
-  context.read<LibraryCubit>().markOpened(book.id);
+  context.read<LibraryCubit>().onBookOpened(book);
   ZbfViewerRoute(
     zbfPath: book.zbfPath,
     bookTitle: book.title,

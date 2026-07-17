@@ -47,11 +47,7 @@ class EmbeddingService {
     List<List<List<int>>> batch,
   ) async {
     if (batch.isEmpty) return const [];
-    final dir = await getApplicationSupportDirectory();
-    final modelPath = '${dir.path}/models/$_modelFileName';
-    await _load();
-
-    final model = MiniLmL6V2.load(modelPath);
+    final model = await _load();
     final results = <Float32List>[];
     for (final pieces in batch) {
       if (pieces.isEmpty) {

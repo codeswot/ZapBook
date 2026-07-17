@@ -81,6 +81,8 @@ import 'package:zapbook/core/data/infrastructure/zap_support_service.dart'
 import 'package:zapbook/core/data/library_file_store.dart' as _i854;
 import 'package:zapbook/core/data/repositories/book_download_repository_impl.dart'
     as _i558;
+import 'package:zapbook/core/data/repositories/book_search_repository_impl.dart'
+    as _i33;
 import 'package:zapbook/core/data/repositories/circle_progress_repository.dart'
     as _i59;
 import 'package:zapbook/core/data/repositories/earnings_repository_impl.dart'
@@ -88,6 +90,7 @@ import 'package:zapbook/core/data/repositories/earnings_repository_impl.dart'
 import 'package:zapbook/core/data/search/book_search_index.dart' as _i525;
 import 'package:zapbook/core/data/search/book_vector_index.dart' as _i491;
 import 'package:zapbook/core/data/search/embedding_service.dart' as _i18;
+import 'package:zapbook/core/data/search/search_index_backfill.dart' as _i64;
 import 'package:zapbook/core/di/marmot_module.dart' as _i817;
 import 'package:zapbook/core/di/nostr_module.dart' as _i96;
 import 'package:zapbook/core/di/register_module.dart' as _i200;
@@ -97,10 +100,14 @@ import 'package:zapbook/core/domain/pdf_chunk_extractor.dart' as _i970;
 import 'package:zapbook/core/domain/pdf_page_rasterizer.dart' as _i283;
 import 'package:zapbook/core/domain/repositories/book_download_repository.dart'
     as _i753;
+import 'package:zapbook/core/domain/repositories/book_search_repository.dart'
+    as _i83;
 import 'package:zapbook/core/domain/repositories/earnings_repository.dart'
     as _i949;
 import 'package:zapbook/core/domain/repositories/performance_repository.dart'
     as _i801;
+import 'package:zapbook/core/domain/usecases/book_search_usecases.dart'
+    as _i741;
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart' as _i854;
 import 'package:zapbook/core/domain/usecases/delete_circle_book.dart' as _i812;
 import 'package:zapbook/core/domain/usecases/download_circle_book.dart'
@@ -174,6 +181,8 @@ import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart'
     as _i552;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_init_cubit.dart'
     as _i227;
+import 'package:zapbook/features/book_reader/presentation/bloc/reader_search_cubit.dart'
+    as _i444;
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart'
     as _i58;
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart'
@@ -341,7 +350,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i912.CheersNoteComposer>(
       () => const _i912.CheersNoteComposer(),
     );
-    gh.factory<_i385.BookTextSearchCubit>(() => _i385.BookTextSearchCubit());
     gh.singleton<_i525.AppDatabase>(() => _i525.AppDatabase());
     await gh.singletonAsync<_i739.AppInfoService>(
       () => registerModule.appInfoService(),
@@ -503,6 +511,25 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i733.GroupEnvelopeService>(),
       ),
     );
+    gh.lazySingleton<_i83.BookSearchRepository>(
+      () => _i33.BookSearchRepositoryImpl(
+        gh<_i525.BookSearchIndex>(),
+        gh<_i491.BookVectorIndex>(),
+        gh<_i854.LibraryFileStore>(),
+      ),
+    );
+    gh.factory<_i741.SearchBooks>(
+      () => _i741.SearchBooks(gh<_i83.BookSearchRepository>()),
+    );
+    gh.factory<_i741.EnsureBookSearchable>(
+      () => _i741.EnsureBookSearchable(gh<_i83.BookSearchRepository>()),
+    );
+    gh.factory<_i444.ReaderSearchCubit>(
+      () => _i444.ReaderSearchCubit(gh<_i741.SearchBooks>()),
+    );
+    gh.factory<_i385.BookTextSearchCubit>(
+      () => _i385.BookTextSearchCubit(gh<_i741.SearchBooks>()),
+    );
     gh.lazySingleton<_i1029.WelcomeInboxService>(
       () => _i1029.WelcomeInboxService(
         gh<_i970.Marmot>(),
@@ -627,6 +654,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
       ),
       dispose: (i) => i.dispose(),
+    );
+    gh.lazySingleton<_i64.SearchIndexBackfill>(
+      () => _i64.SearchIndexBackfill(gh<_i83.BookSearchRepository>()),
     );
     gh.factory<_i753.BookDownloadRepository>(
       () => _i558.BookDownloadRepositoryImpl(gh<_i540.CircleShareService>()),
@@ -754,9 +784,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
-    gh.factory<_i665.DownloadCircleBook>(
-      () => _i665.DownloadCircleBook(gh<_i753.BookDownloadRepository>()),
-    );
     gh.factory<_i153.WatchGlobalBookDownloadProgress>(
       () => _i153.WatchGlobalBookDownloadProgress(
         gh<_i753.BookDownloadRepository>(),
@@ -765,6 +792,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1055.ProfileSettingsUseCases>(
       () =>
           _i1055.ProfileSettingsUseCases(gh<_i493.ProfileSettingsRepository>()),
+    );
+    gh.factory<_i665.DownloadCircleBook>(
+      () => _i665.DownloadCircleBook(
+        gh<_i753.BookDownloadRepository>(),
+        gh<_i83.BookSearchRepository>(),
+      ),
     );
     gh.factory<_i552.QuizCubit>(
       () => _i552.QuizCubit(
@@ -1117,17 +1150,18 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i1006.WatchCirclesUseCase>()),
     );
+    gh.factory<_i107.LibraryCubit>(
+      () => _i107.LibraryCubit(
+        gh<_i1024.WatchCircleBooks>(),
+        gh<_i16.WatchLastOpenedLibraryBook>(),
+        gh<_i741.EnsureBookSearchable>(),
+      ),
+    );
     gh.factory<_i899.TouchDashboardBookOpened>(
       () => _i899.TouchDashboardBookOpened(gh<_i326.HomeDashboardRepository>()),
     );
     gh.factory<_i1021.WatchHomeDashboard>(
       () => _i1021.WatchHomeDashboard(gh<_i326.HomeDashboardRepository>()),
-    );
-    gh.factory<_i107.LibraryCubit>(
-      () => _i107.LibraryCubit(
-        gh<_i1024.WatchCircleBooks>(),
-        gh<_i16.WatchLastOpenedLibraryBook>(),
-      ),
     );
     gh.factory<_i362.ReadingProgressCubit>(
       () => _i362.ReadingProgressCubit(

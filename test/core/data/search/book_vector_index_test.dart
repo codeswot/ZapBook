@@ -45,7 +45,11 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
-  Future<String> writeBook(String id, List<String> pageTexts) async {
+  Future<String> writeBook(
+    String id,
+    List<String> pageTexts, {
+    Set<int>? presentPages,
+  }) async {
     final pages = [
       for (var i = 0; i < pageTexts.length; i++)
         BookPage(
@@ -85,10 +89,28 @@ void main() {
       'INSERT INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
     );
     for (var i = 0; i < pages.length; i++) {
+      if (presentPages != null && !presentPages.contains(i)) continue;
       stmt.execute([i, 0, jsonEncode(pages[i].toJson())]);
     }
     db.close();
     return path;
+  }
+
+  void addPage(String path, int pageIndex, String text) {
+    final db = sqlite3.open('$path/pages.db');
+    final page = BookPage(
+      pageNumber: pageIndex + 1,
+      chapterIndex: 0,
+      chapterTitle: 'Chapter 1',
+      layoutType: BookLayoutType.textHeavy,
+      needsAiProcessing: false,
+      blocks: [ParagraphBlock(text: text)],
+    );
+    db.execute(
+      'INSERT OR REPLACE INTO pages (page_index, chapter_index, json) VALUES (?, ?, ?)',
+      [pageIndex, 0, jsonEncode(page.toJson())],
+    );
+    db.close();
   }
 
   group('BookChunker', () {
@@ -185,6 +207,87 @@ void main() {
         isEmpty,
       );
     });
+
+    test('embeds incrementally as pages land and completes at full coverage', () async {
+      final path = await writeBook('v5', [
+        'first page about mountain hiking trails',
+        'second page about deep sea creatures',
+        'third page about ancient roman history',
+      ], presentPages: {0});
+
+      await index.ensureEmbedded('v5', path);
+      expect(await index.isEmbedded('v5'), isFalse);
+
+      var hits = await index.search(
+        'mountain hiking',
+        circleDirId: 'v5',
+        minScore: 0.1,
+      );
+      expect(hits.map((h) => h.pageNumber), contains(1));
+
+      addPage(path, 1, 'second page about deep sea creatures');
+      addPage(path, 2, 'third page about ancient roman history');
+      await index.ensureEmbedded('v5', path);
+      expect(await index.isEmbedded('v5'), isTrue);
+
+      hits = await index.search(
+        'ancient roman history',
+        circleDirId: 'v5',
+        minScore: 0.1,
+      );
+      expect(hits.map((h) => h.pageNumber), contains(3));
+    });
+
+    test('does not re-embed pages already processed', () async {
+      final path = await writeBook('v6', [
+        'alpha content page',
+        'beta content page',
+      ], presentPages: {0});
+      await index.ensureEmbedded('v6', path);
+      addPage(path, 1, 'beta content page');
+      await index.ensureEmbedded('v6', path);
+      await index.ensureEmbedded('v6', path);
+
+      final db = sqlite3.open('${tempDir.path}/vectors.db');
+      final counts = db.select(
+        'SELECT page_number, COUNT(*) AS n FROM chunks WHERE book_id = ? GROUP BY page_number',
+        ['v6'],
+      );
+      db.close();
+      for (final row in counts) {
+        expect((row['n'] as num).toInt(), 1);
+      }
+    });
+
+    test(
+      'library-wide search still reaches small unclustered books when a large clustered book exists',
+      () async {
+        final large = await writeBook('big', [
+          for (var i = 0; i < 25; i++)
+            'filler page $i about cooking pasta recipes and kitchen equipment',
+        ]);
+        await index.ensureEmbedded('big', large);
+
+        final small = await writeBook('small', [
+          'rare topic quantum entanglement experiments',
+        ]);
+        await index.ensureEmbedded('small', small);
+
+        final db = sqlite3.open('${tempDir.path}/vectors.db');
+        final centroids = db.select(
+          'SELECT COUNT(*) AS n FROM centroids WHERE book_id = ?',
+          ['big'],
+        );
+        db.close();
+        expect((centroids.first['n'] as num).toInt(), greaterThan(1));
+
+        final hits = await index.search(
+          'quantum entanglement experiments',
+          minScore: 0.1,
+        );
+        expect(hits.map((h) => h.circleDirId), contains('small'));
+      },
+    );
   });
 
   group('EmbeddingService math', () {
