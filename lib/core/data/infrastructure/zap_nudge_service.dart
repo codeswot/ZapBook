@@ -17,7 +17,8 @@ class ZapNudgeService {
   final SharedPreferences _prefs;
 
   final _log = logging.Logger('ZapNudgeService');
-  static const _nudgeKeyPrefix = 'zap_nudge_sent_to_';
+  static const _nudgeKeyPrefix = 'zap_nudge_last_ms_';
+  static const _nudgeCooldown = Duration(hours: 24);
 
   Future<void> clearNudge(String npub) async {
     await _prefs.remove('$_nudgeKeyPrefix$npub');
@@ -28,8 +29,10 @@ class ZapNudgeService {
     if (npub == null || npub.isEmpty) return;
 
     final nudgeKey = '$_nudgeKeyPrefix$toNpub';
-    if (_prefs.getBool(nudgeKey) == true) return;
-    await _prefs.setBool(nudgeKey, true);
+    final lastMs = _prefs.getInt(nudgeKey) ?? 0;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - lastMs < _nudgeCooldown.inMilliseconds) return;
+    await _prefs.setInt(nudgeKey, nowMs);
 
     final nudgeId = '$npub:$toNpub:${DateTime.now().millisecondsSinceEpoch}';
     await _send(npub, groupId, {

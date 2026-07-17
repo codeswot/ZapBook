@@ -1,6 +1,7 @@
 package com.example.zapbook
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
@@ -11,9 +12,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class Nip55Plugin(
-    private val activity: Activity,
+    private val context: Context,
     messenger: BinaryMessenger,
 ) : MethodChannel.MethodCallHandler {
+
+    var activity: Activity? = null
 
     private val channel = MethodChannel(messenger, CHANNEL).apply { setMethodCallHandler(this@Nip55Plugin) }
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -43,7 +46,7 @@ class Nip55Plugin(
 
     private fun isSignerInstalled(): Boolean {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("$SCHEME:"))
-        return activity.packageManager.queryIntentActivities(intent, 0).isNotEmpty()
+        return context.packageManager.queryIntentActivities(intent, 0).isNotEmpty()
     }
 
     private fun getPublicKey(result: MethodChannel.Result) {
@@ -104,6 +107,12 @@ class Nip55Plugin(
         expectedPackage: String?,
         currentUser: String?,
     ) {
+        val host = activity
+            ?: return result.error(
+                ERR_UNAVAILABLE,
+                "Signer approval requires the app to be open",
+                null,
+            )
         pending = result
         pendingType = type
         pendingPackage = expectedPackage
@@ -112,7 +121,7 @@ class Nip55Plugin(
             mainHandler.postDelayed(it, APPROVAL_TIMEOUT_MS)
         }
         try {
-            activity.startActivityForResult(intent, REQUEST_CODE)
+            host.startActivityForResult(intent, REQUEST_CODE)
         } catch (e: Exception) {
             finishError(ERR_UNAVAILABLE, e.message ?: "Could not launch signer")
         }
@@ -163,7 +172,7 @@ class Nip55Plugin(
         val uri = Uri.parse("content://$packageName.$type")
         var cursor: Cursor? = null
         return try {
-            cursor = activity.contentResolver.query(uri, args, null, null, null)
+            cursor = context.contentResolver.query(uri, args, null, null, null)
             if (cursor == null) return Row.Unavailable
             if (!cursor.moveToFirst()) return Row.Unavailable
             if (cursor.getColumnIndex("rejected") >= 0) return Row.Rejected

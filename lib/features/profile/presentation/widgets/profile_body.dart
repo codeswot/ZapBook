@@ -12,6 +12,7 @@ import 'package:zapbook/features/profile/presentation/widgets/profile_sign_out_t
 import 'package:zapbook/features/profile/presentation/widgets/profile_stats_row.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_manage_sheet.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_notifications_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_key_package_tile.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_wallet_card.dart';
 import 'package:zapbook/features/profile/presentation/widgets/account_switch_sheet.dart';
@@ -85,6 +86,7 @@ class ProfileBody extends StatelessWidget {
             label: 'App',
             tiles: [
               const ProfileDonateTile(),
+              const ProfileNotificationsTile(),
               const ProfileAppearanceTile(),
               ProfileTile(
                 icon: LucideIcons.users,

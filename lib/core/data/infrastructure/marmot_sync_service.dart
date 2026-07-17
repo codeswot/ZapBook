@@ -44,6 +44,11 @@ class MarmotSyncService {
   final _syncController = StreamController<void>.broadcast();
   Stream<void> get onSync => _syncController.stream;
 
+  final _welcomeAcceptedController =
+      StreamController<PendingWelcome>.broadcast();
+  Stream<PendingWelcome> get onWelcomeAccepted =>
+      _welcomeAcceptedController.stream;
+
   final _welcomeQueue = <Nip01Event>[];
   bool _processingWelcome = false;
   bool _isExecutingHeavyUpdates = false;
@@ -107,6 +112,7 @@ class MarmotSyncService {
           try {
             await _marmot.acceptWelcome(welcome.id);
             acceptedAny = true;
+            _welcomeAcceptedController.add(welcome);
           } on Object catch (error, trace) {
             _log.warning('unable to accept welcome', error, trace);
           }

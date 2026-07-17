@@ -53,6 +53,8 @@ import 'package:zapbook/core/data/infrastructure/group_store_service.dart'
 import 'package:zapbook/core/data/infrastructure/key_package_service.dart'
     as _i383;
 import 'package:zapbook/core/data/infrastructure/lnurl_service.dart' as _i192;
+import 'package:zapbook/core/data/infrastructure/local_notification_service.dart'
+    as _i551;
 import 'package:zapbook/core/data/infrastructure/marmot_sync_service.dart'
     as _i904;
 import 'package:zapbook/core/data/infrastructure/message_router_service.dart'
@@ -60,6 +62,8 @@ import 'package:zapbook/core/data/infrastructure/message_router_service.dart'
 import 'package:zapbook/core/data/infrastructure/milestone_service.dart'
     as _i80;
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart' as _i295;
+import 'package:zapbook/core/data/infrastructure/notification_gate.dart'
+    as _i903;
 import 'package:zapbook/core/data/infrastructure/nwc_service.dart' as _i409;
 import 'package:zapbook/core/data/infrastructure/performance_service.dart'
     as _i797;
@@ -69,6 +73,8 @@ import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart'
 import 'package:zapbook/core/data/infrastructure/secure_storage_service.dart'
     as _i206;
 import 'package:zapbook/core/data/infrastructure/share_service.dart' as _i210;
+import 'package:zapbook/core/data/infrastructure/sync_service_channel.dart'
+    as _i1064;
 import 'package:zapbook/core/data/infrastructure/welcome_inbox_service.dart'
     as _i1029;
 import 'package:zapbook/core/data/infrastructure/zap_earnings_service.dart'
@@ -366,11 +372,17 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i192.LnurlService.create(),
       dispose: (i) => i.dispose(),
     );
+    gh.lazySingleton<_i551.LocalNotificationService>(
+      () => _i551.LocalNotificationService(),
+    );
     gh.lazySingleton<_i876.QuizService>(() => _i876.QuizService());
     gh.lazySingleton<_i206.SecureStorageService>(
       () => _i206.SecureStorageService(),
     );
     gh.lazySingleton<_i210.ShareService>(() => _i210.ShareService());
+    gh.lazySingleton<_i1064.SyncServiceChannel>(
+      () => _i1064.SyncServiceChannel(),
+    );
     gh.lazySingleton<_i854.LibraryFileStore>(() => _i854.LibraryFileStore());
     gh.lazySingleton<_i525.BookSearchIndex>(() => _i525.BookSearchIndex());
     gh.lazySingleton<_i18.EmbeddingService>(() => _i18.EmbeddingService());
@@ -690,14 +702,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i904.MarmotSyncService>(),
       ),
     );
-    gh.lazySingleton<_i194.MessageRouterService>(
-      () => _i194.MessageRouterService(
-        gh<_i904.MarmotSyncService>(),
-        gh<_i562.CheersDao>(),
-        gh<_i348.CircleProgressDao>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-    );
     gh.factory<_i469.DonateCubit>(
       () => _i469.DonateCubit(gh<_i631.DonateUseCases>()),
     );
@@ -804,6 +808,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i297.WatchQuizSurfaceUseCase>(),
         gh<_i297.SubmitQuizUseCase>(),
         gh<_i297.SkipQuizUseCase>(),
+      ),
+    );
+    gh.lazySingleton<_i194.MessageRouterService>(
+      () => _i194.MessageRouterService(
+        gh<_i904.MarmotSyncService>(),
+        gh<_i562.CheersDao>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i970.Marmot>(),
       ),
     );
     gh.lazySingleton<_i582.ProfileRepository>(
@@ -928,6 +941,18 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i3.UserProfileZapCubit>(
       () => _i3.UserProfileZapCubit(gh<_i644.SendProfileZapUseCase>()),
+    );
+    gh.lazySingleton<_i903.NotificationGate>(
+      () => _i903.NotificationGate(
+        gh<_i194.MessageRouterService>(),
+        gh<_i904.MarmotSyncService>(),
+        gh<_i377.ZapEarningsService>(),
+        gh<_i551.LocalNotificationService>(),
+        gh<_i1064.SyncServiceChannel>(),
+        gh<_i409.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+      dispose: (i) => i.dispose(),
     );
     gh.factory<_i704.CreateCircleBookUseCase>(
       () => _i704.CreateCircleBookUseCase(

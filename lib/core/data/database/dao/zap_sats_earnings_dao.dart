@@ -53,7 +53,7 @@ class ZapSatsEarningsDao {
 
   ZapSatsEarningsDao(this._db);
 
-  Future<void> insertZap(String ownerNpub, ZapSatsEarningsRecord record) async {
+  Future<bool> insertZap(String ownerNpub, ZapSatsEarningsRecord record) async {
     try {
       final database = await _db.open();
       final stmt = database.prepare('''
@@ -73,13 +73,16 @@ class ZapSatsEarningsDao {
         record.timestamp,
       ]);
 
-      if (database.updatedRows > 0) {
+      final inserted = database.updatedRows > 0;
+      if (inserted) {
         _changeController.add(null);
       }
 
       stmt.close();
+      return inserted;
     } on Object catch (error, stack) {
       _log.warning('Failed to insert zap sats earnings', error, stack);
+      return false;
     }
   }
 

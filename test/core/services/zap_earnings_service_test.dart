@@ -47,7 +47,7 @@ void main() {
     ).thenAnswer((_) async => null);
     when(
       () => mockEarningsDao.insertZap(any(), any()),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => true);
 
     service = ZapEarningsService(mockNdk, mockEarningsDao);
   });

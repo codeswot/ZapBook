@@ -62,6 +62,7 @@ class CheersDao {
           actorNpub: row['actor_npub'] as String,
           circleBookId: row['book_id'] as String?,
           groupId: row['group_id'] as String?,
+          bookTitle: row['book_title'] as String?,
           activityDescription: row['activity_description'] as String,
           timestamp: DateTime.fromMillisecondsSinceEpoch(
             row['timestamp'] as int,
@@ -97,11 +98,11 @@ class CheersDao {
       db.execute(
         '''
         INSERT OR REPLACE INTO cheers_feed (
-          id, owner_npub, actor_npub, book_id, group_id,
-          activity_description, timestamp, type, is_unread, nudge_id, 
-          thumbs_up_count, clap_count, fire_count, rocket_count, trophy_count, 
+          id, owner_npub, actor_npub, book_id, group_id, book_title,
+          activity_description, timestamp, type, is_unread, nudge_id,
+          thumbs_up_count, clap_count, fire_count, rocket_count, trophy_count,
           zap_amount, zap_reaction, zap_target_id, zap_target_description, zap_recipient_npub
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           activity.id,
@@ -109,6 +110,7 @@ class CheersDao {
           activity.actorNpub,
           activity.circleBookId,
           activity.groupId,
+          activity.bookTitle,
           activity.activityDescription,
           activity.timestamp.millisecondsSinceEpoch,
           activity.type.value,
