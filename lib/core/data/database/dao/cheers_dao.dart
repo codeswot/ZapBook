@@ -47,8 +47,13 @@ class CheersDao {
     try {
       final db = await _appDatabase.open();
       final rows = db.select(
-        'SELECT * FROM cheers_feed WHERE owner_npub = ? ORDER BY timestamp DESC LIMIT ?',
-        [ownerNpub, limit],
+        '''
+        SELECT * FROM cheers_feed
+        WHERE owner_npub = ?
+          AND NOT (type = ? AND actor_npub = owner_npub)
+        ORDER BY timestamp DESC LIMIT ?
+        ''',
+        [ownerNpub, CheersActivityType.zapNudge.value, limit],
       );
 
       return rows.map((row) {

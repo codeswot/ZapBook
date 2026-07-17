@@ -76,7 +76,8 @@ class CheersCubit extends Cubit<CheersState> {
           }
           break;
         case 'Notification':
-          if (a.type == CheersActivityType.notification) {
+          if (a.type == CheersActivityType.notification ||
+              a.type == CheersActivityType.zapNudge) {
             filtered.add(a);
           }
           break;

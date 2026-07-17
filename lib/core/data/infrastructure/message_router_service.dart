@@ -67,13 +67,19 @@ class MessageRouterService {
             if (npub != null) await _cheersDao.saveActivity(npub, cheer);
           }
 
-        case CheersMessage() ||
-            ZapSentMessage() ||
-            ZapNudgeMessage() ||
-            ZapReadyMessage():
+        case CheersMessage() || ZapSentMessage():
           final activity = CheersActivityMessage.fromAppMessage(parsed);
           final npub = await _identityLocalDataSource.readNpub();
-          if (npub != null) await _cheersDao.saveActivity(npub, activity);
+          if (npub != null && activity != null) {
+            await _cheersDao.saveActivity(npub, activity);
+          }
+
+        case ZapNudgeMessage(payload: final payload) ||
+            ZapReadyMessage(payload: final payload):
+          final npub = await _identityLocalDataSource.readNpub();
+          if (npub == null || payload['toNpub'] != npub) break;
+          final activity = CheersActivityMessage.fromAppMessage(parsed);
+          if (activity != null) await _cheersDao.saveActivity(npub, activity);
 
         case InitialBookMessage() || BookCompletedMessage():
           break;
