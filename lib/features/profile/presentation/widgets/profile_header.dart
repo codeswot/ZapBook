@@ -10,6 +10,7 @@ import 'package:zapbook/core/presentation/widgets/app_icon_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_shimmer.dart';
 import 'package:zapbook/features/profile/presentation/widgets/profile_edit_sheet.dart';
+import 'package:zapbook/features/profile/presentation/widgets/profile_share_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 
@@ -48,31 +49,40 @@ class _ProfileHeaderContent extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        AppProfileAvatar(url: profile.picture, size: 48),
+        BouncingInteractiveWidget(
+          onTap: () => _openShareSheet(context),
+          child: AppProfileAvatar(url: profile.picture, size: 48),
+        ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                profile.displayName,
-                style: typography.h1.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  color: colors.ink,
+              BouncingInteractiveWidget(
+                onTap: () => _openShareSheet(context),
+                child: Text(
+                  profile.displayName,
+                  style: typography.h1.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: colors.ink,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Text(
-                    profile.npub.toNpubShort(),
-                    style: typography.body.copyWith(
-                      color: colors.slate,
-                      fontSize: 14,
+                  BouncingInteractiveWidget(
+                    onTap: () => _openShareSheet(context),
+                    child: Text(
+                      profile.npub.toNpubShort(),
+                      style: typography.body.copyWith(
+                        color: colors.slate,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -115,6 +125,12 @@ class _ProfileHeaderContent extends StatelessWidget {
     await context.read<ProfileCubit>().copy(profile.npub);
     if (context.mounted) context.toast.showSuccess('npub copied');
   }
+
+  void _openShareSheet(BuildContext context) => ProfileShareSheet.show(
+    context,
+    profile: profile,
+    onCopy: (value) => context.read<ProfileCubit>().copy(value),
+  );
 }
 
 class _ProfileHeaderPlaceholder extends StatelessWidget {
