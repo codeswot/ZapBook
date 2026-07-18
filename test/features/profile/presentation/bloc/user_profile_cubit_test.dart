@@ -9,10 +9,13 @@ import 'package:zapbook/features/profile/presentation/bloc/user_profile_cubit.da
 class MockLoadUserProfileUseCase extends Mock
     implements LoadUserProfileUseCase {}
 
+class MockToggleFollowUseCase extends Mock implements ToggleFollowUseCase {}
+
 class MockCopyTextUseCase extends Mock implements CopyTextUseCase {}
 
 void main() {
   late MockLoadUserProfileUseCase loadUserProfile;
+  late MockToggleFollowUseCase toggleFollow;
   late MockCopyTextUseCase copyText;
 
   const tProfile = UserProfile(
@@ -28,10 +31,12 @@ void main() {
 
   setUp(() {
     loadUserProfile = MockLoadUserProfileUseCase();
+    toggleFollow = MockToggleFollowUseCase();
     copyText = MockCopyTextUseCase();
   });
 
-  UserProfileCubit buildCubit() => UserProfileCubit(loadUserProfile, copyText);
+  UserProfileCubit buildCubit() =>
+      UserProfileCubit(loadUserProfile, toggleFollow, copyText);
 
   group('UserProfileCubit', () {
     blocTest<UserProfileCubit, UserProfileState>(
@@ -60,6 +65,46 @@ void main() {
         const UserProfileLoading(),
         const UserProfileError('Could not load profile'),
       ],
+    );
+
+    blocTest<UserProfileCubit, UserProfileState>(
+      'toggleFollow flips isFollow optimistically and calls usecase',
+      build: buildCubit,
+      seed: () => const UserProfileLoaded(tProfile),
+      act: (cubit) async {
+        when(() => toggleFollow('npub1abc', false)).thenAnswer((_) async {});
+        await cubit.toggleFollow();
+      },
+      expect: () => [UserProfileLoaded(tProfile.copyWith(isFollow: true))],
+      verify: (_) {
+        verify(() => toggleFollow('npub1abc', false)).called(1);
+      },
+    );
+
+    blocTest<UserProfileCubit, UserProfileState>(
+      'toggleFollow reverts state when usecase throws',
+      build: buildCubit,
+      seed: () => const UserProfileLoaded(tProfile),
+      act: (cubit) async {
+        when(
+          () => toggleFollow('npub1abc', false),
+        ).thenThrow(Exception('offline'));
+        await cubit.toggleFollow();
+      },
+      expect: () => [
+        UserProfileLoaded(tProfile.copyWith(isFollow: true)),
+        const UserProfileLoaded(tProfile),
+      ],
+    );
+
+    blocTest<UserProfileCubit, UserProfileState>(
+      'toggleFollow does nothing when profile not loaded',
+      build: buildCubit,
+      act: (cubit) => cubit.toggleFollow(),
+      expect: () => <UserProfileState>[],
+      verify: (_) {
+        verifyNever(() => toggleFollow(any(), any()));
+      },
     );
 
     test('copy delegates to CopyTextUseCase', () async {

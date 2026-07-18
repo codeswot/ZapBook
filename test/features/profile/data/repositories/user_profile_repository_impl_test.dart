@@ -4,8 +4,11 @@ import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/data/database/dao/reading_stats_dao.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart'
     show ZapType;
+import 'package:zapbook/core/data/infrastructure/contact_service.dart';
 import 'package:zapbook/core/data/infrastructure/reading_stats_service.dart';
 import 'package:zapbook/core/data/infrastructure/zap_service.dart';
+import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/domain/entities/zap_status.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
@@ -21,11 +24,18 @@ class MockCircleProgressDao extends Mock implements CircleProgressDao {}
 
 class MockZapService extends Mock implements ZapService {}
 
+class MockContactService extends Mock implements ContactService {}
+
+class MockIdentityLocalDataSource extends Mock
+    implements IdentityLocalDataSource {}
+
 void main() {
   late MockProfileRemoteDataSource remote;
   late MockReadingStatsService stats;
   late MockCircleProgressDao progressDao;
   late MockZapService zapService;
+  late MockContactService contacts;
+  late MockIdentityLocalDataSource identity;
   late UserProfileRepositoryImpl repository;
 
   const npub = 'npub1abc';
@@ -40,17 +50,25 @@ void main() {
     stats = MockReadingStatsService();
     progressDao = MockCircleProgressDao();
     zapService = MockZapService();
+    contacts = MockContactService();
+    identity = MockIdentityLocalDataSource();
+    when(() => contacts.contactFor(npub)).thenReturn(const Contact(npub: npub));
+    when(() => identity.readNpub()).thenAnswer((_) async => 'npub1me');
     repository = UserProfileRepositoryImpl(
       remote,
       stats,
       progressDao,
       zapService,
+      contacts,
+      identity,
     );
   });
 
   group('load', () {
     test('uses fetched metadata and remote booksRead when higher', () async {
-      when(() => remote.fetchMetadata(npub: npub)).thenAnswer(
+      when(
+        () => remote.fetchMetadata(npub: npub, forceRefresh: true),
+      ).thenAnswer(
         (_) async => (
           name: 'alice',
           displayName: 'Alice',
@@ -90,7 +108,7 @@ void main() {
       'falls back to local booksRead when it is higher than remote',
       () async {
         when(
-          () => remote.fetchMetadata(npub: npub),
+          () => remote.fetchMetadata(npub: npub, forceRefresh: true),
         ).thenAnswer((_) async => null);
         when(() => stats.getStats(npub)).thenAnswer(
           (_) async => ReadingStatsRecord(
@@ -118,7 +136,7 @@ void main() {
       'falls back to generated avatar and short npub when metadata missing',
       () async {
         when(
-          () => remote.fetchMetadata(npub: npub),
+          () => remote.fetchMetadata(npub: npub, forceRefresh: true),
         ).thenAnswer((_) async => null);
         when(() => stats.getStats(npub)).thenAnswer((_) async => null);
         when(
