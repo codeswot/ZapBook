@@ -54,12 +54,7 @@ void main() {
       () => groupStore.watchGroups,
     ).thenAnswer((_) => groupStreamCtrl.stream);
 
-    service = CircleStoreService(
-      groupStore,
-      fileStore,
-      contactStore,
-      keyPackageService,
-    );
+    service = CircleStoreService(groupStore, fileStore, contactStore);
   });
 
   tearDown(() {
@@ -278,16 +273,16 @@ void main() {
       expect(members, [contact]);
 
       when(
-        () => groupStore.addMember('g1', 'json'),
+        () => groupStore.addMembers('g1', ['json']),
       ).thenAnswer((_) async => null);
-      await service.addCircleMember('g1', 'json');
-      verify(() => groupStore.addMember('g1', 'json')).called(1);
+      await service.addCircleMembers('g1', ['json']);
+      verify(() => groupStore.addMembers('g1', ['json'])).called(1);
 
       when(
-        () => groupStore.removeMember('g1', 'npub1'),
+        () => groupStore.removeMembers('g1', ['npub1']),
       ).thenAnswer((_) async {});
-      await service.removeCircleMember('g1', 'npub1');
-      verify(() => groupStore.removeMember('g1', 'npub1')).called(1);
+      await service.removeCircleMembers('g1', ['npub1']);
+      verify(() => groupStore.removeMembers('g1', ['npub1'])).called(1);
     },
   );
 }

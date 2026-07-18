@@ -754,6 +754,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i136.ImportIdentity>(
       () => _i136.ImportIdentity(gh<_i63.IdentityRepository>()),
     );
+    gh.lazySingleton<_i516.CircleStoreService>(
+      () => _i516.CircleStoreService(
+        gh<_i676.GroupStoreService>(),
+        gh<_i854.LibraryFileStore>(),
+        gh<_i409.ContactService>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.factory<_i177.WatchEarningsUseCase>(
       () => _i177.WatchEarningsUseCase(
         gh<_i949.EarningsRepository>(),
@@ -777,6 +785,21 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i540.CircleShareService>(),
       ),
     );
+    gh.lazySingleton<_i0.CirclesDataSource>(
+      () => _i160.CirclesDataSourceImpl(
+        gh<_i516.CircleStoreService>(),
+        gh<_i409.ContactService>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i327.ZapService>(),
+        gh<_i954.ZapNudgeService>(),
+        gh<_i383.KeyPackageService>(),
+        gh<_i733.GroupEnvelopeService>(),
+        gh<_i540.CircleShareService>(),
+        gh<_i676.GroupStoreService>(),
+        gh<_i970.Marmot>(),
+      ),
+    );
     gh.factory<_i696.IngestBook>(
       () => _i696.IngestBook(gh<_i379.BookIngestionRepository>()),
     );
@@ -789,6 +812,13 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i1055.ProfileSettingsUseCases(gh<_i493.ProfileSettingsRepository>()),
     );
+    gh.factory<_i810.IngestionOrchestratorRepository>(
+      () => _i289.IngestionOrchestratorRepositoryImpl(
+        gh<_i516.CircleStoreService>(),
+        gh<_i540.CircleShareService>(),
+        gh<_i854.LibraryFileStore>(),
+      ),
+    );
     gh.factory<_i665.DownloadCircleBook>(
       () => _i665.DownloadCircleBook(
         gh<_i753.BookDownloadRepository>(),
@@ -800,6 +830,31 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i297.WatchQuizSurfaceUseCase>(),
         gh<_i297.SubmitQuizUseCase>(),
         gh<_i297.SkipQuizUseCase>(),
+      ),
+    );
+    gh.factory<_i704.CreateCircleBookUseCase>(
+      () => _i704.CreateCircleBookUseCase(
+        gh<_i810.IngestionOrchestratorRepository>(),
+      ),
+    );
+    gh.factory<_i704.DeleteBookFilesUseCase>(
+      () => _i704.DeleteBookFilesUseCase(
+        gh<_i810.IngestionOrchestratorRepository>(),
+      ),
+    );
+    gh.factory<_i704.FinalizeAndUploadBookUseCase>(
+      () => _i704.FinalizeAndUploadBookUseCase(
+        gh<_i810.IngestionOrchestratorRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i265.HomeDashboardDataSource>(
+      () => _i265.HomeDashboardDataSourceImpl(
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i837.ReadingStatsService>(),
+        gh<_i516.CircleStoreService>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i760.ZapSatsEarningsDao>(),
+        gh<_i460.SharedPreferences>(),
       ),
     );
     gh.lazySingleton<_i194.MessageRouterService>(
@@ -838,6 +893,18 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1009.SwitchAccountUseCases>(
       () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
     );
+    gh.lazySingleton<_i203.CirclesRepository>(
+      () => _i557.CirclesRepositoryImpl(
+        gh<_i0.CirclesDataSource>(),
+        gh<_i516.CircleStoreService>(),
+      ),
+    );
+    gh.factory<_i737.BookIngestionRepository>(
+      () => _i484.BookIngestionRepositoryImpl(
+        gh<_i1049.FilePickerService>(),
+        gh<_i516.CircleStoreService>(),
+      ),
+    );
     gh.factory<_i362.EarningsCubit>(
       () => _i362.EarningsCubit(
         gh<_i177.GetEarningsUseCase>(),
@@ -860,6 +927,19 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1045.SetPerformanceModeUseCase>(),
       ),
     );
+    gh.lazySingleton<_i64.CheersDataSource>(
+      () => _i64.CheersDataSourceImpl(
+        gh<_i516.CircleStoreService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i562.CheersDao>(),
+        gh<_i409.ContactService>(),
+        gh<_i327.ZapService>(),
+        gh<_i954.ZapNudgeService>(),
+        gh<_i295.NostrService>(),
+        gh<_i78.ClipboardService>(),
+        gh<_i210.ShareService>(),
+      ),
+    );
     gh.factory<_i571.SaveReadingSnapshotUseCase>(
       () => _i571.SaveReadingSnapshotUseCase(gh<_i188.BookReaderRepository>()),
     );
@@ -879,155 +959,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i571.WatchBookDownloadProgressUseCase>(
       () => _i571.WatchBookDownloadProgressUseCase(
         gh<_i188.BookReaderRepository>(),
-      ),
-    );
-    gh.factory<_i634.OnboardingCubit>(
-      () => _i634.OnboardingCubit(
-        gh<_i854.CopyTextUseCase>(),
-        gh<_i854.PasteTextUseCase>(),
-        gh<_i1070.FetchExistingProfileUseCase>(),
-        gh<_i709.GenerateIdentity>(),
-        gh<_i136.ImportIdentity>(),
-        gh<_i341.CompleteOnboarding>(),
-        gh<_i234.ConnectExternalSigner>(),
-      ),
-    );
-    gh.factory<_i81.BookDownloadCubit>(
-      () => _i81.BookDownloadCubit(
-        gh<_i665.DownloadCircleBook>(),
-        gh<_i153.WatchGlobalBookDownloadProgress>(),
-      ),
-    );
-    gh.factory<_i385.LoadProfile>(
-      () => _i385.LoadProfile(gh<_i582.ProfileRepository>()),
-    );
-    gh.factory<_i915.SignOut>(
-      () => _i915.SignOut(gh<_i582.ProfileRepository>()),
-    );
-    gh.factory<_i223.UpdateProfile>(
-      () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
-    );
-    gh.lazySingleton<_i516.CircleStoreService>(
-      () => _i516.CircleStoreService(
-        gh<_i676.GroupStoreService>(),
-        gh<_i854.LibraryFileStore>(),
-        gh<_i409.ContactService>(),
-        gh<_i383.KeyPackageService>(),
-      ),
-      dispose: (i) => i.dispose(),
-    );
-    gh.factory<_i86.FriendsUseCases>(
-      () => _i86.FriendsUseCases(gh<_i856.FriendsRepository>()),
-    );
-    gh.lazySingleton<_i0.CirclesDataSource>(
-      () => _i160.CirclesDataSourceImpl(
-        gh<_i516.CircleStoreService>(),
-        gh<_i409.ContactService>(),
-        gh<_i348.CircleProgressDao>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i327.ZapService>(),
-        gh<_i954.ZapNudgeService>(),
-        gh<_i383.KeyPackageService>(),
-        gh<_i733.GroupEnvelopeService>(),
-        gh<_i540.CircleShareService>(),
-        gh<_i676.GroupStoreService>(),
-        gh<_i970.Marmot>(),
-      ),
-    );
-    gh.factory<_i810.IngestionOrchestratorRepository>(
-      () => _i289.IngestionOrchestratorRepositoryImpl(
-        gh<_i516.CircleStoreService>(),
-        gh<_i540.CircleShareService>(),
-        gh<_i854.LibraryFileStore>(),
-      ),
-    );
-    gh.factory<_i982.SwitchAccountCubit>(
-      () => _i982.SwitchAccountCubit(gh<_i1009.SwitchAccountUseCases>()),
-    );
-    gh.factory<_i3.UserProfileZapCubit>(
-      () => _i3.UserProfileZapCubit(gh<_i644.SendProfileZapUseCase>()),
-    );
-    gh.factory<_i623.UserProfileCubit>(
-      () => _i623.UserProfileCubit(
-        gh<_i644.LoadUserProfileUseCase>(),
-        gh<_i644.ToggleFollowUseCase>(),
-        gh<_i854.CopyTextUseCase>(),
-      ),
-    );
-    gh.lazySingleton<_i903.NotificationGate>(
-      () => _i903.NotificationGate(
-        gh<_i194.MessageRouterService>(),
-        gh<_i904.MarmotSyncService>(),
-        gh<_i377.ZapEarningsService>(),
-        gh<_i551.LocalNotificationService>(),
-        gh<_i1064.SyncServiceChannel>(),
-        gh<_i409.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-      dispose: (i) => i.dispose(),
-    );
-    gh.factory<_i704.CreateCircleBookUseCase>(
-      () => _i704.CreateCircleBookUseCase(
-        gh<_i810.IngestionOrchestratorRepository>(),
-      ),
-    );
-    gh.factory<_i704.DeleteBookFilesUseCase>(
-      () => _i704.DeleteBookFilesUseCase(
-        gh<_i810.IngestionOrchestratorRepository>(),
-      ),
-    );
-    gh.factory<_i704.FinalizeAndUploadBookUseCase>(
-      () => _i704.FinalizeAndUploadBookUseCase(
-        gh<_i810.IngestionOrchestratorRepository>(),
-      ),
-    );
-    gh.factory<_i145.ProfileCubit>(
-      () => _i145.ProfileCubit(
-        gh<_i385.LoadProfile>(),
-        gh<_i223.UpdateProfile>(),
-        gh<_i915.SignOut>(),
-        gh<_i1055.ProfileSettingsUseCases>(),
-      ),
-    );
-    gh.lazySingleton<_i265.HomeDashboardDataSource>(
-      () => _i265.HomeDashboardDataSourceImpl(
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i837.ReadingStatsService>(),
-        gh<_i516.CircleStoreService>(),
-        gh<_i348.CircleProgressDao>(),
-        gh<_i760.ZapSatsEarningsDao>(),
-        gh<_i460.SharedPreferences>(),
-      ),
-    );
-    gh.lazySingleton<_i397.FriendsCubit>(
-      () => _i397.FriendsCubit(
-        gh<_i86.FriendsUseCases>(),
-        gh<_i854.CopyTextUseCase>(),
-      ),
-    );
-    gh.lazySingleton<_i203.CirclesRepository>(
-      () => _i557.CirclesRepositoryImpl(
-        gh<_i0.CirclesDataSource>(),
-        gh<_i516.CircleStoreService>(),
-      ),
-    );
-    gh.factory<_i737.BookIngestionRepository>(
-      () => _i484.BookIngestionRepositoryImpl(
-        gh<_i1049.FilePickerService>(),
-        gh<_i516.CircleStoreService>(),
-      ),
-    );
-    gh.lazySingleton<_i64.CheersDataSource>(
-      () => _i64.CheersDataSourceImpl(
-        gh<_i516.CircleStoreService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i562.CheersDao>(),
-        gh<_i409.ContactService>(),
-        gh<_i327.ZapService>(),
-        gh<_i954.ZapNudgeService>(),
-        gh<_i295.NostrService>(),
-        gh<_i78.ClipboardService>(),
-        gh<_i210.ShareService>(),
       ),
     );
     gh.factory<_i1006.WatchCirclesUseCase>(
@@ -1090,6 +1021,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i516.LibraryRepository>(
       () => _i894.LibraryRepositoryImpl(gh<_i516.CircleStoreService>()),
     );
+    gh.factory<_i634.OnboardingCubit>(
+      () => _i634.OnboardingCubit(
+        gh<_i854.CopyTextUseCase>(),
+        gh<_i854.PasteTextUseCase>(),
+        gh<_i1070.FetchExistingProfileUseCase>(),
+        gh<_i709.GenerateIdentity>(),
+        gh<_i136.ImportIdentity>(),
+        gh<_i341.CompleteOnboarding>(),
+        gh<_i234.ConnectExternalSigner>(),
+      ),
+    );
     gh.lazySingleton<_i326.HomeDashboardRepository>(
       () => _i139.HomeDashboardRepositoryImpl(
         gh<_i265.HomeDashboardDataSource>(),
@@ -1097,6 +1039,21 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i492.ReaderZapCubit>(
       () => _i492.ReaderZapCubit(gh<_i1006.SendCircleZapUseCase>()),
+    );
+    gh.factory<_i81.BookDownloadCubit>(
+      () => _i81.BookDownloadCubit(
+        gh<_i665.DownloadCircleBook>(),
+        gh<_i153.WatchGlobalBookDownloadProgress>(),
+      ),
+    );
+    gh.factory<_i385.LoadProfile>(
+      () => _i385.LoadProfile(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i915.SignOut>(
+      () => _i915.SignOut(gh<_i582.ProfileRepository>()),
+    );
+    gh.factory<_i223.UpdateProfile>(
+      () => _i223.UpdateProfile(gh<_i582.ProfileRepository>()),
     );
     gh.factory<_i812.DeleteCircleBook>(
       () => _i812.DeleteCircleBook(gh<_i516.LibraryRepository>()),
@@ -1113,6 +1070,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.GetCircleMembersUseCase>(),
         gh<_i1006.ToggleContactUseCase>(),
       ),
+    );
+    gh.factory<_i86.FriendsUseCases>(
+      () => _i86.FriendsUseCases(gh<_i856.FriendsRepository>()),
     );
     gh.factory<_i20.PickBookFileUseCase>(
       () => _i20.PickBookFileUseCase(gh<_i737.BookIngestionRepository>()),
@@ -1131,6 +1091,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i704.FinalizeAndUploadBookUseCase>(),
       ),
     );
+    gh.factory<_i982.SwitchAccountCubit>(
+      () => _i982.SwitchAccountCubit(gh<_i1009.SwitchAccountUseCases>()),
+    );
     gh.lazySingleton<_i314.CheersRepository>(
       () => _i489.CheersRepositoryImpl(gh<_i64.CheersDataSource>()),
     );
@@ -1144,6 +1107,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.SetUploadingCoverUseCase>(),
         gh<_i1006.ClearUploadingCoverUseCase>(),
         gh<_i1006.UpdateCircleBookCoverOptimisticUseCase>(),
+      ),
+    );
+    gh.factory<_i3.UserProfileZapCubit>(
+      () => _i3.UserProfileZapCubit(gh<_i644.SendProfileZapUseCase>()),
+    );
+    gh.factory<_i623.UserProfileCubit>(
+      () => _i623.UserProfileCubit(
+        gh<_i644.LoadUserProfileUseCase>(),
+        gh<_i644.ToggleFollowUseCase>(),
+        gh<_i854.CopyTextUseCase>(),
       ),
     );
     gh.factory<_i620.ShareCircleCubit>(
@@ -1167,6 +1140,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.DeleteCircleBookUseCase>(),
       ),
     );
+    gh.lazySingleton<_i903.NotificationGate>(
+      () => _i903.NotificationGate(
+        gh<_i194.MessageRouterService>(),
+        gh<_i904.MarmotSyncService>(),
+        gh<_i377.ZapEarningsService>(),
+        gh<_i551.LocalNotificationService>(),
+        gh<_i1064.SyncServiceChannel>(),
+        gh<_i409.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -1178,8 +1163,22 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i20.PickCoverImageUseCase>(),
       ),
     );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i385.LoadProfile>(),
+        gh<_i223.UpdateProfile>(),
+        gh<_i915.SignOut>(),
+        gh<_i1055.ProfileSettingsUseCases>(),
+      ),
+    );
     gh.factory<_i761.CirclesCubit>(
       () => _i761.CirclesCubit(gh<_i1006.WatchCirclesUseCase>()),
+    );
+    gh.lazySingleton<_i397.FriendsCubit>(
+      () => _i397.FriendsCubit(
+        gh<_i86.FriendsUseCases>(),
+        gh<_i854.CopyTextUseCase>(),
+      ),
     );
     gh.factory<_i107.LibraryCubit>(
       () => _i107.LibraryCubit(

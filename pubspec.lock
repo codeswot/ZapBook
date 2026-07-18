@@ -853,10 +853,10 @@ packages:
     dependency: "direct main"
     description:
       name: marmot_dart
-      sha256: "3082f080a3c59b65f4041061d1a95db41784c4a36eb0f94ed3ac2214a7b10981"
+      sha256: "9c1907747930597d31e92228e4988e5ca4737b21354bd9c5c08487cd68e59ab5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.6"
+    version: "0.0.7"
   matcher:
     dependency: transitive
     description:

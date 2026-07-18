@@ -156,55 +156,55 @@ class CirclesDataSourceImpl implements CirclesDataSource {
     final keyPackages = await Future.wait(fetchFutures);
     final publishFutures = <Future<void>>[];
 
+    final validEntries = <MapEntry<String, String>>[];
+
     for (final entry in keyPackages) {
-      final npub = entry.key;
-      final keyPackageJson = entry.value;
-
-      if (keyPackageJson == null) {
-        _log.warning('No key package found for $npub');
-        skips.add(ShareSkip(npub: npub, reason: ShareSkipReason.noKeyPackage));
-        continue;
+      if (entry.value == null) {
+        _log.warning('No key package found for ${entry.key}');
+        skips.add(
+          ShareSkip(npub: entry.key, reason: ShareSkipReason.noKeyPackage),
+        );
+      } else {
+        validEntries.add(MapEntry(entry.key, entry.value!));
       }
+    }
 
+    if (validEntries.isNotEmpty) {
+      final validJsons = validEntries.map((e) => e.value).toList();
       try {
-        MemberChangeResult? result;
-        int retries = 0;
-
-        while (result == null && retries < 20) {
-          result = await _circleStore.addCircleMember(groupId, keyPackageJson);
-
-          if (result == null) {
-            _log.info(
-              'addCircleMember returned null (likely pending commit), waiting... ($retries/20)',
-            );
-            await Future.delayed(const Duration(milliseconds: 1000));
-            retries++;
-          }
-        }
+        final result = await _circleStore.addCircleMembers(groupId, validJsons);
 
         if (result == null) {
-          _log.warning('Failed to add member $npub after retries');
-          skips.add(
-            ShareSkip(npub: npub, reason: ShareSkipReason.unknownError),
-          );
-          continue;
-        }
+          _log.warning('Failed to add members in bulk');
+          for (final entry in validEntries) {
+            skips.add(
+              ShareSkip(npub: entry.key, reason: ShareSkipReason.unknownError),
+            );
+          }
+        } else {
+          // Send welcome rumors (order matches the input key packages)
+          for (var i = 0; i < result.welcomeRumors.length; i++) {
+            final npub = validEntries[i].key;
+            final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
+            final rumorJson = result.welcomeRumors[i];
 
-        final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
-
-        for (final rumorJson in result.welcomeRumors) {
-          publishFutures.add(
-            _envelopeService.giftWrapAndPublish(rumorJson, hex).catchError((
-              e,
-              st,
-            ) {
-              _log.severe('Failed to publish welcome rumor for $npub', e, st);
-            }),
-          );
+            publishFutures.add(
+              _envelopeService.giftWrapAndPublish(rumorJson, hex).catchError((
+                e,
+                st,
+              ) {
+                _log.severe('Failed to publish welcome rumor for $npub', e, st);
+              }),
+            );
+          }
         }
       } catch (e, stack) {
-        _log.severe('Failed to add member', e, stack);
-        skips.add(ShareSkip(npub: npub, reason: ShareSkipReason.unknownError));
+        _log.severe('Failed to add members', e, stack);
+        for (final entry in validEntries) {
+          skips.add(
+            ShareSkip(npub: entry.key, reason: ShareSkipReason.unknownError),
+          );
+        }
       }
     }
 

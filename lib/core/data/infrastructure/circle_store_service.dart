@@ -16,16 +16,10 @@ import 'package:zapbook/core/data/infrastructure/contact_service.dart';
 import 'package:zapbook/core/data/infrastructure/group_store_service.dart';
 import 'package:zapbook/zbf/enums/book_source_format.dart';
 import 'package:logging/logging.dart' as logging;
-import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 
 @lazySingleton
 class CircleStoreService {
-  CircleStoreService(
-    this._groupStore,
-    this._fileStore,
-    this._contactStore,
-    this._keyPackageService,
-  ) {
+  CircleStoreService(this._groupStore, this._fileStore, this._contactStore) {
     _init();
   }
   final _log = logging.Logger('CircleStoreService');
@@ -33,7 +27,6 @@ class CircleStoreService {
   final GroupStoreService _groupStore;
   final LibraryFileStore _fileStore;
   final ContactService _contactStore;
-  final KeyPackageService _keyPackageService;
 
   final _circlesController = BehaviorSubject<List<CircleBook>>.seeded([]);
   Stream<List<CircleBook>> get watchCircleBooks => _circlesController.stream;
@@ -391,7 +384,6 @@ class CircleStoreService {
   Future<void> deleteCircleBook(CircleBook circleBook) async {
     await _groupStore.deleteGroup(circleBook.id);
     await _fileStore.deleteBook(circleBook.circleDirId);
-    unawaited(_keyPackageService.forceRotate());
   }
 
   Future<List<Contact>> getCircleMembers(String circleBookId) async {
@@ -401,11 +393,11 @@ class CircleStoreService {
     );
   }
 
-  Future<MemberChangeResult?> addCircleMember(
+  Future<MemberChangeResult?> addCircleMembers(
     String circleBookId,
-    String keyPackageJson,
+    List<String> keyPackageJsons,
   ) async {
-    return await _groupStore.addMember(circleBookId, keyPackageJson);
+    return await _groupStore.addMembers(circleBookId, keyPackageJsons);
   }
 
   Future<void> removeCircleMember(
@@ -413,6 +405,13 @@ class CircleStoreService {
     String memberNpub,
   ) async {
     await _groupStore.removeMember(circleBookId, memberNpub);
+  }
+
+  Future<void> removeCircleMembers(
+    String circleBookId,
+    List<String> memberNpubs,
+  ) async {
+    await _groupStore.removeMembers(circleBookId, memberNpubs);
   }
 
   Future<void> leaveCircleBook(CircleBook circleBook) async {
