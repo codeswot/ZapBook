@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **External Signer (NIP-55):** Sign with Amber or any NIP-55 signer app on Android — no nsec ever touches ZapBook.
 - **External Signer (NIP-46):** Connect a remote signer (nsecbunker, nsec.app, Amber) via bunker:// link for cross-device signing.
 - **Signer method sheet:** Unified UI for choosing between local keys, signer app, or remote bunker during onboarding and account switching.
+- **Profile sharing:** Tap your avatar, name, or npub on the "You" screen to open a shareable profile card with a QR code of your npub, a truncated npub label, and a one-tap copy button — built for scanning in person at meetups.
+- **QR scanning:** Friends and Share-to-circle sheets now have a scan button next to the paste button — scan a friend's npub QR code to add them as a contact or as a circle member, instead of typing or pasting.
 
 ### Fixed
 

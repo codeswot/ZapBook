@@ -47,6 +47,9 @@ PODS:
     - onnxruntime-objc
   - marmot_dart (0.0.1):
     - Flutter
+  - mobile_scanner (7.0.0):
+    - Flutter
+    - FlutterMacOS
   - onnxruntime-c (1.26.0)
   - onnxruntime-extensions-c (0.13.0)
   - onnxruntime-objc (1.26.0):
@@ -80,6 +83,7 @@ DEPENDENCIES:
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - fonnx (from `.symlinks/plugins/fonnx/ios`)
   - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
+  - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
@@ -112,6 +116,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/fonnx/ios"
   marmot_dart:
     :path: ".symlinks/plugins/marmot_dart/ios"
+  mobile_scanner:
+    :path: ".symlinks/plugins/mobile_scanner/darwin"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   printing:
@@ -135,6 +141,7 @@ SPEC CHECKSUMS:
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   fonnx: b6864f2cc9cefa20eafbdbe5d27636008741c1e0
   marmot_dart: a13983081cff8697bab2c8f93cad96b7fc7a8970
+  mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
   onnxruntime-c: e6e9272f5996fed3ea3ca3c9bc843478b2ecbc73
   onnxruntime-extensions-c: 46aede179035fc012b044e75f5b0da4e4b1a39e3
   onnxruntime-objc: 63687acb8d78c35dd0ab097abf755b1f3dc468c7

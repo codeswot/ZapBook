@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/friends_state.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
@@ -11,9 +12,11 @@ import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
 import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/qr_scanner_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/friend_list_item.dart';
 import 'package:zapbook/features/profile/presentation/widgets/npub_preview.dart';
 
@@ -54,6 +57,22 @@ class _BodyState extends State<_Body> {
   void dispose() {
     _npubOrSearchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _scan() async {
+    final result = await QrScannerSheet.show(context);
+    if (result == null) return;
+    if (!result.isNpub) {
+      if (mounted) {
+        context.toast.showError(
+          'That doesn\'t look like an npub',
+          rootNavigator: true,
+        );
+      }
+      return;
+    }
+    _npubOrSearchController.text = result;
+    setState(() {});
   }
 
   @override
@@ -211,6 +230,8 @@ class _BodyState extends State<_Body> {
                       ),
                     ),
                   ),
+                  SizedBox(width: 12),
+                  AppScanButton(onTap: _scan),
                   SizedBox(width: 12),
                   AppPasteButton(
                     onPaste: (value) {

@@ -18,9 +18,11 @@ import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
 import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_row.dart';
+import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/qr_scanner_sheet.dart';
 
 class ShareCircleSheet extends StatelessWidget {
   const ShareCircleSheet({super.key, required this.book});
@@ -74,6 +76,28 @@ class _BodyState extends State<_Body> {
       return 'Already a member';
     }
     return null;
+  }
+
+  Future<void> _scan(ShareCircleState state) async {
+    final result = await QrScannerSheet.show(context);
+    if (!mounted || result == null) return;
+
+    final npub = result.trim();
+    if (!npub.isNpub) {
+      context.toast.showError(
+        'That doesn\'t look like an npub',
+        rootNavigator: true,
+      );
+      return;
+    }
+
+    final error = _validateNpub(npub, state);
+    if (error != null) {
+      context.toast.showError(error, rootNavigator: true);
+      return;
+    }
+
+    await context.read<ShareCircleCubit>().addNpub(npub);
   }
 
   @override
@@ -376,6 +400,8 @@ class _BodyState extends State<_Body> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  AppScanButton(onTap: () => _scan(state)),
                   const SizedBox(width: 10),
                   AppPasteButton(
                     onPaste: (text) {
