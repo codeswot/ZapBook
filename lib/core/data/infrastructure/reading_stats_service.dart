@@ -178,10 +178,21 @@ class ReadingStatsService {
     }
   }
 
-  String _today() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
+  String _today() {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).toIso8601String().substring(0, 10);
+  }
 
   String _dayOffset(int offset) {
-    final d = DateTime.now().toUtc().add(Duration(days: offset));
-    return d.toIso8601String().substring(0, 10);
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day + offset,
+    ).toIso8601String().substring(0, 10);
   }
 }

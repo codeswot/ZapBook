@@ -20,16 +20,28 @@ class ReadingStatsRecord {
 
   int get effectiveStreak {
     if (lastActivityDate == null) return 0;
-    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
-    final yesterday = DateTime.now()
-        .toUtc()
-        .subtract(const Duration(days: 1))
-        .toIso8601String()
-        .substring(0, 10);
 
-    if (lastActivityDate == today || lastActivityDate == yesterday) {
+    final now = DateTime.now();
+    final today = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).toIso8601String().substring(0, 10);
+
+    if (lastActivityDate == today) {
       return streak;
     }
+
+    final yesterday = DateTime(
+      now.year,
+      now.month,
+      now.day - 1,
+    ).toIso8601String().substring(0, 10);
+
+    if (lastActivityDate == yesterday) {
+      return streak;
+    }
+
     return 0;
   }
 

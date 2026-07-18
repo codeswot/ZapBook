@@ -102,17 +102,32 @@ void main() {
     );
   });
 
-  String today() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
-  String yesterday() => DateTime.now()
-      .toUtc()
-      .subtract(const Duration(days: 1))
-      .toIso8601String()
-      .substring(0, 10);
-  String dayBeforeYesterday() => DateTime.now()
-      .toUtc()
-      .subtract(const Duration(days: 2))
-      .toIso8601String()
-      .substring(0, 10);
+  String today() {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).toIso8601String().substring(0, 10);
+  }
+
+  String yesterday() {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day - 1,
+    ).toIso8601String().substring(0, 10);
+  }
+
+  String dayBeforeYesterday() {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day - 2,
+    ).toIso8601String().substring(0, 10);
+  }
 
   test('getStats fetches from stats dao for local user', () async {
     final record = ReadingStatsRecord(
