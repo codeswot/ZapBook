@@ -155,9 +155,10 @@ class _BodyState extends State<_Body> {
                             )
                           : Text(
                               'No contacts found matching "$query"'.substring(
-                                0,
-                                100,
-                              ),
+                                    0,
+                                    query.length > 30 ? 30 : null,
+                                  ) +
+                                  (query.length > 30 ? '...' : ''),
                               style: typography.body.copyWith(
                                 color: colors.slate,
                               ),
