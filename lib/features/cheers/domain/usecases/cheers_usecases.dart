@@ -90,3 +90,12 @@ class PostCheersNoteUseCase {
   Future<void> call(String text, {List<String> mentionNpubs = const []}) =>
       _repository.postNote(text, mentionNpubs: mentionNpubs);
 }
+
+@injectable
+class MarkCheersActivityAsReadUseCase {
+  const MarkCheersActivityAsReadUseCase(this._repository);
+
+  final CheersRepository _repository;
+
+  Future<void> call(String activityId) => _repository.markAsRead(activityId);
+}

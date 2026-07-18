@@ -22,6 +22,7 @@ import 'package:zapbook/core/data/infrastructure/zap_nudge_service.dart';
 
 abstract interface class CheersDataSource {
   Stream<List<CheersActivity>> watchActivities();
+  Future<void> markAsRead(String activityId);
 
   Future<ZapStatus> sendZap({
     required CheersActivity activity,
@@ -162,6 +163,13 @@ class CheersDataSourceImpl implements CheersDataSource {
         }).toList();
       });
     });
+  }
+
+  @override
+  Future<void> markAsRead(String activityId) async {
+    final npub = await _identityLocal.readNpub();
+    if (npub == null || npub.isEmpty) return;
+    await _cheersDao.markActivityAsRead(npub, activityId);
   }
 
   @override

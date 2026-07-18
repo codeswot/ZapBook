@@ -1224,17 +1224,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i921.PostCheersNoteUseCase>(
       () => _i921.PostCheersNoteUseCase(gh<_i314.CheersRepository>()),
     );
+    gh.factory<_i921.MarkCheersActivityAsReadUseCase>(
+      () => _i921.MarkCheersActivityAsReadUseCase(gh<_i314.CheersRepository>()),
+    );
     gh.factory<_i696.IngestionPageCubit>(
       () => _i696.IngestionPageCubit(
         gh<_i20.PickBookFileUseCase>(),
         gh<_i918.FileHasher>(),
         gh<_i20.FindExistingBookUseCase>(),
-      ),
-    );
-    gh.factory<_i602.HomeCubit>(
-      () => _i602.HomeCubit(
-        gh<_i1021.WatchHomeDashboard>(),
-        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     gh.factory<_i584.CheersCubit>(
@@ -1246,7 +1243,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i921.CopyCheersActivityTextUseCase>(),
         gh<_i921.ShareCheersActivityTextUseCase>(),
         gh<_i921.PostCheersNoteUseCase>(),
+        gh<_i921.MarkCheersActivityAsReadUseCase>(),
         gh<_i912.CheersNoteComposer>(),
+      ),
+    );
+    gh.factory<_i602.HomeCubit>(
+      () => _i602.HomeCubit(
+        gh<_i1021.WatchHomeDashboard>(),
+        gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
     return this;

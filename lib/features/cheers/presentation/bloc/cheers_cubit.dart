@@ -21,6 +21,7 @@ class CheersCubit extends Cubit<CheersState> {
     this._copyText,
     this._shareText,
     this._postNote,
+    this._markAsRead,
     this._noteComposer,
   ) : super(const CheersLoading()) {
     _subscribe();
@@ -33,6 +34,7 @@ class CheersCubit extends Cubit<CheersState> {
   final CopyCheersActivityTextUseCase _copyText;
   final ShareCheersActivityTextUseCase _shareText;
   final PostCheersNoteUseCase _postNote;
+  final MarkCheersActivityAsReadUseCase _markAsRead;
   final CheersNoteComposer _noteComposer;
 
   final _log = logging.Logger('CheersCubit');
@@ -211,6 +213,10 @@ class CheersCubit extends Cubit<CheersState> {
       _log.warning('Post note failed', error, stack);
       emit(const CheersPostError('Failed to post note'));
     }
+  }
+
+  void markAsRead(String activityId) {
+    _markAsRead(activityId);
   }
 
   @override

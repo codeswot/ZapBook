@@ -5,6 +5,8 @@ import 'package:zapbook/features/cheers/domain/entities/cheers_activity.dart';
 abstract interface class CheersRepository {
   Stream<List<CheersActivity>> watchActivities();
 
+  Future<void> markAsRead(String activityId);
+
   Future<ZapStatus> sendZap({
     required CheersActivity activity,
     required ZapGesture gesture,

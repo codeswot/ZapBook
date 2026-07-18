@@ -13,6 +13,7 @@ import 'package:get_it/get_it.dart';
 import 'package:zapbook/core/data/database/app_database.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/core/data/infrastructure/nostr_service.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class MockCheersCubit extends Mock implements CheersCubit {}
 
@@ -21,6 +22,10 @@ class MockNostrService extends Mock implements NostrService {}
 class MockAppDatabase extends Mock implements AppDatabase {}
 
 void main() {
+  setUpAll(() {
+    VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  });
+
   late MockCheersCubit cheersCubit;
   late MockNostrService nostrService;
   late MockAppDatabase appDatabase;
@@ -58,11 +63,8 @@ void main() {
 
       await tester.pumpWidget(buildTestWidget());
 
-      expect(find.text('All'), findsOneWidget); // Filter chip
-      expect(
-        find.byType(CircularProgressIndicator),
-        findsNothing,
-      ); // Using shimmer probably
+      expect(find.text('All'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
     testWidgets('renders loaded state with activities', (tester) async {

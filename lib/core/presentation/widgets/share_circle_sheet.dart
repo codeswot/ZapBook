@@ -12,6 +12,7 @@ import 'package:zapbook/features/circles/presentation/bloc/share_circle_state.da
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_chip.dart';
+import 'package:zapbook/core/presentation/widgets/app_fade_overlay.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_loading_list.dart';
 import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
@@ -65,6 +66,7 @@ class _BodyState extends State<_Body> {
   String? _validateNpub(String text, ShareCircleState state) {
     final npub = text.trim();
     if (npub.isEmpty) return null;
+    if (!npub.startsWith('npub1')) return null;
     if (!context.read<ShareCircleCubit>().isValidNpub(npub)) {
       return 'Not a valid npub';
     }
@@ -81,6 +83,7 @@ class _BodyState extends State<_Body> {
         final colors = context.colors;
         final typography = context.typography;
         final cubit = context.read<ShareCircleCubit>();
+        final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
         final friends = state is ShareCircleLoaded
             ? state.friends
@@ -101,7 +104,7 @@ class _BodyState extends State<_Body> {
           for (final c in friends) {
             if (c.npub == npub) return c.label;
           }
-          return npub;
+          return npub.toNpubShort();
         }
 
         bool isExistingMember(String npub) {
@@ -110,227 +113,331 @@ class _BodyState extends State<_Body> {
           return false;
         }
 
+        final query = _npubController.text.trim().toLowerCase();
+        final isNpubInput = query.startsWith('npub1');
+
+        var displayedFriends = friends;
+        if (query.isNotEmpty) {
+          displayedFriends = friends.where((f) {
+            return f.label.toLowerCase().contains(query) ||
+                f.npub.toLowerCase().contains(query);
+          }).toList();
+        }
+
         return AppSheet(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Share to circle',
-                  style: context.typography.displayM.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.colors.ink,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Pick friends or paste an npub. They join "${widget.book.title}" and it appears in their library.',
-                  style: typography.body.copyWith(color: colors.slate),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: AppInput(
-                        label: 'Add by npub',
-                        hintText: 'npub1…',
-                        icon: LucideIcons.atSign,
-                        controller: _npubController,
-                        onChanged: (_) => setState(() {}),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_npubController.text.isNotEmpty)
-                              BouncingInteractiveWidget(
-                                onTap: () {
-                                  _npubController.clear();
-                                  setState(() {});
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 10),
-                                  child: Icon(
-                                    LucideIcons.x,
-                                    size: 16,
-                                    color: colors.slate2,
-                                  ),
-                                ),
-                              ),
-                            if (isAdding)
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            else
-                              BouncingInteractiveWidget(
-                                onTap:
-                                    (error != null ||
-                                        _npubController.text.trim().isEmpty)
-                                    ? null
-                                    : () => cubit.addNpub(
-                                        _npubController.text.trim(),
-                                      ),
-                                child: Text(
-                                  'Add',
-                                  style: typography.body.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: _npubController.text.trim().isEmpty
-                                        ? colors.slate2
-                                        : colors.bitcoin,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Share to circle',
+                    style: context.typography.displayM.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.colors.ink,
                     ),
-                    const SizedBox(width: 10),
-                    AppPasteButton(
-                      onPaste: (text) {
-                        _npubController.text = text;
-                        setState(() {});
-                      },
+                  ),
+                  if (!isKeyboardOpen) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pick friends or paste an npub. They join "${widget.book.title}" and it appears in their library.',
+                      style: typography.body.copyWith(color: colors.slate),
                     ),
                   ],
-                ),
-                if (error != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    error,
-                    style: typography.bodyS.copyWith(color: colors.tomato),
-                  ),
-                ],
-                if (selectedNpubs.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final npub in selectedNpubs)
-                        npub.isNpub
-                            ? AppChip(
-                                label: labelFor(npub.toNpubShort()),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      error,
+                      style: typography.bodyS.copyWith(color: colors.tomato),
+                    ),
+                  ],
+                  if (!isKeyboardOpen && selectedNpubs.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 40,
+                      child: Stack(
+                        alignment: Alignment.centerRight,
+                        children: [
+                          ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.only(right: 52),
+                            itemCount: selectedNpubs.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final npub = selectedNpubs[index];
+                              if (!npub.isNpub) return const SizedBox.shrink();
+
+                              return AppChip(
+                                label: labelFor(npub),
                                 icon: LucideIcons.x,
                                 selected: true,
                                 onTap: () => cubit.toggleNpub(npub),
-                              )
-                            : SizedBox.shrink(),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 22),
-                Text(
-                  'Friends',
-                  style: typography.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    letterSpacing: 0.24,
-                    color: colors.slate,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (isLoading)
-                  const AppLoadingList()
-                else if (friends.isEmpty)
-                  Text(
-                    'No contacts yet. Paste an npub to add your first friend.',
-                    style: typography.body.copyWith(color: colors.slate),
-                  )
-                else
-                  Column(
-                    children: [
-                      for (final contact in friends) ...[
-                        AppRow(
-                          leading: AppProfileAvatar(
-                            url: contact.picture ?? '',
-                            size: 40,
+                              );
+                            },
                           ),
-                          title: contact.label,
-                          subtitle: isExistingMember(contact.npub)
-                              ? 'Already in circle'
-                              : contact.shortNpub,
-                          trailing: isExistingMember(contact.npub)
-                              ? Icon(
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colors.paper,
+                              border: Border.all(color: colors.slate),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colors.ink.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(-4, 0),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${selectedNpubs.length}',
+                              style: typography.body.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'Friends',
+                    style: typography.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      letterSpacing: 0.24,
+                      color: colors.slate,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+              Expanded(
+                flex: 1,
+                child: Builder(
+                  builder: (context) {
+                    if (isLoading) {
+                      return const SingleChildScrollView(
+                        child: AppLoadingList(),
+                      );
+                    }
+                    if (friends.isEmpty && query.isEmpty) {
+                      return Text(
+                        'No contacts yet. Paste an npub to add your first friend.',
+                        style: typography.body.copyWith(color: colors.slate),
+                      );
+                    }
+                    if (displayedFriends.isEmpty && query.isNotEmpty) {
+                      if (isNpubInput) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'No contacts found matching "$query"'.substring(
+                                0,
+                                query.length > 30 ? 30 : null,
+                              ) +
+                              (query.length > 30 ? '...' : ''),
+                          style: typography.body.copyWith(color: colors.slate),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+                    return Stack(
+                      children: [
+                        ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shrinkWrap: true,
+                          itemCount: displayedFriends.length,
+                          itemBuilder: (context, index) {
+                            final contact = displayedFriends[index];
+                            final isExisting = isExistingMember(contact.npub);
+                            final isSelected = selectedNpubs.contains(
+                              contact.npub,
+                            );
+
+                            String getSubtitle() {
+                              if (isExisting) return 'Already in circle';
+                              return contact.shortNpub;
+                            }
+
+                            Widget getTrailingIcon() {
+                              if (isExisting) {
+                                return Icon(
                                   LucideIcons.checkCheck,
                                   size: 20,
                                   color: colors.slate2,
-                                )
-                              : selectedNpubs.contains(contact.npub)
-                              ? Icon(
+                                );
+                              }
+                              if (isSelected) {
+                                return Icon(
                                   LucideIcons.checkCheck,
                                   size: 20,
                                   color: colors.mint,
-                                )
-                              : Icon(
-                                  LucideIcons.plus,
-                                  size: 20,
-                                  color: colors.slate,
+                                );
+                              }
+                              return Icon(
+                                LucideIcons.plus,
+                                size: 20,
+                                color: colors.slate,
+                              );
+                            }
+
+                            VoidCallback? getOnTap() {
+                              if (isExisting) return null;
+                              return () => cubit.toggleNpub(contact.npub);
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: AppRow(
+                                leading: AppProfileAvatar(
+                                  url: contact.picture ?? '',
+                                  size: 40,
                                 ),
-                          onTap: isExistingMember(contact.npub)
-                              ? null
-                              : () => cubit.toggleNpub(contact.npub),
+                                title: contact.label,
+                                subtitle: getSubtitle(),
+                                trailing: getTrailingIcon(),
+                                onTap: getOnTap(),
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(height: 10),
+                        AppFadeOverlay.top(color: colors.paper, height: 12),
+                        AppFadeOverlay.bottom(color: colors.paper, height: 12),
                       ],
-                    ],
-                  ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: selectedNpubs.isEmpty
-                      ? 'Share'
-                      : 'Share with ${selectedNpubs.length}',
-                  icon: LucideIcons.userPlus,
-                  variant: AppButtonVariant.purple,
-                  fullWidth: true,
-                  isLoading: isSharing,
-                  onTap: selectedNpubs.isEmpty || isSharing
-                      ? null
-                      : () {
-                          final circleBookId = widget.book.id;
-
-                          final messengerState = ScaffoldMessenger.of(context);
-                          final successSnackbar = AppToast.buildSnackBar(
-                            context,
-                            message: 'shared successfully!',
-                            type: AppToastType.success,
-                          );
-                          final skipSnackbar = AppToast.buildSnackBar(
-                            context,
-                            message: 'Shared, but some friends skipped',
-                            type: AppToastType.success,
-                          );
-                          final errorSnackbar = AppToast.buildSnackBar(
-                            context,
-                            message:
-                                'Failed to share circle. Please try again.',
-                            type: AppToastType.error,
-                          );
-
-                          context.toast.showSuccess(
-                            'Sharing circle in the background...',
-                          );
-                          Navigator.of(context).pop();
-
-                          cubit
-                              .share(circleBookId)
-                              .then((skipped) {
-                                messengerState.hideCurrentSnackBar();
-                                if (skipped.isNotEmpty) {
-                                  messengerState.showSnackBar(skipSnackbar);
-                                } else {
-                                  messengerState.showSnackBar(successSnackbar);
-                                }
-                              })
-                              .catchError((_) {
-                                messengerState.hideCurrentSnackBar();
-                                messengerState.showSnackBar(errorSnackbar);
-                              });
-                        },
+                    );
+                  },
                 ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: AppInput(
+                      label: 'Search contacts or paste npub',
+                      hintText: 'search or paste npub...',
+                      icon: LucideIcons.search,
+                      controller: _npubController,
+                      onChanged: (_) => setState(() {}),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_npubController.text.isNotEmpty)
+                            BouncingInteractiveWidget(
+                              onTap: () {
+                                _npubController.clear();
+                                setState(() {});
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: Icon(
+                                  LucideIcons.x,
+                                  size: 16,
+                                  color: colors.slate2,
+                                ),
+                              ),
+                            ),
+                          if (isAdding)
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          else
+                            BouncingInteractiveWidget(
+                              onTap:
+                                  (error != null ||
+                                      _npubController.text.trim().isEmpty)
+                                  ? null
+                                  : () => cubit.addNpub(
+                                      _npubController.text.trim(),
+                                    ),
+                              child: Text(
+                                'Add',
+                                style: typography.body.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: _npubController.text.trim().isEmpty
+                                      ? colors.slate2
+                                      : colors.bitcoin,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  AppPasteButton(
+                    onPaste: (text) {
+                      _npubController.text = text;
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: selectedNpubs.isEmpty
+                    ? 'Share'
+                    : 'Share with ${selectedNpubs.length}',
+                icon: LucideIcons.userPlus,
+                variant: AppButtonVariant.purple,
+                fullWidth: true,
+                isLoading: isSharing,
+                onTap: selectedNpubs.isEmpty || isSharing
+                    ? null
+                    : () {
+                        final circleBookId = widget.book.id;
+
+                        final messengerState = ScaffoldMessenger.of(context);
+                        final successSnackbar = AppToast.buildSnackBar(
+                          context,
+                          message: 'shared successfully!',
+                          type: AppToastType.success,
+                        );
+                        final skipSnackbar = AppToast.buildSnackBar(
+                          context,
+                          message: 'Shared, but some friends skipped',
+                          type: AppToastType.success,
+                        );
+                        final errorSnackbar = AppToast.buildSnackBar(
+                          context,
+                          message: 'Failed to share circle. Please try again.',
+                          type: AppToastType.error,
+                        );
+
+                        context.toast.showSuccess(
+                          'Sharing circle in the background...',
+                        );
+                        Navigator.of(context).pop();
+
+                        cubit
+                            .share(circleBookId)
+                            .then((skipped) {
+                              messengerState.hideCurrentSnackBar();
+                              if (skipped.isNotEmpty) {
+                                messengerState.showSnackBar(skipSnackbar);
+                              } else {
+                                messengerState.showSnackBar(successSnackbar);
+                              }
+                            })
+                            .catchError((_) {
+                              messengerState.hideCurrentSnackBar();
+                              messengerState.showSnackBar(errorSnackbar);
+                            });
+                      },
+              ),
+              if (!isKeyboardOpen) ...[
                 const SizedBox(height: 10),
                 AppButton(
                   label: 'Cancel',
@@ -339,7 +446,7 @@ class _BodyState extends State<_Body> {
                   onTap: () => context.pop(),
                 ),
               ],
-            ),
+            ],
           ),
         );
       },

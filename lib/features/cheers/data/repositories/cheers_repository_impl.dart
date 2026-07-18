@@ -16,6 +16,10 @@ class CheersRepositoryImpl implements CheersRepository {
       _dataSource.watchActivities();
 
   @override
+  Future<void> markAsRead(String activityId) =>
+      _dataSource.markAsRead(activityId);
+
+  @override
   Future<ZapStatus> sendZap({
     required CheersActivity activity,
     required ZapGesture gesture,

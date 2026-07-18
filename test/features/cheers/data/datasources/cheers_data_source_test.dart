@@ -225,6 +225,22 @@ void main() {
       verify(() => shareService.share('hello')).called(1);
     });
 
+    test('markAsRead updates the database', () async {
+      when(
+        () => identityLocal.readNpub(),
+      ).thenAnswer((_) => Future.value('npub1my'));
+      when(
+        () => cheersDao.markActivityAsRead(any(), any()),
+      ).thenAnswer((_) async {});
+
+      await dataSource.markAsRead('activity_123');
+
+      verify(() => identityLocal.readNpub()).called(1);
+      verify(
+        () => cheersDao.markActivityAsRead('npub1my', 'activity_123'),
+      ).called(1);
+    });
+
     test('postNote publishes a note with mentions', () async {
       when(
         () => nostrService.publishNote(

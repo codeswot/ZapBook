@@ -6,6 +6,7 @@ import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:zapbook/core/extensions/date_time_extension.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 
@@ -26,25 +27,43 @@ int _getGestureCount(CheersActivity activity, ZapGesture gesture) {
   }
 }
 
-class CheersActivityCard extends StatelessWidget {
+class CheersActivityCard extends StatefulWidget {
   const CheersActivityCard({
     super.key,
     required this.activity,
     required this.onTap,
     required this.onReactionTap,
     this.onLongPress,
+    this.onMarkRead,
   });
 
   final CheersActivity activity;
   final VoidCallback onTap;
   final void Function(ZapGesture gesture, String actorName) onReactionTap;
   final VoidCallback? onLongPress;
+  final void Function(String activityId)? onMarkRead;
+
+  @override
+  State<CheersActivityCard> createState() => _CheersActivityCardState();
+}
+
+class _CheersActivityCardState extends State<CheersActivityCard> {
+  bool _hasMarkedRead = false;
+
+  @override
+  void didUpdateWidget(CheersActivityCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activity.id != oldWidget.activity.id ||
+        (!widget.activity.isUnread && oldWidget.activity.isUnread)) {
+      _hasMarkedRead = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
-    final activity = this.activity;
+    final activity = widget.activity;
 
     final isNotice =
         activity.type == CheersActivityType.zapNudge ||
@@ -58,88 +77,101 @@ class CheersActivityCard extends StatelessWidget {
     final actorName = activity.actorName;
     final actorAvatar = activity.actorPicture;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: BouncingInteractiveWidget(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colors.paper3,
-            borderRadius: AppRadii.br20,
-            border: Border.all(
-              color: activity.isUnread ? colors.bitcoin : colors.hairline2,
-              width: activity.isUnread ? 1.5 : 1.0,
+    return VisibilityDetector(
+      key: Key('cheers_activity_${activity.id}'),
+      onVisibilityChanged: (info) {
+        if (activity.isUnread &&
+            !_hasMarkedRead &&
+            info.visibleFraction > 0.5) {
+          _hasMarkedRead = true;
+          widget.onMarkRead?.call(activity.id);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: BouncingInteractiveWidget(
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colors.paper3,
+              borderRadius: AppRadii.br20,
+              border: Border.all(
+                color: activity.isUnread
+                    ? colors.bitcoin.withValues(alpha: 0.4)
+                    : colors.hairline2,
+                width: activity.isUnread ? 1.5 : 1.0,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppProfileAvatar(url: actorAvatar, size: 40),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              actorName,
-                              style: typography.bodyL.copyWith(
-                                color: colors.ink,
-                                fontWeight: FontWeight.w700,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppProfileAvatar(url: actorAvatar, size: 40),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                actorName,
+                                style: typography.bodyL.copyWith(
+                                  color: colors.ink,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              Text(
+                                activity.timestamp.formatTimeAgo(),
+                                style: typography.caption.copyWith(
+                                  color: colors.slate,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            activity.targetDescription,
+                            style: typography.body.copyWith(
+                              color: colors.ink2,
+                              fontWeight: FontWeight.w500,
                             ),
+                          ),
+                          if (activity.bookCircleTitle?.isNotEmpty == true) ...[
+                            const SizedBox(height: 4),
                             Text(
-                              activity.timestamp.formatTimeAgo(),
+                              activity.bookCircleTitle ?? '',
                               style: typography.caption.copyWith(
                                 color: colors.slate,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          activity.targetDescription,
-                          style: typography.body.copyWith(
-                            color: colors.ink2,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (activity.bookCircleTitle?.isNotEmpty == true) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            activity.bookCircleTitle ?? '',
-                            style: typography.caption.copyWith(
-                              color: colors.slate,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+                if (!isNotice && !isZap) ...[
+                  const SizedBox(height: 12),
+                  if (hasReactions)
+                    _ReactionsRow(
+                      activity: activity,
+                      onReactionTap: (gesture) =>
+                          widget.onReactionTap(gesture, actorName),
+                      onTap: widget.onTap,
+                      isMine: activity.isMine,
+                    )
+                  else if (!activity.isMine)
+                    _EmptyReactions(onTap: widget.onTap),
                 ],
-              ),
-              if (!isNotice && !isZap) ...[
-                const SizedBox(height: 12),
-                if (hasReactions)
-                  _ReactionsRow(
-                    activity: activity,
-                    onReactionTap: (gesture) =>
-                        onReactionTap(gesture, actorName),
-                    onTap: onTap,
-                    isMine: activity.isMine,
-                  )
-                else if (!activity.isMine)
-                  _EmptyReactions(onTap: onTap),
               ],
-            ],
+            ),
           ),
         ),
       ),

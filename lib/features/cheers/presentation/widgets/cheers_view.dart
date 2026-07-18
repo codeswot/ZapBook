@@ -249,6 +249,8 @@ class _CheersViewState extends State<CheersView> {
                         final item = filtered[index];
                         return CheersActivityCard(
                           activity: item,
+                          onMarkRead: (id) =>
+                              context.read<CheersCubit>().markAsRead(id),
                           onTap: () {
                             if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);

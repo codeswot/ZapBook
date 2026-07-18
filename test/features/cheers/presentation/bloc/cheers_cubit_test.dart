@@ -70,6 +70,9 @@ class MockShareCheersActivityTextUseCase extends Mock
 
 class MockPostCheersNoteUseCase extends Mock implements PostCheersNoteUseCase {}
 
+class MockMarkCheersActivityAsReadUseCase extends Mock
+    implements MarkCheersActivityAsReadUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(ZapGesture.clap);
@@ -84,6 +87,7 @@ void main() {
   late MockCopyCheersActivityTextUseCase copyText;
   late MockShareCheersActivityTextUseCase shareText;
   late MockPostCheersNoteUseCase postNote;
+  late MockMarkCheersActivityAsReadUseCase markAsRead;
   late StreamController<List<CheersActivity>> activitiesController;
 
   setUp(() {
@@ -94,6 +98,7 @@ void main() {
     copyText = MockCopyCheersActivityTextUseCase();
     shareText = MockShareCheersActivityTextUseCase();
     postNote = MockPostCheersNoteUseCase();
+    markAsRead = MockMarkCheersActivityAsReadUseCase();
     activitiesController = StreamController<List<CheersActivity>>.broadcast();
 
     when(
@@ -114,6 +119,7 @@ void main() {
       copyText,
       shareText,
       postNote,
+      markAsRead,
       const CheersNoteComposer(),
     );
   }
@@ -400,6 +406,18 @@ void main() {
 
       await Future.delayed(Duration.zero);
       expect(states.last, isA<CheersPostError>());
+      cubit.close();
+    });
+  });
+
+  group('markAsRead', () {
+    test('calls markAsRead on the use case', () {
+      final cubit = createCubit();
+      when(() => markAsRead('123')).thenAnswer((_) async {});
+
+      cubit.markAsRead('123');
+
+      verify(() => markAsRead('123')).called(1);
       cubit.close();
     });
   });

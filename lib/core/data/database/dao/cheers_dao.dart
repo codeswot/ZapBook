@@ -133,4 +133,21 @@ class CheersDao {
       _log.warning('Failed to save activity', error, stack);
     }
   }
+
+  Future<void> markActivityAsRead(String ownerNpub, String activityId) async {
+    try {
+      final db = await _appDatabase.open();
+      db.execute(
+        '''
+        UPDATE cheers_feed
+        SET is_unread = 0
+        WHERE owner_npub = ? AND id = ?
+        ''',
+        [ownerNpub, activityId],
+      );
+      _changeController.add(null);
+    } on Object catch (error, stack) {
+      _log.warning('Failed to mark activity as read', error, stack);
+    }
+  }
 }
