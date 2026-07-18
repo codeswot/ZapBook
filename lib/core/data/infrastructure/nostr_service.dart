@@ -43,17 +43,31 @@ class NostrService {
       throw StateError('No logged-in account. Sign in before publishing.');
     }
 
+    Metadata? existing;
+    try {
+      existing = await _ndk.metadata
+          .loadMetadata(pubKey, forceRefresh: true)
+          .timeout(const Duration(seconds: 8));
+      existing ??= await _ndk.metadata.loadMetadata(pubKey);
+    } on Object catch (error) {
+      _log.warning('publishMetadata: could not load existing metadata: $error');
+    }
+
     final metadata = Metadata(
       pubKey: pubKey,
-      name: name,
-      displayName: displayName,
-      lud16: lud16,
-      about: about,
-      picture: picture,
-      banner: banner,
-      website: website,
-      nip05: nip05,
+      updatedAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      content: existing != null
+          ? Map<String, dynamic>.from(existing.content)
+          : null,
     );
+    if (name != null) metadata.name = name;
+    if (displayName != null) metadata.displayName = displayName;
+    if (lud16 != null) metadata.lud16 = lud16;
+    if (about != null) metadata.about = about;
+    if (picture != null) metadata.picture = picture;
+    if (banner != null) metadata.banner = banner;
+    if (website != null) metadata.website = website;
+    if (nip05 != null) metadata.nip05 = nip05;
 
     return _ndk.metadata.broadcastMetadata(
       metadata,

@@ -9,6 +9,7 @@ class OnboardingState extends Equatable {
   final String generatedNsec;
   final String importedNsec;
   final String lightningAddress;
+  final String existingLud16;
   final String displayName;
   final String picture;
   final bool isFetchingMetadata;
@@ -28,6 +29,7 @@ class OnboardingState extends Equatable {
     this.generatedNsec = "",
     this.importedNsec = "",
     this.lightningAddress = "",
+    this.existingLud16 = "",
     this.displayName = "",
     this.picture = "",
     this.isFetchingMetadata = false,
@@ -49,6 +51,7 @@ class OnboardingState extends Equatable {
     generatedNsec,
     importedNsec,
     lightningAddress,
+    existingLud16,
     displayName,
     picture,
     isFetchingMetadata,
@@ -69,6 +72,7 @@ class OnboardingState extends Equatable {
     String? generatedNsec,
     String? importedNsec,
     String? lightningAddress,
+    String? existingLud16,
     String? displayName,
     String? picture,
     bool? isFetchingMetadata,
@@ -88,6 +92,7 @@ class OnboardingState extends Equatable {
       generatedNsec: generatedNsec ?? this.generatedNsec,
       importedNsec: importedNsec ?? this.importedNsec,
       lightningAddress: lightningAddress ?? this.lightningAddress,
+      existingLud16: existingLud16 ?? this.existingLud16,
       displayName: displayName ?? this.displayName,
       picture: picture ?? this.picture,
       isFetchingMetadata: isFetchingMetadata ?? this.isFetchingMetadata,

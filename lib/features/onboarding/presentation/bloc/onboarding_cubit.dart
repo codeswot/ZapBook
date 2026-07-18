@@ -268,6 +268,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             picture: profile.picture ?? state.picture,
             lightningAddress:
                 profile.lightningAddress ?? state.lightningAddress,
+            existingLud16: profile.lightningAddress ?? '',
             isFetchingMetadata: false,
             hasExistingProfile: hasName || profile.picture != null,
           ),
@@ -289,6 +290,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       return false;
     }
     emit(state.copyWith(isBusy: true));
+    final lud16 = state.lightningAddress;
+    final lud16Changed = lud16.isNotEmpty && lud16 != state.existingLud16;
     await _completeOnboarding(
       npub: npub,
       nsec: nsec,
@@ -299,9 +302,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       displayName: publish && state.displayName.isNotEmpty
           ? state.displayName
           : null,
-      lud16: publish && state.lightningAddress.isNotEmpty
-          ? state.lightningAddress
-          : null,
+      lud16: (publish && lud16.isNotEmpty) || lud16Changed ? lud16 : null,
       picture: publish && state.picture.isNotEmpty ? state.picture : null,
     );
     return true;
