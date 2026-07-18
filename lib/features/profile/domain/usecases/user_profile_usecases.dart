@@ -12,6 +12,14 @@ class LoadUserProfileUseCase {
 }
 
 @injectable
+class ToggleFollowUseCase {
+  const ToggleFollowUseCase(this._repository);
+  final UserProfileRepository _repository;
+  Future<void> call(String npub, bool isFollow) =>
+      _repository.toggleFollow(npub, isFollow);
+}
+
+@injectable
 class SendProfileZapUseCase {
   const SendProfileZapUseCase(this._repository);
   final UserProfileRepository _repository;

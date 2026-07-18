@@ -15,14 +15,22 @@ class ProfileRemoteDataSource {
 
   final NostrService _nostr;
 
-  Future<ProfileMetadata?> fetchMetadata({required String npub}) async {
+  Future<ProfileMetadata?> fetchMetadata({
+    required String npub,
+    bool forceRefresh = false,
+  }) async {
     if (npub.isEmpty) return null;
     try {
       final pubkey = Nip19.decode(npub);
       if (pubkey.isEmpty) return null;
-      final metadata = await _nostr
-          .getMetadata(pubkey)
+      var metadata = await _nostr
+          .getMetadata(pubkey, forceRefresh: forceRefresh)
           .timeout(const Duration(seconds: 8));
+      if (metadata == null && forceRefresh) {
+        metadata = await _nostr
+            .getMetadata(pubkey)
+            .timeout(const Duration(seconds: 8));
+      }
       if (metadata == null) return null;
       return (
         name: metadata.name,

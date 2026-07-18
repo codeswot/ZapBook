@@ -729,14 +729,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
       ),
     );
-    gh.lazySingleton<_i771.UserProfileRepository>(
-      () => _i615.UserProfileRepositoryImpl(
-        gh<_i735.ProfileRemoteDataSource>(),
-        gh<_i837.ReadingStatsService>(),
-        gh<_i348.CircleProgressDao>(),
-        gh<_i327.ZapService>(),
-      ),
-    );
     gh.factory<_i297.WatchQuizSurfaceUseCase>(
       () => _i297.WatchQuizSurfaceUseCase(gh<_i902.QuizRepository>()),
     );
@@ -833,6 +825,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1070.FetchExistingProfileUseCase>(
       () => _i1070.FetchExistingProfileUseCase(gh<_i1033.IdentityRepository>()),
     );
+    gh.lazySingleton<_i771.UserProfileRepository>(
+      () => _i615.UserProfileRepositoryImpl(
+        gh<_i735.ProfileRemoteDataSource>(),
+        gh<_i837.ReadingStatsService>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i327.ZapService>(),
+        gh<_i409.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+    );
     gh.factory<_i1009.SwitchAccountUseCases>(
       () => _i1009.SwitchAccountUseCases(gh<_i991.SwitchAccountRepository>()),
     );
@@ -844,6 +846,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i644.LoadUserProfileUseCase>(
       () => _i644.LoadUserProfileUseCase(gh<_i771.UserProfileRepository>()),
+    );
+    gh.factory<_i644.ToggleFollowUseCase>(
+      () => _i644.ToggleFollowUseCase(gh<_i771.UserProfileRepository>()),
     );
     gh.factory<_i644.SendProfileZapUseCase>(
       () => _i644.SendProfileZapUseCase(gh<_i771.UserProfileRepository>()),
@@ -942,6 +947,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i3.UserProfileZapCubit>(
       () => _i3.UserProfileZapCubit(gh<_i644.SendProfileZapUseCase>()),
     );
+    gh.factory<_i623.UserProfileCubit>(
+      () => _i623.UserProfileCubit(
+        gh<_i644.LoadUserProfileUseCase>(),
+        gh<_i644.ToggleFollowUseCase>(),
+        gh<_i854.CopyTextUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i903.NotificationGate>(
       () => _i903.NotificationGate(
         gh<_i194.MessageRouterService>(),
@@ -990,12 +1002,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(
         gh<_i86.FriendsUseCases>(),
-        gh<_i854.CopyTextUseCase>(),
-      ),
-    );
-    gh.factory<_i623.UserProfileCubit>(
-      () => _i623.UserProfileCubit(
-        gh<_i644.LoadUserProfileUseCase>(),
         gh<_i854.CopyTextUseCase>(),
       ),
     );

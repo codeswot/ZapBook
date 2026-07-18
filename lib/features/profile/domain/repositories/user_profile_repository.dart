@@ -4,6 +4,8 @@ import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
 abstract class UserProfileRepository {
   Future<UserProfile> load(String npub);
 
+  Future<void> toggleFollow(String npub, bool isFollow);
+
   Future<void> zap({
     required UserProfile profile,
     required ZapGesture gesture,

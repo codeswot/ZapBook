@@ -9,10 +9,11 @@ export 'package:zapbook/features/profile/presentation/bloc/user_profile_state.da
 
 @injectable
 class UserProfileCubit extends Cubit<UserProfileState> {
-  UserProfileCubit(this._loadUserProfile, this._copyText)
+  UserProfileCubit(this._loadUserProfile, this._toggleFollow, this._copyText)
     : super(const UserProfileLoading());
 
   final LoadUserProfileUseCase _loadUserProfile;
+  final ToggleFollowUseCase _toggleFollow;
   final CopyTextUseCase _copyText;
 
   Future<void> load(String npub) async {
@@ -21,6 +22,18 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       emit(UserProfileLoaded(await _loadUserProfile(npub)));
     } on Exception {
       emit(const UserProfileError('Could not load profile'));
+    }
+  }
+
+  Future<void> toggleFollow() async {
+    final current = state;
+    if (current is! UserProfileLoaded) return;
+    final profile = current.profile;
+    emit(UserProfileLoaded(profile.copyWith(isFollow: !profile.isFollow)));
+    try {
+      await _toggleFollow(profile.npub, profile.isFollow);
+    } on Exception {
+      emit(UserProfileLoaded(profile));
     }
   }
 

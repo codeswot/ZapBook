@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
     show MemberEntry;
@@ -65,6 +66,14 @@ class ReaderActionsSheet extends StatelessWidget {
     if (ok) await cubit.removeMember(circleBookId, entry.npub);
   }
 
+  void _openProfile(BuildContext context) {
+    if (entry.isSelf) {
+      context.go('/you');
+      return;
+    }
+    UserProfileRoute(npub: entry.npub).push(context);
+  }
+
   void _showZapSheet(BuildContext context) {
     ReaderZapSheet.show(
       context,
@@ -110,6 +119,15 @@ class ReaderActionsSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
+          _ActionRow(
+            icon: LucideIcons.user,
+            label: 'View profile',
+            onTap: () {
+              context.pop();
+              _openProfile(context);
+            },
+          ),
+          const SizedBox(height: 10),
           _ActionRow(
             icon: LucideIcons.zap,
             label: 'Zap reader',

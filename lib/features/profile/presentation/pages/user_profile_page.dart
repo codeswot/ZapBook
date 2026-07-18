@@ -214,6 +214,20 @@ class _UserProfileLoadedView extends StatelessWidget {
                 : AppButtonVariant.ghost,
             onTap: () => _onZapTap(context),
           ),
+          if (!profile.isSelf) ...[
+            const SizedBox(height: 12),
+            AppButton(
+              label: profile.isFollow ? 'Unfollow' : 'Follow',
+              icon: profile.isFollow
+                  ? LucideIcons.userMinus
+                  : LucideIcons.userPlus,
+              fullWidth: true,
+              variant: profile.isFollow
+                  ? AppButtonVariant.outline
+                  : AppButtonVariant.purple,
+              onTap: () => context.read<UserProfileCubit>().toggleFollow(),
+            ),
+          ],
         ],
       ),
     );
