@@ -280,19 +280,6 @@ class GroupStoreService {
     }
   }
 
-  Future<void> removeMember(String groupId, String memberNpub) async {
-    try {
-      final res = await _marmot.removeMember(groupId, memberNpub);
-      await _envelope.publish(res.evolutionEventJson);
-    } catch (e, st) {
-      _log.warning('Marmot removeMember failed', e, st);
-      if (e.toString().contains('pending commit exists')) {
-        _log.info('Recovering from pending commit lock...');
-        await clearPendingCommit(groupId);
-      }
-    }
-  }
-
   Future<void> removeMembers(String groupId, List<String> memberNpubs) async {
     if (memberNpubs.isEmpty) return;
     try {

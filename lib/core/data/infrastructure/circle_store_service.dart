@@ -400,13 +400,6 @@ class CircleStoreService {
     return await _groupStore.addMembers(circleBookId, keyPackageJsons);
   }
 
-  Future<void> removeCircleMember(
-    String circleBookId,
-    String memberNpub,
-  ) async {
-    await _groupStore.removeMember(circleBookId, memberNpub);
-  }
-
   Future<void> removeCircleMembers(
     String circleBookId,
     List<String> memberNpubs,

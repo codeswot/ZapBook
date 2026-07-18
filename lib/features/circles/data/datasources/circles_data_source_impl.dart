@@ -68,7 +68,7 @@ class CirclesDataSourceImpl implements CirclesDataSource {
 
   @override
   Future<void> removeCircleMember(String circleId, String npub) {
-    return _circleStore.removeCircleMember(circleId, npub);
+    return _circleStore.removeCircleMembers(circleId, [npub]);
   }
 
   @override
