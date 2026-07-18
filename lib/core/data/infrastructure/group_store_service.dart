@@ -253,16 +253,29 @@ class GroupStoreService {
     return await _marmot.getMembers(groupId);
   }
 
-  Future<MemberChangeResult?> addMember(
-    String groupId,
-    String keyPackageJson,
-  ) async {
+  Future<void> clearPendingCommit(String groupId) async {
     try {
-      final res = await _marmot.addMember(groupId, keyPackageJson);
+      await _marmot.clearPendingCommit(groupId);
+    } catch (e, st) {
+      _log.warning('Failed to clear pending commit', e, st);
+    }
+  }
+
+  Future<MemberChangeResult?> addMembers(
+    String groupId,
+    List<String> keyPackageJsons,
+  ) async {
+    if (keyPackageJsons.isEmpty) return null;
+    try {
+      final res = await _marmot.addMembers(groupId, keyPackageJsons);
       await _envelope.publish(res.evolutionEventJson);
       return res;
     } catch (e, st) {
-      _log.warning('Marmot addMember failed', e, st);
+      _log.warning('Marmot addMembers failed', e, st);
+      if (e.toString().contains('pending commit exists')) {
+        _log.info('Recovering from pending commit lock...');
+        await clearPendingCommit(groupId);
+      }
       return null;
     }
   }
@@ -273,6 +286,24 @@ class GroupStoreService {
       await _envelope.publish(res.evolutionEventJson);
     } catch (e, st) {
       _log.warning('Marmot removeMember failed', e, st);
+      if (e.toString().contains('pending commit exists')) {
+        _log.info('Recovering from pending commit lock...');
+        await clearPendingCommit(groupId);
+      }
+    }
+  }
+
+  Future<void> removeMembers(String groupId, List<String> memberNpubs) async {
+    if (memberNpubs.isEmpty) return;
+    try {
+      final res = await _marmot.removeMembers(groupId, memberNpubs);
+      await _envelope.publish(res.evolutionEventJson);
+    } catch (e, st) {
+      _log.warning('Marmot removeMembers failed', e, st);
+      if (e.toString().contains('pending commit exists')) {
+        _log.info('Recovering from pending commit lock...');
+        await clearPendingCommit(groupId);
+      }
     }
   }
 
