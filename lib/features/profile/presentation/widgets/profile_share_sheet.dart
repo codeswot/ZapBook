@@ -115,11 +115,7 @@ class ProfileShareSheet extends StatelessWidget {
                 const SizedBox(width: 8),
                 BouncingInteractiveWidget(
                   onTap: () => _copy(context),
-                  child: Icon(
-                    LucideIcons.copy,
-                    size: 16,
-                    color: colors.slate,
-                  ),
+                  child: Icon(LucideIcons.copy, size: 16, color: colors.slate),
                 ),
               ],
             ),
