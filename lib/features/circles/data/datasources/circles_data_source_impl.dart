@@ -167,12 +167,23 @@ class CirclesDataSourceImpl implements CirclesDataSource {
       }
 
       try {
-        final result = await _circleStore.addCircleMember(
-          groupId,
-          keyPackageJson,
-        );
+        MemberChangeResult? result;
+        int retries = 0;
+
+        while (result == null && retries < 20) {
+          result = await _circleStore.addCircleMember(groupId, keyPackageJson);
+
+          if (result == null) {
+            _log.info(
+              'addCircleMember returned null (likely pending commit), waiting... ($retries/20)',
+            );
+            await Future.delayed(const Duration(milliseconds: 1000));
+            retries++;
+          }
+        }
+
         if (result == null) {
-          _log.warning('Failed to add member $npub');
+          _log.warning('Failed to add member $npub after retries');
           skips.add(
             ShareSkip(npub: npub, reason: ShareSkipReason.unknownError),
           );

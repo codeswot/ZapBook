@@ -355,18 +355,20 @@ class _BodyState extends State<_Body> {
                             )
                           else
                             BouncingInteractiveWidget(
-                              onTap:
-                                  (error != null ||
-                                      _npubController.text.trim().isEmpty)
+                              onTap: (error != null || !isNpubInput)
                                   ? null
-                                  : () => cubit.addNpub(
-                                      _npubController.text.trim(),
-                                    ),
+                                  : () {
+                                      cubit.addNpub(
+                                        _npubController.text.trim(),
+                                      );
+                                      _npubController.clear();
+                                      setState(() {});
+                                    },
                               child: Text(
                                 'Add',
                                 style: typography.body.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: _npubController.text.trim().isEmpty
+                                  color: !isNpubInput
                                       ? colors.slate2
                                       : colors.bitcoin,
                                 ),
