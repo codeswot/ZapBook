@@ -16,7 +16,6 @@ import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/core/presentation/widgets/qr_scanner_sheet.dart';
 import 'package:zapbook/features/profile/presentation/widgets/friend_list_item.dart';
 import 'package:zapbook/features/profile/presentation/widgets/npub_preview.dart';
 
@@ -59,16 +58,13 @@ class _BodyState extends State<_Body> {
     super.dispose();
   }
 
-  Future<void> _scan() async {
-    final result = await QrScannerSheet.show(context);
-    if (result == null) return;
+  void _onScan(String result) {
+    if (!mounted) return;
     if (!result.isNpub) {
-      if (mounted) {
-        context.toast.showError(
-          'That doesn\'t look like an npub',
-          rootNavigator: true,
-        );
-      }
+      context.toast.showError(
+        'That doesn\'t look like an npub',
+        rootNavigator: true,
+      );
       return;
     }
     _npubOrSearchController.text = result;
@@ -231,7 +227,7 @@ class _BodyState extends State<_Body> {
                     ),
                   ),
                   SizedBox(width: 12),
-                  AppScanButton(onTap: _scan),
+                  AppQrScanButton(onScan: _onScan),
                   SizedBox(width: 12),
                   AppPasteButton(
                     onPaste: (value) {

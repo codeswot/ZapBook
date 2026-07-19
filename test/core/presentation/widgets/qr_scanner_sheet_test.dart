@@ -87,7 +87,19 @@ void main() {
     expect(find.text('Point your camera at an npub QR code'), findsOneWidget);
   });
 
-  testWidgets('close button pops with null', (tester) async {
+  testWidgets('renders torch toggle button', (tester) async {
+    await tester.pumpWidget(
+      buildTestWidget((context) => QrScannerSheet.show(context)),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byIcon(LucideIcons.zap), findsOneWidget);
+  });
+
+  testWidgets('dismissing the sheet pops with null', (tester) async {
     String? result = 'unset';
 
     await tester.pumpWidget(
@@ -100,7 +112,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.byIcon(LucideIcons.x));
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
 
     expect(result, isNull);

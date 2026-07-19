@@ -1,12 +1,15 @@
 import 'dart:async';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
-import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_square_icon_button.dart';
 
 class QrScannerSheet extends StatefulWidget {
   const QrScannerSheet({
@@ -27,7 +30,7 @@ class QrScannerSheet extends StatefulWidget {
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: Colors.black,
+      backgroundColor: context.colors.transparent,
       builder: (_) => QrScannerSheet(title: title, instructions: instructions),
     );
   }
@@ -38,7 +41,10 @@ class QrScannerSheet extends StatefulWidget {
 
 class _QrScannerSheetState extends State<QrScannerSheet>
     with WidgetsBindingObserver {
-  final _controller = MobileScannerController();
+  final _controller = MobileScannerController(
+    formats: [BarcodeFormat.qrCode],
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
   bool _handled = false;
 
   @override
@@ -73,91 +79,76 @@ class _QrScannerSheetState extends State<QrScannerSheet>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final typography = context.typography;
 
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-            errorBuilder: (context, error) => _ScannerError(error: error),
-          ),
-          IgnorePointer(
-            child: Center(
+    return AppSheet(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.title,
+              style: typography.displayM.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colors.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.instructions,
+              style: typography.body.copyWith(color: colors.slate),
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 24),
+            AspectRatio(
+              aspectRatio: 1,
               child: Container(
-                width: 240,
-                height: 240,
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 3,
-                  ),
+                  color: colors.paper2,
                   borderRadius: AppRadii.br24,
+                  border: Border.all(color: colors.hairline),
+                ),
+                child: ClipRRect(
+                  borderRadius: AppRadii.br24,
+                  child: MobileScanner(
+                    controller: _controller,
+                    onDetect: _onDetect,
+                    placeholderBuilder: (context) =>
+                        const _ScannerPlaceholder(),
+                    errorBuilder: (context, error) =>
+                        _ScannerError(error: error),
+                  ),
                 ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      BouncingInteractiveWidget(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const _CircleIconButton(icon: LucideIcons.x),
-                      ),
-                      BouncingInteractiveWidget(
-                        onTap: () => unawaited(_controller.toggleTorch()),
-                        child: const _CircleIconButton(icon: LucideIcons.zap),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    widget.title,
-                    style: typography.h1.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.instructions,
-                    style: typography.body.copyWith(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            const SizedBox(height: 20),
+            AppSquareIconButton(
+              icon: LucideIcons.zap,
+              onTap: () => unawaited(_controller.toggleTorch()),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon});
-
-  final IconData icon;
+class _ScannerPlaceholder extends StatelessWidget {
+  const _ScannerPlaceholder();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
-        shape: BoxShape.circle,
+    final colors = context.colors;
+
+    return ColoredBox(
+      color: colors.paper2,
+      child: Center(
+        child: Icon(LucideIcons.camera, color: colors.slate, size: 40),
       ),
-      child: Icon(icon, color: Colors.white, size: 20),
     );
   }
 }
@@ -169,47 +160,41 @@ class _ScannerError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final typography = context.typography;
-    final message = error.errorCode == MobileScannerErrorCode.permissionDenied
+    final isPermissionDenied =
+        error.errorCode == MobileScannerErrorCode.permissionDenied;
+    final message = isPermissionDenied
         ? 'Camera permission denied. Enable camera access in your device settings to scan QR codes.'
         : error.errorCode.message;
 
     return ColoredBox(
-      color: Colors.black,
+      color: colors.paper2,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.cameraOff, color: Colors.white, size: 40),
+              Icon(LucideIcons.cameraOff, color: colors.slate, size: 40),
               const SizedBox(height: 16),
               Text(
                 message,
-                style: typography.body.copyWith(color: Colors.white),
+                style: typography.body.copyWith(color: colors.slate),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              BouncingInteractiveWidget(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white),
-                    borderRadius: AppRadii.br999,
-                  ),
-                  child: Text(
-                    'Close',
-                    style: typography.body.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
+              if (isPermissionDenied) ...[
+                const SizedBox(height: 20),
+                AppButton(
+                  label: 'Open Settings',
+                  icon: LucideIcons.settings,
+                  variant: AppButtonVariant.outline,
+                  size: AppButtonSize.sm,
+                  onTap: () => unawaited(
+                    AppSettings.openAppSettings(type: AppSettingsType.settings),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

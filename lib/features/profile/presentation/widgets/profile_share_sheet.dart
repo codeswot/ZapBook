@@ -51,15 +51,28 @@ class ProfileShareSheet extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+
           children: [
-            Text(
-              'Share Profile',
-              style: typography.displayM.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colors.ink,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Share Profile',
+                  textAlign: TextAlign.start,
+                  style: typography.displayM.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colors.ink,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Let friends scan this QR code to easily add you',
+                  style: typography.body.copyWith(color: colors.slate),
+                  textAlign: TextAlign.start,
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 20),
             AppProfileAvatar(url: profile.picture, size: 96),
             const SizedBox(height: 12),
             Text(
@@ -74,34 +87,30 @@ class ProfileShareSheet extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final edge = constraints.maxWidth;
-                return Container(
-                  width: edge,
-                  height: edge,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: colors.white,
-                    borderRadius: AppRadii.br24,
-                    border: Border.all(color: colors.hairline),
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colors.white,
+                  borderRadius: AppRadii.br24,
+                  border: Border.all(color: colors.hairline),
+                ),
+                child: QrImageView(
+                  data: profile.npub,
+                  backgroundColor: colors.white,
+                  gapless: false,
+                  errorCorrectionLevel: QrErrorCorrectLevel.H,
+                  eyeStyle: QrEyeStyle(
+                    eyeShape: QrEyeShape.circle,
+                    color: colors.nostr,
                   ),
-                  child: QrImageView(
-                    data: profile.npub,
-                    backgroundColor: colors.white,
-                    gapless: false,
-                    errorCorrectionLevel: QrErrorCorrectLevel.H,
-                    eyeStyle: QrEyeStyle(
-                      eyeShape: QrEyeShape.circle,
-                      color: colors.nostr,
-                    ),
-                    dataModuleStyle: QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.circle,
-                      color: colors.black,
-                    ),
+                  dataModuleStyle: QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.circle,
+                    color: colors.black,
                   ),
-                );
-              },
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -115,11 +124,7 @@ class ProfileShareSheet extends StatelessWidget {
                 const SizedBox(width: 8),
                 BouncingInteractiveWidget(
                   onTap: () => _copy(context),
-                  child: Icon(
-                    LucideIcons.copy,
-                    size: 16,
-                    color: colors.slate,
-                  ),
+                  child: Icon(LucideIcons.copy, size: 16, color: colors.slate),
                 ),
               ],
             ),

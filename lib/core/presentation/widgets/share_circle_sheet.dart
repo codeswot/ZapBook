@@ -22,7 +22,6 @@ import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
-import 'package:zapbook/core/presentation/widgets/qr_scanner_sheet.dart';
 
 class ShareCircleSheet extends StatelessWidget {
   const ShareCircleSheet({super.key, required this.book});
@@ -78,11 +77,8 @@ class _BodyState extends State<_Body> {
     return null;
   }
 
-  Future<void> _scan(ShareCircleState state) async {
-    final result = await QrScannerSheet.show(context);
-    if (!mounted || result == null) return;
-
-    final npub = result.trim();
+  Future<void> _onScan(String npub, ShareCircleState state) async {
+    if (!mounted) return;
     if (!npub.isNpub) {
       context.toast.showError(
         'That doesn\'t look like an npub',
@@ -401,7 +397,7 @@ class _BodyState extends State<_Body> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  AppScanButton(onTap: () => _scan(state)),
+                  AppQrScanButton(onScan: (value) => _onScan(value, state)),
                   const SizedBox(width: 10),
                   AppPasteButton(
                     onPaste: (text) {
