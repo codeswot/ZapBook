@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
+import 'package:collection/collection.dart';
 
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
@@ -250,9 +251,23 @@ class CircleShareService {
       if (isComplete()) break;
     }
 
+    MarmotMediaRef resolveOldestRef(MarmotMediaRef target) {
+      for (final msg in messages) {
+        for (final m in msg.media) {
+          if (const ListEquality().equals(
+            m.originalHash,
+            target.originalHash,
+          )) {
+            return m;
+          }
+        }
+      }
+      return target;
+    }
+
     return (
-      segments: segmentsMap.values.toList(),
-      sourceRef: sourceRef,
+      segments: segmentsMap.values.map(resolveOldestRef).toList(),
+      sourceRef: sourceRef != null ? resolveOldestRef(sourceRef) : null,
       complete: isComplete(),
     );
   }
