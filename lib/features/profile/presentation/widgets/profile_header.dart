@@ -49,56 +49,69 @@ class _ProfileHeaderContent extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        BouncingInteractiveWidget(
-          onTap: () => _openShareSheet(context),
-          child: AppProfileAvatar(url: profile.picture, size: 48),
-        ),
-        const SizedBox(width: 16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              BouncingInteractiveWidget(
-                onTap: () => _openShareSheet(context),
-                child: Text(
-                  profile.displayName,
-                  style: typography.h1.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: colors.ink,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  BouncingInteractiveWidget(
-                    onTap: () => _openShareSheet(context),
-                    child: Text(
-                      profile.npub.toNpubShort(),
-                      style: typography.body.copyWith(
-                        color: colors.slate,
-                        fontSize: 14,
+          child: BouncingInteractiveWidget(
+            onTap: () => _openShareSheet(context),
+            child: Row(
+              children: [
+                AppProfileAvatar(url: profile.picture, size: 48),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              profile.displayName,
+                              style: typography.h1.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                color: colors.ink,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            LucideIcons.chevronDown,
+                            size: 14,
+                            color: colors.slate,
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            profile.npub.toNpubShort(),
+                            style: typography.body.copyWith(
+                              color: colors.slate,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          BouncingInteractiveWidget(
+                            onTap: () => _copyNpub(context),
+                            child: Icon(
+                              LucideIcons.copy,
+                              size: 14,
+                              color: colors.slate,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  BouncingInteractiveWidget(
-                    onTap: () => _copyNpub(context),
-                    child: Icon(
-                      LucideIcons.copy,
-                      size: 14,
-                      color: colors.slate,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
+        const SizedBox(width: 16),
         AppIconButton(
           onTap: () => ProfileEditSheet.show(
             context,
