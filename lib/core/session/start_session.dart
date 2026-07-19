@@ -22,7 +22,9 @@ Future<void> startSession() async {
   }
   final stats = getIt<ReadingStatsService>();
   unawaited(stats.load());
-  unawaited(getIt<SearchIndexBackfill>().run());
+  Future.delayed(const Duration(seconds: 4), () {
+    unawaited(getIt<SearchIndexBackfill>().run());
+  });
 }
 
 Future<void> _publishPendingProfile() async {

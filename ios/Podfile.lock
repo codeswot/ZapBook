@@ -55,6 +55,9 @@ PODS:
     - onnxruntime-c (= 1.26.0)
   - package_info_plus (0.4.5):
     - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - printing (1.0.0):
     - Flutter
   - SDWebImage (5.21.7):
@@ -81,6 +84,7 @@ DEPENDENCIES:
   - fonnx (from `.symlinks/plugins/fonnx/ios`)
   - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -114,6 +118,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/marmot_dart/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   printing:
     :path: ".symlinks/plugins/printing/ios"
   share_plus:
@@ -126,26 +132,27 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  device_info_plus: 71ffc6ab7634ade6267c7a93088ed7e4f74e5896
+  device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
-  file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
+  file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_local_notifications: 643a3eda1ce1c0599413ca31672536d423dee214
-  flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
-  fonnx: b6864f2cc9cefa20eafbdbe5d27636008741c1e0
-  marmot_dart: a13983081cff8697bab2c8f93cad96b7fc7a8970
+  flutter_local_notifications: eda81afddbf18f8589f6ec069ce593c4c6378769
+  flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
+  fonnx: 43ccf5b747f218b7cf389d84c5b841aada6cb70d
+  marmot_dart: a5888a784f2d355809d5e9bbea29169abe5ebefe
   onnxruntime-c: e6e9272f5996fed3ea3ca3c9bc843478b2ecbc73
   onnxruntime-extensions-c: 46aede179035fc012b044e75f5b0da4e4b1a39e3
   onnxruntime-objc: 63687acb8d78c35dd0ab097abf755b1f3dc468c7
-  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
+  printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
+  share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
+  url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
 
 PODFILE CHECKSUM: f1135b979822e8c524ce750fb3c38d9734708beb
 

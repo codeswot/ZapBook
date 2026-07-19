@@ -38,7 +38,9 @@ class NostrSession {
 
   void _afterLogin() {
     unawaited(_nostr.ensureRelayListPublished());
-    unawaited(_sync.start());
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      unawaited(_sync.start());
+    });
   }
 
   void logout() {

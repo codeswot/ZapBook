@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/features/profile/presentation/bloc/profile_cubit.dart';
@@ -50,7 +51,7 @@ class ProfileKeyPackageSheet extends StatelessWidget {
             onTap: () async {
               final ok = await getIt<ProfileCubit>().rotateKeyPackage();
               if (context.mounted) {
-                Navigator.of(context).pop(true);
+                context.pop(true);
                 if (ok) {
                   context.toast.showSuccess(
                     'Key package rotated',

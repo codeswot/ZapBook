@@ -57,11 +57,18 @@ class GroupStoreService {
   Future<void> _init() async {
     await _refreshGroups();
 
-    _sub = _marmotSync.onGroup.listen((updatedGroup) {
-      _undeleteGroup(updatedGroup.id);
-      _groupsMap[updatedGroup.id] = updatedGroup;
+    _sub = _marmotSync.onGroup
+        .bufferTime(const Duration(milliseconds: 150))
+        .listen((updatedGroups) {
+      if (updatedGroups.isEmpty) return;
+      for (final updatedGroup in updatedGroups) {
+        _undeleteGroup(updatedGroup.id);
+        _groupsMap[updatedGroup.id] = updatedGroup;
+      }
       _groupsSubject.add(_groupsMap.values.toList());
-      _groupUpdatedSubject.add(updatedGroup);
+      for (final updatedGroup in updatedGroups) {
+        _groupUpdatedSubject.add(updatedGroup);
+      }
     });
 
     _syncSub = _marmotSync.onSync.listen((_) => _refreshGroups());

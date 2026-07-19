@@ -207,20 +207,16 @@ class MarmotSyncService {
 
   Future<void> _onGroupEvent(Nip01Event event) async {
     try {
-      final message = await _marmot.processIncoming(event.toMarmotJson());
-      if (message != null) {
-        _messageController.add(message);
-      } else {
-        final groupIdHex = event.getTags('h').firstOrNull;
-        if (groupIdHex != null) {
-          final groups = await _marmot.listGroups();
-          final group = groups
-              .where((g) => g.nostrGroupId == groupIdHex)
-              .firstOrNull;
-
-          if (group != null) {
-            _groupController.add(group);
-          }
+      final result = await _marmot.processIncomingWithKind(
+        event.toMarmotJson(),
+      );
+      result.kind;
+      if (result.message != null) {
+        _messageController.add(result.message!);
+      } else if (result.groupId != null) {
+        final group = await _marmot.getGroup(result.groupId!);
+        if (group != null) {
+          _groupController.add(group);
         }
       }
     } on Object catch (error) {
