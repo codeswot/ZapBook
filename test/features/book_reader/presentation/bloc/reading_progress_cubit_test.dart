@@ -186,8 +186,8 @@ void main() {
           any(),
           any(),
           scrollOffset: any(named: 'scrollOffset'),
-          ),
-          ).called(1);
+        ),
+      ).called(1);
     });
 
     test('markComplete finishes the book and saves', () {
