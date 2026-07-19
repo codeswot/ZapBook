@@ -60,6 +60,9 @@ PODS:
     - onnxruntime-c (= 1.26.0)
   - package_info_plus (0.4.5):
     - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - printing (1.0.0):
     - Flutter
   - SDWebImage (5.21.7):
@@ -88,6 +91,7 @@ DEPENDENCIES:
   - marmot_dart (from `.symlinks/plugins/marmot_dart/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -125,6 +129,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/mobile_scanner/darwin"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   printing:
     :path: ".symlinks/plugins/printing/ios"
   share_plus:
@@ -137,7 +143,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  app_settings: 58017cd26b604ae98c3e65acbdd8ba173703cc82
   device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
@@ -147,11 +152,11 @@ SPEC CHECKSUMS:
   flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
   fonnx: 43ccf5b747f218b7cf389d84c5b841aada6cb70d
   marmot_dart: a5888a784f2d355809d5e9bbea29169abe5ebefe
-  mobile_scanner: 77265f3dc8d580810e91849d4a0811a90467ed5e
   onnxruntime-c: e6e9272f5996fed3ea3ca3c9bc843478b2ecbc73
   onnxruntime-extensions-c: 46aede179035fc012b044e75f5b0da4e4b1a39e3
   onnxruntime-objc: 63687acb8d78c35dd0ab097abf755b1f3dc468c7
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
