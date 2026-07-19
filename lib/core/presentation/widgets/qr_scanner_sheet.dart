@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -74,7 +75,7 @@ class _QrScannerSheetState extends State<QrScannerSheet>
     final value = capture.barcodes.first.rawValue;
     if (value == null || value.isEmpty) return;
     _handled = true;
-    Navigator.of(context).pop(value);
+    context.pop(value);
   }
 
   @override
