@@ -56,7 +56,9 @@ void main() {
     test('treats missing progress as zero', () {
       final a = _entry('a', 'Alice');
       final b = _entry('b', 'Bob');
-      final progress = {'b': const MemberProgress(currentPage: 1, fraction: 0.1)};
+      final progress = {
+        'b': const MemberProgress(currentPage: 1, fraction: 0.1),
+      };
 
       final sorted = [a, b]..sort(progress.compareEntries);
 
