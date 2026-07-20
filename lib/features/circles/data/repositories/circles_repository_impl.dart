@@ -5,6 +5,7 @@ import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
+import 'package:zapbook/core/domain/entities/pending_circle_upload.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 import 'package:zapbook/features/circles/data/datasources/circles_data_source.dart';
@@ -130,4 +131,42 @@ class CirclesRepositoryImpl implements CirclesRepository {
   @override
   Future<Set<String>> getExistingMemberNpubs(String circleBookId) =>
       _dataSource.getExistingMemberNpubs(circleBookId);
+
+  @override
+  Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub) =>
+      _dataSource.watchPendingUploads(ownerNpub);
+
+  @override
+  Future<void> retryPendingUpload(PendingCircleUpload upload) =>
+      _dataSource.retryPendingUpload(upload);
+
+  @override
+  Future<List<String>> getReseedRequesters({
+    required String groupId,
+    required String circleDirId,
+  }) => _dataSource.getReseedRequesters(
+    groupId: groupId,
+    circleDirId: circleDirId,
+  );
+
+  @override
+  Future<void> reseedCircleBook({
+    required String groupId,
+    required String circleDirId,
+    required String myNpub,
+  }) => _dataSource.reseedCircleBook(
+    groupId: groupId,
+    circleDirId: circleDirId,
+    myNpub: myNpub,
+  );
+
+  @override
+  Stream<bool> watchHasUnreadAdminActions(
+    String ownerNpub,
+    String circleDirId,
+  ) => _dataSource.watchHasUnreadAdminActions(ownerNpub, circleDirId);
+
+  @override
+  Future<void> markAdminActionsAsRead(String ownerNpub, String circleDirId) =>
+      _dataSource.markAdminActionsAsRead(ownerNpub, circleDirId);
 }

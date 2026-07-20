@@ -150,4 +150,63 @@ class CheersDao {
       _log.warning('Failed to mark activity as read', error, stack);
     }
   }
+
+  Stream<bool> watchHasUnreadAdminActions(
+    String ownerNpub,
+    String circleDirId,
+  ) {
+    late StreamController<bool> controller;
+
+    Future<void> emit() async {
+      try {
+        final db = await _appDatabase.open();
+        final rows = db.select(
+          '''
+          SELECT COUNT(*) as count FROM cheers_feed
+          WHERE owner_npub = ? AND book_id = ? AND type = ? AND is_unread = 1
+          ''',
+          [ownerNpub, circleDirId, CheersActivityType.adminAction.value],
+        );
+        final count = rows.first['count'] as int;
+        if (!controller.isClosed) {
+          controller.add(count > 0);
+        }
+      } catch (e, st) {
+        _log.warning('Failed to check unread admin actions', e, st);
+        if (!controller.isClosed) {
+          controller.add(false);
+        }
+      }
+    }
+
+    controller = StreamController<bool>.broadcast(onListen: emit);
+    final sub = _changeController.stream.listen((_) => emit());
+
+    controller.onCancel = () {
+      sub.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  Future<void> markAdminActionsAsRead(
+    String ownerNpub,
+    String circleDirId,
+  ) async {
+    try {
+      final db = await _appDatabase.open();
+      db.execute(
+        '''
+        UPDATE cheers_feed
+        SET is_unread = 0
+        WHERE owner_npub = ? AND book_id = ? AND type = ?
+        ''',
+        [ownerNpub, circleDirId, CheersActivityType.adminAction.value],
+      );
+      _changeController.add(null);
+    } catch (e, st) {
+      _log.warning('Failed to mark admin actions as read', e, st);
+    }
+  }
 }

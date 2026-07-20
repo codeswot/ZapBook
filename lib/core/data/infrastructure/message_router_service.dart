@@ -96,13 +96,20 @@ class MessageRouterService {
             _activityController.add(cheer);
           }
 
-        case CheersMessage() || ZapSentMessage():
+        case CheersMessage() || ZapSentMessage() || ReseedRequestMessage():
           final activity = CheersActivityMessage.fromAppMessage(
             parsed,
             bookTitle: await _titleFor(parsed.groupId),
           );
           final npub = await _identityLocalDataSource.readNpub();
           if (npub != null && activity != null) {
+            if (parsed is ReseedRequestMessage) {
+              final group = await _marmot.getGroup(parsed.groupId);
+              if (group == null || !group.adminNpubs.contains(npub)) {
+                break;
+              }
+            }
+
             await _cheersDao.saveActivity(npub, activity);
             _activityController.add(activity);
           }

@@ -12,7 +12,9 @@ import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/admin_actions_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/features/circles/presentation/widgets/admin_badge_indicator.dart';
 
 class CircleSettingsSheet extends StatelessWidget {
   const CircleSettingsSheet({
@@ -35,6 +37,7 @@ class CircleSettingsSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: context.colors.transparent,
       builder: (_) =>
           CircleSettingsSheet(cubit: cubit, book: book, isAdmin: isAdmin),
@@ -51,6 +54,11 @@ class CircleSettingsSheet extends StatelessWidget {
     context.pop();
     await CircleMembersSheet.show(context, book: book, isAdmin: isAdmin);
     await cubit.refresh(book.id);
+  }
+
+  Future<void> _adminActions(BuildContext context) async {
+    context.pop();
+    await AdminActionsSheet.show(context, book: book);
   }
 
   Future<void> _deleteCircle(BuildContext context) async {
@@ -134,6 +142,13 @@ class CircleSettingsSheet extends StatelessWidget {
               },
             ),
             const SizedBox(height: 10),
+            _SettingsRow(
+              icon: LucideIcons.shieldAlert,
+              label: 'Admin actions',
+              circleDirId: book.circleDirId,
+              onTap: () => _adminActions(context),
+            ),
+            const SizedBox(height: 10),
           ],
           _SettingsRow(
             icon: LucideIcons.users,
@@ -169,12 +184,14 @@ class _SettingsRow extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.tone,
+    this.circleDirId,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final Color? tone;
+  final String? circleDirId;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +208,15 @@ class _SettingsRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: color),
+            if (circleDirId != null)
+              AdminBadgeIndicator(
+                circleDirId: circleDirId!,
+                top: -2,
+                left: -2,
+                child: Icon(icon, size: 20, color: color),
+              )
+            else
+              Icon(icon, size: 20, color: color),
             const SizedBox(width: 14),
             Expanded(
               child: Text(

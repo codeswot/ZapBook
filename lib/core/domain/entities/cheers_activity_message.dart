@@ -156,6 +156,20 @@ final class CheersActivityMessage extends Equatable {
       );
     }
 
+    if (msg is ReseedRequestMessage) {
+      return CheersActivityMessage(
+        id: msg.id,
+        actorNpub: msg.senderNpub,
+        circleBookId: msg.payload['circleDirId'] as String?,
+        groupId: msg.groupId,
+        activityDescription: 'Requested a re-seed for missing segments',
+        timestamp: timestamp,
+        type: CheersActivityType.adminAction,
+        isUnread: true,
+        bookTitle: bookTitle,
+      );
+    }
+
     return null;
   }
 

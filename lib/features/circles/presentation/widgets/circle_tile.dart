@@ -8,6 +8,7 @@ import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/circle_book_cover.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/features/circles/presentation/widgets/admin_badge_indicator.dart';
 
 class CircleTile extends StatelessWidget {
   const CircleTile({super.key, required this.circle});
@@ -35,7 +36,10 @@ class CircleTile extends StatelessWidget {
               tag: 'circle-cover-${circle.id}',
               child: Material(
                 type: MaterialType.transparency,
-                child: CircleBookCover(book: circle, width: 72, height: 92),
+                child: AdminBadgeIndicator(
+                  circleDirId: circle.circleDirId,
+                  child: CircleBookCover(book: circle, width: 72, height: 92),
+                ),
               ),
             ),
             const SizedBox(width: 14),

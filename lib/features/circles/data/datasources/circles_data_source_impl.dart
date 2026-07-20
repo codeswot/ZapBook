@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/domain/entities/pending_circle_upload.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
@@ -17,6 +18,13 @@ import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 import 'package:zapbook/core/data/infrastructure/group_store_service.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 import 'package:zapbook/core/data/database/dao/zap_sats_earnings_dao.dart';
+import 'package:zapbook/core/data/database/dao/pending_circle_upload_dao.dart';
+import 'package:zapbook/core/data/database/dao/circle_reseed_ack_dao.dart';
+import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
+import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
+import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:uuid/uuid.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/features/circles/data/datasources/circles_data_source.dart';
 
@@ -34,6 +42,9 @@ class CirclesDataSourceImpl implements CirclesDataSource {
     this._shareService,
     this._groupStore,
     this._marmot,
+    this._pendingUploadDao,
+    this._reseedAckDao,
+    this._cheersDao,
   );
 
   final CircleStoreService _circleStore;
@@ -47,7 +58,78 @@ class CirclesDataSourceImpl implements CirclesDataSource {
   final CircleShareService _shareService;
   final GroupStoreService _groupStore;
   final Marmot _marmot;
+  final PendingCircleUploadDao _pendingUploadDao;
+  final CircleReseedAckDao _reseedAckDao;
+  final CheersDao _cheersDao;
   final _log = logging.Logger('CirclesDataSourceImpl');
+
+  static const _uploadMaxAttempts = 3;
+
+  Future<void> _uploadWithRetry(
+    String npub,
+    String groupId,
+    String circleDirId,
+  ) async {
+    var uploaded = <String>{};
+    for (var attempt = 1; attempt <= _uploadMaxAttempts; attempt++) {
+      final outcome = await _shareService.uploadBookContent(
+        npub,
+        groupId,
+        circleDirId,
+        alreadyUploaded: uploaded,
+      );
+      uploaded = uploaded.union(outcome.uploaded);
+
+      if (outcome.error == null) {
+        await _pendingUploadDao.clear(circleDirId);
+        return;
+      }
+
+      final isLastAttempt = attempt == _uploadMaxAttempts;
+      _log.warning(
+        'Upload attempt $attempt/$_uploadMaxAttempts failed for $circleDirId',
+        outcome.error,
+        outcome.stack,
+      );
+      if (isLastAttempt) {
+        await _pendingUploadDao.markFailed(
+          circleDirId: circleDirId,
+          groupId: groupId,
+          ownerNpub: npub,
+          attempts: attempt,
+          reason: outcome.error.toString(),
+        );
+
+        try {
+          final group = await _marmot.getGroup(groupId);
+          final title = group != null
+              ? (BookGroupNaming.matches(group.name)
+                    ? BookGroupNaming.titleOf(group.name)
+                    : group.name)
+              : null;
+
+          final activity = CheersActivityMessage(
+            id: const Uuid().v4(),
+            actorNpub: npub,
+            circleBookId: circleDirId,
+            groupId: groupId,
+            activityDescription:
+                'Book upload failed after $_uploadMaxAttempts attempts. Please retry.',
+            timestamp: DateTime.now(),
+            type: CheersActivityType.adminAction,
+            isUnread: true,
+            bookTitle: title,
+          );
+          await _cheersDao.saveActivity(npub, activity);
+        } catch (e, st) {
+          _log.warning('Failed to log admin action for failed upload', e, st);
+        }
+
+        return;
+      }
+      await Future.delayed(Duration(seconds: attempt * 2));
+    }
+  }
 
   @override
   Stream<List<CircleBook>> watchSharedCircles() {
@@ -182,7 +264,6 @@ class CirclesDataSourceImpl implements CirclesDataSource {
             );
           }
         } else {
-          // Send welcome rumors (order matches the input key packages)
           for (var i = 0; i < result.welcomeRumors.length; i++) {
             final npub = validEntries[i].key;
             final hex = await MarmotIdentity.pubkeyHexFromNpub(npub);
@@ -213,7 +294,7 @@ class CirclesDataSourceImpl implements CirclesDataSource {
     }
 
     if (skips.length < npubs.length) {
-      await _shareService.uploadBookContent(myNpub, groupId, book.circleDirId);
+      await _uploadWithRetry(myNpub, groupId, book.circleDirId);
       await _groupStore.refreshGroup(groupId);
     }
 
@@ -247,5 +328,51 @@ class CirclesDataSourceImpl implements CirclesDataSource {
     }
 
     return existingMembers;
+  }
+
+  @override
+  Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub) {
+    return _pendingUploadDao.watchAll(ownerNpub);
+  }
+
+  @override
+  Future<void> retryPendingUpload(PendingCircleUpload upload) {
+    return _uploadWithRetry(
+      upload.ownerNpub,
+      upload.groupId,
+      upload.circleDirId,
+    );
+  }
+
+  @override
+  Future<List<String>> getReseedRequesters({
+    required String groupId,
+    required String circleDirId,
+  }) async {
+    final since = await _reseedAckDao.lastAck(circleDirId);
+    return _shareService.reseedRequesters(groupId, circleDirId, since: since);
+  }
+
+  @override
+  Future<void> reseedCircleBook({
+    required String groupId,
+    required String circleDirId,
+    required String myNpub,
+  }) async {
+    await _uploadWithRetry(myNpub, groupId, circleDirId);
+    await _reseedAckDao.ack(circleDirId);
+  }
+
+  @override
+  Stream<bool> watchHasUnreadAdminActions(
+    String ownerNpub,
+    String circleDirId,
+  ) {
+    return _cheersDao.watchHasUnreadAdminActions(ownerNpub, circleDirId);
+  }
+
+  @override
+  Future<void> markAdminActionsAsRead(String ownerNpub, String circleDirId) {
+    return _cheersDao.markAdminActionsAsRead(ownerNpub, circleDirId);
   }
 }

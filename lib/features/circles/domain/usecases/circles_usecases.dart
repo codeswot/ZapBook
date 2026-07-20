@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
+import 'package:zapbook/core/domain/entities/pending_circle_upload.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
@@ -178,4 +179,64 @@ class UpdateCircleBookCoverOptimisticUseCase {
     preparedImage: preparedImage,
     mimeType: mimeType,
   );
+}
+
+@injectable
+class WatchPendingCircleUploadsUseCase {
+  const WatchPendingCircleUploadsUseCase(this._repository);
+  final CirclesRepository _repository;
+  Stream<List<PendingCircleUpload>> call(String ownerNpub) =>
+      _repository.watchPendingUploads(ownerNpub);
+}
+
+@injectable
+class RetryPendingCircleUploadUseCase {
+  const RetryPendingCircleUploadUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<void> call(PendingCircleUpload upload) =>
+      _repository.retryPendingUpload(upload);
+}
+
+@injectable
+class GetReseedRequestersUseCase {
+  const GetReseedRequestersUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<List<String>> call({
+    required String groupId,
+    required String circleDirId,
+  }) => _repository.getReseedRequesters(
+    groupId: groupId,
+    circleDirId: circleDirId,
+  );
+}
+
+@injectable
+class ReseedCircleBookUseCase {
+  const ReseedCircleBookUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<void> call({
+    required String groupId,
+    required String circleDirId,
+    required String myNpub,
+  }) => _repository.reseedCircleBook(
+    groupId: groupId,
+    circleDirId: circleDirId,
+    myNpub: myNpub,
+  );
+}
+
+@injectable
+class WatchUnreadAdminActionsUseCase {
+  const WatchUnreadAdminActionsUseCase(this._repository);
+  final CirclesRepository _repository;
+  Stream<bool> call(String ownerNpub, String circleDirId) =>
+      _repository.watchHasUnreadAdminActions(ownerNpub, circleDirId);
+}
+
+@injectable
+class MarkAdminActionsAsReadUseCase {
+  const MarkAdminActionsAsReadUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<void> call(String ownerNpub, String circleDirId) =>
+      _repository.markAdminActionsAsRead(ownerNpub, circleDirId);
 }

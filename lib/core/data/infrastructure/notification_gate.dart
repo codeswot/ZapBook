@@ -89,7 +89,10 @@ class NotificationGate {
   Future<void> _onActivity(CheersActivityMessage activity) async {
     final tsSecs = activity.timestamp.millisecondsSinceEpoch ~/ 1000;
     if (!_shouldNotify(id: activity.id, tsSecs: tsSecs)) return;
-    if (activity.actorNpub == _selfNpub) return;
+    if (activity.actorNpub == _selfNpub &&
+        activity.type != CheersActivityType.adminAction) {
+      return;
+    }
 
     final name = _nameFor(activity.actorNpub);
     final circle = activity.bookTitle;
@@ -119,6 +122,11 @@ class NotificationGate {
         'Ready for zaps',
         '$name is now ready to receive zaps',
         ZapbookNotificationChannel.sats,
+      ),
+      CheersActivityType.adminAction => (
+        'Action Required',
+        activity.activityDescription,
+        ZapbookNotificationChannel.circles,
       ),
       _ => (
         'ZapBook',

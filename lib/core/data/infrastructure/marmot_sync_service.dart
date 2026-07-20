@@ -57,6 +57,11 @@ class MarmotSyncService {
   final _seenGroupEventIds = <String>{};
   final _groupEventQueue = <Nip01Event>[];
   bool _processingGroupEvents = false;
+  Timer? _groupEventDebounce;
+  final _groupBackfillInFlight = <String>{};
+
+  static const _groupEventDebounceWindow = Duration(milliseconds: 300);
+  static const _backfillOverlap = Duration(seconds: 300);
 
   Future<void> start() async {
     if (_running) return;
@@ -200,31 +205,70 @@ class MarmotSyncService {
       _stopGroupSub(id);
     }
 
-    for (final group in bookGroups) {
-      final groupId = group.id;
-      final nostrGroupId = group.nostrGroupId;
-      if (_groupSubs.containsKey(groupId)) continue;
+    final newGroups = bookGroups
+        .where(
+          (group) =>
+              !_groupSubs.containsKey(group.id) &&
+              _groupBackfillInFlight.add(group.id),
+        )
+        .toList();
 
-      int? since;
-      if (group.lastMessageProcessedAtSecs == null) {
-        since = null;
-      } else {
-        since = (group.lastMessageProcessedAtSecs ?? 0) - 300;
+    await Future.wait(newGroups.map(_backfillThenSubscribe));
+  }
+
+  Future<void> _backfillThenSubscribe(MarmotGroup group) async {
+    final groupId = group.id;
+    final nostrGroupId = group.nostrGroupId;
+    final cutover = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    try {
+      final since = group.lastMessageProcessedAtSecs == null
+          ? null
+          : (group.lastMessageProcessedAtSecs ?? 0) -
+                _backfillOverlap.inSeconds;
+
+      final backfill = await _ndk.requests
+          .query(
+            filter: Filter(
+              kinds: const [_groupMessageKind],
+              tags: {
+                '#h': [nostrGroupId],
+              },
+              since: since,
+            ),
+            explicitRelays: ZapbookConfig.broadcastRelays,
+          )
+          .future;
+
+      backfill.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+      for (final event in backfill) {
+        if (!_seenGroupEventIds.add(event.id)) continue;
+        if (_seenGroupEventIds.length > 250) {
+          _seenGroupEventIds.remove(_seenGroupEventIds.first);
+        }
+        await _processGroupEvent(event);
       }
-
-      final response = _ndk.requests.subscription(
-        filter: Filter(
-          kinds: const [_groupMessageKind],
-          tags: {
-            '#h': [nostrGroupId],
-          },
-          since: since,
-        ),
-        explicitRelays: ZapbookConfig.broadcastRelays,
-      );
-      _groupSubIds[groupId] = response.requestId;
-      _groupSubs[groupId] = response.stream.listen(_onGroupEvent);
+    } on Object catch (error, stack) {
+      _log.warning('Group backfill failed for $groupId', error, stack);
+    } finally {
+      _groupBackfillInFlight.remove(groupId);
     }
+
+    if (_groupSubs.containsKey(groupId)) return;
+
+    final response = _ndk.requests.subscription(
+      filter: Filter(
+        kinds: const [_groupMessageKind],
+        tags: {
+          '#h': [nostrGroupId],
+        },
+        since: cutover - _backfillOverlap.inSeconds,
+      ),
+      explicitRelays: ZapbookConfig.broadcastRelays,
+    );
+    _groupSubIds[groupId] = response.requestId;
+    _groupSubs[groupId] = response.stream.listen(_onGroupEvent);
   }
 
   Future<void> _restartGroupSubs() async {
@@ -246,7 +290,12 @@ class MarmotSyncService {
       _seenGroupEventIds.remove(_seenGroupEventIds.first);
     }
     _groupEventQueue.add(event);
-    _processGroupEventQueue();
+
+    _groupEventDebounce?.cancel();
+    _groupEventDebounce = Timer(
+      _groupEventDebounceWindow,
+      _processGroupEventQueue,
+    );
   }
 
   Future<void> _processGroupEventQueue() async {
@@ -255,35 +304,42 @@ class MarmotSyncService {
 
     try {
       while (_groupEventQueue.isNotEmpty) {
+        _groupEventQueue.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         final event = _groupEventQueue.removeAt(0);
-        try {
-          final result = await _marmot.processIncomingWithKind(
-            event.toMarmotJson(),
-          );
-          if (result.message != null) {
-            _messageController.add(result.message!);
-          } else if (result.groupId != null) {
-            final group = await _marmot.getGroup(result.groupId!);
-            if (group != null) {
-              _groupController.add(group);
-            }
-          }
-        } on Object catch (error) {
-          _log.fine('processIncoming skipped: $error');
-        }
+        await _processGroupEvent(event);
       }
     } finally {
       _processingGroupEvents = false;
     }
   }
 
+  Future<void> _processGroupEvent(Nip01Event event) async {
+    try {
+      final result = await _marmot.processIncomingWithKind(
+        event.toMarmotJson(),
+      );
+      if (result.message != null) {
+        _messageController.add(result.message!);
+      } else if (result.groupId != null) {
+        final group = await _marmot.getGroup(result.groupId!);
+        if (group != null) {
+          _groupController.add(group);
+        }
+      }
+    } on Object catch (error) {
+      _log.fine('processIncoming skipped: $error');
+    }
+  }
+
   Future<void> stop() async {
     _running = false;
     _heavyUpdateTimer?.cancel();
+    _groupEventDebounce?.cancel();
     _welcomeQueue.clear();
     _groupEventQueue.clear();
     _seenWelcomeIds.clear();
     _seenGroupEventIds.clear();
+    _groupBackfillInFlight.clear();
     await _welcomeSub?.cancel();
     for (final sub in _groupSubs.values) {
       await sub.cancel();

@@ -8,6 +8,7 @@ abstract class AppMessageTypes {
   static const zapNudge = 'zapbook.zap.nudge';
   static const zapReady = 'zapbook.zap.ready';
   static const zapSent = 'zapbook.zap.sent';
+  static const reseedRequest = 'application/vnd.zapbook.reseed-request+json';
 }
 
 sealed class AppMessage {
@@ -25,7 +26,7 @@ sealed class AppMessage {
 
     try {
       final decoded = jsonDecode(message.payloadJson!);
-      final type = decoded['type'] as String?;
+      final type = decoded['type'] as String? ?? message.contentType;
 
       if (type == null) return null;
 
@@ -42,6 +43,8 @@ sealed class AppMessage {
           return ZapReadyMessage(message, decoded);
         case AppMessageTypes.zapSent:
           return ZapSentMessage(message, decoded);
+        case AppMessageTypes.reseedRequest:
+          return ReseedRequestMessage(message, decoded);
         default:
           return null;
       }
@@ -91,4 +94,10 @@ class ZapSentMessage extends AppMessage {
   final Map<String, dynamic> payload;
 
   const ZapSentMessage(super.message, this.payload);
+}
+
+class ReseedRequestMessage extends AppMessage {
+  final Map<String, dynamic> payload;
+
+  const ReseedRequestMessage(super.message, this.payload);
 }

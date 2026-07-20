@@ -6,18 +6,21 @@ import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_back_button.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/features/circles/presentation/widgets/admin_badge_indicator.dart';
 
 class CircleDetailTopBar extends StatelessWidget {
   const CircleDetailTopBar({
     super.key,
     required this.readersCount,
     required this.circleBookId,
+    required this.circleDirId,
     required this.bookTitle,
     this.onSettings,
   });
 
   final int readersCount;
   final String circleBookId;
+  final String circleDirId;
   final String bookTitle;
   final VoidCallback? onSettings;
 
@@ -68,7 +71,12 @@ class CircleDetailTopBar extends StatelessWidget {
           ),
           const Spacer(),
           if (onSettings != null)
-            _ReadersChip(count: readersCount, onTap: onSettings!),
+            AdminBadgeIndicator(
+              circleDirId: circleDirId,
+              top: 0,
+              right: 0,
+              child: _ReadersChip(count: readersCount, onTap: onSettings!),
+            ),
         ],
       ),
     );

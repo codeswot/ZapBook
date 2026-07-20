@@ -11,6 +11,7 @@ import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.da
 import 'package:zapbook/core/presentation/widgets/book_download_overlay.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/features/circles/presentation/widgets/admin_badge_indicator.dart';
 
 class CircleBookTile extends StatelessWidget {
   const CircleBookTile({super.key, required this.book, this.onOpen});
@@ -52,11 +53,14 @@ class CircleBookTile extends StatelessWidget {
             children: [
               BookDownloadOverlay(
                 book: book,
-                child: CircleBookCover(
-                  book: book,
-                  width: width,
-                  height: width / 0.727,
-                  showInfos: true,
+                child: AdminBadgeIndicator(
+                  circleDirId: book.circleDirId,
+                  child: CircleBookCover(
+                    book: book,
+                    width: width,
+                    height: width / 0.727,
+                    showInfos: true,
+                  ),
                 ),
               ),
               if (book.isShared)

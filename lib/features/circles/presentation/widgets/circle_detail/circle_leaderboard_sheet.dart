@@ -216,10 +216,7 @@ class _CurrentUserHighlight extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            entry.contact.label,
-            style: typography.h3.copyWith(color: colors.ink),
-          ),
+          Text('You', style: typography.h3.copyWith(color: colors.ink)),
           const SizedBox(height: 4),
           Text(
             '${(fraction * 100).toInt()}% • p.${page + 1}',

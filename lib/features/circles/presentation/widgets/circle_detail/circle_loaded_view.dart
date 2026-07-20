@@ -95,6 +95,7 @@ class CircleLoadedView extends StatelessWidget {
         CircleDetailTopBar(
           readersCount: state.members.length,
           circleBookId: circleBookId,
+          circleDirId: book.circleDirId,
           bookTitle: book.title,
           onSettings: book.removedFromCircle
               ? null

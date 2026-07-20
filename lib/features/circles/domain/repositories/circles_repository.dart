@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/domain/entities/pending_circle_upload.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
@@ -57,4 +58,20 @@ abstract class CirclesRepository {
 
   Future<List<Contact>> getFriends();
   Future<Set<String>> getExistingMemberNpubs(String circleBookId);
+
+  Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub);
+  Future<void> retryPendingUpload(PendingCircleUpload upload);
+
+  Future<List<String>> getReseedRequesters({
+    required String groupId,
+    required String circleDirId,
+  });
+  Future<void> reseedCircleBook({
+    required String groupId,
+    required String circleDirId,
+    required String myNpub,
+  });
+
+  Stream<bool> watchHasUnreadAdminActions(String ownerNpub, String circleDirId);
+  Future<void> markAdminActionsAsRead(String ownerNpub, String circleDirId);
 }

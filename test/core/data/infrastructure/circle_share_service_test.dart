@@ -8,6 +8,7 @@ import 'package:marmot_dart/marmot_dart.dart';
 import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/data/infrastructure/group_envelope_service.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'dart:io';
 
 class MockMarmot extends Mock implements Marmot {}
@@ -18,6 +19,9 @@ class MockLibraryFileStore extends Mock implements LibraryFileStore {}
 
 class MockGroupEnvelopeService extends Mock implements GroupEnvelopeService {}
 
+class MockIdentityLocalDataSource extends Mock
+    implements IdentityLocalDataSource {}
+
 class MockDirectory extends Mock implements Directory {}
 
 void main() {
@@ -25,6 +29,7 @@ void main() {
   late MockBlossomService blossom;
   late MockLibraryFileStore fileStore;
   late MockGroupEnvelopeService envelope;
+  late MockIdentityLocalDataSource identity;
   late CircleShareService service;
 
   setUpAll(() {
@@ -36,7 +41,15 @@ void main() {
     blossom = MockBlossomService();
     fileStore = MockLibraryFileStore();
     envelope = MockGroupEnvelopeService();
-    service = CircleShareService(marmot, blossom, fileStore, envelope);
+    identity = MockIdentityLocalDataSource();
+    when(() => identity.readNpub()).thenAnswer((_) async => null);
+    service = CircleShareService(
+      marmot,
+      blossom,
+      fileStore,
+      envelope,
+      identity,
+    );
   });
 
   group('CircleShareService', () {

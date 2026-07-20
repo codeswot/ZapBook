@@ -5,6 +5,7 @@ enum CheersActivityType {
   zapNudge,
   zapReady,
   notification,
+  adminAction,
   unknown;
 
   static CheersActivityType fromString(String val) {
@@ -21,6 +22,8 @@ enum CheersActivityType {
         return zapReady;
       case 'notification':
         return notification;
+      case 'admin_action':
+        return adminAction;
       default:
         return unknown;
     }
@@ -40,6 +43,8 @@ enum CheersActivityType {
         return 'zap_ready';
       case notification:
         return 'notification';
+      case adminAction:
+        return 'admin_action';
       case unknown:
         return 'unknown';
     }

@@ -67,7 +67,8 @@ class _CheersActivityCardState extends State<CheersActivityCard> {
 
     final isNotice =
         activity.type == CheersActivityType.zapNudge ||
-        activity.type == CheersActivityType.zapReady;
+        activity.type == CheersActivityType.zapReady ||
+        activity.type == CheersActivityType.adminAction;
     final isZap = activity.type == CheersActivityType.zap;
 
     final hasReactions = ZapGesture.values.any(

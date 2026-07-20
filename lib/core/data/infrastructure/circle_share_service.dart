@@ -1,21 +1,28 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
-import 'package:collection/collection.dart';
 
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/data/infrastructure/group_envelope_service.dart';
+import 'package:zapbook/core/identity/identity_local_data_source.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/models/book_download_progress.dart';
 
-typedef _TaskResult = ({Object? error, StackTrace? stack});
+typedef _TaskResult = ({String filename, Object? error, StackTrace? stack});
+
+typedef UploadOutcome = ({
+  Set<String> uploaded,
+  Object? error,
+  StackTrace? stack,
+});
 
 typedef _DownloadResult = ({
   Uint8List? bytes,
@@ -33,13 +40,20 @@ class CircleShareService {
     this._blossom,
     this._fileStore,
     this._envelope,
+    this._identity,
   );
 
   final Marmot _marmot;
   final BlossomService _blossom;
   final LibraryFileStore _fileStore;
   final GroupEnvelopeService _envelope;
+  final IdentityLocalDataSource _identity;
   final _log = logging.Logger('CircleShareService');
+
+  static const kReseedContentType =
+      'application/vnd.zapbook.reseed-request+json';
+  static const _reseedRequestCooldown = Duration(hours: 1);
+  final _lastReseedRequestAt = <String, DateTime>{};
 
   final _progressController =
       StreamController<BookDownloadProgress>.broadcast();
@@ -59,17 +73,31 @@ class CircleShareService {
     r'\.seg(\d+)' + RegExp.escape(kSegmentExt) + r'$',
   );
 
-  Future<void> uploadBookContent(
+  Future<UploadOutcome> uploadBookContent(
     String npub,
     String groupId,
-    String circleDirId,
-  ) async {
+    String circleDirId, {
+    Set<String> alreadyUploaded = const {},
+  }) async {
     final zbf = await _fileStore.zbfFile(circleDirId);
     if (!await zbf.exists()) {
       _log.warning(
         'Cannot upload book content: ZBF file not found for $circleDirId',
       );
-      return;
+      return (uploaded: <String>{}, error: null, stack: null);
+    }
+
+    final uploaded = <String>{};
+    Object? firstError;
+    StackTrace? firstStack;
+
+    void recordResult(_TaskResult result) {
+      if (result.error != null) {
+        firstError ??= result.error;
+        firstStack ??= result.stack;
+      } else {
+        uploaded.add(result.filename);
+      }
     }
 
     final handle = await _reader.open(zbf.path);
@@ -77,36 +105,48 @@ class CircleShareService {
       final window = <Future<_TaskResult>>[];
 
       final sourcePath = handle.sourceDocumentPath();
-      if (sourcePath != null) {
+      final sourceFilename = '$circleDirId$kSourceExt';
+      if (sourcePath != null && !alreadyUploaded.contains(sourceFilename)) {
         window.add(
-          _guard(() => _uploadSource(npub, groupId, circleDirId, sourcePath)),
+          _guard(
+            sourceFilename,
+            () => _uploadSource(npub, groupId, circleDirId, sourcePath),
+          ),
         );
       }
 
       await for (final segment in _segmenter.segment(handle)) {
+        if (firstError != null) break;
+
         final index = segment.index.toString().padLeft(_segmentIndexWidth, '0');
+        final filename = '$circleDirId.seg$index$kSegmentExt';
+        if (alreadyUploaded.contains(filename)) continue;
+
         window.add(
           _guard(
+            filename,
             () => _uploadBlob(
               npub,
               groupId,
               segment.bytes,
               _blobMimeType,
-              '$circleDirId.seg$index$kSegmentExt',
+              filename,
             ),
           ),
         );
         if (window.length >= _transferConcurrency) {
-          await _drainOne(window);
+          recordResult(await window.removeAt(0));
         }
       }
 
       while (window.isNotEmpty) {
-        await _drainOne(window);
+        recordResult(await window.removeAt(0));
       }
     } finally {
       handle.close();
     }
+
+    return (uploaded: uploaded, error: firstError, stack: firstStack);
   }
 
   Future<bool> fetchAndDownloadBook(String groupId, String circleDirId) async {
@@ -127,15 +167,92 @@ class CircleShareService {
 
       if (segments.isEmpty) {
         _log.warning('No segment assets found in messages for $circleDirId');
+        unawaited(_notifyReseedNeeded(groupId, circleDirId));
         return false;
       }
 
       segments.sort((a, b) => a.filename.compareTo(b.filename));
 
-      return downloadBookContent(circleDirId, groupId, segments, sourceRef);
+      final ok = await downloadBookContent(
+        circleDirId,
+        groupId,
+        segments,
+        sourceRef,
+      );
+      if (!ok) unawaited(_notifyReseedNeeded(groupId, circleDirId));
+      return ok;
     } catch (e, st) {
       _log.warning('Failed to fetch messages for $groupId', e, st);
+      unawaited(_notifyReseedNeeded(groupId, circleDirId));
       return false;
+    }
+  }
+
+  Future<void> _notifyReseedNeeded(String groupId, String circleDirId) async {
+    final last = _lastReseedRequestAt[circleDirId];
+    if (last != null &&
+        DateTime.now().difference(last) < _reseedRequestCooldown) {
+      return;
+    }
+    try {
+      final npub = await _identity.readNpub();
+      if (npub == null || npub.isEmpty) return;
+      _lastReseedRequestAt[circleDirId] = DateTime.now();
+      await requestReseed(npub, groupId, circleDirId);
+    } on Object catch (error, stack) {
+      _log.fine('Reseed notify skipped for $circleDirId: $error\n$stack');
+    }
+  }
+
+  Future<void> requestReseed(
+    String npub,
+    String groupId,
+    String circleDirId,
+  ) async {
+    final rumor = await buildUnsignedRumor(
+      npub: npub,
+      content: jsonEncode({'circleDirId': circleDirId}),
+      contentType: kReseedContentType,
+    );
+    final event = await _marmot.sendMessage(rumor, groupId);
+    await _envelope.publish(event);
+  }
+
+  Future<List<String>> reseedRequesters(
+    String groupId,
+    String circleDirId, {
+    DateTime? since,
+  }) async {
+    try {
+      final messages = await _marmot.getMessages(groupId);
+      final sinceSecs = since == null
+          ? 0
+          : since.millisecondsSinceEpoch ~/ 1000;
+
+      final requesters = <String>{};
+      for (final message in messages) {
+        if (message.contentType != kReseedContentType) continue;
+        if (message.timestampSecs.toInt() <= sinceSecs) continue;
+
+        final payload = message.payloadJson;
+        if (payload == null) continue;
+        try {
+          final decoded = jsonDecode(payload) as Map<String, dynamic>;
+          if (decoded['circleDirId'] == circleDirId) {
+            requesters.add(message.senderNpub);
+          }
+        } on Object catch (_) {
+          continue;
+        }
+      }
+      return requesters.toList();
+    } on Object catch (error, stack) {
+      _log.warning(
+        'Failed to read reseed requests for $circleDirId',
+        error,
+        stack,
+      );
+      return [];
     }
   }
 
@@ -251,23 +368,9 @@ class CircleShareService {
       if (isComplete()) break;
     }
 
-    MarmotMediaRef resolveOldestRef(MarmotMediaRef target) {
-      for (final msg in messages) {
-        for (final m in msg.media) {
-          if (const ListEquality().equals(
-            m.originalHash,
-            target.originalHash,
-          )) {
-            return m;
-          }
-        }
-      }
-      return target;
-    }
-
     return (
-      segments: segmentsMap.values.map(resolveOldestRef).toList(),
-      sourceRef: sourceRef != null ? resolveOldestRef(sourceRef) : null,
+      segments: segmentsMap.values.toList(),
+      sourceRef: sourceRef,
       complete: isComplete(),
     );
   }
@@ -347,19 +450,15 @@ class CircleShareService {
     }
   }
 
-  Future<_TaskResult> _guard(Future<void> Function() task) async {
+  Future<_TaskResult> _guard(
+    String filename,
+    Future<void> Function() task,
+  ) async {
     try {
       await task();
-      return (error: null, stack: null);
+      return (filename: filename, error: null, stack: null);
     } catch (e, st) {
-      return (error: e, stack: st);
-    }
-  }
-
-  Future<void> _drainOne(List<Future<_TaskResult>> window) async {
-    final result = await window.removeAt(0);
-    if (result.error != null) {
-      Error.throwWithStackTrace(result.error!, result.stack!);
+      return (filename: filename, error: e, stack: st);
     }
   }
 }

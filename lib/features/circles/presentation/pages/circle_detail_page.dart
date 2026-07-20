@@ -47,6 +47,7 @@ class _CircleDetailView extends StatelessWidget {
               ),
               CircleDetailError(:final message) => CircleErrorView(
                 message: message,
+                circleBookId: circleBookId,
               ),
               _ => CircleDetailShimmer(circleBookId: circleBookId),
             };

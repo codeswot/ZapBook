@@ -17,6 +17,7 @@ class CircleDetailShimmer extends StatelessWidget {
           CircleDetailTopBar(
             readersCount: 0,
             circleBookId: circleBookId,
+            circleDirId: "",
             bookTitle: 'Loading circle...',
           ),
           Expanded(

@@ -252,6 +252,9 @@ class _CheersViewState extends State<CheersView> {
                           onMarkRead: (id) =>
                               context.read<CheersCubit>().markAsRead(id),
                           onTap: () {
+                            if (item.type == CheersActivityType.adminAction) {
+                              return;
+                            }
                             if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);
                             } else {
@@ -259,6 +262,9 @@ class _CheersViewState extends State<CheersView> {
                             }
                           },
                           onLongPress: () {
+                            if (item.type == CheersActivityType.adminAction) {
+                              return;
+                            }
                             if (item.type == CheersActivityType.zapNudge) {
                               context.read<CheersCubit>().performNudge(item);
                             } else {

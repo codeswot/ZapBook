@@ -45,6 +45,8 @@ class AppDatabase {
     _createCircleMemberProgressTable(db);
     _createReadingStatsTable(db);
     _createZapSatsEarningsTable(db);
+    _createPendingCircleUploadsTable(db);
+    _createCircleReseedAcksTable(db);
 
     return _db = db;
   }
@@ -197,6 +199,28 @@ class AppDatabase {
     db.execute(
       'CREATE INDEX IF NOT EXISTS idx_zap_sats_earnings_timestamp ON zap_sats_earnings(timestamp DESC)',
     );
+  }
+
+  void _createPendingCircleUploadsTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS pending_circle_uploads (
+        circle_dir_id TEXT PRIMARY KEY,
+        group_id TEXT NOT NULL,
+        owner_npub TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        failure_reason TEXT,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  void _createCircleReseedAcksTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS circle_reseed_acks (
+        circle_dir_id TEXT PRIMARY KEY,
+        acked_at INTEGER NOT NULL
+      )
+    ''');
   }
 
   void close() {
