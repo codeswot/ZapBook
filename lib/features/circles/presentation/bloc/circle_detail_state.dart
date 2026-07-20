@@ -18,6 +18,22 @@ class MemberProgress {
   final double fraction;
 }
 
+extension MemberProgressRanking on Map<String, MemberProgress> {
+  int compareEntries(MemberEntry a, MemberEntry b) {
+    final progA = this[a.npub];
+    final progB = this[b.npub];
+    final fracA = progA?.fraction ?? 0.0;
+    final fracB = progB?.fraction ?? 0.0;
+    if (fracA != fracB) return fracB.compareTo(fracA);
+
+    final pageA = progA?.currentPage ?? 0;
+    final pageB = progB?.currentPage ?? 0;
+    if (pageA != pageB) return pageB.compareTo(pageA);
+
+    return a.contact.label.compareTo(b.contact.label);
+  }
+}
+
 class CircleDetailLoaded extends CircleDetailState {
   const CircleDetailLoaded({
     required this.book,
