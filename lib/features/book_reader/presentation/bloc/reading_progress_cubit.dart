@@ -134,6 +134,32 @@ class ReadingProgressCubit extends Cubit<ReadingProgressState> {
     _save();
   }
 
+  /// Lets the reader jump straight to "finished" from the floating
+  /// mark-as-complete pill, instead of waiting for the engine to detect
+  /// completion page-by-page. We fast-forward the word count to the end
+  /// of the book and replay it through the same exit-page transition
+  /// [closeSession] uses, so page bookkeeping (visited/completed pages,
+  /// milestones) stays consistent with a normal finish — then force
+  /// `bookCompleted` to true as a safeguard, since the engine's own
+  /// completion detection may key off more than just word count.
+  void markComplete() {
+    if (_closed || state.bookCompleted) return;
+    final total = totalWords;
+    if (total <= 0) return;
+    _engine.seed(_engine.state.copyWith(wordsRead: total));
+    final page = _engine.state.currentPage;
+    if (page != null) {
+      _run(_engine.exitPage(page, ExitDirection.forward));
+    } else {
+      _run(_engine.tick());
+    }
+    _engine.seed(_engine.state.copyWith(bookCompleted: true));
+    emit(_project());
+    _dirty = true;
+    _save();
+    _report();
+  }
+
   void _run(List<ProgressEffect> effects) {
     emit(_project());
     _handleEffects(effects);

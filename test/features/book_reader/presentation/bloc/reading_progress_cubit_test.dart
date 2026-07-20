@@ -182,8 +182,53 @@ void main() {
       cubit.saveScrollOffset(50.0);
       cubit.pause();
       verify(
-        () => mockSaveSnapshot(any(), any(), scrollOffset: 50.0),
+        () => mockSaveSnapshot(
+          any(),
+          any(),
+          scrollOffset: any(named: 'scrollOffset'),
+        ),
       ).called(1);
+    });
+
+    test('markComplete finishes the book and saves', () {
+      final cubit = buildCubit();
+      cubit.start(initialPage: 0);
+
+      cubit.markComplete();
+
+      expect(cubit.state.bookCompleted, true);
+      expect(cubit.state.wordsRead, cubit.totalWords);
+      expect(cubit.state.fraction, 1.0);
+      verify(
+        () => mockSaveSnapshot(
+          any(),
+          any(),
+          scrollOffset: any(named: 'scrollOffset'),
+        ),
+      ).called(greaterThanOrEqualTo(1));
+      verify(
+        () => mockReportProgress.report(
+          circleDirId: any(named: 'circleDirId'),
+          groupId: any(named: 'groupId'),
+          currentPage: any(named: 'currentPage'),
+          currentWordCount: any(named: 'currentWordCount'),
+          totalWords: any(named: 'totalWords'),
+          fraction: any(named: 'fraction'),
+          milestonesReached: any(named: 'milestonesReached'),
+          bookCompleted: true,
+        ),
+      ).called(1);
+    });
+
+    test('markComplete is a no-op once already completed', () {
+      final cubit = buildCubit();
+      cubit.start(initialPage: 0);
+      cubit.markComplete();
+      final completedState = cubit.state;
+
+      cubit.markComplete();
+
+      expect(cubit.state, completedState);
     });
   });
 }

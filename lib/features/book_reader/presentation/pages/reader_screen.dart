@@ -23,8 +23,10 @@ import 'package:zapbook/features/book_reader/presentation/widgets/reader_toc_she
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_search_sheet.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_opening_scaffold.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_page_view.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/reader_mark_complete_pill.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reading_progress_cubit.dart';
 import 'package:zapbook/core/presentation/theme/reading_style.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
@@ -295,6 +297,42 @@ class _ReaderScreenState extends State<ReaderScreen>
                         ),
                   ),
                   ReaderPullIndicator(pull: _pull),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 96,
+                    child: SafeArea(
+                      top: false,
+                      child: Center(
+                        child:
+                            BlocBuilder<
+                              ReadingProgressCubit,
+                              ReadingProgressState
+                            >(
+                              builder: (context, progressState) {
+                                final showPill =
+                                    !progressState.bookCompleted &&
+                                    progressState.fraction >= 0.90 &&
+                                    progressState.fraction < 1.0;
+                                return ReaderMarkCompletePill(
+                                  visible: showPill,
+                                  onComplete: () {
+                                    context
+                                        .read<ReadingProgressCubit>()
+                                        .markComplete();
+                                    AppToast.show(
+                                      context,
+                                      message:
+                                          "🎉 Nice work — you finished ${widget.handle.manifest.title}!",
+                                      type: AppToastType.success,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                      ),
+                    ),
+                  ),
                 ],
               );
             },
