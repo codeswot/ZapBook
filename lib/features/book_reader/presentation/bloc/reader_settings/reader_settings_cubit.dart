@@ -13,11 +13,15 @@ class ReaderSettingsCubit extends Cubit<ReaderSettingsState> {
 
   static const _fontKey = 'reader_font';
   static const _textScaleKey = 'reader_text_scale';
+  static const _scrollDirectionKey = 'reader_scroll_direction';
 
   static ReaderSettingsState _load(SharedPreferences prefs) =>
       ReaderSettingsState(
         font: ReaderFont.fromName(prefs.getString(_fontKey)),
         textScale: prefs.getDouble(_textScaleKey) ?? 1.0,
+        scrollDirection: ReaderScrollDirection.fromName(
+          prefs.getString(_scrollDirectionKey),
+        ),
       );
 
   void cycleFont() {
@@ -36,5 +40,11 @@ class ReaderSettingsCubit extends Cubit<ReaderSettingsState> {
     if (scale == state.textScale) return;
     emit(state.copyWith(textScale: scale));
     _prefs.setDouble(_textScaleKey, scale);
+  }
+
+  void setScrollDirection(ReaderScrollDirection direction) {
+    if (direction == state.scrollDirection) return;
+    emit(state.copyWith(scrollDirection: direction));
+    _prefs.setString(_scrollDirectionKey, direction.name);
   }
 }

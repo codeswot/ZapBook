@@ -59,6 +59,19 @@ class ReaderFontSheet extends StatelessWidget {
                 onChanged: cubit.setTextScale,
               ),
               const SizedBox(height: 24),
+              Text(
+                'Page turn scroll direction',
+                style: typography.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colors.slate,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ScrollDirectionSelector(
+                currentDirection: state.scrollDirection,
+                onDirectionSelected: cubit.setScrollDirection,
+              ),
+              const SizedBox(height: 24),
             ],
           );
         },
@@ -109,6 +122,66 @@ class _FontFamilySelector extends StatelessWidget {
                   child: Center(
                     child: Text(
                       font.displayName,
+                      style: typography.body.copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: isSelected ? colors.plum : colors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _ScrollDirectionSelector extends StatelessWidget {
+  const _ScrollDirectionSelector({
+    required this.currentDirection,
+    required this.onDirectionSelected,
+  });
+
+  final ReaderScrollDirection currentDirection;
+  final ValueChanged<ReaderScrollDirection> onDirectionSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final typography = context.typography;
+
+    return Row(
+      children: ReaderScrollDirection.values.map((direction) {
+        final isSelected = direction == currentDirection;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: direction == ReaderScrollDirection.values.last ? 0 : 8.0,
+            ),
+            child: Material(
+              color: isSelected
+                  ? colors.plum.withValues(alpha: 0.1)
+                  : colors.paper2,
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onDirectionSelected(direction),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isSelected ? colors.plum : colors.hairline,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      direction.displayName,
                       style: typography.body.copyWith(
                         fontWeight: isSelected
                             ? FontWeight.w600

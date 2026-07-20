@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/data/paragraph_merger.dart';
@@ -11,7 +12,7 @@ import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dar
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_block_view.dart';
 import 'package:zapbook/core/presentation/theme/reading_style.dart';
 
-enum ReaderPullEdge { top, bottom }
+enum ReaderPullEdge { top, bottom, left, right }
 
 class ReaderPullState {
   const ReaderPullState({
@@ -29,6 +30,7 @@ class ReaderBody extends StatefulWidget {
   const ReaderBody({
     required this.blocks,
     required this.style,
+    required this.scrollDirection,
     required this.asset,
     required this.canGoForward,
     required this.canGoBack,
@@ -46,6 +48,7 @@ class ReaderBody extends StatefulWidget {
 
   final List<BookBlock> blocks;
   final ReadingStyle style;
+  final ReaderScrollDirection scrollDirection;
   final Future<Uint8List?> Function(String assetRef) asset;
   final bool canGoForward;
   final bool canGoBack;
@@ -204,7 +207,9 @@ class _ReaderBodyState extends State<ReaderBody> {
   }
 
   bool _allowedAt(ReaderPullEdge edge) =>
-      edge == ReaderPullEdge.bottom ? widget.canGoForward : widget.canGoBack;
+      (edge == ReaderPullEdge.bottom || edge == ReaderPullEdge.right)
+      ? widget.canGoForward
+      : widget.canGoBack;
 
   void _emitPull() {
     final edge = _edge;
@@ -257,6 +262,9 @@ class _ReaderBodyState extends State<ReaderBody> {
     }
 
     final edge = overflow > 0 ? ReaderPullEdge.bottom : ReaderPullEdge.top;
+    if (widget.scrollDirection == ReaderScrollDirection.horizontal) {
+      return false;
+    }
     if (!_allowedAt(edge)) return false;
 
     final wasArmed = _armed;
@@ -276,7 +284,8 @@ class _ReaderBodyState extends State<ReaderBody> {
       HapticFeedback.lightImpact();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (armedEdge == ReaderPullEdge.bottom) {
+        if (armedEdge == ReaderPullEdge.bottom ||
+            armedEdge == ReaderPullEdge.right) {
           widget.onTurnForward();
         } else {
           widget.onTurnBackward();
@@ -286,47 +295,96 @@ class _ReaderBodyState extends State<ReaderBody> {
     _clearPull();
   }
 
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
+    if (widget.scrollDirection != ReaderScrollDirection.horizontal) return;
+
+    final dx = details.delta.dx;
+    if (_edge == null) {
+      if (dx < -1) {
+        _edge = ReaderPullEdge.right;
+      } else if (dx > 1) {
+        _edge = ReaderPullEdge.left;
+      } else {
+        return;
+      }
+    }
+
+    if (_edge != null && !_allowedAt(_edge!)) {
+      _edge = null;
+      return;
+    }
+
+    if (_edge == ReaderPullEdge.right) {
+      _overscroll += -dx;
+    } else if (_edge == ReaderPullEdge.left) {
+      _overscroll += dx;
+    }
+
+    _overscroll = _overscroll.clamp(0, 500);
+
+    final wasArmed = _armed;
+    _armed = _overscroll >= _armThreshold;
+    if (_armed && !wasArmed) {
+      HapticFeedback.lightImpact();
+    }
+    _emitPull();
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails details) {
+    if (widget.scrollDirection != ReaderScrollDirection.horizontal) return;
+    _release();
+  }
+
+  void _onHorizontalDragStart(DragStartDetails details) {
+    Logger('ReaderBody').fine('to participate in the gesture arena');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.deferToChild,
       onPointerDown: _onPointerDown,
       onPointerUp: _onPointerUp,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _onNotification,
-        child: ScrollConfiguration(
-          behavior: const _NoGlowScrollBehavior(),
-          child: ListView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              24,
-              MediaQuery.of(context).padding.top + 72,
-              24,
-              MediaQuery.of(context).padding.bottom + 96,
-            ),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: ReadingStyle.maxContentWidth,
-                  ),
-                  child: SelectionArea(
-                    child: _HighlightableBlocks(
-                      blocks: _merged,
-                      style: widget.style,
-                      asset: widget.asset,
-                      highlightQuery: widget.highlightQuery,
-                      onHighlightComplete: widget.onHighlightComplete,
-                      anchorIndex: _anchorIndex,
-                      anchorKey: _anchorKey,
+      child: GestureDetector(
+        onHorizontalDragStart: _onHorizontalDragStart,
+        onHorizontalDragUpdate: _onHorizontalDragUpdate,
+        onHorizontalDragEnd: _onHorizontalDragEnd,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onNotification,
+          child: ScrollConfiguration(
+            behavior: const _NoGlowScrollBehavior(),
+            child: ListView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                MediaQuery.of(context).padding.top + 72,
+                24,
+                MediaQuery.of(context).padding.bottom + 96,
+              ),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: ReadingStyle.maxContentWidth,
+                    ),
+                    child: SelectionArea(
+                      child: _HighlightableBlocks(
+                        blocks: _merged,
+                        style: widget.style,
+                        asset: widget.asset,
+                        highlightQuery: widget.highlightQuery,
+                        onHighlightComplete: widget.onHighlightComplete,
+                        anchorIndex: _anchorIndex,
+                        anchorKey: _anchorKey,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

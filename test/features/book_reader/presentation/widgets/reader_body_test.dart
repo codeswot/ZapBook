@@ -45,6 +45,7 @@ void main() {
               body: ReaderBody(
                 blocks: blocks,
                 style: style,
+                scrollDirection: ReaderScrollDirection.vertical,
                 asset: (ref) async => null,
                 canGoForward: canGoForward,
                 canGoBack: canGoBack,
@@ -109,6 +110,7 @@ void main() {
                   body: ReaderBody(
                     blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
                     style: style,
+                    scrollDirection: ReaderScrollDirection.vertical,
                     asset: (ref) async => null,
                     canGoForward: true,
                     canGoBack: true,
@@ -147,6 +149,7 @@ void main() {
                   body: ReaderBody(
                     blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
                     style: style,
+                    scrollDirection: ReaderScrollDirection.vertical,
                     asset: (ref) async => null,
                     canGoForward: true,
                     canGoBack: true,
@@ -171,5 +174,64 @@ void main() {
       expect(lastPull!.edge, ReaderPullEdge.top);
       expect(lastPull!.armed, isTrue);
     });
+
+    testWidgets(
+      'horizontal pull indicator updates when scrollDirection is horizontal',
+      (tester) async {
+        ReaderPullState? lastPull;
+
+        await tester.pumpWidget(
+          BlocProvider<PerformanceCubit>.value(
+            value: performanceCubit,
+            child: MaterialApp(
+              theme: lightTheme,
+              home: Builder(
+                builder: (context) {
+                  final style = ReadingStyle.of(
+                    ReaderFont.sans,
+                    context.colors,
+                  );
+                  return Scaffold(
+                    body: ReaderBody(
+                      blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
+                      style: style,
+                      scrollDirection: ReaderScrollDirection.horizontal,
+                      asset: (ref) async => null,
+                      canGoForward: true,
+                      canGoBack: true,
+                      onTurnForward: () {},
+                      onTurnBackward: () {},
+                      onTap: () {},
+                      onUserScrollDirection: (dir) {},
+                      onPullChanged: (pull) => lastPull = pull,
+                      onScrollOffsetChanged: (offset) {},
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        final listViewRect = tester.getRect(find.byType(ListView));
+        final startPos =
+            listViewRect.centerLeft +
+            const Offset(10, 0); // start near left edge
+        final gesture = await tester.startGesture(startPos);
+        await gesture.moveBy(const Offset(-30, 0)); // break slop
+        await tester.pump();
+        await gesture.moveBy(
+          const Offset(-200, 0),
+        ); // generate large overscroll
+        await tester.pump();
+
+        expect(lastPull, isNotNull);
+        expect(lastPull!.edge, ReaderPullEdge.right);
+        expect(lastPull!.armed, isTrue);
+
+        await gesture.up();
+        await tester.pump();
+      },
+    );
   });
 }
