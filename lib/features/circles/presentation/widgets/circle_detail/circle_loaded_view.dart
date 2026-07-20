@@ -7,6 +7,7 @@ import 'package:zapbook/core/presentation/bloc/book_download/book_download_state
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/router/app_router.dart';
+import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_cubit.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_detail_state.dart';
 import 'package:zapbook/features/circles/presentation/bloc/circle_members_state.dart'
@@ -17,6 +18,7 @@ import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circ
 import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_removed_banner.dart';
 import 'package:zapbook/features/circles/presentation/widgets/circle_settings_sheet.dart';
 import 'package:zapbook/features/circles/presentation/widgets/reader_actions_sheet.dart';
+import 'package:zapbook/features/circles/presentation/widgets/circle_detail/circle_leaderboard_sheet.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
 class CircleLoadedView extends StatelessWidget {
@@ -68,10 +70,24 @@ class CircleLoadedView extends StatelessWidget {
     );
   }
 
+  void _showLeaderboard(BuildContext context) {
+    CircleLeaderboardSheet.show(
+      context,
+      cubit: context.read<CircleDetailCubit>(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final typography = context.typography;
+
+    final sortedMembers = List<MemberEntry>.from(state.members)
+      ..sort((a, b) {
+        if (a.isSelf && !b.isSelf) return 1;
+        if (!a.isSelf && b.isSelf) return -1;
+        return state.memberProgress.compareEntries(a, b);
+      });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,10 +138,45 @@ class CircleLoadedView extends StatelessWidget {
                     ),
                     const SizedBox(height: 26),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           'Readers',
                           style: typography.h3.copyWith(color: colors.ink),
+                        ),
+                        const Spacer(),
+                        BouncingInteractiveWidget(
+                          onTap: () => _showLeaderboard(context),
+
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.paper3,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: colors.hairline),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.medal,
+                                  size: 16,
+                                  color: colors.bitcoin,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Leaderboard',
+                                  style: typography.caption.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -136,7 +187,7 @@ class CircleLoadedView extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    final entry = state.members[index];
+                    final entry = sortedMembers[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: CircleReaderTile(
@@ -152,7 +203,7 @@ class CircleLoadedView extends StatelessWidget {
                             : () => _readerActions(context, entry),
                       ),
                     );
-                  }, childCount: state.members.length),
+                  }, childCount: sortedMembers.length),
                 ),
               ),
             ],
