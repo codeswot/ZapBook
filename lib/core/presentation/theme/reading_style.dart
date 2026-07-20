@@ -16,6 +16,20 @@ enum ReaderFont {
       values.firstWhere((f) => f.name == name, orElse: () => ReaderFont.sans);
 }
 
+enum ReaderScrollDirection {
+  vertical('Vertical'),
+  horizontal('Horizontal');
+
+  const ReaderScrollDirection(this.displayName);
+
+  final String displayName;
+
+  static ReaderScrollDirection fromName(String? name) => values.firstWhere(
+    (d) => d.name == name,
+    orElse: () => ReaderScrollDirection.vertical,
+  );
+}
+
 class ReadingStyle {
   const ReadingStyle({
     required this.paragraph,

@@ -218,6 +218,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                       index: index,
                       total: total,
                       style: style,
+                      scrollDirection: settings.scrollDirection,
                       turningForward: _turningForward,
                       asset: widget.handle.assetNamedAsync,
                       initialScrollOffset: _scrollOffsets[index],

@@ -19,6 +19,7 @@ class ReaderPageView extends StatelessWidget {
     required this.index,
     required this.total,
     required this.style,
+    required this.scrollDirection,
     required this.turningForward,
     required this.asset,
     required this.initialScrollOffset,
@@ -42,6 +43,7 @@ class ReaderPageView extends StatelessWidget {
   final int index;
   final int total;
   final ReadingStyle style;
+  final ReaderScrollDirection scrollDirection;
   final bool turningForward;
   final Future<Uint8List?> Function(String assetRef) asset;
   final double? initialScrollOffset;
@@ -74,9 +76,11 @@ class ReaderPageView extends StatelessWidget {
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, animation) {
         final isIncoming = child.key == ValueKey<int>(index);
+        final isHorizontal =
+            scrollDirection == ReaderScrollDirection.horizontal;
         final beginOffset = turningForward
-            ? const Offset(0, 0.06)
-            : const Offset(0, -0.06);
+            ? (isHorizontal ? const Offset(0.06, 0) : const Offset(0, 0.06))
+            : (isHorizontal ? const Offset(-0.06, 0) : const Offset(0, -0.06));
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
@@ -130,6 +134,7 @@ class ReaderPageView extends StatelessWidget {
       child: ReaderBody(
         blocks: blocks!,
         style: style,
+        scrollDirection: scrollDirection,
         asset: asset,
         canGoForward: index < total - 1,
         canGoBack: index > 0,
