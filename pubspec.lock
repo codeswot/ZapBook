@@ -1181,10 +1181,10 @@ packages:
     dependency: "direct main"
     description:
       name: reading_progress
-      sha256: "25909a84d15f8c4d546059a2394ff0cf02fba82ac4b8b830ffe010b4528dac79"
+      sha256: "62b3611185b1af2a59473ba8515af6a3485b81235cb29d9a6daf476a5e86b25c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.2"
   recase:
     dependency: transitive
     description:

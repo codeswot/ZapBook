@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -61,15 +62,22 @@ void main() {
   });
 
   Widget buildTestWidget(Future<void> Function(BuildContext) onPressed) {
-    return MaterialApp(
+    return MaterialApp.router(
       theme: lightTheme,
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => onPressed(context),
-            child: const Text('Open'),
+      routerConfig: GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () => onPressed(context),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

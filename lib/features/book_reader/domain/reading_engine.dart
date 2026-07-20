@@ -80,6 +80,9 @@ class ReadingEngine {
   List<ProgressEffect> exitPage(int page, ExitDirection direction) =>
       _apply(PageExited(page: page, direction: direction, atMs: _now()));
 
+  List<ProgressEffect> completeBook() =>
+      _apply(BookMarkedComplete(atMs: _now()));
+
   List<ProgressEffect> _apply(ReadingEvent event) {
     final out = reduce(_state, event, _deps);
     _state = out.state;

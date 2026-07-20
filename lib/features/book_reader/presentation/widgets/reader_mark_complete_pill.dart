@@ -4,12 +4,6 @@ import 'package:flutter/material.dart';
 
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 
-/// A small floating pill shown while the reader is 90%–99% through a book,
-/// nudging them to mark it as finished.
-///
-/// It fades to a faint, non-distracting opacity after [fadeDelay] of no
-/// interaction. Tapping it while faded just restores full opacity; tapping
-/// it again while fully opaque triggers [onComplete].
 class ReaderMarkCompletePill extends StatefulWidget {
   const ReaderMarkCompletePill({
     required this.visible,

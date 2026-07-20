@@ -305,28 +305,33 @@ class _ReaderScreenState extends State<ReaderScreen>
                       top: false,
                       child: Center(
                         child:
-                            BlocBuilder<
+                            BlocConsumer<
                               ReadingProgressCubit,
                               ReadingProgressState
                             >(
+                              listenWhen: (previous, current) =>
+                                  !previous.bookCompleted &&
+                                  current.bookCompleted &&
+                                  previous.fraction >= markCompleteThreshold,
+                              listener: (context, progressState) {
+                                AppToast.show(
+                                  context,
+                                  message:
+                                      "🎉 Nice work — you finished ${widget.handle.manifest.title}!",
+                                  type: AppToastType.success,
+                                );
+                              },
                               builder: (context, progressState) {
                                 final showPill =
                                     !progressState.bookCompleted &&
-                                    progressState.fraction >= 0.90 &&
+                                    progressState.fraction >=
+                                        markCompleteThreshold &&
                                     progressState.fraction < 1.0;
                                 return ReaderMarkCompletePill(
                                   visible: showPill,
-                                  onComplete: () {
-                                    context
-                                        .read<ReadingProgressCubit>()
-                                        .markComplete();
-                                    AppToast.show(
-                                      context,
-                                      message:
-                                          "🎉 Nice work — you finished ${widget.handle.manifest.title}!",
-                                      type: AppToastType.success,
-                                    );
-                                  },
+                                  onComplete: context
+                                      .read<ReadingProgressCubit>()
+                                      .markComplete,
                                 );
                               },
                             ),

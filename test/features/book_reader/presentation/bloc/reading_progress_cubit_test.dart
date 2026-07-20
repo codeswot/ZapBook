@@ -182,17 +182,37 @@ void main() {
       cubit.saveScrollOffset(50.0);
       cubit.pause();
       verify(
-        () => mockSaveSnapshot(
-          any(),
-          any(),
-          scrollOffset: any(named: 'scrollOffset'),
-        ),
+        () => mockSaveSnapshot(any(), any(), scrollOffset: 50.0),
       ).called(1);
     });
 
-    test('markComplete finishes the book and saves', () {
+    Future<ReadingProgressCubit> buildCubitWithWordsRead(int wordsRead) async {
+      when(() => mockLoadSnapshot('test_book')).thenAnswer(
+        (_) async => (
+          state: ReadingState(
+            wpm: 250,
+            completedPages: const {0, 1},
+            visitedPages: const {0, 1, 2},
+            partials: const {},
+            wordsRead: wordsRead,
+            pointsBanked: 2,
+            milestonesReached: 2,
+            currentPage: 2,
+            sessionEngagedMs: 0,
+            bookCompleted: false,
+            open: null,
+          ),
+          scrollOffset: null,
+        ),
+      );
       final cubit = buildCubit();
-      cubit.start(initialPage: 0);
+      await cubit.restore();
+      cubit.start(initialPage: 2);
+      return cubit;
+    }
+
+    test('markComplete finishes the book and saves', () async {
+      final cubit = await buildCubitWithWordsRead(340);
 
       cubit.markComplete();
 
@@ -211,24 +231,45 @@ void main() {
           circleDirId: any(named: 'circleDirId'),
           groupId: any(named: 'groupId'),
           currentPage: any(named: 'currentPage'),
+          currentWordCount: cubit.totalWords,
+          totalWords: cubit.totalWords,
+          fraction: 1.0,
+          milestonesReached: 2,
+          bookCompleted: true,
+        ),
+      ).called(greaterThanOrEqualTo(1));
+    });
+
+    test('markComplete is a no-op once already completed', () async {
+      final cubit = await buildCubitWithWordsRead(340);
+      cubit.markComplete();
+      expect(cubit.state.bookCompleted, true);
+      final completedState = cubit.state;
+
+      cubit.markComplete();
+
+      expect(cubit.state, completedState);
+    });
+
+    test('markComplete is a no-op below the 90 percent threshold', () async {
+      final cubit = await buildCubitWithWordsRead(300);
+
+      cubit.markComplete();
+
+      expect(cubit.state.bookCompleted, false);
+      expect(cubit.state.wordsRead, 300);
+      verifyNever(
+        () => mockReportProgress.report(
+          circleDirId: any(named: 'circleDirId'),
+          groupId: any(named: 'groupId'),
+          currentPage: any(named: 'currentPage'),
           currentWordCount: any(named: 'currentWordCount'),
           totalWords: any(named: 'totalWords'),
           fraction: any(named: 'fraction'),
           milestonesReached: any(named: 'milestonesReached'),
           bookCompleted: true,
         ),
-      ).called(1);
-    });
-
-    test('markComplete is a no-op once already completed', () {
-      final cubit = buildCubit();
-      cubit.start(initialPage: 0);
-      cubit.markComplete();
-      final completedState = cubit.state;
-
-      cubit.markComplete();
-
-      expect(cubit.state, completedState);
+      );
     });
   });
 }

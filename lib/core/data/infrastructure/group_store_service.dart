@@ -60,16 +60,16 @@ class GroupStoreService {
     _sub = _marmotSync.onGroup
         .bufferTime(const Duration(milliseconds: 150))
         .listen((updatedGroups) {
-      if (updatedGroups.isEmpty) return;
-      for (final updatedGroup in updatedGroups) {
-        _undeleteGroup(updatedGroup.id);
-        _groupsMap[updatedGroup.id] = updatedGroup;
-      }
-      _groupsSubject.add(_groupsMap.values.toList());
-      for (final updatedGroup in updatedGroups) {
-        _groupUpdatedSubject.add(updatedGroup);
-      }
-    });
+          if (updatedGroups.isEmpty) return;
+          for (final updatedGroup in updatedGroups) {
+            _undeleteGroup(updatedGroup.id);
+            _groupsMap[updatedGroup.id] = updatedGroup;
+          }
+          _groupsSubject.add(_groupsMap.values.toList());
+          for (final updatedGroup in updatedGroups) {
+            _groupUpdatedSubject.add(updatedGroup);
+          }
+        });
 
     _syncSub = _marmotSync.onSync.listen((_) => _refreshGroups());
   }
