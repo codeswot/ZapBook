@@ -6,8 +6,8 @@ import 'package:mime/mime.dart';
 import 'package:zapbook/core/constants/app_constants.dart';
 import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/identity/active_account.dart';
-import 'package:zapbook/core/data/infrastructure/circle_share_service.dart';
 import 'package:zapbook/core/data/infrastructure/circle_store_service.dart';
+import 'package:zapbook/features/circles/domain/repositories/circles_repository.dart';
 import 'package:zapbook/features/book_ingestion/domain/repositories/ingestion_orchestrator_repository.dart';
 
 @Injectable(as: IngestionOrchestratorRepository)
@@ -15,12 +15,12 @@ class IngestionOrchestratorRepositoryImpl
     implements IngestionOrchestratorRepository {
   IngestionOrchestratorRepositoryImpl(
     this._circleStore,
-    this._circleShareService,
+    this._circlesRepository,
     this._fileStore,
   );
 
   final CircleStoreService _circleStore;
-  final CircleShareService _circleShareService;
+  final CirclesRepository _circlesRepository;
   final LibraryFileStore _fileStore;
   final _log = logging.Logger('IngestionOrchestratorRepositoryImpl');
 
@@ -59,7 +59,7 @@ class IngestionOrchestratorRepositoryImpl
 
     final npub = ActiveAccount.currentNpub;
     if (npub != null) {
-      _circleShareService.uploadBookContent(npub, marmotGroupId, circleDirId);
+      _circlesRepository.uploadCircleBook(npub, marmotGroupId);
 
       final coverPath = await _fileStore.coverPathIfExists(circleDirId);
       if (coverPath != null) {

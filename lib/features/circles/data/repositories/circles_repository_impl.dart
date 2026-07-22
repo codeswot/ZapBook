@@ -133,8 +133,19 @@ class CirclesRepositoryImpl implements CirclesRepository {
       _dataSource.getExistingMemberNpubs(circleBookId);
 
   @override
-  Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub) =>
-      _dataSource.watchPendingUploads(ownerNpub);
+  Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub) {
+    return _dataSource.watchPendingUploads(ownerNpub);
+  }
+
+  @override
+  Stream<Set<String>> watchActiveUploads() {
+    return _dataSource.watchActiveUploads();
+  }
+
+  @override
+  Set<String> get activeUploads {
+    return _dataSource.activeUploads;
+  }
 
   @override
   Future<void> retryPendingUpload(PendingCircleUpload upload) =>
@@ -148,6 +159,11 @@ class CirclesRepositoryImpl implements CirclesRepository {
     groupId: groupId,
     circleDirId: circleDirId,
   );
+
+  @override
+  Future<void> uploadCircleBook(String myNpub, String circleBookId) {
+    return _dataSource.uploadCircleBook(myNpub, circleBookId);
+  }
 
   @override
   Future<void> reseedCircleBook({

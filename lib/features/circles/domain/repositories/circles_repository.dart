@@ -62,10 +62,15 @@ abstract class CirclesRepository {
   Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub);
   Future<void> retryPendingUpload(PendingCircleUpload upload);
 
+  Stream<Set<String>> watchActiveUploads();
+  Set<String> get activeUploads;
+
   Future<List<String>> getReseedRequesters({
     required String groupId,
     required String circleDirId,
   });
+
+  Future<void> uploadCircleBook(String myNpub, String circleBookId);
   Future<void> reseedCircleBook({
     required String groupId,
     required String circleDirId,

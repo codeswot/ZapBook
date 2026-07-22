@@ -10,6 +10,7 @@ import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/models/circle_member_progress.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/features/circles/domain/repositories/circles_repository.dart';
 
 @LazySingleton()
 class MessageRouterService {
@@ -17,6 +18,7 @@ class MessageRouterService {
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
   final IdentityLocalDataSource _identityLocalDataSource;
+  final CirclesRepository _circlesRepository;
   final Marmot _marmot;
 
   final _log = logging.Logger('MessageRouterService');
@@ -33,6 +35,7 @@ class MessageRouterService {
     this._cheersDao,
     this._circleProgressDao,
     this._identityLocalDataSource,
+    this._circlesRepository,
     this._marmot,
   ) {
     initialize();
@@ -108,6 +111,17 @@ class MessageRouterService {
               if (group == null || !group.adminNpubs.contains(npub)) {
                 break;
               }
+
+              try {
+                final circleDirId = parsed.payload['circleDirId'] as String;
+                await _circlesRepository.reseedCircleBook(
+                  groupId: parsed.groupId,
+                  circleDirId: circleDirId,
+                  myNpub: npub,
+                );
+              } catch (e, st) {
+                _log.severe('Failed to handle reseed request', e, st);
+              }
             }
 
             await _cheersDao.saveActivity(npub, activity);
@@ -127,11 +141,13 @@ class MessageRouterService {
             _activityController.add(activity);
           }
 
-        case InitialBookMessage() || BookCompletedMessage():
+        case BookManifestMessage():
+        case InitialBookMessage():
+        case BookCompletedMessage():
           break;
       }
     } on Object catch (error, stack) {
-      _log.warning('Failed to route message ${rawMsg.id}', error, stack);
+      _log.warning('Message handling error', error, stack);
     }
   }
 

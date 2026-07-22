@@ -240,3 +240,18 @@ class MarkAdminActionsAsReadUseCase {
   Future<void> call(String ownerNpub, String circleDirId) =>
       _repository.markAdminActionsAsRead(ownerNpub, circleDirId);
 }
+
+@injectable
+class UploadCircleBookUseCase {
+  const UploadCircleBookUseCase(this._repository);
+  final CirclesRepository _repository;
+  Future<void> call(String myNpub, String circleBookId) =>
+      _repository.uploadCircleBook(myNpub, circleBookId);
+}
+
+@injectable
+class WatchActiveUploadsUseCase {
+  const WatchActiveUploadsUseCase(this._repository);
+  final CirclesRepository _repository;
+  Stream<Set<String>> call() => _repository.watchActiveUploads();
+}

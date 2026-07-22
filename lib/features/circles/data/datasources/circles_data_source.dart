@@ -41,6 +41,10 @@ abstract class CirclesDataSource {
 
   Stream<List<PendingCircleUpload>> watchPendingUploads(String ownerNpub);
   Future<void> retryPendingUpload(PendingCircleUpload upload);
+  Future<void> uploadCircleBook(String myNpub, String circleBookId);
+
+  Stream<Set<String>> watchActiveUploads();
+  Set<String> get activeUploads;
 
   Future<List<String>> getReseedRequesters({
     required String groupId,

@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/contact.dart';
+import 'package:zapbook/core/models/book_manifest_payload.dart';
 import 'package:zapbook/core/domain/entities/circle_book.dart';
 import 'package:zapbook/core/domain/entities/pending_circle_upload.dart';
 import 'package:zapbook/core/domain/zap_gesture.dart';
@@ -24,6 +25,7 @@ import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_type.dart';
 import 'package:zapbook/core/domain/book_group_naming.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 import 'package:ndk/ndk.dart';
 import 'package:zapbook/features/circles/data/datasources/circles_data_source.dart';
@@ -63,71 +65,104 @@ class CirclesDataSourceImpl implements CirclesDataSource {
   final CheersDao _cheersDao;
   final _log = logging.Logger('CirclesDataSourceImpl');
 
+  final _activeUploadsController = BehaviorSubject<Set<String>>.seeded(
+    const {},
+  );
+
+  @override
+  Stream<Set<String>> watchActiveUploads() => _activeUploadsController.stream;
+
+  @override
+  Set<String> get activeUploads => _activeUploadsController.value;
+
   static const _uploadMaxAttempts = 3;
+
+  @override
+  Future<void> uploadCircleBook(String myNpub, String circleBookId) async {
+    final book = _circleStore.currentCircles
+        .where((b) => b.id == circleBookId)
+        .firstOrNull;
+    if (book == null) return;
+    await _uploadWithRetry(myNpub, book.id, book.circleDirId);
+  }
 
   Future<void> _uploadWithRetry(
     String npub,
     String groupId,
     String circleDirId,
   ) async {
-    var uploaded = <String>{};
-    for (var attempt = 1; attempt <= _uploadMaxAttempts; attempt++) {
-      final outcome = await _shareService.uploadBookContent(
-        npub,
-        groupId,
-        circleDirId,
-        alreadyUploaded: uploaded,
-      );
-      uploaded = uploaded.union(outcome.uploaded);
+    var uploaded = <String, BookManifestFile>{};
 
-      if (outcome.error == null) {
-        await _pendingUploadDao.clear(circleDirId);
-        return;
-      }
+    final currentUploads = Set<String>.from(_activeUploadsController.value)
+      ..add(circleDirId);
+    _activeUploadsController.add(currentUploads);
 
-      final isLastAttempt = attempt == _uploadMaxAttempts;
-      _log.warning(
-        'Upload attempt $attempt/$_uploadMaxAttempts failed for $circleDirId',
-        outcome.error,
-        outcome.stack,
-      );
-      if (isLastAttempt) {
-        await _pendingUploadDao.markFailed(
-          circleDirId: circleDirId,
-          groupId: groupId,
-          ownerNpub: npub,
-          attempts: attempt,
-          reason: outcome.error.toString(),
+    try {
+      for (var attempt = 1; attempt <= _uploadMaxAttempts; attempt++) {
+        final outcome = await _shareService.uploadBookContent(
+          npub,
+          groupId,
+          circleDirId,
+          alreadyUploaded: uploaded,
         );
-
-        try {
-          final group = await _marmot.getGroup(groupId);
-          final title = group != null
-              ? (BookGroupNaming.matches(group.name)
-                    ? BookGroupNaming.titleOf(group.name)
-                    : group.name)
-              : null;
-
-          final activity = CheersActivityMessage(
-            id: const Uuid().v4(),
-            actorNpub: npub,
-            circleBookId: circleDirId,
-            groupId: groupId,
-            activityDescription:
-                'Book upload failed after $_uploadMaxAttempts attempts. Please retry.',
-            timestamp: DateTime.now(),
-            type: CheersActivityType.adminAction,
-            isUnread: true,
-            bookTitle: title,
-          );
-          await _cheersDao.saveActivity(npub, activity);
-        } catch (e, st) {
-          _log.warning('Failed to log admin action for failed upload', e, st);
+        uploaded.addAll(outcome.uploaded);
+        if (outcome.manifest != null) {
+          // We can just keep going or break, it succeeded
         }
 
-        return;
+        if (outcome.error == null) {
+          await _pendingUploadDao.clear(circleDirId);
+          return;
+        }
+
+        final isLastAttempt = attempt == _uploadMaxAttempts;
+        _log.warning(
+          'Upload attempt $attempt/$_uploadMaxAttempts failed for $circleDirId',
+          outcome.error,
+          outcome.stack,
+        );
+        if (isLastAttempt) {
+          await _pendingUploadDao.markFailed(
+            circleDirId: circleDirId,
+            groupId: groupId,
+            ownerNpub: npub,
+            attempts: attempt,
+            reason: outcome.error.toString(),
+          );
+
+          try {
+            final group = await _marmot.getGroup(groupId);
+            final title = group != null
+                ? (BookGroupNaming.matches(group.name)
+                      ? BookGroupNaming.titleOf(group.name)
+                      : group.name)
+                : null;
+
+            final activity = CheersActivityMessage(
+              id: const Uuid().v4(),
+              actorNpub: npub,
+              circleBookId: circleDirId,
+              groupId: groupId,
+              activityDescription:
+                  'Book upload failed after $_uploadMaxAttempts attempts. Please retry.',
+              timestamp: DateTime.now(),
+              type: CheersActivityType.adminAction,
+              isUnread: true,
+              bookTitle: title,
+            );
+            await _cheersDao.saveActivity(npub, activity);
+          } catch (e, st) {
+            _log.warning('Failed to log admin action for failed upload', e, st);
+          }
+
+          return;
+        }
+        await Future.delayed(Duration(seconds: attempt * 2));
       }
-      await Future.delayed(Duration(seconds: attempt * 2));
+    } finally {
+      final updatedUploads = Set<String>.from(_activeUploadsController.value)
+        ..remove(circleDirId);
+      _activeUploadsController.add(updatedUploads);
     }
   }
 
@@ -294,7 +329,18 @@ class CirclesDataSourceImpl implements CirclesDataSource {
     }
 
     if (skips.length < npubs.length) {
-      await _uploadWithRetry(myNpub, groupId, book.circleDirId);
+      final manifest = await _shareService.getLatestManifest(
+        groupId,
+        book.circleDirId,
+      );
+      if (manifest != null) {
+        try {
+          await _shareService.broadcastManifest(myNpub, groupId, manifest);
+        } catch (e, st) {
+          _log.warning('Failed to re-broadcast manifest to new members', e, st);
+        }
+      }
+
       await _groupStore.refreshGroup(groupId);
     }
 

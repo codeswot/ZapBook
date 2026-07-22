@@ -411,14 +411,50 @@ class _BodyState extends State<_Body> {
               ),
               const SizedBox(height: 24),
               AppButton(
-                label: selectedNpubs.isEmpty
+                label:
+                    state is ShareCircleLoaded &&
+                            state.uploadStatus == UploadStatus.uploading ||
+                        state is ShareCircleBusy &&
+                            state.uploadStatus == UploadStatus.uploading
+                    ? 'Uploading to network...'
+                    : state is ShareCircleLoaded &&
+                              state.uploadStatus == UploadStatus.pending ||
+                          state is ShareCircleBusy &&
+                              state.uploadStatus == UploadStatus.pending
+                    ? 'Upload to share'
+                    : selectedNpubs.isEmpty
                     ? 'Share'
                     : 'Share with ${selectedNpubs.length}',
-                icon: LucideIcons.userPlus,
+                icon:
+                    state is ShareCircleLoaded &&
+                            state.uploadStatus == UploadStatus.pending ||
+                        state is ShareCircleBusy &&
+                            state.uploadStatus == UploadStatus.pending
+                    ? LucideIcons.cloudUpload
+                    : LucideIcons.userPlus,
                 variant: AppButtonVariant.purple,
                 fullWidth: true,
-                isLoading: isSharing,
-                onTap: selectedNpubs.isEmpty || isSharing
+                isLoading:
+                    isSharing ||
+                    (state is ShareCircleLoaded &&
+                            state.uploadStatus == UploadStatus.uploading ||
+                        state is ShareCircleBusy &&
+                            state.uploadStatus == UploadStatus.uploading),
+                onTap:
+                    (state is ShareCircleLoaded &&
+                                state.uploadStatus == UploadStatus.uploading ||
+                            state is ShareCircleBusy &&
+                                state.uploadStatus == UploadStatus.uploading) ||
+                        isSharing
+                    ? null
+                    : (state is ShareCircleLoaded &&
+                              state.uploadStatus == UploadStatus.pending ||
+                          state is ShareCircleBusy &&
+                              state.uploadStatus == UploadStatus.pending)
+                    ? () {
+                        cubit.upload();
+                      }
+                    : selectedNpubs.isEmpty
                     ? null
                     : () {
                         final circleBookId = widget.book.id;

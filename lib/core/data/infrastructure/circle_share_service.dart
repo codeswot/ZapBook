@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart';
+import 'package:convert/convert.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:marmot_dart/marmot_dart.dart';
@@ -11,15 +14,23 @@ import 'package:zapbook/core/data/library_file_store.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/data/infrastructure/blossom_service.dart';
 import 'package:zapbook/core/data/infrastructure/group_envelope_service.dart';
+import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/data/database/dao/book_key_dao.dart';
+import 'package:zapbook/core/models/book_manifest_payload.dart';
 import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/models/book_download_progress.dart';
 
-typedef _TaskResult = ({String filename, Object? error, StackTrace? stack});
+typedef _TaskResult = ({
+  BookManifestFile? file,
+  Object? error,
+  StackTrace? stack,
+});
 
 typedef UploadOutcome = ({
-  Set<String> uploaded,
+  BookManifestPayload? manifest,
+  Map<String, BookManifestFile> uploaded,
   Object? error,
   StackTrace? stack,
 });
@@ -41,6 +52,7 @@ class CircleShareService {
     this._fileStore,
     this._envelope,
     this._identity,
+    this._bookKeyDao,
   );
 
   final Marmot _marmot;
@@ -48,6 +60,7 @@ class CircleShareService {
   final LibraryFileStore _fileStore;
   final GroupEnvelopeService _envelope;
   final IdentityLocalDataSource _identity;
+  final BookKeyDao _bookKeyDao;
   final _log = logging.Logger('CircleShareService');
 
   static const kReseedContentType =
@@ -64,125 +77,242 @@ class CircleShareService {
   static const _segmenter = ZbfSegmenter();
 
   static const int _transferConcurrency = 4;
-  static const int _fetchMaxAttempts = 10;
-  static const Duration _fetchRetryDelay = Duration(seconds: 2);
   static const String _blobMimeType = 'application/octet-stream';
   static const int _segmentIndexWidth = 4;
-
-  static final RegExp _segmentIndexPattern = RegExp(
-    r'\.seg(\d+)' + RegExp.escape(kSegmentExt) + r'$',
-  );
 
   Future<UploadOutcome> uploadBookContent(
     String npub,
     String groupId,
     String circleDirId, {
-    Set<String> alreadyUploaded = const {},
+    Map<String, BookManifestFile> alreadyUploaded = const {},
   }) async {
     final zbf = await _fileStore.zbfFile(circleDirId);
     if (!await zbf.exists()) {
       _log.warning(
         'Cannot upload book content: ZBF file not found for $circleDirId',
       );
-      return (uploaded: <String>{}, error: null, stack: null);
+      return (
+        manifest: null,
+        uploaded: <String, BookManifestFile>{},
+        error: null,
+        stack: null,
+      );
     }
 
-    final uploaded = <String>{};
+    var keys = await _bookKeyDao.getKey(circleDirId);
+    if (keys == null) {
+      final k = Key.fromSecureRandom(32);
+      final i = IV.fromSecureRandom(16);
+      keys = (keyHex: hex.encode(k.bytes), ivHex: hex.encode(i.bytes));
+      await _bookKeyDao.saveKey(
+        nostrGroupId: groupId,
+        circleDirId: circleDirId,
+        keyHex: keys.keyHex,
+        ivHex: keys.ivHex,
+      );
+    }
+
+    final encrypter = Encrypter(
+      AES(Key(Uint8List.fromList(hex.decode(keys.keyHex))), mode: AESMode.cbc),
+    );
+    final iv = IV(Uint8List.fromList(hex.decode(keys.ivHex)));
+
+    final uploadedFiles = Map<String, BookManifestFile>.from(alreadyUploaded);
     Object? firstError;
     StackTrace? firstStack;
 
-    void recordResult(_TaskResult result) {
+    void recordResult(_TaskResult result, String key) {
       if (result.error != null) {
         firstError ??= result.error;
         firstStack ??= result.stack;
-      } else {
-        uploaded.add(result.filename);
+      } else if (result.file != null) {
+        uploadedFiles[key] = result.file!;
       }
     }
 
     final handle = await _reader.open(zbf.path);
     try {
-      final window = <Future<_TaskResult>>[];
+      final window = <Future<MapEntry<String, _TaskResult>>>[];
 
       final sourcePath = handle.sourceDocumentPath();
-      final sourceFilename = '$circleDirId$kSourceExt';
-      if (sourcePath != null && !alreadyUploaded.contains(sourceFilename)) {
+      final sourceKey = 'source';
+      if (sourcePath != null && !alreadyUploaded.containsKey(sourceKey)) {
         window.add(
           _guard(
-            sourceFilename,
-            () => _uploadSource(npub, groupId, circleDirId, sourcePath),
-          ),
+            () => _uploadSource(sourcePath, circleDirId, encrypter, iv),
+          ).then((r) => MapEntry(sourceKey, r)),
         );
       }
+
+      final segments = <BookManifestSegment>[];
 
       await for (final segment in _segmenter.segment(handle)) {
         if (firstError != null) break;
 
-        final index = segment.index.toString().padLeft(_segmentIndexWidth, '0');
-        final filename = '$circleDirId.seg$index$kSegmentExt';
-        if (alreadyUploaded.contains(filename)) continue;
+        final segmentKey = 'seg_${segment.index}';
+
+        if (alreadyUploaded.containsKey(segmentKey)) {
+          segments.add(
+            BookManifestSegment(
+              index: segment.index,
+              file: alreadyUploaded[segmentKey]!,
+            ),
+          );
+          continue;
+        }
 
         window.add(
           _guard(
-            filename,
             () => _uploadBlob(
-              npub,
-              groupId,
               segment.bytes,
-              _blobMimeType,
-              filename,
+              circleDirId,
+              segment.index,
+              encrypter,
+              iv,
             ),
-          ),
+          ).then((r) {
+            if (r.file != null) {
+              segments.add(
+                BookManifestSegment(index: segment.index, file: r.file!),
+              );
+            }
+            return MapEntry(segmentKey, r);
+          }),
         );
         if (window.length >= _transferConcurrency) {
-          recordResult(await window.removeAt(0));
+          final entry = await window.removeAt(0);
+          recordResult(entry.value, entry.key);
         }
       }
 
       while (window.isNotEmpty) {
-        recordResult(await window.removeAt(0));
+        final entry = await window.removeAt(0);
+        recordResult(entry.value, entry.key);
+      }
+
+      if (firstError == null) {
+        final manifest = BookManifestPayload(
+          circleDirId: circleDirId,
+          keyHex: keys.keyHex,
+          ivHex: keys.ivHex,
+          segments: segments,
+          source: uploadedFiles[sourceKey],
+        );
+
+        await broadcastManifest(npub, groupId, manifest);
+
+        return (
+          manifest: manifest,
+          uploaded: uploadedFiles,
+          error: null,
+          stack: null,
+        );
       }
     } finally {
       handle.close();
     }
 
-    return (uploaded: uploaded, error: firstError, stack: firstStack);
+    return (
+      manifest: null,
+      uploaded: uploadedFiles,
+      error: firstError,
+      stack: firstStack,
+    );
+  }
+
+  Future<BookManifestFile> _uploadSource(
+    String sourcePath,
+    String circleDirId,
+    Encrypter encrypter,
+    IV iv,
+  ) async {
+    final sourceBytes = await File(sourcePath).readAsBytes();
+    final encrypted = encrypter.encryptBytes(sourceBytes, iv: iv);
+
+    final url = await _blossom.upload(encrypted.bytes);
+    final hash = sha256.convert(encrypted.bytes).toString();
+
+    return BookManifestFile(
+      url: url,
+      hash: hash,
+      filename: '$circleDirId$kSourceExt',
+      mimeType: _blobMimeType,
+    );
+  }
+
+  Future<BookManifestFile> _uploadBlob(
+    Uint8List bytes,
+    String circleDirId,
+    int index,
+    Encrypter encrypter,
+    IV iv,
+  ) async {
+    final encrypted = encrypter.encryptBytes(bytes, iv: iv);
+
+    final url = await _blossom.upload(encrypted.bytes);
+    final hash = sha256.convert(encrypted.bytes).toString();
+
+    final strIndex = index.toString().padLeft(_segmentIndexWidth, '0');
+    return BookManifestFile(
+      url: url,
+      hash: hash,
+      filename: '$circleDirId.seg$strIndex$kSegmentExt',
+      mimeType: _blobMimeType,
+    );
+  }
+
+  Future<void> broadcastManifest(
+    String npub,
+    String groupId,
+    BookManifestPayload manifest,
+  ) async {
+    final rumor = await buildUnsignedRumor(
+      npub: npub,
+      content: jsonEncode(manifest.toJson()),
+      contentType: AppMessageTypes.bookManifest,
+    );
+    final event = await _marmot.sendMessage(rumor, groupId);
+    await _envelope.publish(event);
+  }
+
+  Future<BookManifestPayload?> getLatestManifest(
+    String groupId,
+    String circleDirId,
+  ) async {
+    final messages = await _marmot.getMessages(groupId);
+    for (final message in messages.reversed) {
+      if (message.contentType == AppMessageTypes.bookManifest &&
+          message.payloadJson != null) {
+        try {
+          final payload = BookManifestPayload.fromJson(
+            jsonDecode(message.payloadJson!),
+          );
+          if (payload.circleDirId == circleDirId) {
+            return payload;
+          }
+        } catch (e, st) {
+          _log.severe('Failed to parse manifest payload', e, st);
+        }
+      }
+    }
+    return null;
   }
 
   Future<bool> fetchAndDownloadBook(String groupId, String circleDirId) async {
     try {
-      List<MarmotMediaRef> segments = [];
-      MarmotMediaRef? sourceRef;
+      final manifest = await getLatestManifest(groupId, circleDirId);
 
-      for (var attempt = 0; attempt < _fetchMaxAttempts; attempt++) {
-        final found = await _collectMediaRefs(groupId, circleDirId);
-        segments = found.segments;
-        sourceRef = found.sourceRef;
-        if (found.complete) break;
-
-        if (attempt < _fetchMaxAttempts - 1) {
-          await Future.delayed(_fetchRetryDelay);
-        }
-      }
-
-      if (segments.isEmpty) {
-        _log.warning('No segment assets found in messages for $circleDirId');
+      if (manifest == null) {
+        _log.warning('No manifest found in messages for $circleDirId');
         unawaited(_notifyReseedNeeded(groupId, circleDirId));
         return false;
       }
 
-      segments.sort((a, b) => a.filename.compareTo(b.filename));
-
-      final ok = await downloadBookContent(
-        circleDirId,
-        groupId,
-        segments,
-        sourceRef,
-      );
+      final ok = await downloadBookContent(circleDirId, groupId, manifest);
       if (!ok) unawaited(_notifyReseedNeeded(groupId, circleDirId));
       return ok;
     } catch (e, st) {
-      _log.warning('Failed to fetch messages for $groupId', e, st);
+      _log.warning('Failed to fetch manifest for $groupId', e, st);
       unawaited(_notifyReseedNeeded(groupId, circleDirId));
       return false;
     }
@@ -259,18 +389,25 @@ class CircleShareService {
   Future<bool> downloadBookContent(
     String circleDirId,
     String groupId,
-    List<MarmotMediaRef> segmentRefs,
-    MarmotMediaRef? sourceRef,
+    BookManifestPayload manifest,
   ) async {
     try {
+      final encrypter = Encrypter(
+        AES(
+          Key(Uint8List.fromList(hex.decode(manifest.keyHex))),
+          mode: AESMode.cbc,
+        ),
+      );
+      final iv = IV(Uint8List.fromList(hex.decode(manifest.ivHex)));
+
       Uint8List? sourceBytes;
-      if (sourceRef != null) {
-        sourceBytes = await downloadAndDecrypt(groupId, sourceRef);
+      if (manifest.source != null) {
+        sourceBytes = await downloadAndDecrypt(manifest.source!, encrypter, iv);
       }
 
       final zbf = await _fileStore.zbfFile(circleDirId);
       await _segmenter.reassembleToDirectory(
-        _downloadSegments(groupId, segmentRefs),
+        _downloadSegments(manifest.segments, encrypter, iv),
         zbf.path,
         sourceBytes: sourceBytes,
         onSegmentProcessed: () {
@@ -292,10 +429,23 @@ class CircleShareService {
     String circleDirId,
     String groupId,
     int segmentIndex,
-    MarmotMediaRef ref,
   ) async {
     try {
-      final zip = await downloadAndDecrypt(groupId, ref);
+      final manifest = await getLatestManifest(groupId, circleDirId);
+      if (manifest == null) return null;
+
+      final segment = manifest.segments.firstWhere(
+        (s) => s.index == segmentIndex,
+      );
+      final encrypter = Encrypter(
+        AES(
+          Key(Uint8List.fromList(hex.decode(manifest.keyHex))),
+          mode: AESMode.cbc,
+        ),
+      );
+      final iv = IV(Uint8List.fromList(hex.decode(manifest.ivHex)));
+
+      final zip = await downloadAndDecrypt(segment.file, encrypter, iv);
       final parsed = await _segmenter.parseSegmentAsync(zip);
       if (parsed.pages.isEmpty) return null;
       return SegmentData(
@@ -314,120 +464,29 @@ class CircleShareService {
   }
 
   Future<Uint8List> downloadAndDecrypt(
-    String groupId,
-    MarmotMediaRef ref,
+    BookManifestFile file,
+    Encrypter encrypter,
+    IV iv,
   ) async {
-    final blob = await _blossom.download(ref.url);
-    return _marmot.decryptMedia(
-      groupId,
-      blob,
-      MediaRefInput(
-        url: ref.url,
-        originalHash: ref.originalHash,
-        mimeType: ref.mimeType,
-        filename: ref.filename,
-        schemeVersion: ref.schemeVersion,
-        nonce: ref.nonce,
-      ),
-    );
-  }
-
-  Future<
-    ({List<MarmotMediaRef> segments, MarmotMediaRef? sourceRef, bool complete})
-  >
-  _collectMediaRefs(String groupId, String circleDirId) async {
-    final messages = await _marmot.getMessages(groupId);
-    final segmentsMap = <String, MarmotMediaRef>{};
-    MarmotMediaRef? sourceRef;
-    var maxSegmentIndex = -1;
-
-    bool isComplete() =>
-        maxSegmentIndex != -1 &&
-        segmentsMap.length == maxSegmentIndex + 1 &&
-        sourceRef != null;
-
-    for (final message in messages.reversed) {
-      for (final media in message.media) {
-        if (!media.filename.startsWith(circleDirId)) continue;
-
-        if (media.filename.endsWith(kSourceExt)) {
-          sourceRef ??= media;
-        } else if (media.filename.endsWith(kSegmentExt) &&
-            !segmentsMap.containsKey(media.filename)) {
-          segmentsMap[media.filename] = media;
-          final match = _segmentIndexPattern.firstMatch(media.filename);
-          if (match != null) {
-            final index = int.parse(match.group(1)!);
-            if (index > maxSegmentIndex) {
-              maxSegmentIndex = index;
-            }
-          }
-        }
-      }
-
-      if (isComplete()) break;
-    }
-
-    return (
-      segments: segmentsMap.values.toList(),
-      sourceRef: sourceRef,
-      complete: isComplete(),
-    );
-  }
-
-  Future<void> _uploadSource(
-    String npub,
-    String groupId,
-    String circleDirId,
-    String sourcePath,
-  ) async {
-    final sourceBytes = await File(sourcePath).readAsBytes();
-    await _uploadBlob(
-      npub,
-      groupId,
-      sourceBytes,
-      _blobMimeType,
-      '$circleDirId$kSourceExt',
-    );
-  }
-
-  Future<void> _uploadBlob(
-    String npub,
-    String groupId,
-    Uint8List bytes,
-    String mimeType,
-    String filename,
-  ) async {
-    final enc = await _marmot.encryptMedia(groupId, bytes, mimeType, filename);
-    final url = await _blossom.upload(enc.encryptedData);
-    final rumor = await _marmot.buildMediaRumor(
-      npub: npub,
-      groupId: groupId,
-      caption: '',
-      url: url,
-      originalHash: enc.originalHash,
-      mimeType: enc.mimeType,
-      filename: enc.filename,
-      nonce: enc.nonce,
-      blurhash: enc.blurhash,
-      thumbhash: enc.thumbhash,
-      dimensionsWidth: enc.dimensionsWidth,
-      dimensionsHeight: enc.dimensionsHeight,
-    );
-    final event = await _marmot.sendMessage(rumor, groupId);
-    await _envelope.publish(event);
+    final blob = await _blossom.download(file.url);
+    final decrypted = encrypter.decryptBytes(Encrypted(blob), iv: iv);
+    return Uint8List.fromList(decrypted);
   }
 
   Stream<Uint8List> _downloadSegments(
-    String groupId,
-    List<MarmotMediaRef> refs,
+    List<BookManifestSegment> segments,
+    Encrypter encrypter,
+    IV iv,
   ) async* {
     final window = <Future<_DownloadResult>>[];
     var next = 0;
 
-    while (next < refs.length || window.isNotEmpty) {
-      while (window.length < _transferConcurrency && next < refs.length) {
-        window.add(_downloadSafe(groupId, refs[next++]));
+    final sorted = List<BookManifestSegment>.from(segments)
+      ..sort((a, b) => a.index.compareTo(b.index));
+
+    while (next < sorted.length || window.isNotEmpty) {
+      while (window.length < _transferConcurrency && next < sorted.length) {
+        window.add(_downloadSafe(sorted[next++].file, encrypter, iv));
       }
 
       final result = await window.removeAt(0);
@@ -439,26 +498,24 @@ class CircleShareService {
   }
 
   Future<_DownloadResult> _downloadSafe(
-    String groupId,
-    MarmotMediaRef ref,
+    BookManifestFile file,
+    Encrypter encrypter,
+    IV iv,
   ) async {
     try {
-      final bytes = await downloadAndDecrypt(groupId, ref);
+      final bytes = await downloadAndDecrypt(file, encrypter, iv);
       return (bytes: bytes, error: null, stack: null);
     } catch (e, st) {
       return (bytes: null, error: e, stack: st);
     }
   }
 
-  Future<_TaskResult> _guard(
-    String filename,
-    Future<void> Function() task,
-  ) async {
+  Future<_TaskResult> _guard(Future<BookManifestFile> Function() task) async {
     try {
-      await task();
-      return (filename: filename, error: null, stack: null);
+      final file = await task();
+      return (file: file, error: null, stack: null);
     } catch (e, st) {
-      return (filename: filename, error: e, stack: st);
+      return (file: null, error: e, stack: st);
     }
   }
 }
