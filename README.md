@@ -98,4 +98,4 @@ logic, and a 65% coverage floor enforced in `just precommit`.
 
 ## License
 
-[MIT](LICENSE) — open source.
+[AGPL-3.0](LICENSE) — open source.
