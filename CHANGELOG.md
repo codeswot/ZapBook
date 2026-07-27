@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Signer method sheet:** Unified UI for choosing between local keys, signer app, or remote bunker during onboarding and account switching.
 - **Profile sharing:** Tap your avatar, name, or npub on the "You" screen to open a shareable profile card with a QR code of your npub, a truncated npub label, and a one-tap copy button — built for scanning in person at meetups.
 - **QR scanning:** Friends and Share-to-circle sheets now have a scan button next to the paste button — scan a friend's npub QR code to add them as a contact or as a circle member, instead of typing or pasting.
+- **Highlights & notes:** Select any word, sentence, or passage in the reader to Highlight it, attach a personal Note, Share it, or (on circle-shared books) Zap it. Highlights are private by default — synced privately to your own account via NIP-44 — and can be shared with your circle, where they show up for everyone via the same encrypted Marmot channel used for progress and cheers.
 
 ### Fixed
 

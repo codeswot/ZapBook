@@ -44,7 +44,44 @@ bool isTableOfContentsPage(List<BookBlock> blocks) {
   return leaders / count >= 0.5;
 }
 
-List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
+List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) =>
+    mergeReadingBlocksWithProvenance(rawBlocks).blocks;
+
+String blockPlainText(BookBlock block) => switch (block) {
+  HeadingBlock(:final text) => text,
+  ParagraphBlock(:final text) => text,
+  PullquoteBlock(:final text) => text,
+  CodeBlock(:final text) => text,
+  CaptionBlock(:final text) => text,
+  ImageBlock(:final altText) => altText,
+  _ => '',
+};
+
+final class BlockProvenanceRun {
+  const BlockProvenanceRun({
+    required this.mergedBlockIndex,
+    required this.mergedStart,
+    required this.mergedEnd,
+    required this.originalBlockIndex,
+    required this.originalStart,
+    required this.originalEnd,
+  });
+
+  final int mergedBlockIndex;
+  final int mergedStart;
+  final int mergedEnd;
+  final int originalBlockIndex;
+  final int originalStart;
+  final int originalEnd;
+}
+
+final class MergeResult {
+  const MergeResult(this.blocks, this.provenance);
+  final List<BookBlock> blocks;
+  final List<BlockProvenanceRun> provenance;
+}
+
+MergeResult mergeReadingBlocksWithProvenance(List<BookBlock> rawBlocks) {
   var maxLen = 0;
   var count = 0;
   for (final b in rawBlocks) {
@@ -56,46 +93,148 @@ List<BookBlock> mergeReadingBlocks(List<BookBlock> rawBlocks) {
     }
   }
 
+  final result = <BookBlock>[];
+  final provenance = <BlockProvenanceRun>[];
+
   if (count < 2) {
-    return List.unmodifiable(rawBlocks.where((b) => !_isNoise(b)));
+    for (var i = 0; i < rawBlocks.length; i++) {
+      if (_isNoise(rawBlocks[i])) continue;
+      final length = blockPlainText(rawBlocks[i]).length;
+      provenance.add(
+        BlockProvenanceRun(
+          mergedBlockIndex: result.length,
+          mergedStart: 0,
+          mergedEnd: length,
+          originalBlockIndex: i,
+          originalStart: 0,
+          originalEnd: length,
+        ),
+      );
+      result.add(rawBlocks[i]);
+    }
+    return MergeResult(
+      List.unmodifiable(result),
+      List.unmodifiable(provenance),
+    );
   }
 
   final widthThreshold = maxLen == 0 ? 0 : (maxLen * 0.66).floor();
 
-  final result = <BookBlock>[];
   ParagraphBlock? pending;
+  var pendingRuns = <BlockProvenanceRun>[];
 
   void flush() {
     if (pending != null) {
+      final mergedIndex = result.length;
+      for (final run in pendingRuns) {
+        provenance.add(
+          BlockProvenanceRun(
+            mergedBlockIndex: mergedIndex,
+            mergedStart: run.mergedStart,
+            mergedEnd: run.mergedEnd,
+            originalBlockIndex: run.originalBlockIndex,
+            originalStart: run.originalStart,
+            originalEnd: run.originalEnd,
+          ),
+        );
+      }
       result.add(pending!);
       pending = null;
+      pendingRuns = [];
     }
   }
 
-  for (final block in rawBlocks) {
+  List<BlockProvenanceRun> soloRun(int originalBlockIndex, ParagraphBlock b) {
+    return [
+      BlockProvenanceRun(
+        mergedBlockIndex: -1,
+        mergedStart: 0,
+        mergedEnd: b.text.length,
+        originalBlockIndex: originalBlockIndex,
+        originalStart: 0,
+        originalEnd: b.text.length,
+      ),
+    ];
+  }
+
+  for (var i = 0; i < rawBlocks.length; i++) {
+    final block = rawBlocks[i];
     if (_isNoise(block)) continue;
 
     if (block is! ParagraphBlock) {
       flush();
+      final length = blockPlainText(block).length;
+      provenance.add(
+        BlockProvenanceRun(
+          mergedBlockIndex: result.length,
+          mergedStart: 0,
+          mergedEnd: length,
+          originalBlockIndex: i,
+          originalStart: 0,
+          originalEnd: length,
+        ),
+      );
       result.add(block);
       continue;
     }
+
     if (pending == null) {
       pending = block;
+      pendingRuns = soloRun(i, block);
       continue;
     }
+
+    final bool noSpace;
     if (_isWordFragmentSplit(pending!, block)) {
-      pending = _join(pending!, block, noSpace: true);
+      noSpace = true;
     } else if (_continues(pending!, widthThreshold)) {
-      pending = _join(pending!, block);
+      noSpace = false;
     } else {
       flush();
       pending = block;
+      pendingRuns = soloRun(i, block);
+      continue;
     }
+
+    final aText = pending!.text.trimRight();
+    final hyphenated = aText.endsWith('-');
+    final keptLength = hyphenated ? aText.length - 1 : aText.length;
+    final glueLength = (hyphenated || noSpace) ? 0 : 1;
+    final leadingTrim = block.text.length - block.text.trimLeft().length;
+
+    final clipped = <BlockProvenanceRun>[];
+    for (final run in pendingRuns) {
+      if (run.mergedStart >= keptLength) continue;
+      final newEnd = run.mergedEnd > keptLength ? keptLength : run.mergedEnd;
+      final delta = run.mergedEnd - newEnd;
+      clipped.add(
+        BlockProvenanceRun(
+          mergedBlockIndex: run.mergedBlockIndex,
+          mergedStart: run.mergedStart,
+          mergedEnd: newEnd,
+          originalBlockIndex: run.originalBlockIndex,
+          originalStart: run.originalStart,
+          originalEnd: run.originalEnd - delta,
+        ),
+      );
+    }
+
+    final newRunStart = keptLength + glueLength;
+    final newRun = BlockProvenanceRun(
+      mergedBlockIndex: -1,
+      mergedStart: newRunStart,
+      mergedEnd: newRunStart + (block.text.length - leadingTrim),
+      originalBlockIndex: i,
+      originalStart: leadingTrim,
+      originalEnd: block.text.length,
+    );
+
+    pending = _join(pending!, block, noSpace: noSpace);
+    pendingRuns = [...clipped, newRun];
   }
   flush();
 
-  return List.unmodifiable(result);
+  return MergeResult(List.unmodifiable(result), List.unmodifiable(provenance));
 }
 
 final RegExp _whitespace = RegExp(r'\s');

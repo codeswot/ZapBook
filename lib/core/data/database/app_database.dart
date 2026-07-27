@@ -47,6 +47,7 @@ class AppDatabase {
     _createZapSatsEarningsTable(db);
     _createPendingCircleUploadsTable(db);
     _createCircleReseedAcksTable(db);
+    _createBookHighlightsTable(db);
 
     return _db = db;
   }
@@ -221,6 +222,29 @@ class AppDatabase {
         acked_at INTEGER NOT NULL
       )
     ''');
+  }
+
+  void _createBookHighlightsTable(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS book_highlights (
+        id TEXT PRIMARY KEY,
+        book_id TEXT NOT NULL,
+        owner_npub TEXT NOT NULL,
+        visibility TEXT NOT NULL,
+        group_id TEXT,
+        page_number INTEGER NOT NULL,
+        spans_json TEXT NOT NULL,
+        quote_snapshot TEXT NOT NULL,
+        note TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        deleted INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_book_highlights_page '
+      'ON book_highlights(book_id, page_number)',
+    );
   }
 
   void close() {

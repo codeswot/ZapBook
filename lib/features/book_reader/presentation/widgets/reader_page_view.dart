@@ -18,6 +18,9 @@ class ReaderPageView extends StatelessWidget {
     required this.page,
     required this.index,
     required this.total,
+    required this.bookId,
+    required this.groupId,
+    required this.bookTitle,
     required this.style,
     required this.scrollDirection,
     required this.turningForward,
@@ -42,6 +45,9 @@ class ReaderPageView extends StatelessWidget {
   final BookPage page;
   final int index;
   final int total;
+  final String bookId;
+  final String groupId;
+  final String bookTitle;
   final ReadingStyle style;
   final ReaderScrollDirection scrollDirection;
   final bool turningForward;
@@ -133,6 +139,10 @@ class ReaderPageView extends StatelessWidget {
       },
       child: ReaderBody(
         blocks: blocks!,
+        bookId: bookId,
+        pageNumber: page.pageNumber,
+        groupId: groupId,
+        bookTitle: bookTitle,
         style: style,
         scrollDirection: scrollDirection,
         asset: asset,

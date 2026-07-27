@@ -16,6 +16,7 @@ class ReaderBlockView extends StatelessWidget {
     required this.asset,
     this.highlightQuery,
     this.highlightProgress,
+    this.persistedHighlightRanges,
     super.key,
   });
 
@@ -24,6 +25,7 @@ class ReaderBlockView extends StatelessWidget {
   final Future<Uint8List?> Function(String) asset;
   final String? highlightQuery;
   final double? highlightProgress;
+  final List<TextRange>? persistedHighlightRanges;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,7 @@ class ReaderBlockView extends StatelessWidget {
           ),
           highlightQuery: highlightQuery,
           highlightProgress: highlightProgress,
+          persistedHighlightRanges: persistedHighlightRanges,
         ),
       ),
       ParagraphBlock(:final text, :final runs) => Padding(
@@ -48,6 +51,7 @@ class ReaderBlockView extends StatelessWidget {
           style: style.paragraph,
           highlightQuery: highlightQuery,
           highlightProgress: highlightProgress,
+          persistedHighlightRanges: persistedHighlightRanges,
         ),
       ),
       PullquoteBlock(:final text, :final runs) => Padding(
@@ -68,6 +72,7 @@ class ReaderBlockView extends StatelessWidget {
             style: style.pullquote,
             highlightQuery: highlightQuery,
             highlightProgress: highlightProgress,
+            persistedHighlightRanges: persistedHighlightRanges,
           ),
         ),
       ),
@@ -104,6 +109,7 @@ class _RichText extends StatelessWidget {
     required this.style,
     this.highlightQuery,
     this.highlightProgress,
+    this.persistedHighlightRanges,
   });
 
   final String text;
@@ -111,33 +117,104 @@ class _RichText extends StatelessWidget {
   final TextStyle style;
   final String? highlightQuery;
   final double? highlightProgress;
+  final List<TextRange>? persistedHighlightRanges;
 
   bool get _highlighting =>
       highlightProgress != null &&
       highlightQuery != null &&
       highlightQuery!.isNotEmpty;
 
+  bool get _hasPersisted =>
+      persistedHighlightRanges != null && persistedHighlightRanges!.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     final localRuns = runs;
     if (localRuns == null || localRuns.isEmpty) {
-      if (!_highlighting) return Text(text, style: style);
+      if (!_highlighting && !_hasPersisted) return Text(text, style: style);
       return Text.rich(
-        TextSpan(style: style, children: _spansFor(context, text, style)),
+        TextSpan(
+          style: style,
+          children: _spansForRun(
+            context,
+            text,
+            style,
+            persistedHighlightRanges ?? const [],
+          ),
+        ),
       );
     }
-    return Text.rich(
-      TextSpan(
-        style: style,
-        children: [
-          for (final run in localRuns)
-            if (_highlighting)
-              ..._spansFor(context, run.text, _styleFor(run))
-            else
-              TextSpan(text: run.text, style: _styleFor(run)),
-        ],
-      ),
+
+    var runStart = 0;
+    final children = <InlineSpan>[];
+    for (final run in localRuns) {
+      final runEnd = runStart + run.text.length;
+      final runStyle = _styleFor(run);
+      final localRanges = _hasPersisted
+          ? _clipRangesToRun(persistedHighlightRanges!, runStart, runEnd)
+          : const <TextRange>[];
+
+      if (_highlighting || localRanges.isNotEmpty) {
+        children.addAll(_spansForRun(context, run.text, runStyle, localRanges));
+      } else {
+        children.add(TextSpan(text: run.text, style: runStyle));
+      }
+      runStart = runEnd;
+    }
+    return Text.rich(TextSpan(style: style, children: children));
+  }
+
+  List<TextRange> _clipRangesToRun(
+    List<TextRange> ranges,
+    int runStart,
+    int runEnd,
+  ) {
+    final result = <TextRange>[];
+    for (final range in ranges) {
+      final start = range.start > runStart ? range.start : runStart;
+      final end = range.end < runEnd ? range.end : runEnd;
+      if (start < end) {
+        result.add(TextRange(start: start - runStart, end: end - runStart));
+      }
+    }
+    return result;
+  }
+
+  List<InlineSpan> _spansForRun(
+    BuildContext context,
+    String input,
+    TextStyle base,
+    List<TextRange> persistedRanges,
+  ) {
+    if (persistedRanges.isEmpty) {
+      return _spansFor(context, input, base);
+    }
+
+    final sorted = [...persistedRanges]
+      ..sort((a, b) => a.start.compareTo(b.start));
+    final persistedStyle = base.copyWith(
+      backgroundColor: context.colors.bitcoin2.withValues(alpha: 0.28),
     );
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final range in sorted) {
+      final start = range.start.clamp(0, input.length);
+      final end = range.end.clamp(0, input.length);
+      if (start > cursor) {
+        spans.addAll(_spansFor(context, input.substring(cursor, start), base));
+      }
+      if (end > start) {
+        spans.add(
+          TextSpan(text: input.substring(start, end), style: persistedStyle),
+        );
+      }
+      if (end > cursor) cursor = end;
+    }
+    if (cursor < input.length) {
+      spans.addAll(_spansFor(context, input.substring(cursor), base));
+    }
+    return spans;
   }
 
   static double _envelope(double p) {

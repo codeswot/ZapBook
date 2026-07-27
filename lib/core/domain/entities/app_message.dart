@@ -9,6 +9,7 @@ abstract class AppMessageTypes {
   static const zapReady = 'zapbook.zap.ready';
   static const zapSent = 'zapbook.zap.sent';
   static const reseedRequest = 'application/vnd.zapbook.reseed-request+json';
+  static const highlightShared = 'zapbook.highlight.shared';
 }
 
 sealed class AppMessage {
@@ -45,6 +46,8 @@ sealed class AppMessage {
           return ZapSentMessage(message, decoded);
         case AppMessageTypes.reseedRequest:
           return ReseedRequestMessage(message, decoded);
+        case AppMessageTypes.highlightShared:
+          return HighlightSharedMessage(message, decoded);
         default:
           return null;
       }
@@ -100,4 +103,10 @@ class ReseedRequestMessage extends AppMessage {
   final Map<String, dynamic> payload;
 
   const ReseedRequestMessage(super.message, this.payload);
+}
+
+class HighlightSharedMessage extends AppMessage {
+  final Map<String, dynamic> payload;
+
+  const HighlightSharedMessage(super.message, this.payload);
 }

@@ -9,7 +9,11 @@ import 'package:zapbook/zbf/zbf.dart';
 
 import 'package:zapbook/core/data/paragraph_merger.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
+import 'package:zapbook/features/book_reader/domain/anchor_resolution.dart';
+import 'package:zapbook/features/book_reader/domain/entities/highlight.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/highlights/highlights_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_block_view.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/selection_toolbar/reader_selection_toolbar.dart';
 import 'package:zapbook/core/presentation/theme/reading_style.dart';
 
 enum ReaderPullEdge { top, bottom, left, right }
@@ -29,6 +33,10 @@ class ReaderPullState {
 class ReaderBody extends StatefulWidget {
   const ReaderBody({
     required this.blocks,
+    required this.bookId,
+    required this.pageNumber,
+    required this.groupId,
+    required this.bookTitle,
     required this.style,
     required this.scrollDirection,
     required this.asset,
@@ -47,6 +55,10 @@ class ReaderBody extends StatefulWidget {
   });
 
   final List<BookBlock> blocks;
+  final String bookId;
+  final int pageNumber;
+  final String groupId;
+  final String bookTitle;
   final ReadingStyle style;
   final ReaderScrollDirection scrollDirection;
   final Future<Uint8List?> Function(String assetRef) asset;
@@ -79,10 +91,14 @@ class _ReaderBodyState extends State<ReaderBody> {
   Timer? _tapTimer;
 
   late final _scrollController = ScrollController();
-  late final List<BookBlock> _merged = mergeReadingBlocks(widget.blocks);
+  late final MergeResult _mergeResult = mergeReadingBlocksWithProvenance(
+    widget.blocks,
+  );
+  List<BookBlock> get _merged => _mergeResult.blocks;
   final GlobalKey _anchorKey = GlobalKey();
   int _anchorIndex = -1;
   bool _initialOffsetApplied = false;
+  SelectedContent? _selectedContent;
 
   @override
   void initState() {
@@ -371,8 +387,31 @@ class _ReaderBodyState extends State<ReaderBody> {
                       maxWidth: ReadingStyle.maxContentWidth,
                     ),
                     child: SelectionArea(
+                      onSelectionChanged: (content) =>
+                          setState(() => _selectedContent = content),
+                      contextMenuBuilder: (menuContext, state) {
+                        final content = _selectedContent;
+                        if (content == null || content.plainText.isEmpty) {
+                          return AdaptiveTextSelectionToolbar.buttonItems(
+                            anchors: state.contextMenuAnchors,
+                            buttonItems: state.contextMenuButtonItems,
+                          );
+                        }
+                        return ReaderSelectionToolbar(
+                          selectableRegionState: state,
+                          selectedText: content.plainText,
+                          mergedBlockTexts: _merged
+                              .map(blockPlainText)
+                              .toList(),
+                          pageRuns: _mergeResult.provenance,
+                          groupId: widget.groupId,
+                          bookTitle: widget.bookTitle,
+                          highlightsCubit: context.read<HighlightsCubit>(),
+                        );
+                      },
                       child: _HighlightableBlocks(
                         blocks: _merged,
+                        provenance: _mergeResult.provenance,
                         style: widget.style,
                         asset: widget.asset,
                         highlightQuery: widget.highlightQuery,
@@ -406,6 +445,7 @@ class _NoGlowScrollBehavior extends ScrollBehavior {
 class _HighlightableBlocks extends StatelessWidget {
   const _HighlightableBlocks({
     required this.blocks,
+    required this.provenance,
     required this.style,
     required this.asset,
     required this.highlightQuery,
@@ -415,6 +455,7 @@ class _HighlightableBlocks extends StatelessWidget {
   });
 
   final List<BookBlock> blocks;
+  final List<BlockProvenanceRun> provenance;
   final ReadingStyle style;
   final Future<Uint8List?> Function(String assetRef) asset;
   final String? highlightQuery;
@@ -428,6 +469,7 @@ class _HighlightableBlocks extends StatelessWidget {
     if (query == null || query.isEmpty) {
       return _BlockColumn(
         blocks: blocks,
+        provenance: provenance,
         style: style,
         asset: asset,
         anchorIndex: anchorIndex,
@@ -444,6 +486,7 @@ class _HighlightableBlocks extends StatelessWidget {
         onEnd: onHighlightComplete,
         builder: (context, t, _) => _BlockColumn(
           blocks: blocks,
+          provenance: provenance,
           style: style,
           asset: asset,
           highlightQuery: query,
@@ -459,6 +502,7 @@ class _HighlightableBlocks extends StatelessWidget {
 class _BlockColumn extends StatelessWidget {
   const _BlockColumn({
     required this.blocks,
+    required this.provenance,
     required this.style,
     required this.asset,
     required this.anchorIndex,
@@ -468,6 +512,7 @@ class _BlockColumn extends StatelessWidget {
   });
 
   final List<BookBlock> blocks;
+  final List<BlockProvenanceRun> provenance;
   final ReadingStyle style;
   final Future<Uint8List?> Function(String) asset;
   final int anchorIndex;
@@ -477,19 +522,42 @@ class _BlockColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < blocks.length; i++)
-          ReaderBlockView(
-            key: i == anchorIndex ? anchorKey : null,
-            block: blocks[i],
-            style: style,
-            asset: asset,
-            highlightQuery: highlightQuery,
-            highlightProgress: highlightProgress,
-          ),
-      ],
+    return BlocBuilder<HighlightsCubit, HighlightsState>(
+      builder: (context, state) {
+        final highlights = state is HighlightsLoaded
+            ? state.highlights
+            : const <Highlight>[];
+        final rangesByBlock = <int, List<TextRange>>{};
+        for (final highlight in highlights) {
+          final mapped = mapSpansToMergedRanges(
+            spans: highlight.spans,
+            pageRuns: provenance,
+          );
+          mapped.forEach((blockIndex, ranges) {
+            rangesByBlock
+                .putIfAbsent(blockIndex, () => [])
+                .addAll(
+                  ranges.map((r) => TextRange(start: r.start, end: r.end)),
+                );
+          });
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < blocks.length; i++)
+              ReaderBlockView(
+                key: i == anchorIndex ? anchorKey : null,
+                block: blocks[i],
+                style: style,
+                asset: asset,
+                highlightQuery: highlightQuery,
+                highlightProgress: highlightProgress,
+                persistedHighlightRanges: rangesByBlock[i],
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/highlights/highlights_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/widgets/reader_body.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/core/domain/entities/perf_mode.dart';
@@ -12,8 +13,11 @@ import 'package:zapbook/zbf/zbf.dart';
 
 class MockPerformanceCubit extends Mock implements PerformanceCubit {}
 
+class MockHighlightsCubit extends Mock implements HighlightsCubit {}
+
 void main() {
   late MockPerformanceCubit performanceCubit;
+  late MockHighlightsCubit highlightsCubit;
 
   setUp(() {
     performanceCubit = MockPerformanceCubit();
@@ -21,7 +25,21 @@ void main() {
       const PerformanceState(reduceEffects: true, mode: PerfMode.auto),
     );
     when(() => performanceCubit.stream).thenAnswer((_) => const Stream.empty());
+
+    highlightsCubit = MockHighlightsCubit();
+    when(() => highlightsCubit.state).thenReturn(const HighlightsLoaded([]));
+    when(() => highlightsCubit.stream).thenAnswer((_) => const Stream.empty());
   });
+
+  Widget wrapProviders(Widget child) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<PerformanceCubit>.value(value: performanceCubit),
+        BlocProvider<HighlightsCubit>.value(value: highlightsCubit),
+      ],
+      child: child,
+    );
+  }
 
   Widget buildTestWidget({
     List<BookBlock> blocks = const [],
@@ -30,9 +48,8 @@ void main() {
     bool canGoForward = true,
     bool canGoBack = true,
   }) {
-    return BlocProvider<PerformanceCubit>.value(
-      value: performanceCubit,
-      child: MaterialApp(
+    return wrapProviders(
+      MaterialApp(
         theme: lightTheme,
         home: Builder(
           builder: (context) {
@@ -44,6 +61,10 @@ void main() {
             return Scaffold(
               body: ReaderBody(
                 blocks: blocks,
+                bookId: 'book1',
+                pageNumber: 0,
+                groupId: '',
+                bookTitle: 'Test Book',
                 style: style,
                 scrollDirection: ReaderScrollDirection.vertical,
                 asset: (ref) async => null,
@@ -99,9 +120,8 @@ void main() {
       var tapped = false;
 
       await tester.pumpWidget(
-        BlocProvider<PerformanceCubit>.value(
-          value: performanceCubit,
-          child: MaterialApp(
+        wrapProviders(
+          MaterialApp(
             theme: lightTheme,
             home: Builder(
               builder: (context) {
@@ -109,6 +129,10 @@ void main() {
                 return Scaffold(
                   body: ReaderBody(
                     blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
+                    bookId: 'book1',
+                    pageNumber: 0,
+                    groupId: '',
+                    bookTitle: 'Test Book',
                     style: style,
                     scrollDirection: ReaderScrollDirection.vertical,
                     asset: (ref) async => null,
@@ -138,9 +162,8 @@ void main() {
       ReaderPullState? lastPull;
 
       await tester.pumpWidget(
-        BlocProvider<PerformanceCubit>.value(
-          value: performanceCubit,
-          child: MaterialApp(
+        wrapProviders(
+          MaterialApp(
             theme: lightTheme,
             home: Builder(
               builder: (context) {
@@ -148,6 +171,10 @@ void main() {
                 return Scaffold(
                   body: ReaderBody(
                     blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
+                    bookId: 'book1',
+                    pageNumber: 0,
+                    groupId: '',
+                    bookTitle: 'Test Book',
                     style: style,
                     scrollDirection: ReaderScrollDirection.vertical,
                     asset: (ref) async => null,
@@ -181,9 +208,8 @@ void main() {
         ReaderPullState? lastPull;
 
         await tester.pumpWidget(
-          BlocProvider<PerformanceCubit>.value(
-            value: performanceCubit,
-            child: MaterialApp(
+          wrapProviders(
+            MaterialApp(
               theme: lightTheme,
               home: Builder(
                 builder: (context) {
@@ -194,6 +220,10 @@ void main() {
                   return Scaffold(
                     body: ReaderBody(
                       blocks: const <BookBlock>[ParagraphBlock(text: 'Test')],
+                      bookId: 'book1',
+                      pageNumber: 0,
+                      groupId: '',
+                      bookTitle: 'Test Book',
                       style: style,
                       scrollDirection: ReaderScrollDirection.horizontal,
                       asset: (ref) async => null,

@@ -11,6 +11,7 @@ import 'package:zapbook/zbf/zbf.dart';
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/usecases/pdf_usecases.dart';
+import 'package:zapbook/features/book_reader/presentation/bloc/highlights/highlights_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_state.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
@@ -175,6 +176,13 @@ class _ReaderScreenState extends State<ReaderScreen>
           ),
         ),
         BlocProvider.value(value: getIt<ReaderSettingsCubit>()),
+        BlocProvider(
+          create: (_) => getIt<HighlightsCubit>()
+            ..openPage(
+              bookId: widget.handle.manifest.id,
+              pageNumber: widget.handle.pageAt(_savedPage).pageNumber,
+            ),
+        ),
       ],
       child: Scaffold(
         backgroundColor: colors.paper,
@@ -186,6 +194,10 @@ class _ReaderScreenState extends State<ReaderScreen>
             final next = state.currentPage;
             final goingBack = next < prev;
             context.read<ReadingProgressCubit>().openPage(next);
+            context.read<HighlightsCubit>().openPage(
+              bookId: widget.handle.manifest.id,
+              pageNumber: widget.handle.pageAt(next).pageNumber,
+            );
             _savedPage = next;
             if (goingBack && !_scrollOffsets.containsKey(next)) {
               _scrollOffsets[next] = double.infinity;
@@ -217,6 +229,9 @@ class _ReaderScreenState extends State<ReaderScreen>
                       page: page,
                       index: index,
                       total: total,
+                      bookId: widget.handle.manifest.id,
+                      groupId: widget.groupId,
+                      bookTitle: widget.handle.manifest.title,
                       style: style,
                       scrollDirection: settings.scrollDirection,
                       turningForward: _turningForward,

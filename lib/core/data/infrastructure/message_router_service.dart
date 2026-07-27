@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:marmot_dart/marmot_dart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
 import 'package:zapbook/core/domain/entities/app_message.dart';
 import 'package:zapbook/core/data/infrastructure/marmot_sync_service.dart';
+import 'package:zapbook/core/data/database/dao/book_highlights_dao.dart';
 import 'package:zapbook/core/data/database/dao/cheers_dao.dart';
 import 'package:zapbook/core/data/database/dao/circle_progress_dao.dart';
 import 'package:zapbook/core/domain/entities/cheers_activity_message.dart';
@@ -16,6 +18,7 @@ class MessageRouterService {
   final MarmotSyncService _marmotSyncService;
   final CheersDao _cheersDao;
   final CircleProgressDao _circleProgressDao;
+  final BookHighlightsDao _bookHighlightsDao;
   final IdentityLocalDataSource _identityLocalDataSource;
   final Marmot _marmot;
 
@@ -32,6 +35,7 @@ class MessageRouterService {
     this._marmotSyncService,
     this._cheersDao,
     this._circleProgressDao,
+    this._bookHighlightsDao,
     this._identityLocalDataSource,
     this._marmot,
   ) {
@@ -126,6 +130,31 @@ class MessageRouterService {
             await _cheersDao.saveActivity(npub, activity);
             _activityController.add(activity);
           }
+
+        case HighlightSharedMessage(payload: final payload):
+          final id = payload['id'] as String?;
+          if (id == null) break;
+          if (payload['deleted'] == true) {
+            await _bookHighlightsDao.softDelete(id);
+            break;
+          }
+          await _bookHighlightsDao.upsert(
+            HighlightRecord(
+              id: id,
+              bookId: payload['bookId'] as String? ?? '',
+              ownerNpub: parsed.senderNpub,
+              visibility: 'circle',
+              groupId: parsed.groupId,
+              pageNumber: (payload['pageNumber'] as num?)?.toInt() ?? 0,
+              spansJson: jsonEncode(payload['spans']),
+              quoteSnapshot: payload['quoteSnapshot'] as String? ?? '',
+              note: payload['note'] as String?,
+              createdAt: parsed.timestampSecs * 1000,
+              updatedAt:
+                  (payload['sharedAtMs'] as num?)?.toInt() ??
+                  parsed.timestampSecs * 1000,
+            ),
+          );
 
         case InitialBookMessage() || BookCompletedMessage():
           break;

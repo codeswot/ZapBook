@@ -29,6 +29,7 @@ void main() {
     required BookBlock block,
     String? highlightQuery,
     double? highlightProgress,
+    List<TextRange>? persistedHighlightRanges,
     Future<Uint8List?> Function(String)? asset,
   }) {
     return BlocProvider<PerformanceCubit>.value(
@@ -49,6 +50,7 @@ void main() {
                 asset: asset ?? (ref) async => null,
                 highlightQuery: highlightQuery,
                 highlightProgress: highlightProgress,
+                persistedHighlightRanges: persistedHighlightRanges,
               ),
             );
           },
@@ -148,6 +150,30 @@ void main() {
       expect(richTextFinder, findsOneWidget);
       final richText = tester.widget<RichText>(richTextFinder);
       expect(richText.text.toPlainText(), 'This is a highlight test.');
+    });
+
+    testWidgets('renders a persisted highlight range with a background', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestWidget(
+          block: const ParagraphBlock(text: 'This is a highlight test.'),
+          persistedHighlightRanges: const [TextRange(start: 10, end: 19)],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final richTextFinder = find.byType(RichText);
+      expect(richTextFinder, findsOneWidget);
+      final richText = tester.widget<RichText>(richTextFinder);
+      expect(richText.text.toPlainText(), 'This is a highlight test.');
+
+      final topSpan = richText.text as TextSpan;
+      final innerSpan = topSpan.children!.single as TextSpan;
+      final highlightedSpan = innerSpan.children!.cast<TextSpan>().firstWhere(
+        (span) => span.style?.backgroundColor != null,
+      );
+      expect(highlightedSpan.text, 'highlight');
     });
 
     testWidgets('renders text runs with styling', (tester) async {
