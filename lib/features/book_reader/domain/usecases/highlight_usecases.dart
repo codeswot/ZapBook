@@ -51,3 +51,10 @@ class WatchHighlightsForPageUseCase {
     required int pageNumber,
   }) => _repository.watchPage(bookId: bookId, pageNumber: pageNumber);
 }
+
+@injectable
+class WatchHighlightsForBookUseCase {
+  const WatchHighlightsForBookUseCase(this._repository);
+  final HighlightRepository _repository;
+  Stream<List<Highlight>> call(String bookId) => _repository.watchBook(bookId);
+}

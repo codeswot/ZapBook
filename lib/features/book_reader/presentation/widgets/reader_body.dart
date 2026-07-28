@@ -95,7 +95,10 @@ class _ReaderBodyState extends State<ReaderBody> {
     widget.blocks,
   );
   List<BookBlock> get _merged => _mergeResult.blocks;
-  final GlobalKey _anchorKey = GlobalKey();
+  late final List<GlobalKey> _blockKeys = List.generate(
+    _merged.length,
+    (_) => GlobalKey(),
+  );
   int _anchorIndex = -1;
   bool _initialOffsetApplied = false;
   SelectedContent? _selectedContent;
@@ -160,8 +163,10 @@ class _ReaderBodyState extends State<ReaderBody> {
   }
 
   void _scrollToAnchor([int attempt = 0]) {
-    if (!mounted) return;
-    final context = _anchorKey.currentContext;
+    if (!mounted || _anchorIndex < 0 || _anchorIndex >= _blockKeys.length) {
+      return;
+    }
+    final context = _blockKeys[_anchorIndex].currentContext;
     if (context == null) {
       if (attempt < 5) {
         WidgetsBinding.instance.addPostFrameCallback(
@@ -176,6 +181,38 @@ class _ReaderBodyState extends State<ReaderBody> {
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  int? _disambiguationHint(Offset? anchorPosition) {
+    if (anchorPosition == null) return null;
+    final texts = _merged.map(blockPlainText).toList();
+    var cumulative = 0;
+    var bestIndex = -1;
+    var bestDistance = double.infinity;
+    for (var i = 0; i < _blockKeys.length; i++) {
+      final renderObject = _blockKeys[i].currentContext?.findRenderObject();
+      if (renderObject is RenderBox && renderObject.hasSize) {
+        final topLeft = renderObject.localToGlobal(Offset.zero);
+        final rect = topLeft & renderObject.size;
+        if (anchorPosition.dy >= rect.top && anchorPosition.dy <= rect.bottom) {
+          return cumulative;
+        }
+        final distance = anchorPosition.dy < rect.top
+            ? rect.top - anchorPosition.dy
+            : anchorPosition.dy - rect.bottom;
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
+      }
+      cumulative += texts[i].length;
+    }
+    if (bestIndex < 0) return null;
+    var offset = 0;
+    for (var i = 0; i < bestIndex; i++) {
+      offset += texts[i].length;
+    }
+    return offset;
   }
 
   static String _blockText(BookBlock block) => switch (block) {
@@ -404,6 +441,9 @@ class _ReaderBodyState extends State<ReaderBody> {
                               .map(blockPlainText)
                               .toList(),
                           pageRuns: _mergeResult.provenance,
+                          disambiguationHint: _disambiguationHint(
+                            state.contextMenuAnchors.primaryAnchor,
+                          ),
                           groupId: widget.groupId,
                           bookTitle: widget.bookTitle,
                           highlightsCubit: context.read<HighlightsCubit>(),
@@ -416,8 +456,7 @@ class _ReaderBodyState extends State<ReaderBody> {
                         asset: widget.asset,
                         highlightQuery: widget.highlightQuery,
                         onHighlightComplete: widget.onHighlightComplete,
-                        anchorIndex: _anchorIndex,
-                        anchorKey: _anchorKey,
+                        blockKeys: _blockKeys,
                       ),
                     ),
                   ),
@@ -450,8 +489,7 @@ class _HighlightableBlocks extends StatelessWidget {
     required this.asset,
     required this.highlightQuery,
     required this.onHighlightComplete,
-    required this.anchorIndex,
-    required this.anchorKey,
+    required this.blockKeys,
   });
 
   final List<BookBlock> blocks;
@@ -460,8 +498,7 @@ class _HighlightableBlocks extends StatelessWidget {
   final Future<Uint8List?> Function(String assetRef) asset;
   final String? highlightQuery;
   final VoidCallback? onHighlightComplete;
-  final int anchorIndex;
-  final Key anchorKey;
+  final List<GlobalKey> blockKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -472,8 +509,7 @@ class _HighlightableBlocks extends StatelessWidget {
         provenance: provenance,
         style: style,
         asset: asset,
-        anchorIndex: anchorIndex,
-        anchorKey: anchorKey,
+        blockKeys: blockKeys,
       );
     }
     final reduceEffects = context.watch<PerformanceCubit>().state.reduceEffects;
@@ -491,8 +527,7 @@ class _HighlightableBlocks extends StatelessWidget {
           asset: asset,
           highlightQuery: query,
           highlightProgress: t,
-          anchorIndex: anchorIndex,
-          anchorKey: anchorKey,
+          blockKeys: blockKeys,
         ),
       ),
     );
@@ -505,8 +540,7 @@ class _BlockColumn extends StatelessWidget {
     required this.provenance,
     required this.style,
     required this.asset,
-    required this.anchorIndex,
-    required this.anchorKey,
+    required this.blockKeys,
     this.highlightQuery,
     this.highlightProgress,
   });
@@ -515,8 +549,7 @@ class _BlockColumn extends StatelessWidget {
   final List<BlockProvenanceRun> provenance;
   final ReadingStyle style;
   final Future<Uint8List?> Function(String) asset;
-  final int anchorIndex;
-  final Key anchorKey;
+  final List<GlobalKey> blockKeys;
   final String? highlightQuery;
   final double? highlightProgress;
 
@@ -547,7 +580,7 @@ class _BlockColumn extends StatelessWidget {
           children: [
             for (var i = 0; i < blocks.length; i++)
               ReaderBlockView(
-                key: i == anchorIndex ? anchorKey : null,
+                key: i < blockKeys.length ? blockKeys[i] : null,
                 block: blocks[i],
                 style: style,
                 asset: asset,

@@ -199,6 +199,8 @@ import 'package:zapbook/features/book_reader/domain/usecases/highlight_usecases.
     as _i901;
 import 'package:zapbook/features/book_reader/domain/usecases/quiz_usecases.dart'
     as _i297;
+import 'package:zapbook/features/book_reader/presentation/bloc/highlights/book_highlights_cubit.dart'
+    as _i783;
 import 'package:zapbook/features/book_reader/presentation/bloc/highlights/highlights_cubit.dart'
     as _i1019;
 import 'package:zapbook/features/book_reader/presentation/bloc/quiz_cubit.dart'
@@ -951,6 +953,10 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i901.WatchHighlightsForPageUseCase(gh<_i469.HighlightRepository>()),
     );
+    gh.factory<_i901.WatchHighlightsForBookUseCase>(
+      () =>
+          _i901.WatchHighlightsForBookUseCase(gh<_i469.HighlightRepository>()),
+    );
     gh.factory<_i362.EarningsCubit>(
       () => _i362.EarningsCubit(
         gh<_i177.GetEarningsUseCase>(),
@@ -1088,6 +1094,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i704.CreateCircleBookUseCase>(),
         gh<_i704.DeleteBookFilesUseCase>(),
         gh<_i704.FinalizeAndUploadBookUseCase>(),
+      ),
+    );
+    gh.factory<_i783.BookHighlightsCubit>(
+      () => _i783.BookHighlightsCubit(
+        gh<_i901.WatchHighlightsForBookUseCase>(),
+        gh<_i901.ShareHighlightToCircleUseCase>(),
+        gh<_i901.DeleteHighlightUseCase>(),
       ),
     );
     gh.factory<_i665.DownloadCircleBook>(

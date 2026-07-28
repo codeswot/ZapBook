@@ -179,4 +179,28 @@ class BookHighlightsDao {
 
     return controller.stream;
   }
+
+  Stream<List<HighlightRecord>> watchForBook(String bookId) {
+    late StreamController<List<HighlightRecord>> controller;
+
+    Future<void> emit() async {
+      final records = await loadForBook(bookId);
+      if (!controller.isClosed) {
+        controller.add(records);
+      }
+    }
+
+    controller = StreamController<List<HighlightRecord>>.broadcast(
+      onListen: emit,
+    );
+
+    final sub = _changeController.stream.listen((_) => emit());
+
+    controller.onCancel = () {
+      sub.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
 }

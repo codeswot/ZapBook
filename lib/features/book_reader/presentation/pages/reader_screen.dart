@@ -12,6 +12,7 @@ import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/domain/book_segment_source.dart';
 import 'package:zapbook/core/domain/usecases/pdf_usecases.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/highlights/highlights_cubit.dart';
+import 'package:zapbook/features/book_reader/presentation/widgets/book_highlights_sheet.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_cubit.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/reader_settings/reader_settings_state.dart';
 import 'package:zapbook/features/book_reader/presentation/bloc/viewer/zbf_viewer_cubit.dart';
@@ -294,6 +295,12 @@ class _ReaderScreenState extends State<ReaderScreen>
                         manifest: widget.handle.manifest,
                         currentPage: index,
                         onSelect: cubit.goToPage,
+                      ),
+                      onOpenHighlights: () => BookHighlightsSheet.show(
+                        context,
+                        bookId: widget.handle.manifest.id,
+                        groupId: widget.groupId,
+                        onJumpToPage: cubit.goToPage,
                       ),
                     ),
                   ),

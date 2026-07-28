@@ -24,4 +24,6 @@ abstract class HighlightRepository {
     required String bookId,
     required int pageNumber,
   });
+
+  Stream<List<Highlight>> watchBook(String bookId);
 }

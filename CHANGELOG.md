@@ -20,8 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Profile sharing:** Tap your avatar, name, or npub on the "You" screen to open a shareable profile card with a QR code of your npub, a truncated npub label, and a one-tap copy button — built for scanning in person at meetups.
 - **QR scanning:** Friends and Share-to-circle sheets now have a scan button next to the paste button — scan a friend's npub QR code to add them as a contact or as a circle member, instead of typing or pasting.
 - **Highlights & notes:** Select any word, sentence, or passage in the reader to Highlight it, attach a personal Note, Share it, or (on circle-shared books) Zap it. Highlights are private by default — synced privately to your own account via NIP-44 — and can be shared with your circle, where they show up for everyone via the same encrypted Marmot channel used for progress and cheers.
+- **Highlights & notes list:** New "Highlights & Notes" button in the reader header lists every highlight and note for the current book, sorted by page — tap one to jump straight to it, share a private highlight to your circle, or delete it.
 
 ### Fixed
+
+- **Highlights:** Highlighting a word/phrase that appears more than once on a page no longer always lands on the first occurrence — the reader now uses the on-screen position of your selection to pick the right one.
+- **Highlights:** Removed a duplicate "Share" button in the selection toolbar (the platform's own Share option was already present alongside a second, custom one).
 
 - **Cheers:** Activity cards no longer lose their book/circle name when the circle or book is later deleted — the title is now stored with each activity when it arrives.
 - **External Signer (NIP-55):** Signer requests no longer break after the app is swiped away — background decryption (e.g. circle invites) now works headlessly when the signer app has auto-approve enabled, and falls back gracefully otherwise.

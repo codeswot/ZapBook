@@ -119,6 +119,13 @@ class HighlightRepositoryImpl implements HighlightRepository {
         .map((records) => records.map(_toDomain).toList());
   }
 
+  @override
+  Stream<List<Highlight>> watchBook(String bookId) {
+    return _dao
+        .watchForBook(bookId)
+        .map((records) => records.map(_toDomain).toList());
+  }
+
   Future<void> _publishPrivate(Highlight highlight) async {
     try {
       await _privateSync.publish(highlight);

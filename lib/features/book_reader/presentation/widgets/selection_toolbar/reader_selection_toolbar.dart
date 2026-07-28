@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:zapbook/core/data/infrastructure/share_service.dart';
 import 'package:zapbook/core/data/paragraph_merger.dart';
-import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/features/book_reader/domain/anchor_resolution.dart';
 import 'package:zapbook/features/book_reader/domain/entities/highlight.dart';
@@ -17,6 +15,7 @@ class ReaderSelectionToolbar extends StatelessWidget {
     required this.selectedText,
     required this.mergedBlockTexts,
     required this.pageRuns,
+    this.disambiguationHint,
     required this.groupId,
     required this.bookTitle,
     required this.highlightsCubit,
@@ -26,6 +25,7 @@ class ReaderSelectionToolbar extends StatelessWidget {
   final String selectedText;
   final List<String> mergedBlockTexts;
   final List<BlockProvenanceRun> pageRuns;
+  final int? disambiguationHint;
   final String groupId;
   final String bookTitle;
   final HighlightsCubit highlightsCubit;
@@ -59,11 +59,6 @@ class ReaderSelectionToolbar extends StatelessWidget {
     }
   }
 
-  void _share() {
-    selectableRegionState.hideToolbar();
-    getIt<ShareService>().share(selectedText);
-  }
-
   void _zap(BuildContext context) {
     selectableRegionState.hideToolbar();
     HighlightZapPickerSheet.show(
@@ -79,6 +74,7 @@ class ReaderSelectionToolbar extends StatelessWidget {
       mergedBlockTexts: mergedBlockTexts,
       pageRuns: pageRuns,
       selectedText: selectedText,
+      disambiguationHint: disambiguationHint,
     );
 
     final items = <ContextMenuButtonItem>[
@@ -92,7 +88,6 @@ class ReaderSelectionToolbar extends StatelessWidget {
           label: 'Note',
           onPressed: () => _addNote(context, spans),
         ),
-      ContextMenuButtonItem(label: 'Share', onPressed: _share),
       if (spans != null && groupId.isNotEmpty)
         ContextMenuButtonItem(label: 'Zap', onPressed: () => _zap(context)),
       ...selectableRegionState.contextMenuButtonItems,

@@ -9,6 +9,7 @@ class ReaderHeader extends StatelessWidget {
     required this.onBack,
     required this.onOpenContents,
     this.onSearch,
+    this.onOpenHighlights,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class ReaderHeader extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onOpenContents;
   final VoidCallback? onSearch;
+  final VoidCallback? onOpenHighlights;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +63,13 @@ class ReaderHeader extends StatelessWidget {
                   onPressed: onSearch,
                   icon: const Icon(Icons.search_rounded),
                   tooltip: 'Search book',
+                  color: colors.ink,
+                ),
+              if (onOpenHighlights != null)
+                IconButton(
+                  onPressed: onOpenHighlights,
+                  icon: const Icon(Icons.highlight_rounded),
+                  tooltip: 'Highlights & notes',
                   color: colors.ink,
                 ),
               IconButton(
