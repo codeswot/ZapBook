@@ -20,6 +20,15 @@ class MockShareCircleBookUseCase extends Mock
 
 class MockGetMyNpubUseCase extends Mock implements GetMyNpubUseCase {}
 
+class MockWatchActiveUploadsUseCase extends Mock
+    implements WatchActiveUploadsUseCase {}
+
+class MockWatchPendingCircleUploadsUseCase extends Mock
+    implements WatchPendingCircleUploadsUseCase {}
+
+class MockUploadCircleBookUseCase extends Mock
+    implements UploadCircleBookUseCase {}
+
 CircleBook _createTestBook(String id, String title, List<String> adminNpubs) {
   return CircleBook(
     id: id,
@@ -45,6 +54,10 @@ void main() {
   late MockGetExistingMemberNpubsUseCase mockGetExistingMemberNpubsUseCase;
   late MockShareCircleBookUseCase mockShareCircleBookUseCase;
   late MockGetMyNpubUseCase mockGetMyNpubUseCase;
+  late MockWatchActiveUploadsUseCase mockWatchActiveUploadsUseCase;
+  late MockWatchPendingCircleUploadsUseCase
+  mockWatchPendingCircleUploadsUseCase;
+  late MockUploadCircleBookUseCase mockUploadCircleBookUseCase;
 
   setUp(() {
     mockGetFriendsUseCase = MockGetFriendsUseCase();
@@ -52,6 +65,21 @@ void main() {
     mockGetExistingMemberNpubsUseCase = MockGetExistingMemberNpubsUseCase();
     mockShareCircleBookUseCase = MockShareCircleBookUseCase();
     mockGetMyNpubUseCase = MockGetMyNpubUseCase();
+    mockWatchActiveUploadsUseCase = MockWatchActiveUploadsUseCase();
+    mockWatchPendingCircleUploadsUseCase =
+        MockWatchPendingCircleUploadsUseCase();
+    mockUploadCircleBookUseCase = MockUploadCircleBookUseCase();
+
+    when(
+      () => mockWatchActiveUploadsUseCase(),
+    ).thenAnswer((_) => Stream.value({}));
+    when(
+      () => mockWatchPendingCircleUploadsUseCase(any()),
+    ).thenAnswer((_) => Stream.value([]));
+    when(() => mockGetMyNpubUseCase.call()).thenAnswer(
+      (_) async =>
+          'npub1v4v5td3r04f3n6udfqqv7eulx328y83tndq889yey8n3cnhrntsq8v0wps',
+    );
   });
 
   ShareCircleCubit buildCubit() => ShareCircleCubit(
@@ -60,6 +88,9 @@ void main() {
     mockGetExistingMemberNpubsUseCase,
     mockShareCircleBookUseCase,
     mockGetMyNpubUseCase,
+    mockWatchActiveUploadsUseCase,
+    mockWatchPendingCircleUploadsUseCase,
+    mockUploadCircleBookUseCase,
   );
 
   group('ShareCircleCubit', () {
