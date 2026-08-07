@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-08-07
+
 ### Added
 
 - **Push Notifications (local):** Get notified of circle activity even with the app closed — cheers, reading milestones (with book/circle name), zaps sent in circles, zap nudges and nudge replies, circle invites ("You have been added to…"), and sats earned from zap receipts. Fully local and private: no Firebase, no push servers — the app keeps its encrypted relay connections alive and only wakes when a message actually arrives.
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Signer method sheet:** Unified UI for choosing between local keys, signer app, or remote bunker during onboarding and account switching.
 - **Profile sharing:** Tap your avatar, name, or npub on the "You" screen to open a shareable profile card with a QR code of your npub, a truncated npub label, and a one-tap copy button — built for scanning in person at meetups.
 - **QR scanning:** Friends and Share-to-circle sheets now have a scan button next to the paste button — scan a friend's npub QR code to add them as a contact or as a circle member, instead of typing or pasting.
+- **Reader Zaps & Stats:** Send zaps directly to readers, and track your total zap sats earned right on the home dashboard.
+- **Blossom Sync:** Improved concurrency and error management for smoother book uploading and downloading.
 
 ### Fixed
 
