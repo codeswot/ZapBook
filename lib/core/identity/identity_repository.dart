@@ -31,6 +31,8 @@ abstract interface class IdentityRepository {
 
   Future<BunkerConnectResult> connectBunker(String bunkerUrl);
 
+  NostrConnectSession initiateNostrConnect({required String appName});
+
   Future<String?> currentNpub();
 
   Future<bool> hasIdentity();

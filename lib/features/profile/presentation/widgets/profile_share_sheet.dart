@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
-import 'package:zapbook/core/presentation/theme/app_radii.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
+import 'package:zapbook/core/presentation/widgets/app_qr_code.dart';
 import 'package:zapbook/core/presentation/widgets/app_profile_avatar.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
@@ -87,31 +86,7 @@ class ProfileShareSheet extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 24),
-            AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colors.white,
-                  borderRadius: AppRadii.br24,
-                  border: Border.all(color: colors.hairline),
-                ),
-                child: QrImageView(
-                  data: profile.npub,
-                  backgroundColor: colors.white,
-                  gapless: false,
-                  errorCorrectionLevel: QrErrorCorrectLevel.H,
-                  eyeStyle: QrEyeStyle(
-                    eyeShape: QrEyeShape.circle,
-                    color: colors.nostr,
-                  ),
-                  dataModuleStyle: QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.circle,
-                    color: colors.black,
-                  ),
-                ),
-              ),
-            ),
+            AppQrCode(data: profile.npub),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:zapbook/core/identity/identity_local_data_source.dart';
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/identity/identity_repository.dart';
 import 'package:zapbook/core/session/session_reloader.dart';
 import 'package:zapbook/features/profile/data/datasources/profile_remote_datasource.dart';
@@ -36,13 +37,14 @@ class SwitchAccountRepositoryImpl implements SwitchAccountRepository {
   Future<bool> validateNsec(String nsec) => _identityRepo.validateNsec(nsec);
 
   @override
-  Future<void> importAndPersist(String nsec) async {
+  Future<String> importAndPersist(String nsec) async {
     final keypair = await _identityRepo.importFromNsec(nsec);
     final derivedNsec = keypair.nsec;
     if (derivedNsec == null || derivedNsec.isEmpty) {
       throw const FormatException('Could not derive secret key');
     }
     await _identityRepo.persist(npub: keypair.npub, nsec: derivedNsec);
+    return keypair.npub;
   }
 
   @override
@@ -50,17 +52,32 @@ class SwitchAccountRepositoryImpl implements SwitchAccountRepository {
       _identityRepo.isExternalSignerAvailable();
 
   @override
-  Future<void> connectExternalSigner() async {
+  Future<String> connectExternalSigner() async {
     final connection = await _identityRepo.connectExternalSigner();
     await _identityRepo.persistExternal(
       npub: connection.npub,
       package: connection.package,
     );
+    return connection.npub;
   }
 
   @override
-  Future<void> connectBunker(String bunkerUrl) async {
+  Future<String> connectBunker(String bunkerUrl) async {
     final result = await _identityRepo.connectBunker(bunkerUrl);
+    await _identityRepo.persistBunker(
+      npub: result.npub,
+      connectionJson: result.connectionJson,
+    );
+    return result.npub;
+  }
+
+  @override
+  NostrConnectSession initiateNostrConnect({required String appName}) {
+    return _identityRepo.initiateNostrConnect(appName: appName);
+  }
+
+  @override
+  Future<void> saveBunkerConnection(BunkerConnectResult result) async {
     await _identityRepo.persistBunker(
       npub: result.npub,
       connectionJson: result.connectionJson,

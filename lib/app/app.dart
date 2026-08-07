@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:zapbook/core/di/injection.dart';
 import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit.dart';
+import 'package:zapbook/core/presentation/bloc/clipboard/clipboard_cubit.dart';
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart';
 import 'package:zapbook/core/presentation/router/app_router.dart';
 import 'package:zapbook/core/presentation/theme/theme_cubit.dart';
@@ -23,6 +24,7 @@ class ZapBookApp extends StatelessWidget {
         BlocProvider<BookDownloadCubit>(
           create: (_) => getIt<BookDownloadCubit>(),
         ),
+        BlocProvider<ClipboardCubit>(create: (_) => getIt<ClipboardCubit>()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {

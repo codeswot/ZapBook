@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart' as logging;
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/extensions/string_extension.dart';
 import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/core/utils/profile_meta_generator.dart';
@@ -10,6 +11,12 @@ import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.
 @injectable
 class SwitchAccountCubit extends Cubit<SwitchAccountState> {
   SwitchAccountCubit(this._usecases) : super(const SwitchAccountLoading());
+
+  @override
+  void emit(SwitchAccountState state) {
+    if (isClosed) return;
+    super.emit(state);
+  }
 
   final SwitchAccountUseCases _usecases;
   final _log = logging.Logger('SwitchAccountCubit');
@@ -117,8 +124,8 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
         throw const FormatException('Invalid secret key');
       }
 
-      await _usecases.importAndPersist(trimmed);
-      await _usecases.reloadSession();
+      final newNpub = await _usecases.importAndPersist(trimmed);
+      await switchAccount(newNpub);
       return true;
     } on Object catch (e, stack) {
       _log.warning('Import account failed', e, stack);
@@ -142,8 +149,8 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
     );
     try {
-      await _usecases.connectExternalSigner();
-      await _usecases.reloadSession();
+      final newNpub = await _usecases.connectExternalSigner();
+      await switchAccount(newNpub);
       return true;
     } on Nip55Exception catch (e, stack) {
       _log.warning('Connect external signer failed', e, stack);
@@ -164,8 +171,8 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
     );
     try {
-      await _usecases.connectBunker(bunkerUrl);
-      await _usecases.reloadSession();
+      final newNpub = await _usecases.connectBunker(bunkerUrl);
+      await switchAccount(newNpub);
       return true;
     } on Nip55Exception catch (e, stack) {
       _log.warning('Connect bunker failed', e, stack);
@@ -177,6 +184,34 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
         SwitchAccountError.from(
           state,
           'Could not connect to the remote signer',
+        ),
+      );
+      return false;
+    }
+  }
+
+  NostrConnectSession startNostrConnect() {
+    return _usecases.initiateNostrConnect(appName: 'ZapBook');
+  }
+
+  Future<bool> connectNostrConnect(NostrConnectSession session) async {
+    final accounts = _currentAccounts;
+    final active = _currentActiveNpub;
+
+    emit(
+      SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
+    );
+    try {
+      final connection = await session.awaitConnection();
+      await _usecases.saveBunkerConnection(connection);
+      await switchAccount(connection.npub);
+      return true;
+    } on Object catch (e, stack) {
+      _log.warning('Connect NostrConnect failed', e, stack);
+      emit(
+        SwitchAccountError.from(
+          state,
+          'Signer did not connect or an error occurred.',
         ),
       );
       return false;

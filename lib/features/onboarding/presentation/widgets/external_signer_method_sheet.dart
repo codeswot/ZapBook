@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'package:zapbook/core/presentation/theme/app_radii.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zapbook/core/presentation/bloc/clipboard/clipboard_cubit.dart';
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
+import 'package:zapbook/core/presentation/widgets/app_method_tile.dart';
 import 'package:zapbook/core/presentation/widgets/app_paste_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_qr_code.dart';
+import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
+import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+
+enum _Phase { main, bunker, nostrConnect }
 
 class ExternalSignerMethodSheet extends StatefulWidget {
   const ExternalSignerMethodSheet({
@@ -15,27 +23,36 @@ class ExternalSignerMethodSheet extends StatefulWidget {
     required this.showSignerApp,
     required this.onSignerApp,
     required this.onBunker,
+    required this.onStartNostrConnect,
+    required this.onNostrConnect,
   });
 
   final bool showSignerApp;
   final Future<String?> Function() onSignerApp;
   final Future<String?> Function(String bunkerUrl) onBunker;
+  final NostrConnectSession Function() onStartNostrConnect;
+  final Future<String?> Function(NostrConnectSession session) onNostrConnect;
 
   static Future<bool?> show(
     BuildContext context, {
     required bool showSignerApp,
     required Future<String?> Function() onSignerApp,
     required Future<String?> Function(String bunkerUrl) onBunker,
+    required NostrConnectSession Function() onStartNostrConnect,
+    required Future<String?> Function(NostrConnectSession session)
+    onNostrConnect,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.colors.transparent,
       builder: (_) => ExternalSignerMethodSheet(
         showSignerApp: showSignerApp,
         onSignerApp: onSignerApp,
         onBunker: onBunker,
+        onStartNostrConnect: onStartNostrConnect,
+        onNostrConnect: onNostrConnect,
       ),
     );
   }
@@ -47,9 +64,9 @@ class ExternalSignerMethodSheet extends StatefulWidget {
 
 class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
   final _bunkerController = TextEditingController();
-  bool _bunkerPhase = false;
+  _Phase _phase = _Phase.main;
   bool _busy = false;
-  String? _error;
+  NostrConnectSession? _nostrConnectSession;
 
   @override
   void dispose() {
@@ -57,10 +74,23 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
     super.dispose();
   }
 
+  void _handleBunkerInput(String text) {
+    final url = text.trim();
+    if (url.isEmpty) return;
+    if (!url.startsWith('bunker://')) {
+      context.toast.showError(
+        'Invalid bunker connection link',
+        rootNavigator: true,
+      );
+      return;
+    }
+    _bunkerController.text = url;
+    setState(() {});
+  }
+
   Future<void> _runSignerApp() async {
     setState(() {
       _busy = true;
-      _error = null;
     });
     final error = await widget.onSignerApp();
     if (!mounted) return;
@@ -68,21 +98,30 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
       Navigator.of(context).pop(true);
       return;
     }
+    context.toast.showError(error, rootNavigator: true);
     setState(() {
       _busy = false;
-      _error = error;
     });
   }
 
   Future<void> _runBunker() async {
     final url = _bunkerController.text.trim();
     if (url.isEmpty) {
-      setState(() => _error = 'Paste a bunker:// connection link');
+      context.toast.showError(
+        'Paste a bunker:// connection link',
+        rootNavigator: true,
+      );
+      return;
+    }
+    if (!url.startsWith('bunker://')) {
+      context.toast.showError(
+        'Invalid bunker connection link',
+        rootNavigator: true,
+      );
       return;
     }
     setState(() {
       _busy = true;
-      _error = null;
     });
     final error = await widget.onBunker(url);
     if (!mounted) return;
@@ -90,10 +129,43 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
       Navigator.of(context).pop(true);
       return;
     }
+    context.toast.showError(error, rootNavigator: true);
     setState(() {
       _busy = false;
-      _error = error;
     });
+  }
+
+  Future<void> _runNostrConnect() async {
+    setState(() {
+      _busy = true;
+    });
+    try {
+      _nostrConnectSession = widget.onStartNostrConnect();
+      setState(() {
+        _phase = _Phase.nostrConnect;
+        _busy = false;
+      });
+      final error = await widget.onNostrConnect(_nostrConnectSession!);
+      if (!mounted) return;
+      if (error == null) {
+        Navigator.of(context).pop(true);
+      } else {
+        context.toast.showError(error, rootNavigator: true);
+        setState(() {
+          _phase = _Phase.main;
+          _nostrConnectSession = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        context.toast.showError(e.toString(), rootNavigator: true);
+        setState(() {
+          _busy = false;
+          _phase = _Phase.main;
+          _nostrConnectSession = null;
+        });
+      }
+    }
   }
 
   @override
@@ -109,14 +181,12 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
           children: [
             Row(
               children: [
-                if (_bunkerPhase)
+                if (_phase != _Phase.main)
                   BouncingInteractiveWidget(
-                    onTap: _busy
-                        ? null
-                        : () => setState(() {
-                            _bunkerPhase = false;
-                            _error = null;
-                          }),
+                    onTap: () => setState(() {
+                      _phase = _Phase.main;
+                      _nostrConnectSession = null;
+                    }),
                     child: Padding(
                       padding: const EdgeInsets.only(right: 10),
                       child: Icon(LucideIcons.arrowLeft, color: colors.ink),
@@ -124,7 +194,11 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                   ),
                 Expanded(
                   child: Text(
-                    _bunkerPhase ? 'Remote signer' : 'Connect a signer',
+                    switch (_phase) {
+                      _Phase.bunker => 'Remote signer',
+                      _Phase.nostrConnect => 'Scan with Signer',
+                      _Phase.main => 'Connect a signer',
+                    },
                     style: typography.displayM.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colors.ink,
@@ -134,14 +208,15 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
               ],
             ),
             const SizedBox(height: 6),
-            Text(
-              _bunkerPhase
-                  ? 'Paste the bunker link from your remote signer (nsecbunker, nsec.app, Amber…).'
-                  : 'Sign without giving ZapBook your secret key.',
-              style: typography.body.copyWith(color: colors.slate),
-            ),
+            Text(switch (_phase) {
+              _Phase.bunker =>
+                'Paste the bunker link from your remote signer (nsecbunker, nsec.app, Amber…).',
+              _Phase.nostrConnect =>
+                'Scan this QR code with a remote signer to approve the connection.',
+              _Phase.main => 'Sign without giving ZapBook your secret key.',
+            }, style: typography.body.copyWith(color: colors.slate)),
             const SizedBox(height: 18),
-            if (_bunkerPhase) ...[
+            if (_phase == _Phase.bunker) ...[
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -154,13 +229,14 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  AppPasteButton(
-                    onPaste: (text) {
-                      _bunkerController.text = text;
-                      setState(() {});
-                    },
+                  const SizedBox(width: 8),
+                  AppQrScanButton(
+                    onScan: _handleBunkerInput,
+                    title: 'Scan Connection',
+                    instructions: 'Scan a bunker:// QR code',
                   ),
+                  const SizedBox(width: 8),
+                  AppPasteButton(onPaste: _handleBunkerInput),
                 ],
               ),
               const SizedBox(height: 16),
@@ -172,9 +248,29 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                 iconRight: _busy ? null : LucideIcons.arrowRight,
                 onTap: _busy ? null : _runBunker,
               ),
+            ] else if (_phase == _Phase.nostrConnect &&
+                _nostrConnectSession != null) ...[
+              AppQrCode(data: _nostrConnectSession?.uri ?? ''),
+              const SizedBox(height: 16),
+              AppButton(
+                label: 'Copy Link',
+                fullWidth: true,
+                variant: AppButtonVariant.ghost,
+                iconRight: LucideIcons.copy,
+                onTap: () async {
+                  await context.read<ClipboardCubit>().copy(
+                    _nostrConnectSession!.uri,
+                  );
+                  if (context.mounted) {
+                    context.toast.showInfo('Link copied to clipboard');
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              const Center(child: CircularProgressIndicator()),
             ] else ...[
               if (widget.showSignerApp)
-                _MethodTile(
+                AppMethodTile(
                   icon: LucideIcons.shieldCheck,
                   title: 'Signer app',
                   subtitle: 'Amber on this device · NIP-55',
@@ -182,7 +278,15 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                   onTap: _busy ? null : _runSignerApp,
                 ),
               if (widget.showSignerApp) const SizedBox(height: 10),
-              _MethodTile(
+              AppMethodTile(
+                icon: LucideIcons.qrCode,
+                title: 'Scan with Signer',
+                subtitle: 'Show a QR code for your signer to scan',
+                busy: _busy && _phase == _Phase.nostrConnect,
+                onTap: _busy ? null : _runNostrConnect,
+              ),
+              const SizedBox(height: 10),
+              AppMethodTile(
                 icon: LucideIcons.radio,
                 title: 'Remote signer',
                 subtitle: 'Paste a bunker link · NIP-46',
@@ -190,87 +294,11 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                 onTap: _busy
                     ? null
                     : () => setState(() {
-                        _bunkerPhase = true;
-                        _error = null;
+                        _phase = _Phase.bunker;
                       }),
               ),
             ],
-            if (_error != null) ...[
-              const SizedBox(height: 14),
-              Text(
-                _error!,
-                style: typography.bodyS.copyWith(color: colors.tomato),
-              ),
-            ],
             const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MethodTile extends StatelessWidget {
-  const _MethodTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.busy,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool busy;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final typography = context.typography;
-
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: colors.paper2,
-          borderRadius: AppRadii.br16,
-          border: Border.all(color: colors.hairline2),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: colors.bitcoin),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: typography.bodyL.copyWith(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: typography.bodyS.copyWith(color: colors.slate),
-                  ),
-                ],
-              ),
-            ),
-            if (busy)
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Icon(LucideIcons.chevronRight, size: 20, color: colors.slate),
           ],
         ),
       ),

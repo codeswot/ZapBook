@@ -207,26 +207,43 @@ class _BodyState extends State<_Body> {
                   BouncingInteractiveWidget(
                     onTap: isAdding
                         ? null
-                        : () => ExternalSignerMethodSheet.show(
-                            context,
-                            showSignerApp: Platform.isAndroid,
-                            onSignerApp: () async {
-                              final ok = await cubit.connectExternalSigner();
-                              if (ok) return null;
-                              final s = cubit.state;
-                              return s is SwitchAccountError
-                                  ? s.message
-                                  : "Couldn't connect signer";
-                            },
-                            onBunker: (url) async {
-                              final ok = await cubit.connectBunker(url);
-                              if (ok) return null;
-                              final s = cubit.state;
-                              return s is SwitchAccountError
-                                  ? s.message
-                                  : "Couldn't connect signer";
-                            },
-                          ),
+                        : () async {
+                            final done = await ExternalSignerMethodSheet.show(
+                              context,
+                              showSignerApp: Platform.isAndroid,
+                              onSignerApp: () async {
+                                final ok = await cubit.connectExternalSigner();
+                                if (ok) return null;
+                                final s = cubit.state;
+                                return s is SwitchAccountError
+                                    ? s.message
+                                    : "Couldn't connect signer";
+                              },
+                              onBunker: (url) async {
+                                final ok = await cubit.connectBunker(url);
+                                if (ok) return null;
+                                final s = cubit.state;
+                                return s is SwitchAccountError
+                                    ? s.message
+                                    : "Couldn't connect signer";
+                              },
+                              onStartNostrConnect: () =>
+                                  cubit.startNostrConnect(),
+                              onNostrConnect: (session) async {
+                                final ok = await cubit.connectNostrConnect(
+                                  session,
+                                );
+                                if (ok) return null;
+                                final s = cubit.state;
+                                return s is SwitchAccountError
+                                    ? s.message
+                                    : "Couldn't connect signer";
+                              },
+                            );
+                            if (done == true && context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,

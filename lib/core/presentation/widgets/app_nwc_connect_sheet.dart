@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:zapbook/core/presentation/theme/app_radii.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zapbook/core/presentation/bloc/clipboard/clipboard_cubit.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_button.dart';
 import 'package:zapbook/core/presentation/widgets/app_input.dart';
 import 'package:zapbook/core/presentation/widgets/app_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
 import 'package:zapbook/core/presentation/widgets/bouncing_interactive_widget.dart';
+import 'package:zapbook/core/presentation/widgets/app_scan_button.dart';
+import 'package:zapbook/core/presentation/widgets/app_square_icon_button.dart';
 
 class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   late final TextEditingController _controller;
@@ -26,10 +28,21 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
     super.dispose();
   }
 
+  void _handleInput(String text) {
+    final uri = text.trim();
+    if (uri.isEmpty) return;
+    if (!uri.startsWith('nostr+walletconnect://')) {
+      context.toast.showError('Invalid connection string', rootNavigator: true);
+      return;
+    }
+    _controller.text = uri;
+  }
+
   Future<void> _paste() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) {
-      _controller.text = data!.text!.trim();
+    final text = await context.read<ClipboardCubit>().paste();
+    final input = text ?? '';
+    if (input.isNotEmpty) {
+      _handleInput(input.trim());
     }
   }
 
@@ -38,8 +51,7 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
   Future<void> _connect() async {
     final uri = _controller.text.trim();
     if (uri.isEmpty) return;
-    if (!uri.startsWith('nostr+walletconnect://') &&
-        !uri.startsWith('bunker://')) {
+    if (!uri.startsWith('nostr+walletconnect://')) {
       context.toast.showError('Invalid connection string', rootNavigator: true);
       return;
     }
@@ -96,8 +108,14 @@ class _AppNwcConnectSheetState extends State<AppNwcConnectSheet> {
                         : null,
                   ),
                 ),
-                const SizedBox(width: 12),
-                _PasteButton(onTap: _paste),
+                const SizedBox(width: 8),
+                AppQrScanButton(
+                  onScan: _handleInput,
+                  title: 'Scan Connection',
+                  instructions: 'Scan a nostr+walletconnect:// QR code',
+                ),
+                const SizedBox(width: 8),
+                AppSquareIconButton(icon: LucideIcons.clipboard, onTap: _paste),
               ],
             ),
             const SizedBox(height: 24),
@@ -134,29 +152,6 @@ class AppNwcConnectSheet extends StatefulWidget {
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AppNwcConnectSheet(onConnect: onConnect),
-    );
-  }
-}
-
-class _PasteButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _PasteButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return BouncingInteractiveWidget(
-      onTap: onTap,
-      child: Container(
-        height: 50,
-        width: 50,
-        decoration: BoxDecoration(
-          color: context.colors.paper2,
-          borderRadius: AppRadii.br10,
-          border: Border.all(color: context.colors.hairline),
-        ),
-        child: Icon(LucideIcons.clipboard, color: context.colors.slate),
-      ),
     );
   }
 }

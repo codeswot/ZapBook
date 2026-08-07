@@ -59,6 +59,10 @@ class MarmotIdentityRepository implements IdentityRepository {
       _bunker.connect(bunkerUrl);
 
   @override
+  NostrConnectSession initiateNostrConnect({required String appName}) =>
+      _bunker.initiateNostrConnect(appName: appName);
+
+  @override
   Future<String?> currentNpub() => _local.readNpub();
 
   @override

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zapbook/core/presentation/bloc/clipboard/clipboard_cubit.dart';
 import 'package:zapbook/core/domain/validators.dart';
 import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/profile/domain/entities/user_profile.dart';
@@ -50,9 +51,9 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
   }
 
   Future<void> _pasteLud16() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) {
-      _lud16Controller.text = data!.text!.trim();
+    final text = await context.read<ClipboardCubit>().paste();
+    if (text != null) {
+      _lud16Controller.text = text.trim();
     }
   }
 

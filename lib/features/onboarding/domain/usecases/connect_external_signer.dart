@@ -15,4 +15,7 @@ class ConnectExternalSigner {
 
   Future<BunkerConnectResult> connectBunker(String bunkerUrl) =>
       _identity.connectBunker(bunkerUrl);
+
+  NostrConnectSession initiateNostrConnect({required String appName}) =>
+      _identity.initiateNostrConnect(appName: appName);
 }

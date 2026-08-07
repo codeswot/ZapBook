@@ -3,10 +3,17 @@ import 'package:mocktail/mocktail.dart';
 import 'package:zapbook/features/profile/domain/usecases/switch_account_usecases.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_cubit.dart';
 import 'package:zapbook/features/profile/presentation/bloc/switch_account_state.dart';
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 
 class MockSwitchAccountUseCases extends Mock implements SwitchAccountUseCases {}
 
+class MockBunkerConnectResult extends Mock implements BunkerConnectResult {}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(MockBunkerConnectResult());
+  });
+
   late MockSwitchAccountUseCases usecases;
 
   setUp(() {
@@ -93,7 +100,8 @@ void main() {
       ).thenAnswer((_) => Future.value(true));
       when(
         () => usecases.importAndPersist(any()),
-      ).thenAnswer((_) => Future.value());
+      ).thenAnswer((_) => Future.value('npub2'));
+      when(() => usecases.setActive(any())).thenAnswer((_) => Future.value());
       when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
 
       final cubit = createCubit();
@@ -101,7 +109,7 @@ void main() {
 
       final result = await cubit.importAccount('nsec2');
 
-      expect(result, isTrue);
+      expect(result, isTrue, reason: "connectNostrConnect returned false");
       verify(() => usecases.validateNsec('nsec2')).called(1);
       verify(() => usecases.importAndPersist('nsec2')).called(1);
       verify(() => usecases.reloadSession()).called(1);
@@ -147,6 +155,93 @@ void main() {
 
       expect(result, isFalse);
       expect(cubit.state, isA<SwitchAccountError>());
+    });
+
+    test('connectExternalSigner connects and switches account', () async {
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
+      when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+
+      when(
+        () => usecases.connectExternalSigner(),
+      ).thenAnswer((_) => Future.value('npub2'));
+      when(() => usecases.setActive(any())).thenAnswer((_) => Future.value());
+      when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
+
+      final cubit = createCubit();
+      await cubit.load();
+
+      final result = await cubit.connectExternalSigner();
+
+      expect(result, isTrue, reason: "connectNostrConnect returned false");
+      verify(() => usecases.connectExternalSigner()).called(1);
+      verify(() => usecases.setActive('npub2')).called(1);
+      verify(() => usecases.reloadSession()).called(1);
+    });
+
+    test('connectBunker connects and switches account', () async {
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
+      when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+
+      when(
+        () => usecases.connectBunker(any()),
+      ).thenAnswer((_) => Future.value('npub2'));
+      when(() => usecases.setActive(any())).thenAnswer((_) => Future.value());
+      when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
+
+      final cubit = createCubit();
+      await cubit.load();
+
+      final result = await cubit.connectBunker('bunker://test');
+
+      expect(result, isTrue, reason: "connectNostrConnect returned false");
+      verify(() => usecases.connectBunker('bunker://test')).called(1);
+      verify(() => usecases.setActive('npub2')).called(1);
+      verify(() => usecases.reloadSession()).called(1);
+    });
+
+    test('connectNostrConnect connects and switches account', () async {
+      when(
+        () => usecases.listNpubs(),
+      ).thenAnswer((_) => Future.value(['npub1']));
+      when(() => usecases.readNpub()).thenAnswer((_) => Future.value('npub1'));
+      when(
+        () => usecases.fetchMetadata(any()),
+      ).thenAnswer((_) => Future.value(null));
+
+      final connection = BunkerConnectResult(
+        npub: 'npub2',
+        connectionJson: '{}',
+      );
+      final session = NostrConnectSession(
+        uri: 'nostrconnect://bunker',
+        awaitConnection: () => Future.value(connection),
+      );
+
+      when(
+        () => usecases.saveBunkerConnection(connection),
+      ).thenAnswer((_) => Future.value());
+      when(() => usecases.setActive(any())).thenAnswer((_) => Future.value());
+      when(() => usecases.reloadSession()).thenAnswer((_) => Future.value());
+
+      final cubit = createCubit();
+      await cubit.load();
+
+      final result = await cubit.connectNostrConnect(session);
+
+      expect(result, isTrue);
+      verify(() => usecases.saveBunkerConnection(connection)).called(1);
+      verify(() => usecases.setActive('npub2')).called(1);
+      verify(() => usecases.reloadSession()).called(1);
     });
   });
 }

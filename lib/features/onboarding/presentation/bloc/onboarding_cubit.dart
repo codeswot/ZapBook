@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 import 'package:logging/logging.dart';
 import 'package:zapbook/core/domain/usecases/clipboard_usecases.dart';
 import 'package:zapbook/core/identity/signer_meta.dart';
+import 'package:zapbook/core/identity/bunker_signer_source.dart';
 import 'package:zapbook/core/utils/profile_meta_generator.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/complete_onboarding.dart';
 import 'package:zapbook/features/onboarding/domain/usecases/connect_external_signer.dart';
@@ -162,6 +163,39 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         state.copyWith(
           isBusy: false,
           error: "Couldn't connect to the remote signer. Check the link.",
+        ),
+      );
+      return false;
+    }
+  }
+
+  NostrConnectSession startNostrConnect() {
+    return _connectExternalSigner.initiateNostrConnect(appName: 'ZapBook');
+  }
+
+  Future<bool> connectNostrConnect(NostrConnectSession session) async {
+    emit(state.copyWith(isBusy: true, error: null));
+    try {
+      final connection = await session.awaitConnection();
+      emit(
+        state.copyWith(
+          isExternalSigner: true,
+          signerConnectionJson: connection.connectionJson,
+          signerPackage: "",
+          generatedNpub: connection.npub,
+          generatedNsec: "",
+          importedNsec: "",
+        ),
+      );
+      await _fetchExistingProfile();
+      emit(state.copyWith(isBusy: false));
+      return true;
+    } on Object catch (error, stack) {
+      _log.warning('connectNostrConnect failed', error, stack);
+      emit(
+        state.copyWith(
+          isBusy: false,
+          error: "Signer did not connect or an error occurred.",
         ),
       );
       return false;

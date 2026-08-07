@@ -146,6 +146,8 @@ import 'package:zapbook/core/presentation/bloc/book_download/book_download_cubit
     as _i81;
 import 'package:zapbook/core/presentation/bloc/circle_operations/circle_operations_cubit.dart'
     as _i41;
+import 'package:zapbook/core/presentation/bloc/clipboard/clipboard_cubit.dart'
+    as _i676;
 import 'package:zapbook/core/presentation/bloc/earnings/earnings_cubit.dart'
     as _i362;
 import 'package:zapbook/core/presentation/bloc/performance/performance_cubit.dart'
@@ -497,6 +499,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.singleton<_i801.PerformanceRepository>(
       () => _i797.PerformanceService(gh<_i460.SharedPreferences>()),
+    );
+    gh.factory<_i676.ClipboardCubit>(
+      () => _i676.ClipboardCubit(
+        gh<_i854.CopyTextUseCase>(),
+        gh<_i854.PasteTextUseCase>(),
+      ),
     );
     gh.lazySingleton<_i491.BookVectorIndex>(
       () => _i491.BookVectorIndex(gh<_i18.EmbeddingService>()),

@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:ndk/ndk.dart';
 
+import 'package:zapbook/core/config/zapbook_config.dart';
 import 'package:zapbook/core/data/cache/local_cache_manager.dart';
 import 'package:zapbook/core/data/cache/nostr_cache_store.dart';
 
@@ -29,14 +30,7 @@ abstract class NostrModule {
         engine: NdkEngine.JIT,
         cache: LocalCacheManager(store),
         eventVerifier: Bip340EventVerifier(),
-        bootstrapRelays: const [
-          'wss://relay.damus.io',
-          'wss://nos.lol',
-          'wss://relay.nostr.band',
-          'wss://relay.primal.net',
-          'wss://relay.snort.social',
-          'wss://nostr.wine',
-        ],
+        bootstrapRelays: ZapbookConfig.broadcastRelays,
       ),
     );
   }
