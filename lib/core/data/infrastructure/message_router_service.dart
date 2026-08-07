@@ -41,118 +41,131 @@ class MessageRouterService {
     initialize();
   }
 
-  Future<String?> _titleFor(String? groupId) async {
-    if (groupId == null || groupId.isEmpty) return null;
-    final cached = _groupTitles[groupId];
-    if (cached != null) return cached;
-    try {
-      final group = await _marmot.getGroup(groupId);
-      if (group == null) return null;
-      final title = BookGroupNaming.matches(group.name)
-          ? BookGroupNaming.titleOf(group.name)
-          : group.name;
-      _groupTitles[groupId] = title;
-      return title;
-    } on Object catch (error) {
-      _log.fine('title lookup failed for $groupId: $error');
-      return null;
-    }
-  }
-
   void initialize() {
     _messageSub ??= _marmotSyncService.onMessage.listen(
       _handleRawMessage,
-      onError: (Object error, StackTrace stack) {
-        _log.warning('Message stream error', error, stack);
-      },
+      onError: (Object error, StackTrace stack) =>
+          _log.warning('Message stream error', error, stack),
     );
-  }
-
-  Future<void> _handleRawMessage(MarmotMessage rawMsg) async {
-    final parsed = AppMessage.tryParse(rawMsg);
-    _log.warning('Incoming Message ${parsed.runtimeType}');
-    if (parsed == null) return;
-
-    try {
-      switch (parsed) {
-        case BookProgressMessage():
-          final next = CircleMemberProgress.fromAppMessage(parsed);
-          final previous = await _circleProgressDao.getProgress(
-            groupId: next.groupId,
-            bookId: next.bookId,
-            pubKey: next.pubKey,
-          );
-          await _circleProgressDao.upsertProgress(next);
-
-          final cheer = CheersActivityMessage.cheerFromProgress(
-            id: parsed.id,
-            actorNpub: parsed.senderNpub,
-            groupId: parsed.groupId,
-            timestampSecs: parsed.timestampSecs,
-            previous: previous,
-            next: next,
-            bookTitle: await _titleFor(parsed.groupId),
-          );
-          if (cheer != null) {
-            final npub = await _identityLocalDataSource.readNpub();
-            if (npub != null) await _cheersDao.saveActivity(npub, cheer);
-            _activityController.add(cheer);
-          }
-
-        case CheersMessage() || ZapSentMessage() || ReseedRequestMessage():
-          final activity = CheersActivityMessage.fromAppMessage(
-            parsed,
-            bookTitle: await _titleFor(parsed.groupId),
-          );
-          final npub = await _identityLocalDataSource.readNpub();
-          if (npub != null && activity != null) {
-            if (parsed is ReseedRequestMessage) {
-              final group = await _marmot.getGroup(parsed.groupId);
-              if (group == null || !group.adminNpubs.contains(npub)) {
-                break;
-              }
-
-              try {
-                final circleDirId = parsed.payload['circleDirId'] as String;
-                await _circlesRepository.reseedCircleBook(
-                  groupId: parsed.groupId,
-                  circleDirId: circleDirId,
-                  myNpub: npub,
-                );
-              } catch (e, st) {
-                _log.severe('Failed to handle reseed request', e, st);
-              }
-            }
-
-            await _cheersDao.saveActivity(npub, activity);
-            _activityController.add(activity);
-          }
-
-        case ZapNudgeMessage(payload: final payload) ||
-            ZapReadyMessage(payload: final payload):
-          final npub = await _identityLocalDataSource.readNpub();
-          if (npub == null || payload['toNpub'] != npub) break;
-          final activity = CheersActivityMessage.fromAppMessage(
-            parsed,
-            bookTitle: await _titleFor(parsed.groupId),
-          );
-          if (activity != null) {
-            await _cheersDao.saveActivity(npub, activity);
-            _activityController.add(activity);
-          }
-
-        case BookManifestMessage():
-        case InitialBookMessage():
-        case BookCompletedMessage():
-          break;
-      }
-    } on Object catch (error, stack) {
-      _log.warning('Message handling error', error, stack);
-    }
   }
 
   void dispose() {
     _messageSub?.cancel();
     _messageSub = null;
+  }
+
+  Future<void> _handleRawMessage(MarmotMessage rawMsg) async {
+    final parsed = AppMessage.tryParse(rawMsg);
+    if (parsed == null) return;
+
+    _log.fine('Routing incoming message: ${parsed.runtimeType}');
+
+    final npub = await _identityLocalDataSource.readNpub();
+    if (npub == null) return;
+
+    try {
+      final activity = await _processAndCreateActivity(parsed, npub);
+      if (activity != null) {
+        await _cheersDao.saveActivity(npub, activity);
+        _activityController.add(activity);
+      }
+    } on Object catch (error, stack) {
+      _log.warning('Failed to route message ${rawMsg.id}', error, stack);
+    }
+  }
+
+  Future<CheersActivityMessage?> _processAndCreateActivity(
+    AppMessage message,
+    String currentNpub,
+  ) async {
+    final bookTitle = await _titleFor(message.groupId);
+
+    switch (message) {
+      case BookProgressMessage():
+        return _handleBookProgress(message, currentNpub, bookTitle);
+
+      case ReseedRequestMessage():
+        return _handleReseedRequest(message, currentNpub, bookTitle);
+
+      case CheersMessage() || ZapSentMessage():
+        if (message.senderNpub == currentNpub) return null;
+        return CheersActivityMessage.fromAppMessage(
+          message,
+          bookTitle: bookTitle,
+        );
+
+      case ZapNudgeMessage(:final toNpub) || ZapReadyMessage(:final toNpub):
+        if (toNpub != currentNpub) return null;
+        return CheersActivityMessage.fromAppMessage(
+          message,
+          bookTitle: bookTitle,
+        );
+
+      case InitialBookMessage() || BookCompletedMessage():
+        return null;
+    }
+  }
+
+  Future<CheersActivityMessage?> _handleBookProgress(
+    BookProgressMessage message,
+    String currentNpub,
+    String? bookTitle,
+  ) async {
+    final next = CircleMemberProgress.fromAppMessage(message);
+    final previous = await _circleProgressDao.getProgress(
+      groupId: next.groupId,
+      bookId: next.bookId,
+      pubKey: next.pubKey,
+    );
+
+    await _circleProgressDao.upsertProgress(next);
+
+    if (message.senderNpub == currentNpub) return null;
+
+    return CheersActivityMessage.cheerFromProgress(
+      id: message.id,
+      actorNpub: message.senderNpub,
+      groupId: message.groupId,
+      timestampSecs: message.timestampSecs,
+      previous: previous,
+      next: next,
+      bookTitle: bookTitle,
+    );
+  }
+
+  Future<CheersActivityMessage?> _handleReseedRequest(
+    ReseedRequestMessage message,
+    String currentNpub,
+    String? bookTitle,
+  ) async {
+    if (message.senderNpub == currentNpub) return null;
+
+    final group = await _marmot.getGroup(message.groupId);
+    if (group == null || !group.adminNpubs.contains(currentNpub)) return null;
+
+    return CheersActivityMessage.fromAppMessage(message, bookTitle: bookTitle);
+  }
+
+  Future<String?> _titleFor(String? groupId) async {
+    if (groupId == null || groupId.isEmpty) return null;
+
+    if (_groupTitles.containsKey(groupId)) {
+      return _groupTitles[groupId];
+    }
+
+    try {
+      final group = await _marmot.getGroup(groupId);
+      if (group == null) return null;
+
+      final title = BookGroupNaming.matches(group.name)
+          ? BookGroupNaming.titleOf(group.name)
+          : group.name;
+
+      _groupTitles[groupId] = title;
+      return title;
+    } on Object catch (error) {
+      _log.fine('Title lookup failed for $groupId: $error');
+      return null;
+    }
   }
 }

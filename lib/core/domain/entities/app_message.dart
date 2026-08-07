@@ -84,11 +84,15 @@ class CheersMessage extends AppMessage {
 class ZapNudgeMessage extends AppMessage {
   final Map<String, dynamic> payload;
 
+  String? get toNpub => payload['toNpub'] as String?;
+
   const ZapNudgeMessage(super.message, this.payload);
 }
 
 class ZapReadyMessage extends AppMessage {
   final Map<String, dynamic> payload;
+
+  String? get toNpub => payload['toNpub'] as String?;
 
   const ZapReadyMessage(super.message, this.payload);
 }
