@@ -844,6 +844,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i460.SharedPreferences>(),
       ),
     );
+    gh.lazySingleton<_i194.MessageRouterService>(
+      () => _i194.MessageRouterService(
+        gh<_i904.MarmotSyncService>(),
+        gh<_i562.CheersDao>(),
+        gh<_i348.CircleProgressDao>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i970.Marmot>(),
+      ),
+    );
     gh.lazySingleton<_i582.ProfileRepository>(
       () => _i160.ProfileRepositoryImpl(
         gh<_i603.IdentityLocalDataSource>(),
@@ -1022,6 +1031,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.CopyTextUseCase>(),
       ),
     );
+    gh.lazySingleton<_i903.NotificationGate>(
+      () => _i903.NotificationGate(
+        gh<_i194.MessageRouterService>(),
+        gh<_i904.MarmotSyncService>(),
+        gh<_i377.ZapEarningsService>(),
+        gh<_i551.LocalNotificationService>(),
+        gh<_i1064.SyncServiceChannel>(),
+        gh<_i409.ContactService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.factoryParam<
       _i405.BookWizardCubit,
       _i687.Completer<_i230.WizardData>,
@@ -1163,16 +1184,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i899.TouchDashboardBookOpened>(),
       ),
     );
-    gh.lazySingleton<_i194.MessageRouterService>(
-      () => _i194.MessageRouterService(
-        gh<_i904.MarmotSyncService>(),
-        gh<_i562.CheersDao>(),
-        gh<_i348.CircleProgressDao>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i203.CirclesRepository>(),
-        gh<_i970.Marmot>(),
-      ),
-    );
     gh.factory<_i921.WatchCheersActivitiesUseCase>(
       () => _i921.WatchCheersActivitiesUseCase(gh<_i314.CheersRepository>()),
     );
@@ -1247,18 +1258,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1006.LeaveCircleBookUseCase>(),
         gh<_i1006.DeleteCircleBookUseCase>(),
       ),
-    );
-    gh.lazySingleton<_i903.NotificationGate>(
-      () => _i903.NotificationGate(
-        gh<_i194.MessageRouterService>(),
-        gh<_i904.MarmotSyncService>(),
-        gh<_i377.ZapEarningsService>(),
-        gh<_i551.LocalNotificationService>(),
-        gh<_i1064.SyncServiceChannel>(),
-        gh<_i409.ContactService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-      ),
-      dispose: (i) => i.dispose(),
     );
     gh.factory<_i620.ShareCircleCubit>(
       () => _i620.ShareCircleCubit(
