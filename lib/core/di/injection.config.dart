@@ -544,6 +544,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i854.LibraryFileStore>(),
       ),
     );
+    gh.lazySingleton<_i493.ProfileSettingsRepository>(
+      () => _i366.ProfileSettingsRepositoryImpl(
+        gh<_i78.ClipboardService>(),
+        gh<_i409.NwcService>(),
+        gh<_i603.IdentityLocalDataSource>(),
+        gh<_i1049.FilePickerService>(),
+        gh<_i383.KeyPackageService>(),
+        gh<_i739.AppInfoService>(),
+        gh<_i1058.ZapSupportService>(),
+        gh<_i879.FileLoggerService>(),
+      ),
+    );
     gh.factory<_i741.SearchBooks>(
       () => _i741.SearchBooks(gh<_i83.BookSearchRepository>()),
     );
@@ -588,6 +600,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i991.BunkerSignerSource>(),
       ),
     );
+    gh.factory<_i1055.ProfileSettingsUseCases>(
+      () =>
+          _i1055.ProfileSettingsUseCases(gh<_i493.ProfileSettingsRepository>()),
+    );
+    gh.factory<_i1055.ExportDebugLogsUseCase>(
+      () =>
+          _i1055.ExportDebugLogsUseCase(gh<_i493.ProfileSettingsRepository>()),
+    );
     gh.lazySingleton<_i295.NostrService>(
       () => _i295.NostrService(gh<_i857.Ndk>(), gh<_i68.NostrCacheStore>()),
     );
@@ -622,17 +642,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i857.Ndk>(),
         gh<_i603.IdentityLocalDataSource>(),
         gh<_i383.KeyPackageService>(),
-      ),
-    );
-    gh.lazySingleton<_i493.ProfileSettingsRepository>(
-      () => _i366.ProfileSettingsRepositoryImpl(
-        gh<_i78.ClipboardService>(),
-        gh<_i409.NwcService>(),
-        gh<_i603.IdentityLocalDataSource>(),
-        gh<_i1049.FilePickerService>(),
-        gh<_i383.KeyPackageService>(),
-        gh<_i739.AppInfoService>(),
-        gh<_i1058.ZapSupportService>(),
       ),
     );
     gh.lazySingleton<_i735.ProfileRemoteDataSource>(
@@ -816,10 +825,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i153.WatchGlobalBookDownloadProgress(
         gh<_i753.BookDownloadRepository>(),
       ),
-    );
-    gh.factory<_i1055.ProfileSettingsUseCases>(
-      () =>
-          _i1055.ProfileSettingsUseCases(gh<_i493.ProfileSettingsRepository>()),
     );
     gh.factory<_i665.DownloadCircleBook>(
       () => _i665.DownloadCircleBook(
@@ -1054,14 +1059,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i20.PickCoverImageUseCase>(),
       ),
     );
-    gh.factory<_i145.ProfileCubit>(
-      () => _i145.ProfileCubit(
-        gh<_i385.LoadProfile>(),
-        gh<_i223.UpdateProfile>(),
-        gh<_i915.SignOut>(),
-        gh<_i1055.ProfileSettingsUseCases>(),
-      ),
-    );
     gh.lazySingleton<_i397.FriendsCubit>(
       () => _i397.FriendsCubit(
         gh<_i86.FriendsUseCases>(),
@@ -1079,6 +1076,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1024.WatchCircleBooks>(),
         gh<_i16.WatchLastOpenedLibraryBook>(),
         gh<_i741.EnsureBookSearchable>(),
+      ),
+    );
+    gh.factory<_i145.ProfileCubit>(
+      () => _i145.ProfileCubit(
+        gh<_i385.LoadProfile>(),
+        gh<_i223.UpdateProfile>(),
+        gh<_i915.SignOut>(),
+        gh<_i1055.ProfileSettingsUseCases>(),
+        gh<_i1055.ExportDebugLogsUseCase>(),
       ),
     );
     gh.factory<_i1006.WatchCirclesUseCase>(

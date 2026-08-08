@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:zapbook/core/config/zapbook_config.dart';
+
 import 'package:zapbook/core/identity/signer_meta.dart';
 import 'package:zapbook/features/profile/domain/usecases/load_profile.dart';
 import 'package:zapbook/features/profile/domain/usecases/profile_usecases.dart';
@@ -20,6 +21,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     this._updateProfile,
     this._signOut,
     this._settings,
+    this._exportDebugLogs,
   ) : super(const ProfileLoading()) {
     load();
   }
@@ -28,6 +30,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   final UpdateProfile _updateProfile;
   final SignOut _signOut;
   final ProfileSettingsUseCases _settings;
+  final ExportDebugLogsUseCase _exportDebugLogs;
 
   String? get nwcConnectionString => _settings.nwcConnectionString;
   bool get isNwcConnected => _settings.isNwcConnected;
@@ -102,6 +105,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> copy(String value) => _settings.copy(value);
 
   Future<bool> rotateKeyPackage() => _settings.rotateKeyPackage();
+
+  Future<void> exportDebugLogs() => _exportDebugLogs();
 
   Future<void> signOut() => _signOut();
 }

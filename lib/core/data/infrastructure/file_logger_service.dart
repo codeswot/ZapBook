@@ -10,6 +10,7 @@ class FileLoggerService {
   File? _logFile;
   final _logBuffer = <String>[];
   bool _initialized = false;
+  bool _isWriting = false;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -52,11 +53,25 @@ class FileLoggerService {
         : '';
 
     final fullMessage = message + errorPart + stackPart;
+    _logBuffer.add(fullMessage);
+    _flushLogs();
+  }
 
-    if (_logFile == null) {
-      _logBuffer.add(fullMessage);
-    } else {
-      _logFile!.writeAsStringSync('$fullMessage\n', mode: FileMode.append);
+  Future<void> _flushLogs() async {
+    if (_isWriting || _logFile == null || _logBuffer.isEmpty) return;
+    _isWriting = true;
+
+    try {
+      final logsToWrite = '${_logBuffer.join('\n')}\n';
+      _logBuffer.clear();
+      await _logFile!.writeAsString(logsToWrite, mode: FileMode.append);
+    } catch (e) {
+      log('Failed to write logs: $e');
+    } finally {
+      _isWriting = false;
+      if (_logBuffer.isNotEmpty) {
+        _flushLogs();
+      }
     }
   }
 
@@ -64,6 +79,8 @@ class FileLoggerService {
     if (_logFile != null && _logFile?.existsSync() == true) {
       // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(_logFile!.path)], text: 'ZapBook QA Logs');
+    } else {
+      log('No log file available to share.');
     }
   }
 }

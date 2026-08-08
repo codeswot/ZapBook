@@ -7,6 +7,7 @@ import 'package:zapbook/core/data/infrastructure/app_info_service.dart';
 import 'package:zapbook/core/data/infrastructure/nwc_service.dart';
 import 'package:zapbook/core/data/infrastructure/key_package_service.dart';
 import 'package:zapbook/core/data/infrastructure/zap_support_service.dart';
+import 'package:zapbook/core/data/infrastructure/file_logger_service.dart';
 import 'package:zapbook/features/profile/domain/repositories/profile_settings_repository.dart';
 
 @LazySingleton(as: ProfileSettingsRepository)
@@ -18,6 +19,7 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
   final KeyPackageService _keyPackage;
   final AppInfoService _appInfo;
   final ZapSupportService _support;
+  final FileLoggerService _fileLogger;
 
   ProfileSettingsRepositoryImpl(
     this._clipboard,
@@ -27,6 +29,7 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
     this._keyPackage,
     this._appInfo,
     this._support,
+    this._fileLogger,
   );
 
   @override
@@ -64,4 +67,6 @@ class ProfileSettingsRepositoryImpl implements ProfileSettingsRepository {
   Future<void> copyToClipboard(String value) => _clipboard.copy(value);
   @override
   Future<bool> rotateKeyPackage() => _keyPackage.forceRotate();
+  @override
+  Future<void> exportDebugLogs() => _fileLogger.shareLogs();
 }

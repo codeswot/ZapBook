@@ -99,15 +99,21 @@ class CirclesDataSourceImpl implements CirclesDataSource {
 
     try {
       for (var attempt = 1; attempt <= _uploadMaxAttempts; attempt++) {
-        final outcome = await _shareService.uploadBookContent(
-          npub,
-          groupId,
-          circleDirId,
-          alreadyUploaded: uploaded,
-        );
+        UploadOutcome? outcome;
+        try {
+          outcome = await _shareService.uploadBookContent(
+            npub,
+            groupId,
+            circleDirId,
+            alreadyUploaded: uploaded,
+          );
+        } catch (e, st) {
+          outcome = (manifest: null, uploaded: uploaded, error: e, stack: st);
+        }
+
         uploaded.addAll(outcome.uploaded);
         if (outcome.manifest != null) {
-          // We can just keep going or break, it succeeded
+          _log.fine('Successfully uploaded book content for $circleDirId');
         }
 
         if (outcome.error == null) {
@@ -155,7 +161,7 @@ class CirclesDataSourceImpl implements CirclesDataSource {
             _log.warning('Failed to log admin action for failed upload', e, st);
           }
 
-          return;
+          throw Exception('Upload failed: ${outcome.error}');
         }
         await Future.delayed(Duration(seconds: attempt * 2));
       }

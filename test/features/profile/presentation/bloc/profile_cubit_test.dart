@@ -18,11 +18,15 @@ class MockSignOut extends Mock implements SignOut {}
 class MockProfileSettingsUseCases extends Mock
     implements ProfileSettingsUseCases {}
 
+class MockExportDebugLogsUseCase extends Mock
+    implements ExportDebugLogsUseCase {}
+
 void main() {
   late MockLoadProfile loadProfile;
   late MockUpdateProfile updateProfile;
   late MockSignOut signOut;
   late MockProfileSettingsUseCases settingsUseCases;
+  late MockExportDebugLogsUseCase exportDebugLogs;
 
   const tProfile = UserProfile(
     npub: 'npub',
@@ -40,6 +44,7 @@ void main() {
     updateProfile = MockUpdateProfile();
     signOut = MockSignOut();
     settingsUseCases = MockProfileSettingsUseCases();
+    exportDebugLogs = MockExportDebugLogsUseCase();
 
     when(() => loadProfile()).thenAnswer((_) async => tProfile);
     when(() => settingsUseCases.nwcWalletName).thenReturn('Alby');
@@ -54,8 +59,13 @@ void main() {
     ).thenReturn([0, 3, 5, 10, 15, 20, 50, 100]);
   });
 
-  ProfileCubit buildCubit() =>
-      ProfileCubit(loadProfile, updateProfile, signOut, settingsUseCases);
+  ProfileCubit buildCubit() => ProfileCubit(
+    loadProfile,
+    updateProfile,
+    signOut,
+    settingsUseCases,
+    exportDebugLogs,
+  );
 
   group('ProfileCubit', () {
     blocTest<ProfileCubit, ProfileState>(

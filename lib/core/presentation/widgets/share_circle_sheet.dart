@@ -410,93 +410,95 @@ class _BodyState extends State<_Body> {
                 ],
               ),
               const SizedBox(height: 24),
-              AppButton(
-                label:
-                    state is ShareCircleLoaded &&
-                            state.uploadStatus == UploadStatus.uploading ||
-                        state is ShareCircleBusy &&
-                            state.uploadStatus == UploadStatus.uploading
-                    ? 'Uploading to network...'
-                    : state is ShareCircleLoaded &&
-                              state.uploadStatus == UploadStatus.pending ||
-                          state is ShareCircleBusy &&
-                              state.uploadStatus == UploadStatus.pending
-                    ? 'Upload to share'
-                    : selectedNpubs.isEmpty
-                    ? 'Share'
-                    : 'Share with ${selectedNpubs.length}',
-                icon:
-                    state is ShareCircleLoaded &&
-                            state.uploadStatus == UploadStatus.pending ||
-                        state is ShareCircleBusy &&
-                            state.uploadStatus == UploadStatus.pending
-                    ? LucideIcons.cloudUpload
-                    : LucideIcons.userPlus,
-                variant: AppButtonVariant.purple,
-                fullWidth: true,
-                isLoading:
-                    isSharing ||
-                    (state is ShareCircleLoaded &&
-                            state.uploadStatus == UploadStatus.uploading ||
-                        state is ShareCircleBusy &&
-                            state.uploadStatus == UploadStatus.uploading),
-                onTap:
-                    (state is ShareCircleLoaded &&
-                                state.uploadStatus == UploadStatus.uploading ||
-                            state is ShareCircleBusy &&
-                                state.uploadStatus == UploadStatus.uploading) ||
-                        isSharing
-                    ? null
-                    : (state is ShareCircleLoaded &&
-                              state.uploadStatus == UploadStatus.pending ||
-                          state is ShareCircleBusy &&
-                              state.uploadStatus == UploadStatus.pending)
-                    ? () {
-                        cubit.upload();
-                      }
-                    : selectedNpubs.isEmpty
-                    ? null
-                    : () {
-                        final circleBookId = widget.book.id;
+              Builder(
+                builder: (context) {
+                  UploadStatus uploadStatus = UploadStatus.uploaded;
+                  if (state is ShareCircleLoaded) {
+                    uploadStatus = state.uploadStatus;
+                  }
+                  if (state is ShareCircleBusy) {
+                    uploadStatus = state.uploadStatus;
+                  }
 
-                        final messengerState = ScaffoldMessenger.of(context);
-                        final successSnackbar = AppToast.buildSnackBar(
-                          context,
-                          message: 'shared successfully!',
-                          type: AppToastType.success,
-                        );
-                        final skipSnackbar = AppToast.buildSnackBar(
-                          context,
-                          message: 'Shared, but some friends skipped',
-                          type: AppToastType.success,
-                        );
-                        final errorSnackbar = AppToast.buildSnackBar(
-                          context,
-                          message: 'Failed to share circle. Please try again.',
-                          type: AppToastType.error,
-                        );
+                  String label = '';
+                  IconData icon = LucideIcons.userPlus;
+                  bool isLoading =
+                      isSharing || uploadStatus == UploadStatus.uploading;
+                  VoidCallback? onTap;
 
-                        context.toast.showSuccess(
-                          'Sharing circle in the background...',
-                        );
-                        Navigator.of(context).pop();
+                  if (uploadStatus == UploadStatus.uploading) {
+                    label = 'Uploading to network...';
+                    onTap = null;
+                  } else if (selectedNpubs.isEmpty) {
+                    label = 'Share';
+                    onTap = null;
+                  } else {
+                    label = 'Share with ${selectedNpubs.length}';
+                    onTap = () {
+                      final circleBookId = widget.book.id;
 
-                        cubit
-                            .share(circleBookId)
-                            .then((skipped) {
-                              messengerState.hideCurrentSnackBar();
-                              if (skipped.isNotEmpty) {
-                                messengerState.showSnackBar(skipSnackbar);
-                              } else {
-                                messengerState.showSnackBar(successSnackbar);
-                              }
-                            })
-                            .catchError((_) {
-                              messengerState.hideCurrentSnackBar();
-                              messengerState.showSnackBar(errorSnackbar);
-                            });
-                      },
+                      final messengerState = ScaffoldMessenger.of(context);
+                      final successSnackbar = AppToast.buildSnackBar(
+                        context,
+                        message: 'shared successfully!',
+                        type: AppToastType.success,
+                      );
+                      final skipSnackbar = AppToast.buildSnackBar(
+                        context,
+                        message: 'Shared, but some friends skipped',
+                        type: AppToastType.success,
+                      );
+                      final uploadErrorSnackbar = AppToast.buildSnackBar(
+                        context,
+                        message: 'Uploading failed. Please try again.',
+                        type: AppToastType.error,
+                      );
+                      final shareErrorSnackbar = AppToast.buildSnackBar(
+                        context,
+                        message: 'Sharing failed. Please try again.',
+                        type: AppToastType.error,
+                      );
+
+                      context.toast.showSuccess(
+                        'Sharing circle in the background...',
+                      );
+                      Navigator.of(context).pop();
+
+                      cubit
+                          .share(circleBookId)
+                          .then((skipped) {
+                            messengerState.hideCurrentSnackBar();
+                            if (skipped.isNotEmpty) {
+                              messengerState.showSnackBar(skipSnackbar);
+                            } else {
+                              messengerState.showSnackBar(successSnackbar);
+                            }
+                          })
+                          .catchError((error) {
+                            messengerState.hideCurrentSnackBar();
+                            final isUploadError = error.toString().contains(
+                              'Upload failed',
+                            );
+                            messengerState.showSnackBar(
+                              isUploadError
+                                  ? uploadErrorSnackbar
+                                  : shareErrorSnackbar,
+                            );
+                          });
+                    };
+                  }
+
+                  return AppButton(
+                    label: label,
+                    icon: icon,
+                    variant: AppButtonVariant.purple,
+                    fullWidth: true,
+                    isLoading: isLoading,
+                    onTap: onTap,
+                  );
+                },
               ),
+              const SizedBox(height: 32),
               if (!isKeyboardOpen) ...[
                 const SizedBox(height: 10),
                 AppButton(

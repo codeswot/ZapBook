@@ -29,7 +29,7 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   final WatchPendingCircleUploadsUseCase _watchPendingCircleUploadsUseCase;
   final UploadCircleBookUseCase _uploadCircleBookUseCase;
 
-  StreamSubscription? _uploadSub;
+  final List<StreamSubscription> _uploadSubs = [];
   String? _circleDirId;
   String? _circleBookId;
 
@@ -72,7 +72,17 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
   ) {
     if (dirId == null) return UploadStatus.uploaded;
     if (active.contains(dirId)) return UploadStatus.uploading;
-    if (pending.any((p) => p.circleDirId == dirId)) return UploadStatus.pending;
+
+    final pendingUpload = pending
+        .where((p) => p.circleDirId == dirId)
+        .firstOrNull;
+    if (pendingUpload != null) {
+      if (pendingUpload.failureReason != null) {
+        return UploadStatus.failed;
+      }
+      return UploadStatus.pending;
+    }
+
     return UploadStatus.uploaded;
   }
 
@@ -84,6 +94,8 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     List<dynamic> pending = [];
 
     void updateState() {
+      if (isClosed) return;
+
       final s = state;
       final status = _calculateUploadStatus(_circleDirId, active, pending);
 
@@ -111,20 +123,26 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
       }
     }
 
-    _watchActiveUploadsUseCase().listen((a) {
-      active = a;
-      updateState();
-    });
+    _uploadSubs.add(
+      _watchActiveUploadsUseCase().listen((a) {
+        active = a;
+        updateState();
+      }),
+    );
 
-    _watchPendingCircleUploadsUseCase(myNpub).listen((p) {
-      pending = p;
-      updateState();
-    });
+    _uploadSubs.add(
+      _watchPendingCircleUploadsUseCase(myNpub).listen((p) {
+        pending = p;
+        updateState();
+      }),
+    );
   }
 
   @override
   Future<void> close() {
-    _uploadSub?.cancel();
+    for (final sub in _uploadSubs) {
+      sub.cancel();
+    }
     return super.close();
   }
 
@@ -197,6 +215,11 @@ class ShareCircleCubit extends Cubit<ShareCircleState> {
     );
 
     try {
+      if (s.uploadStatus == UploadStatus.pending ||
+          s.uploadStatus == UploadStatus.failed) {
+        await _uploadCircleBookUseCase(myNpub, circleBookId);
+      }
+
       final skips = await _shareUseCase(
         circleBookId: circleBookId,
         npubs: s.selectedNpubs,

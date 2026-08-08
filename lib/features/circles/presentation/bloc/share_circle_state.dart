@@ -1,7 +1,7 @@
 import 'package:zapbook/core/domain/contact.dart';
 import 'package:zapbook/features/circles/domain/entities/share_skip.dart';
 
-enum UploadStatus { uploaded, uploading, pending }
+enum UploadStatus { uploaded, uploading, pending, failed }
 
 sealed class ShareCircleState {
   const ShareCircleState();

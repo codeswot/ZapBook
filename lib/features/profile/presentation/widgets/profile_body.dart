@@ -20,8 +20,6 @@ import 'package:zapbook/core/presentation/widgets/app_nwc_connect_sheet.dart';
 import 'package:zapbook/core/presentation/widgets/app_nwc_connected_sheet.dart';
 import 'package:zapbook/core/presentation/theme/app_theme.dart';
 import 'package:zapbook/core/presentation/widgets/app_toast.dart';
-import 'package:zapbook/core/di/injection.dart';
-import 'package:zapbook/core/data/infrastructure/file_logger_service.dart';
 
 class ProfileBody extends StatelessWidget {
   const ProfileBody({super.key, required this.profile, this.nwcWalletName});
@@ -98,7 +96,7 @@ class ProfileBody extends StatelessWidget {
                 icon: LucideIcons.fileText,
                 title: 'Export Debug Logs',
                 subtitle: 'Share session logs for QA',
-                onTap: () => getIt<FileLoggerService>().shareLogs(),
+                onTap: () => context.read<ProfileCubit>().exportDebugLogs(),
               ),
               const ProfileSignOutTile(),
             ],

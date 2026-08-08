@@ -25,3 +25,12 @@ class ProfileSettingsUseCases {
   Future<void> copy(String value) => _repository.copyToClipboard(value);
   Future<bool> rotateKeyPackage() => _repository.rotateKeyPackage();
 }
+
+@injectable
+class ExportDebugLogsUseCase {
+  final ProfileSettingsRepository _repository;
+
+  ExportDebugLogsUseCase(this._repository);
+
+  Future<void> call() => _repository.exportDebugLogs();
+}

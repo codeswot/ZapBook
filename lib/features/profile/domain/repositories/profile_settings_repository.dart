@@ -16,4 +16,5 @@ abstract class ProfileSettingsRepository {
   Future<void> disconnectNwc();
   Future<void> copyToClipboard(String value);
   Future<bool> rotateKeyPackage();
+  Future<void> exportDebugLogs();
 }
