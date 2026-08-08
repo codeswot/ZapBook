@@ -31,7 +31,7 @@ class ExternalSignerMethodSheet extends StatefulWidget {
   final Future<String?> Function() onSignerApp;
   final Future<String?> Function(String bunkerUrl) onBunker;
   final NostrConnectSession Function() onStartNostrConnect;
-  final Future<String?> Function(NostrConnectSession session) onNostrConnect;
+  final Future<String?> Function(NostrConnectSession session, {void Function()? onContact}) onNostrConnect;
 
   static Future<bool?> show(
     BuildContext context, {
@@ -39,7 +39,7 @@ class ExternalSignerMethodSheet extends StatefulWidget {
     required Future<String?> Function() onSignerApp,
     required Future<String?> Function(String bunkerUrl) onBunker,
     required NostrConnectSession Function() onStartNostrConnect,
-    required Future<String?> Function(NostrConnectSession session)
+    required Future<String?> Function(NostrConnectSession session, {void Function()? onContact})
     onNostrConnect,
   }) {
     return showModalBottomSheet<bool>(
@@ -67,6 +67,7 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
   _Phase _phase = _Phase.main;
   bool _busy = false;
   NostrConnectSession? _nostrConnectSession;
+  bool _contacted = false;
 
   @override
   void dispose() {
@@ -144,8 +145,19 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
       setState(() {
         _phase = _Phase.nostrConnect;
         _busy = false;
+        _contacted = false;
       });
-      final error = await widget.onNostrConnect(_nostrConnectSession!);
+      final error = await widget.onNostrConnect(
+        _nostrConnectSession!,
+        onContact: () {
+          if (mounted) {
+            setState(() {
+              _busy = true;
+              _contacted = true;
+            });
+          }
+        },
+      );
       if (!mounted) return;
       if (error == null) {
         Navigator.of(context).pop(true);
@@ -267,7 +279,7 @@ class _ExternalSignerMethodSheetState extends State<ExternalSignerMethodSheet> {
                 },
               ),
               const SizedBox(height: 12),
-              const Center(child: CircularProgressIndicator()),
+              if (_contacted) const Center(child: CircularProgressIndicator()),
             ] else ...[
               if (widget.showSignerApp)
                 AppMethodTile(

@@ -39,7 +39,7 @@ void main() {
     test('initial state is DonateReady', () {
       final cubit = buildCubit();
       expect(cubit.state, const DonateReady());
-      expect(cubit.recipient, 'zapbook@blink.sv');
+      expect(cubit.recipient, 'zapbook@cake.cash');
     });
 
     blocTest<DonateCubit, DonateState>(

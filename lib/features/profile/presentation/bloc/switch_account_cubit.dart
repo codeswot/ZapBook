@@ -194,7 +194,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
     return _usecases.initiateNostrConnect(appName: 'ZapBook');
   }
 
-  Future<bool> connectNostrConnect(NostrConnectSession session) async {
+  Future<bool> connectNostrConnect(NostrConnectSession session, {void Function()? onContact}) async {
     final accounts = _currentAccounts;
     final active = _currentActiveNpub;
 
@@ -202,7 +202,7 @@ class SwitchAccountCubit extends Cubit<SwitchAccountState> {
       SwitchAccountBusy(accounts: accounts, activeNpub: active, isAdding: true),
     );
     try {
-      final connection = await session.awaitConnection();
+      final connection = await session.awaitConnection(onContact: onContact);
       await _usecases.saveBunkerConnection(connection);
       await switchAccount(connection.npub);
       return true;

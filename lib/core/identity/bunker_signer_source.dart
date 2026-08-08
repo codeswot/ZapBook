@@ -20,7 +20,7 @@ class NostrConnectSession {
   const NostrConnectSession({required this.uri, required this.awaitConnection});
 
   final String uri;
-  final Future<BunkerConnectResult> Function() awaitConnection;
+  final Future<BunkerConnectResult> Function({void Function()? onContact}) awaitConnection;
 }
 
 @lazySingleton
@@ -47,7 +47,7 @@ class BunkerSignerSource {
     );
     return NostrConnectSession(
       uri: req.nostrConnectURL,
-      awaitConnection: () async {
+      awaitConnection: ({void Function()? onContact}) async {
         BunkerConnection? connection;
         final localEventSigner = Bip340EventSigner(
           privateKey: req.keyPair.privateKey!,
@@ -178,6 +178,8 @@ class BunkerSignerSource {
             'Signer did not confirm the connection',
           );
         }
+        
+        onContact?.call();
 
         final signer = _ndk.bunkers.createSigner(
           connection,

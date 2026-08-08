@@ -229,9 +229,10 @@ class _BodyState extends State<_Body> {
                               },
                               onStartNostrConnect: () =>
                                   cubit.startNostrConnect(),
-                              onNostrConnect: (session) async {
+                              onNostrConnect: (session, {onContact}) async {
                                 final ok = await cubit.connectNostrConnect(
                                   session,
+                                  onContact: onContact,
                                 );
                                 if (ok) return null;
                                 final s = cubit.state;

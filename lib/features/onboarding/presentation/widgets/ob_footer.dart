@@ -111,8 +111,8 @@ class ObFooter extends StatelessWidget {
                       : (cubit.state.error ?? "Couldn't connect signer");
                 },
                 onStartNostrConnect: () => cubit.startNostrConnect(),
-                onNostrConnect: (session) async {
-                  final ok = await cubit.connectNostrConnect(session);
+                onNostrConnect: (session, {onContact}) async {
+                  final ok = await cubit.connectNostrConnect(session, onContact: onContact);
                   return ok
                       ? null
                       : (cubit.state.error ?? "Couldn't connect signer");

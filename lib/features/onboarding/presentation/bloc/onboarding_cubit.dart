@@ -173,10 +173,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     return _connectExternalSigner.initiateNostrConnect(appName: 'ZapBook');
   }
 
-  Future<bool> connectNostrConnect(NostrConnectSession session) async {
+  Future<bool> connectNostrConnect(NostrConnectSession session, {void Function()? onContact}) async {
     emit(state.copyWith(isBusy: true, error: null));
     try {
-      final connection = await session.awaitConnection();
+      final connection = await session.awaitConnection(onContact: onContact);
       emit(
         state.copyWith(
           isExternalSigner: true,

@@ -224,7 +224,8 @@ void main() {
       );
       final session = NostrConnectSession(
         uri: 'nostrconnect://bunker',
-        awaitConnection: () => Future.value(connection),
+        awaitConnection: ({void Function()? onContact}) =>
+            Future.value(connection),
       );
 
       when(
